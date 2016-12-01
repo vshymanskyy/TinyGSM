@@ -7,8 +7,24 @@
 
 A small Arduino library for GPRS modules, that just works
 
-Currently only SIM800/SIM900 are tested.  
-More modules may be supported later.
+Currently only SIM800/SIM900 are tested, more modules may be supported later.
+
+## Features
+
+#### Supports Arduino Client interface
+This library is very easy to integrate with lots of sketches, which used Ethernet or WiFi previously.  
+Examples for **Blynk**, **MQTT**, **Web Client** and **File Download** are provided.
+
+#### Tiny
+WebClient example for Arduino Nano (with Software Serial) takes little resources:
+```
+Sketch uses 11,916 bytes (38%) of program storage space. Maximum is 30,720 bytes.
+Global variables use 649 bytes (31%) of dynamic memory. Maximum is 2,048 bytes.
+```
+Now, you have more space for your experiments.
+
+#### Uses internal modem buffer for receive
+TinyGSM pulls data gently from the modem, so it can operate on very little RAM.
 
 ## Getting started
 
