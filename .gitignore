@@ -1,29 +1,19 @@
-# Compiled Object files
-*.slo
-*.lo
+# Compiled files, executables
 *.o
-*.obj
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
 *.a
-*.lib
-
-# Executables
 *.exe
 *.out
 *.app
+
+# Junk
+*.orig
+*.log
+*.bak
+
+# IDE project files
+.cproject
+.project
+.settings
+
+# Markers
+.development

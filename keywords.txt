@@ -1,0 +1,17 @@
+#######################################
+# Data types (KEYWORD1)
+#######################################
+TinyGsmClient	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+begin	KEYWORD2
+restart	KEYWORD2
+networkConnect	KEYWORD2
+networkDisconnect	KEYWORD2
+factoryReset	KEYWORD2
+
+#######################################
+# Literals (LITERAL1)
+#######################################
