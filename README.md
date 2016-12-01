@@ -16,12 +16,24 @@ More modules may be supported later.
     - Disable PIN code on the SIM card
     - Check your ballance
     - Check that APN,User,Pass are correct and you have internet
-  2. Ensure the sim card is correctly inserted into the module
-  3. Provide a good, stable power supply (up to 2A)
-     (4.0-4.2V or 5V according to your module documentation)
+  2. Ensure the SIM card is correctly inserted into the module
+  3. Provide a good, stable power supply (up to 2A, 4.0-4.2V or 5V according to your module documentation)
   4. Provide good, stable serial connection
      (Hardware Serial is recommended)
   5. Check if GSM antenna is attached
+
+## Troubleshooting
+
+Sometimes (especially if you played with AT comands), your module configuration may become invalid.
+In this case, there may be different problems:
+
+ * Can't connect to the GPRS network
+ * Can't connect to the server
+ * Sent/recieved data contains invalid bytes
+ * etc.
+
+To return module to **Factory Defaults**, use this sketch:  
+  File -> Examples -> TynyGSM -> tools -> [FactoryReset](https://github.com/vshymanskyy/TinyGSM/blob/master/tools/FactoryReset/FactoryReset.ino)
 
 __________
 
