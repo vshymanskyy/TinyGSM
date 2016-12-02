@@ -2,6 +2,7 @@
  *
  * For this example, you need to install CRC32 library:
  *   https://github.com/vshymanskyy/CRC32.git
+ *   or from http://librarymanager/all#CRC32+checksum
  *
  * TinyGSM Getting Started guide:
  *   http://tiny.cc/tiny-gsm-readme

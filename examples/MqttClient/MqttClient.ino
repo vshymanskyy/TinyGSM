@@ -2,6 +2,7 @@
  *
  * For this example, you need to install PubSubClient library:
  *   https://github.com/knolleary/pubsubclient/releases/latest
+ *   or from http://librarymanager/all#PubSubClient
  *
  * TinyGSM Getting Started guide:
  *   http://tiny.cc/tiny-gsm-readme
