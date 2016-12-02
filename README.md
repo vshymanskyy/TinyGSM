@@ -5,7 +5,7 @@
 
 ```
 
-A small Arduino library for GPRS modules, that just works.
+A small Arduino library for GSM modules, that just works.
 <!---
 [![GitHub download](https://img.shields.io/github/downloads/vshymanskyy/TinyGSM/total.svg)](https://github.com/vshymanskyy/TinyGSM/releases/latest)
 [![GitHub stars](https://img.shields.io/github/stars/vshymanskyy/TinyGSM.svg)](https://github.com/vshymanskyy/TinyGSM/stargazers)
@@ -16,7 +16,7 @@ A small Arduino library for GPRS modules, that just works.
 
 Currently only SIM800/SIM900 are tested, more modules may be supported later.
 
-If you like TinyGSM - give it a star, or fork it and contribute! 
+If you like **TinyGSM** - give it a star, or fork it and contribute! 
 [![GitHub stars](https://img.shields.io/github/stars/vshymanskyy/TinyGSM.svg?style=social&label=Star)](https://github.com/vshymanskyy/TinyGSM/stargazers) 
 [![GitHub forks](https://img.shields.io/github/forks/vshymanskyy/TinyGSM.svg?style=social&label=Fork)](https://github.com/vshymanskyy/TinyGSM/network)
 
