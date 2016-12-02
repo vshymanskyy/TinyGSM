@@ -1,7 +1,11 @@
 /**************************************************************
  *
- * To run this tool, you need to install StreamDebugger library:
+ * To run this tool you need StreamDebugger library:
  *   https://github.com/vshymanskyy/StreamDebugger
+ *   or from http://librarymanager/
+ *
+ * TinyGSM Getting Started guide:
+ *   http://tiny.cc/tiny-gsm-readme
  *
  **************************************************************/
 
