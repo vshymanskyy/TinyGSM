@@ -35,7 +35,10 @@
 #endif
 
 //#define GSM_USE_HEX
-#define GSM_RX_BUFFER 64
+
+#if !defined(GSM_RX_BUFFER)
+  #define GSM_RX_BUFFER 64
+#endif
 
 #define GSM_NL "\r\n"
 static constexpr char GSM_OK[] GSM_PROGMEM = "OK" GSM_NL;
@@ -105,11 +108,7 @@ public:
 
   virtual int available() {
     maintain();
-    size_t res = rx.size();
-    if (res > 0) {
-      return res;
-    }
-    return sock_available;
+    return rx.size() + sock_available;
   }
 
   virtual int read(uint8_t *buf, size_t size) {
@@ -121,8 +120,14 @@ public:
         rx.get(buf, chunk);
         buf += chunk;
         cnt += chunk;
+        continue;
+      }
+      // TODO: Read directly into user buffer?
+      maintain();
+      if (sock_available > 0) {
+        modemRead(rx.free());
       } else {
-        modemRead(rx.free()); //TODO: min(rx.free(), sock_available)
+        break;
       }
     }
     return cnt;
@@ -165,7 +170,9 @@ public:
   }
 
   bool restart() {
-    autoBaud();
+    if (!autoBaud()) {
+      return false;
+    }
     sendAT(F("+CFUN=0"));
     if (waitResponse(10000L) != 1) {
       return false;
@@ -182,15 +189,23 @@ public:
       return false;
     }
 
-    return 1 == waitResponse(60000, F("Ready"));
+    return waitResponse(60000L, F("Ready" GSM_NL)) == 1;
+  }
+
+  bool init() {
+    if (!autoBaud()) {
+      return false;
+    }
+    sendAT(F("&FZE0"));  // Factory + Reset + Echo Off
+    return waitResponse() == 1;
+
+    // +ICCID
+    // AT+CPIN?
+    // AT+CPIN=pin-code
+    // AT+CREG?
   }
 
   bool networkConnect(const char* apn, const char* user, const char* pwd) {
-    autoBaud();
-
-    // AT+CPIN=pin-code
-    // AT+CREG?
-
     networkDisconnect();
 
     // AT+CGATT?
