@@ -2,12 +2,15 @@
  *
  * To run this tool you need StreamDebugger library:
  *   https://github.com/vshymanskyy/StreamDebugger
- *   or from http://librarymanager/
+ *   or from http://librarymanager/all#StreamDebugger
  *
  * TinyGSM Getting Started guide:
  *   http://tiny.cc/tiny-gsm-readme
  *
  **************************************************************/
+
+// Increase buffer fo see less commands
+#define GSM_RX_BUFFER 256
 
 #include <TinyGsmClient.h>
 #include <StreamDebugger.h>
@@ -45,45 +48,44 @@ void setup() {
 }
 
 void loop() {
-  Serial.print("Connecting to ");
-  Serial.print(apn);
   if (!client.networkConnect(apn, user, pass)) {
-    Serial.println(" failed");
     delay(10000);
     return;
   }
-  Serial.println(" OK");
 
-  Serial.print("Connecting to ");
-  Serial.print(server);
   if (!client.connect(server, 80)) {
-    Serial.println(" failed");
     delay(10000);
     return;
   }
-  Serial.println(" OK");
 
   // Make a HTTP GET request:
   client.print(String("GET ") + resource + " HTTP/1.0\r\n");
   client.print(String("Host: ") + server + "\r\n");
   client.print("Connection: close\r\n\r\n");
 
+  // Skip all headers
+  client.find("\r\n\r\n");
+
+  // Read data
   unsigned long timeout = millis();
+  unsigned long bytesReceived = 0;
   while (client.connected() && millis() - timeout < 10000L) {
-    // Print available data
     while (client.available()) {
       char c = client.read();
       //Serial.print(c);
+      bytesReceived += 1;
       timeout = millis();
     }
   }
-  Serial.println();
 
   client.stop();
-  Serial.println("Server disconnected");
 
   client.networkDisconnect();
-  Serial.println("GPRS disconnected");
+
+  Serial.println();
+  Serial.println("************************");
+  Serial.print  (" Test:  ");   Serial.println((bytesReceived == 1000) ? "PASSED" : "FAIL");
+  Serial.println("************************");
 
   // Do nothing forevermore
   while (true) {
