@@ -40,8 +40,8 @@ TinyGSM pulls data gently from the modem, so it can operate on very little RAM.
 
 ## Troubleshooting
 
-Sometimes (especially if you played with AT comands), your module configuration may become invalid.
-In this case, there may be different problems:
+Sometimes (especially if you played with AT comands), your module configuration may become invalid.  
+This may result in problems such as:
 
  * Can't connect to the GPRS network
  * Can't connect to the server
