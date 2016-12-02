@@ -16,8 +16,15 @@ char apn[]  = "YourAPN";
 char user[] = "";
 char pass[] = "";
 
-StreamDebugger GsmSerial(Serial1, Serial);
-GsmClient gsm(GsmSerial);
+// Use Hardware Serial on Mega, Leonardo, Micro
+#define GsmSerial Serial1
+
+// or Software Serial on Uno, Nano
+//#include <SoftwareSerial.h>
+//SoftwareSerial GsmSerial(2, 3); // RX, TX
+
+StreamDebugger DebugSerial(GsmSerial, Serial);
+TinyGsmClient gsm(DebugSerial);
 
 void setup() {
   // Set console baud rate
@@ -31,7 +38,7 @@ void setup() {
   gsm.networkConnect(apn, user, pass);
 
   // Access AT commands from Serial
-  GsmSerial.directAccess();
+  DebugSerial.directAccess();
 }
 
 void loop() {
