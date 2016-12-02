@@ -5,10 +5,37 @@
 
 ```
 
-A small Arduino library for GPRS modules, that just works
+A small Arduino library for GSM modules, that just works.
+<!---
+[![GitHub download](https://img.shields.io/github/downloads/vshymanskyy/TinyGSM/total.svg)](https://github.com/vshymanskyy/TinyGSM/releases/latest)
+[![GitHub stars](https://img.shields.io/github/stars/vshymanskyy/TinyGSM.svg)](https://github.com/vshymanskyy/TinyGSM/stargazers)
+--->
+[![GitHub version](https://img.shields.io/github/release/vshymanskyy/TinyGSM.svg)](https://github.com/vshymanskyy/TinyGSM/releases/latest)
+[![GitHub issues](https://img.shields.io/github/issues/vshymanskyy/TinyGSM.svg)](https://github.com/vshymanskyy/TinyGSM/issues)
+[![License](https://img.shields.io/badge/license-LGPL3-blue.svg)](https://github.com/vshymanskyy/TinyGSM/blob/master/LICENSE)
 
-Currently only SIM800/SIM900 are tested.  
-More modules may be supported later.
+Currently only SIM800/SIM900 are tested, more modules may be supported later.
+
+If you like **TinyGSM** - give it a star, or fork it and contribute! 
+[![GitHub stars](https://img.shields.io/github/stars/vshymanskyy/TinyGSM.svg?style=social&label=Star)](https://github.com/vshymanskyy/TinyGSM/stargazers) 
+[![GitHub forks](https://img.shields.io/github/forks/vshymanskyy/TinyGSM.svg?style=social&label=Fork)](https://github.com/vshymanskyy/TinyGSM/network)
+
+## Features
+
+#### Supports Arduino Client interface
+This library is very easy to integrate with lots of sketches, which used Ethernet or WiFi previously.  
+Examples for **Blynk**, **MQTT**, **Web Client** and **File Download** are provided.
+
+#### Tiny
+WebClient example for Arduino Nano (with Software Serial) takes little resources:
+```
+Sketch uses 11,916 bytes (38%) of program storage space. Maximum is 30,720 bytes.
+Global variables use 649 bytes (31%) of dynamic memory. Maximum is 2,048 bytes.
+```
+Now, you have more space for your experiments.
+
+#### Uses internal modem buffer for receive
+TinyGSM pulls data gently from the modem, so it can operate on very little RAM.
 
 ## Getting started
 
@@ -24,8 +51,8 @@ More modules may be supported later.
 
 ## Troubleshooting
 
-Sometimes (especially if you played with AT comands), your module configuration may become invalid.
-In this case, there may be different problems:
+Sometimes (especially if you played with AT comands), your module configuration may become invalid.  
+This may result in problems such as:
 
  * Can't connect to the GPRS network
  * Can't connect to the server
