@@ -44,9 +44,9 @@ TinyGSM pulls data gently from the modem, so it can operate on very little RAM.
     - Check your ballance
     - Check that APN,User,Pass are correct and you have internet
   2. Ensure the SIM card is correctly inserted into the module
-  3. Provide a good, stable power supply (up to 2A, 4.0-4.2V or 5V according to your module documentation)
-  4. Provide good, stable serial connection
-     (Hardware Serial is recommended)
+  3. Provide a good, [stable power supply](wiki/Powering-GSM-module) (up to 2A, 4.0-4.2V or 5V according to your module documentation)
+  4. Check if serial connection is working (Hardware Serial is recommended)  
+     Send an ```AT``` command using [this sketch](tools/AT_Debug/AT_Debug.ino)
   5. Check if GSM antenna is attached
 
 ## Troubleshooting
