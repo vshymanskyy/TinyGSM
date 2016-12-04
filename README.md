@@ -10,11 +10,6 @@ A small Arduino library for GSM modules, that just works.
 [![GitHub wiki](https://img.shields.io/badge/Wiki-available-brightgreen.svg)](https://github.com/vshymanskyy/TinyGSM/wiki)
 [![License](https://img.shields.io/badge/license-LGPL3-blue.svg)](https://github.com/vshymanskyy/TinyGSM/blob/master/LICENSE)
 
-Supported modules:  
-**SIM800, SIM800A, SIM800C, SIM800L, SIM800H, SIM808, SIM868,  
-SIM900, SIM900A, SIM900D, SIM908, SIM968**  
-More modules (SIM5320, SIM5216, A6, A6C, A7, M590, MG2639) may be supported later. Contributions are welcome!
-
 If you like **TinyGSM** - give it a star, or fork it and contribute! 
 [![GitHub stars](https://img.shields.io/github/stars/vshymanskyy/TinyGSM.svg?style=social&label=Star)](https://github.com/vshymanskyy/TinyGSM/stargazers) 
 [![GitHub forks](https://img.shields.io/github/forks/vshymanskyy/TinyGSM.svg?style=social&label=Fork)](https://github.com/vshymanskyy/TinyGSM/network)
@@ -33,6 +28,11 @@ Sketch uses 11,916 bytes (38%) of program storage space. Maximum is 30,720 bytes
 Global variables use 649 bytes (31%) of dynamic memory. Maximum is 2,048 bytes.
 ```
 Now, you have more space for your experiments.
+
+#### Supported modules:  
+SIM800, SIM800A, SIM800C, SIM800L, SIM800H, SIM808, SIM868,  
+SIM900, SIM900A, SIM900D, SIM908, SIM968  
+More modules (SIM5320, SIM5216, A6, A6C, A7, M590, MG2639) may be supported later. Contributions are welcome!
 
 #### Uses internal modem buffer for receive
 TinyGSM pulls data gently from the modem, so it can operate on very little RAM.
