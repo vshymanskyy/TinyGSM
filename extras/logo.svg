@@ -4,9 +4,9 @@
      xmlns:xlink="http://www.w3.org/1999/xlink"
      width="300" height="60"
 >
-  <text x="0" y="0" xml:space="preserve" style="font-family:monospace;font-size:15;">
-    <tspan x="0" dy="14">  _____            _____  _____  _____ </tspan>
-    <tspan x="0" dy="14">    |  | |\ | \_/ |  ___ |_____ |  |  |</tspan>
-    <tspan x="0" dy="14">    |  | | \|  |  |_____| _____||  |  |</tspan>
+  <text x="0" y="0" xml:space="preserve" style="font-family:monospace;font-size:16;">
+    <tspan x="0" dy="15">  _____            _____  _____  _____ </tspan>
+    <tspan x="0" dy="15">    |  | |\ | \_/ |  ___ |_____ |  |  |</tspan>
+    <tspan x="0" dy="15">    |  | | \|  |  |_____| _____||  |  |</tspan>
   </text>
 </svg>
