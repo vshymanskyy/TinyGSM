@@ -12,6 +12,8 @@ networkConnect	KEYWORD2
 networkDisconnect	KEYWORD2
 factoryReset	KEYWORD2
 
+GsmSerial	KEYWORD3
+
 #######################################
 # Literals (LITERAL1)
 #######################################
