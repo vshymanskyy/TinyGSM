@@ -15,7 +15,7 @@ A small Arduino library for GSM modules, that just works.
 [![GitHub wiki](https://img.shields.io/badge/Wiki-available-brightgreen.svg)](https://github.com/vshymanskyy/TinyGSM/wiki)
 [![License](https://img.shields.io/badge/license-LGPL3-blue.svg)](https://github.com/vshymanskyy/TinyGSM/blob/master/LICENSE)
 
-Currently only SIM800/SIM900 are tested, more modules may be supported later.
+Currently SIM800, SIM900, SIM5320 are tested, more modules may be supported later.
 
 If you like **TinyGSM** - give it a star, or fork it and contribute! 
 [![GitHub stars](https://img.shields.io/github/stars/vshymanskyy/TinyGSM.svg?style=social&label=Star)](https://github.com/vshymanskyy/TinyGSM/stargazers) 
