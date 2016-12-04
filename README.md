@@ -12,6 +12,7 @@ A small Arduino library for GSM modules, that just works.
 --->
 [![GitHub version](https://img.shields.io/github/release/vshymanskyy/TinyGSM.svg)](https://github.com/vshymanskyy/TinyGSM/releases/latest)
 [![GitHub issues](https://img.shields.io/github/issues/vshymanskyy/TinyGSM.svg)](https://github.com/vshymanskyy/TinyGSM/issues)
+[![GitHub wiki](https://img.shields.io/badge/Wiki-available-brightgreen.svg)](https://github.com/vshymanskyy/TinyGSM/wiki)
 [![License](https://img.shields.io/badge/license-LGPL3-blue.svg)](https://github.com/vshymanskyy/TinyGSM/blob/master/LICENSE)
 
 Currently only SIM800/SIM900 are tested, more modules may be supported later.
@@ -44,9 +45,9 @@ TinyGSM pulls data gently from the modem, so it can operate on very little RAM.
     - Check your ballance
     - Check that APN,User,Pass are correct and you have internet
   2. Ensure the SIM card is correctly inserted into the module
-  3. Provide a good, stable power supply (up to 2A, 4.0-4.2V or 5V according to your module documentation)
-  4. Provide good, stable serial connection
-     (Hardware Serial is recommended)
+  3. Provide a good, [stable power supply](wiki/Powering-GSM-module) (up to 2A, 4.0-4.2V or 5V according to your module documentation)
+  4. Check if serial connection is working (Hardware Serial is recommended)  
+     Send an ```AT``` command using [this sketch](tools/AT_Debug/AT_Debug.ino)
   5. Check if GSM antenna is attached
 
 ## Troubleshooting
