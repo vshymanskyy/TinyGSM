@@ -24,6 +24,7 @@ If you like **TinyGSM** - give it a star, or fork it and contribute!
 #### Supports Arduino Client interface
 This library is very easy to integrate with lots of sketches, which used Ethernet or WiFi previously.  
 Examples for **Blynk**, **MQTT**, **Web Client** and **File Download** are provided.
+![TinyGSM logo](/extras/examples.png)
 
 #### Tiny
 WebClient example for Arduino Nano (with Software Serial) takes little resources:
