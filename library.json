@@ -1,8 +1,8 @@
 {
   "name": "TinyGSM",
   "version": "0.1.2",
-  "description": "A small Arduino library for GPRS modules, that just works. Includes examples for Blynk, MQTT, File Download, and Web Client. Supports GSM modules with AT command interface: SIM800, SIM800L, SIM808, SIM900, SIM900A, SIM908, SIM5320",
-  "keywords": "GSM, SIM800, SIM800L, SIM808, SIM900, SIM900A, SIM908, SIM5320, AT commands, AT",
+  "description": "A small Arduino library for GPRS modules, that just works. Includes examples for Blynk, MQTT, File Download, and Web Client. Supports GSM modules with AT command interface: SIM800, SIM800A, SIM800C, SIM800L, SIM800H, SIM808, SIM868, SIM900, SIM900A, SIM900D, SIM908, SIM968",
+  "keywords": "GSM, AT commands, AT, SIM800, SIM800A, SIM800C, SIM800L, SIM800H, SIM808, SIM868, SIM900, SIM900A, SIM900D, SIM908, SIM968",
   "authors":
   {
     "name":  "Volodymyr Shymanskyy",
