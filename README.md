@@ -1,9 +1,4 @@
-```
-   _____            _____  _____  _____
-     |  | |\ | \_/ |  ___ |_____ |  |  |
-     |  | | \|  |  |_____| _____||  |  |
-
-```
+![TinyGSM logo](https://cdn.rawgit.com/vshymanskyy/TinyGSM/master/extras/logo.svg)
 
 A small Arduino library for GSM modules, that just works.
 <!---
