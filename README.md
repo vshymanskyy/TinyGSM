@@ -30,9 +30,16 @@ Global variables use 649 bytes (31%) of dynamic memory. Maximum is 2,048 bytes.
 Now, you have more space for your experiments.
 
 #### Supported modules:  
-SIM800, SIM800A, SIM800C, SIM800L, SIM800H, SIM808, SIM868,  
-SIM900, SIM900A, SIM900D, SIM908, SIM968  
-More modules (SIM5320, SIM5216, A6, A6C, A7, M590, MG2639) may be supported later. Contributions are welcome!
+- [x] SIMCom SIM800, SIM800A, SIM800C, SIM800L, SIM800H, SIM808, SIM868
+- [x] SIMCom SIM900, SIM900A, SIM900D, SIM908, SIM968
+More modules may be supported later:
+- [ ] SIMCom SIM5320, SIM5216, 
+- [ ] AI-Thinker A6, A6C, A7
+- [ ] Quectel M10, M95, UG95
+- [ ] Neoway M590
+- [ ] ZTE MG2639
+
+Watch this repo for new updates! And of course, contributions are welcome ;)
 
 #### Uses internal modem buffer for receive
 TinyGSM pulls data gently from the modem, so it can operate on very little RAM.
