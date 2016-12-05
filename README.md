@@ -14,14 +14,13 @@ If you like **TinyGSM** - give it a star, or fork it and contribute!
 [![GitHub stars](https://img.shields.io/github/stars/vshymanskyy/TinyGSM.svg?style=social&label=Star)](https://github.com/vshymanskyy/TinyGSM/stargazers) 
 [![GitHub forks](https://img.shields.io/github/forks/vshymanskyy/TinyGSM.svg?style=social&label=Fork)](https://github.com/vshymanskyy/TinyGSM/network)
 
-## Features
+### Arduino Client interface support
+This library is easy to integrate with lots of sketches, which use Ethernet or WiFi.  
+Examples for **PubSubClient (MQTT)**, **Blynk**, **Web Client** and **File Download** are provided.
 
-#### Supports Arduino Client interface
-This library is very easy to integrate with lots of sketches, which used Ethernet or WiFi previously.  
-Examples for **Blynk**, **MQTT**, **Web Client** and **File Download** are provided.  
 ![examples](/extras/examples.png)
 
-#### Tiny
+### TinyGSM is tiny
 WebClient example for Arduino Nano (with Software Serial) takes little resources:
 ```
 Sketch uses 11,916 bytes (38%) of program storage space. Maximum is 30,720 bytes.
@@ -29,7 +28,7 @@ Global variables use 649 bytes (31%) of dynamic memory. Maximum is 2,048 bytes.
 ```
 Now, you have more space for your experiments.
 
-#### Supported modules:  
+### Supported modules
 - [x] SIMCom SIM800, SIM800A, SIM800C, SIM800L, SIM800H, SIM808, SIM868
 - [x] SIMCom SIM900, SIM900A, SIM900D, SIM908, SIM968
 
@@ -42,10 +41,10 @@ More modules may be supported later:
 
 Watch this repo for new updates! And of course, contributions are welcome ;)
 
-#### Uses internal modem buffer for receive
-TinyGSM pulls data gently from the modem, so it can operate on very little RAM.
+### Uses internal modem buffer for receive
+TinyGSM pulls data gently from the modem (whenever possible), so it can operate on very little RAM.
 
-## Getting started
+## Getting Started
 
   1. Using your phone:
     - Disable PIN code on the SIM card
