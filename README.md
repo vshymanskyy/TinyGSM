@@ -32,6 +32,7 @@ Now, you have more space for your experiments.
 #### Supported modules:  
 - [x] SIMCom SIM800, SIM800A, SIM800C, SIM800L, SIM800H, SIM808, SIM868
 - [x] SIMCom SIM900, SIM900A, SIM900D, SIM908, SIM968
+
 More modules may be supported later:
 - [ ] SIMCom SIM5320, SIM5216, 
 - [ ] AI-Thinker A6, A6C, A7
