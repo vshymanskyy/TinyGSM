@@ -18,10 +18,10 @@ env:
     - PLATFORMIO_CI_SRC=tools/AT_Debug PLATFORMIO_CI_ARGS="--board=leonardo"
 
     # Arduino test
-    - PLATFORMIO_CI_SRC=extras/test_build PLATFORMIO_CI_ARGS="--project-option='framework=arduino' --board=uno --board=leonardo --board=yun --board=megaatmega2560 --board=genuino101 --board=mkr1000USB --board=zero --board=teensy31 --board=bluepill_f103c8 --board=uno_pic32 --board=esp01 --board=nodemcuv2 --board=esp32dev"
+    - PLATFORMIO_CI_SRC=extras/test_build PLATFORMIO_CI_ARGS="--board=uno --board=leonardo --board=yun --board=megaatmega2560 --board=genuino101 --board=mkr1000USB --board=zero --board=teensy31 --board=bluepill_f103c8 --board=uno_pic32 --board=esp01 --board=nodemcuv2 --board=esp32dev --project-option='framework=arduino'"
 
     # Energia test
-    - PLATFORMIO_CI_SRC=extras/test_build PLATFORMIO_CI_ARGS="--project-option='framework=energia' --board=lplm4f120h5qr"
+    - PLATFORMIO_CI_SRC=extras/test_build PLATFORMIO_CI_ARGS="--board=lplm4f120h5qr --project-option='framework=energia'"
 
 install:
     # ChipKIT issue: install 32-bit support for GCC PIC32
