@@ -32,13 +32,12 @@ install:
     #
     # Libraries from PlatformIO Library Registry:
     #
-    # http://platformio.org/lib/show/415/Blynk
-    # http://platformio.org/lib/show/419/SimpleTimer
     # http://platformio.org/lib/show/89/PubSubClient
-    # http://platformio.org/lib/show/44/Time
+    # http://platformio.org/lib/show/415/Blynk
+    # http://platformio.org/lib/show/1202/CRC32
     # http://platformio.org/lib/show/1286/StreamDebugger
 
-    - platformio lib -g install 415 419 89 44 1286
+    - platformio lib -g install 89 415 1202 1286
 
 script:
     - platformio ci --lib="." $PLATFORMIO_CI_ARGS

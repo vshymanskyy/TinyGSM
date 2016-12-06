@@ -41,8 +41,8 @@
 #endif
 
 #define GSM_NL "\r\n"
-static constexpr char GSM_OK[] GSM_PROGMEM = "OK" GSM_NL;
-static constexpr char GSM_ERROR[] GSM_PROGMEM = "ERROR" GSM_NL;
+static const char GSM_OK[] GSM_PROGMEM = "OK" GSM_NL;
+static const char GSM_ERROR[] GSM_PROGMEM = "ERROR" GSM_NL;
 
 class TinyGsmClient
     : public Client
@@ -88,7 +88,7 @@ public:
     host += ip[2];
     host += ".";
     host += ip[3];
-    return modemConnect(host.c_str(), port);
+    return modemConnect(host.c_str(), port); //TODO: c_str may be missing
   }
 
   virtual void stop() {
@@ -275,6 +275,18 @@ public:
       waitResponse(10);
     }
   }
+
+  bool simUnlock(const char *pin)
+  {
+    sendAT(F("+CPIN="), pin);
+    return waitResponse() == 1;
+  }
+
+  bool simGetCCID() {
+    sendAT(F("+CCID"));
+    //TODO...
+  }
+
 
 private:
   int modemConnect(const char* host, uint16_t port) {
