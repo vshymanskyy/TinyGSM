@@ -50,7 +50,9 @@ void setup() {
 void printPercent(uint32_t readLength, uint32_t contentLength) {
   // If we know the total length
   if (contentLength != -1) {
-    Serial.print(String("\r ") + ((100.0 * readLength) / contentLength) + "%");
+    Serial.print(F("\r "));
+    Serial.print((100.0 * readLength) / contentLength);
+    Serial.println('%');
   } else {
     Serial.println(readLength);
   }
