@@ -32,16 +32,16 @@ public:
         return s - 1;
     }
 
-    T put(const T& c)
+    bool put(const T& c)
     {
         int i = _w;
         int j = i;
         i = _inc(i);
-        while (i == _r) // = !writeable()
-            /* nothing / just wait */;
+        if (i == _r) // !writeable()
+            return false;
         _b[j] = c;
         _w = i;
-        return c;
+        return true;
     }
 
     int put(const T* p, int n, bool t = false)
@@ -85,14 +85,14 @@ public:
         return s;
     }
 
-    T get(void)
+    bool get(T* p)
     {
         int r = _r;
-        while (r == _w) // = !readable()
-            /* nothing / just wait */;
-        T t = _b[r];
+        if (r == _w) // !readable()
+            return false;
+        *p = _b[r];
         _r = _inc(r);
-        return t;
+        return true;
     }
 
     int get(T* p, int n, bool t = false)
