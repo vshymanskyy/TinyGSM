@@ -17,3 +17,7 @@
 
 # Markers
 .development
+
+# Extras
+extras/docs/*
+
