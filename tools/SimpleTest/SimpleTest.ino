@@ -19,31 +19,35 @@ char apn[]  = "YourAPN";
 char user[] = "";
 char pass[] = "";
 
+// Set serial for debug console (to the Serial Monitor, speed 115200)
+#define SerialMonitor Serial
+
+// Set serial for AT commands (to the module)
 // Use Hardware Serial on Mega, Leonardo, Micro
-#define GsmSerial Serial1
+#define SerialAT Serial1
 
 // or Software Serial on Uno, Nano
 //#include <SoftwareSerial.h>
-//SoftwareSerial GsmSerial(2, 3); // RX, TX
+//SoftwareSerial SerialAT(2, 3); // RX, TX
 
-StreamDebugger DebugSerial(GsmSerial, Serial);
-TinyGsmClient client(DebugSerial);
+StreamDebugger DebugAT(SerialAT, SerialMonitor);
+TinyGsmClient client(DebugAT);
 
 char server[] = "cdn.rawgit.com";
 char resource[] = "/vshymanskyy/tinygsm/master/extras/test_simple.txt";
 
 void setup() {
   // Set console baud rate
-  Serial.begin(115200);
+  SerialMonitor.begin(115200);
   delay(10);
 
   // Set GSM module baud rate
-  GsmSerial.begin(115200);
+  SerialAT.begin(115200);
   delay(3000);
 
   // Restart takes quite some time
   // You can skip it in many cases
-  Serial.println("Restarting modem...");
+  SerialMonitor.println("Restarting modem...");
   client.restart();
 }
 
@@ -72,7 +76,7 @@ void loop() {
   while (client.connected() && millis() - timeout < 10000L) {
     while (client.available()) {
       char c = client.read();
-      //Serial.print(c);
+      //SerialMonitor.print(c);
       bytesReceived += 1;
       timeout = millis();
     }
@@ -82,10 +86,14 @@ void loop() {
 
   client.networkDisconnect();
 
-  Serial.println();
-  Serial.println("************************");
-  Serial.print  (" Test:  ");   Serial.println((bytesReceived == 1000) ? "PASSED" : "FAIL");
-  Serial.println("************************");
+  SerialMonitor.println();
+  SerialMonitor.println("************************");
+  SerialMonitor.print  (" Received: ");
+  SerialMonitor.print(bytesReceived);
+  SerialMonitor.println("bytes");
+  SerialMonitor.print  (" Test:     ");
+  SerialMonitor.println((bytesReceived == 1000) ? "PASSED" : "FAIL");
+  SerialMonitor.println("************************");
 
   // Do nothing forevermore
   while (true) {

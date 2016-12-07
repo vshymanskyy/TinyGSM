@@ -17,7 +17,7 @@
 #define SerialAT Serial1
 
 // or Software Serial on Uno, Nano
-//#include <SoftwareSerialMonitor.h>
+//#include <SoftwareSerial.h>
 //SoftwareSerial SerialAT(2, 3); // RX, TX
 
 #include <TinyGsmClient.h>
