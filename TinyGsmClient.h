@@ -151,10 +151,42 @@ public:
   virtual operator bool() { return connected(); }
 
 public:
-  bool factoryDefault() {
+
+  /*
+   * Basic functions
+   */
+  bool begin() {
     if (!autoBaud()) {
       return false;
     }
+    sendAT(F("&FZE0"));  // Factory + Reset + Echo Off
+    return waitResponse() == 1;
+
+    // +ICCID
+    // AT+CPIN?
+    // AT+CPIN=pin-code
+    // AT+CREG?
+  }
+
+  bool autoBaud(unsigned long timeout = 10000L) {
+    for (unsigned long start = millis(); millis() - start < timeout; ) {
+      sendAT("");
+      if (waitResponse(200) == 1) {
+          delay(100);
+          return true;
+      }
+      delay(100);
+    }
+    return false;
+  }
+
+  void maintain() {
+    while (stream.available()) {
+      waitResponse(10);
+    }
+  }
+
+  bool factoryDefault() {
     sendAT(F("&FZE0&W"));  // Factory + Reset + Echo Off + Write
     waitResponse();
     sendAT(F("+IPR=0"));   // Auto-baud
@@ -169,7 +201,15 @@ public:
     return waitResponse() == 1;
   }
 
+  /*
+   * Power functions
+   */
+
   bool restart() {
+    return resetSoft();
+  }
+
+  bool resetSoft() {
     if (!autoBaud()) {
       return false;
     }
@@ -192,19 +232,29 @@ public:
     return waitResponse(60000L, F("Ready" GSM_NL)) == 1;
   }
 
-  bool init() {
-    if (!autoBaud()) {
-      return false;
-    }
-    sendAT(F("&FZE0"));  // Factory + Reset + Echo Off
-    return waitResponse() == 1;
-
-    // +ICCID
-    // AT+CPIN?
-    // AT+CPIN=pin-code
-    // AT+CREG?
+  // Reboot the module by setting the specified pin LOW, then HIGH.
+  // (The pin should be connected to a P-MOSFET)
+  bool resetHard(int pwrPin) {
+    powerOff(pwrPin);
+    delay(100);
+    return powerOn(pwrPin);
   }
 
+  void powerOff(int pwrPin) {
+    pinMode(pwrPin, OUTPUT);
+    digitalWrite(pwrPin, LOW);
+  }
+
+  bool powerOn(int pwrPin) {
+    pinMode(pwrPin, OUTPUT);
+    digitalWrite(pwrPin, HIGH);
+    delay(3000);
+    return autoBaud();
+  }
+
+  /*
+   * GPRS functions
+   */
   bool networkConnect(const char* apn, const char* user, const char* pwd) {
     networkDisconnect();
 
@@ -258,26 +308,10 @@ public:
     return waitResponse(60000L) == 1;
   }
 
-  bool autoBaud(unsigned long timeout = 10000L) {
-    for (unsigned long start = millis(); millis() - start < timeout; ) {
-      sendAT("");
-      if (waitResponse() == 1) {
-          delay(100);
-          return true;
-      }
-      delay(100);
-    }
-    return false;
-  }
-
-  void maintain() {
-    while (stream.available()) {
-      waitResponse(10);
-    }
-  }
-
-  bool simUnlock(const char *pin)
-  {
+  /*
+   * SIM card functions
+   */
+  bool simUnlock(const char *pin) {
     sendAT(F("+CPIN="), pin);
     return waitResponse() == 1;
   }
@@ -287,6 +321,31 @@ public:
     //TODO...
   }
 
+  bool getIMEI() {
+  }
+
+  bool getNetworkOperator() {
+  }
+
+  /*
+   * Phone Call functions
+   */
+
+  /*
+   * Messaging functions
+   */
+
+  void sendUSSD() {
+  }
+
+  void sendSMS() {
+  }
+
+  /*
+   * Location functions
+   */
+  void getLocation() {
+  }
 
 private:
   int modemConnect(const char* host, uint16_t port) {
