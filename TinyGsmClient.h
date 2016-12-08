@@ -536,11 +536,11 @@ private:
   }
 
   int streamRead() { return stream.read(); }
-  void streamReadAll() { while(stream.available()) { stream.read(); } }
 
   template<typename... Args>
   void sendAT(Args... cmd) {
     streamWrite("AT", cmd..., GSM_NL);
+    stream.flush();
     //DBG("### AT:", cmd...);
   }
 
@@ -555,7 +555,7 @@ private:
     for (unsigned long start = millis(); millis() - start < timeout; ) {
       while (stream.available() > 0) {
         int a = streamRead();
-        if (a <= 0) continue;
+        if (a <= 0) continue; // Skip 0x00 bytes, just in case
         data += (char)a;
         if (r1 && data.indexOf(r1) >= 0) {
           index = 1;
