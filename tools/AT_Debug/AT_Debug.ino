@@ -9,7 +9,7 @@
  **************************************************************/
 
 // Set serial for debug console (to the Serial Monitor, speed 115200)
-#define SerialMonitor Serial
+#define SerialMon Serial
 
 // Set serial for AT commands (to the module)
 // Use Hardware Serial on Mega, Leonardo, Micro
@@ -20,11 +20,11 @@
 //SoftwareSerial SerialAT(2, 3); // RX, TX
 
 #include <TinyGsmClient.h>
-TinyGsmClient gsm(SerialAT);
+TinyGsm modem(SerialAT);
 
 void setup() {
   // Set console baud rate
-  SerialMonitor.begin(115200);
+  SerialMon.begin(115200);
   delay(5000);
 }
 
@@ -33,43 +33,43 @@ void loop() {
   uint32_t rate = 0;
   uint32_t rates[] = { 115200, 9600, 57600, 19200, 74400, 74880 };
 
-  SerialMonitor.println("Autodetecting baud rate");
+  SerialMon.println("Autodetecting baud rate");
   for (unsigned i = 0; i < sizeof(rates)/sizeof(rates[0]); i++) {
-    SerialMonitor.print(String("Trying baud rate ") + rates[i] + "... ");
+    SerialMon.print(String("Trying baud rate ") + rates[i] + "... ");
     SerialAT.begin(rates[i]);
     delay(10);
-    if (gsm.autoBaud(3000)) {
+    if (modem.autoBaud(2000)) {
       rate = rates[i];
-      SerialMonitor.println(F("OK"));
+      SerialMon.println(F("OK"));
       break;
     } else {
-      SerialMonitor.println(F("fail"));
+      SerialMon.println(F("fail"));
     }
   }
 
   if (!rate) {
-    SerialMonitor.println(F("***********************************************************"));
-    SerialMonitor.println(F(" Module does not respond!"));
-    SerialMonitor.println(F("   Check your Serial wiring"));
-    SerialMonitor.println(F("   Check the module is correctly powered and turned on"));
-    SerialMonitor.println(F("***********************************************************"));
+    SerialMon.println(F("***********************************************************"));
+    SerialMon.println(F(" Module does not respond!"));
+    SerialMon.println(F("   Check your Serial wiring"));
+    SerialMon.println(F("   Check the module is correctly powered and turned on"));
+    SerialMon.println(F("***********************************************************"));
     delay(30000L);
     return;
   }
 
   // Access AT commands from Serial Monitor
-  SerialMonitor.println(F("***********************************************************"));
-  SerialMonitor.println(F(" You can now send AT commands"));
-  SerialMonitor.println(F(" Enter \"AT\" (without quotes), and you should see \"OK\""));
-  SerialMonitor.println(F(" If it doesn't work, select \"Both NL & CR\" in Serial Monitor"));
-  SerialMonitor.println(F("***********************************************************"));
+  SerialMon.println(F("***********************************************************"));
+  SerialMon.println(F(" You can now send AT commands"));
+  SerialMon.println(F(" Enter \"AT\" (without quotes), and you should see \"OK\""));
+  SerialMon.println(F(" If it doesn't work, select \"Both NL & CR\" in Serial Monitor"));
+  SerialMon.println(F("***********************************************************"));
 
   while(true) {
     if (SerialAT.available()) {
-      SerialMonitor.write(SerialAT.read());
+      SerialMon.write(SerialAT.read());
     }
-    if (SerialMonitor.available()) {
-      SerialAT.write(SerialMonitor.read());
+    if (SerialMon.available()) {
+      SerialAT.write(SerialMon.read());
     }
     delay(0);
   }

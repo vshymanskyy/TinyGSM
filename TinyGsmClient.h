@@ -61,8 +61,7 @@ enum RegStatus {
 };
 
 
-class TinyGsmClient
-    : public Client
+class TinyGsm
 {
   typedef TinyGsmFifo<uint8_t, TINY_GSM_RX_BUFFER> RxFifo;
 
@@ -83,17 +82,40 @@ class TinyGsmClient
 #endif
 
 public:
-  TinyGsmClient(Stream& stream, uint8_t mux = 1)
+  TinyGsm(Stream& stream)
     : stream(stream)
-    , mux(mux)
-    , sock_available(0)
-    , sock_connected(false)
   {}
 
 public:
 
+class GsmClient : public Client
+{
+  friend class TinyGsm;
+  typedef TinyGsmFifo<uint8_t, TINY_GSM_RX_BUFFER> RxFifo;
+
+public:
+  GsmClient() {
+    init(NULL, -1);
+  }
+
+  GsmClient(TinyGsm& at, uint8_t mux = 1) {
+    init(&at, mux);
+  }
+
+  bool init(TinyGsm* at, uint8_t mux = 1) {
+    this->at = at;
+    this->mux = mux;
+    at->sockets[mux] = this;
+    sock_available = 0;
+    sock_connected = false;
+    return true;
+  }
+
+public:
   virtual int connect(const char *host, uint16_t port) {
-    return modemConnect(host, port);
+    rx.clear();
+    sock_connected = at->modemConnect(host, port, mux);
+    return sock_connected;
   }
 
   virtual int connect(IPAddress ip, uint16_t port) {
@@ -105,18 +127,18 @@ public:
     host += ip[2];
     host += ".";
     host += ip[3];
-    return modemConnect(host.c_str(), port); //TODO: c_str may be missing
+    return connect(host.c_str(), port);
   }
 
   virtual void stop() {
-    sendAT(GF("+CIPCLOSE="), mux);
+    at->sendAT(GF("+CIPCLOSE="), mux);
     sock_connected = false;
-    waitResponse();
+    at->waitResponse();
   }
 
   virtual size_t write(const uint8_t *buf, size_t size) {
-    maintain();
-    return modemSend(buf, size);
+    at->maintain();
+    return at->modemSend(buf, size, mux);
   }
 
   virtual size_t write(uint8_t c) {
@@ -124,12 +146,12 @@ public:
   }
 
   virtual int available() {
-    maintain();
+    at->maintain();
     return rx.size() + sock_available;
   }
 
   virtual int read(uint8_t *buf, size_t size) {
-    maintain();
+    at->maintain();
     size_t cnt = 0;
     while (cnt < size) {
       size_t chunk = min(size-cnt, rx.size());
@@ -140,9 +162,9 @@ public:
         continue;
       }
       // TODO: Read directly into user buffer?
-      maintain();
+      at->maintain();
       if (sock_available > 0) {
-        modemRead(rx.free());
+        at->modemRead(rx.free(), mux);
       } else {
         break;
       }
@@ -159,13 +181,20 @@ public:
   }
 
   virtual int peek() { return -1; } //TODO
-  virtual void flush() { stream.flush(); }
+  virtual void flush() { at->stream.flush(); }
 
   virtual uint8_t connected() {
-    maintain();
+    at->maintain();
     return sock_connected;
   }
   virtual operator bool() { return connected(); }
+private:
+  TinyGsm*      at;
+  uint8_t       mux;
+  uint16_t      sock_available;
+  bool          sock_connected;
+  RxFifo        rx;
+};
 
 public:
 
@@ -180,7 +209,7 @@ public:
     if (waitResponse() != 1) {
       return false;
     }
-
+    getSimStatus();
     return true;
   }
 
@@ -297,13 +326,13 @@ public:
       default: return SIM_ERROR;
       }
     }
-    return 0;
+    return SIM_ERROR;
   }
 
   RegStatus getRegistrationStatus() {
     sendAT(GF("+CREG?"));
     if (waitResponse(GF(GSM_NL "+CREG: 0,")) != 1) {
-      return 0;
+      return REG_UNKNOWN;
     }
     int status = stream.readStringUntil('\n').toInt();
     waitResponse();
@@ -335,8 +364,8 @@ public:
   /*
    * GPRS functions
    */
-  bool networkConnect(const char* apn, const char* user, const char* pwd) {
-    networkDisconnect();
+  bool gprsConnect(const char* apn, const char* user, const char* pwd) {
+    gprsDisconnect();
 
     // AT+CGATT?
     // AT+CGATT=1
@@ -381,7 +410,7 @@ public:
     return true;
   }
 
-  bool networkDisconnect() {
+  bool gprsDisconnect() {
     sendAT(GF("+CIPSHUT"));
     return waitResponse(60000L) == 1;
   }
@@ -411,13 +440,16 @@ public:
    */
 
 private:
-  int modemConnect(const char* host, uint16_t port) {
+  int modemConnect(const char* host, uint16_t port, uint8_t mux) {
     sendAT(GF("+CIPSTART="), mux, ',', GF("\"TCP"), GF("\",\""), host, GF("\","), port);
-    sock_connected = (1 == waitResponse(75000L, GF("CONNECT OK" GSM_NL), GF("CONNECT FAIL" GSM_NL), GF("ALREADY CONNECT" GSM_NL)));
-    return sock_connected;
+    int rsp = waitResponse(75000L,
+                           GF("CONNECT OK" GSM_NL),
+                           GF("CONNECT FAIL" GSM_NL),
+                           GF("ALREADY CONNECT" GSM_NL));
+    return (1 == rsp);
   }
 
-  int modemSend(const void* buff, size_t len) {
+  int modemSend(const void* buff, size_t len, uint8_t mux) {
     sendAT(GF("+CIPSEND="), mux, ',', len);
     if (waitResponse(GF(">")) != 1) {
       return -1;
@@ -431,7 +463,7 @@ private:
     return data.toInt();
   }
 
-  size_t modemRead(size_t size) {
+  size_t modemRead(size_t size, uint8_t mux) {
 #ifdef GSM_USE_HEX
     sendAT(GF("+CIPRXGET=3,"), mux, ',', size);
     if (waitResponse(GF("+CIPRXGET: 3,")) != 1) {
@@ -445,7 +477,7 @@ private:
 #endif
     stream.readStringUntil(','); // Skip mux
     size_t len = stream.readStringUntil(',').toInt();
-    sock_available = stream.readStringUntil('\n').toInt();
+    sockets[mux]->sock_available = stream.readStringUntil('\n').toInt();
 
     for (size_t i=0; i<len; i++) {
 #ifdef GSM_USE_HEX
@@ -458,13 +490,13 @@ private:
       while (stream.available() < 1) { delay(1); }
       char c = stream.read();
 #endif
-      rx.put(c);
+      sockets[mux]->rx.put(c);
     }
     waitResponse();
     return len;
   }
 
-  size_t modemGetAvailable() {
+  size_t modemGetAvailable(uint8_t mux) {
     sendAT(GF("+CIPRXGET=4,"), mux);
     size_t result = 0;
     for (byte i = 0; i < 2; i++) {
@@ -479,12 +511,12 @@ private:
       }
     }
     if (!result) {
-      sock_connected = modemGetConnected();
+      sockets[mux]->sock_connected = modemGetConnected(mux);
     }
     return result;
   }
 
-  bool modemGetConnected() {
+  bool modemGetConnected(uint8_t mux) {
     sendAT(GF("+CIPSTATUS="), mux);
     int res = waitResponse(GF(",\"CONNECTED\""), GF(",\"CLOSED\""), GF(",\"CLOSING\""), GF(",\"INITIAL\""));
     waitResponse();
@@ -544,7 +576,7 @@ private:
           gotNewData = true;
           data = "";
         } else if (data.indexOf(GF(GSM_NL "1, CLOSED" GSM_NL)) >= 0) { //TODO: use mux
-          sock_connected = false;
+          sockets[1]->sock_connected = false;
           data = "";
         }
       }
@@ -557,7 +589,7 @@ finish:
       data = "";
     }
     if (gotNewData) {
-      sock_available = modemGetAvailable();
+      sockets[1]->sock_available = modemGetAvailable(1);
     }
     return index;
   }
@@ -578,11 +610,9 @@ finish:
 
 private:
   Stream&       stream;
-  const uint8_t mux;
-
-  RxFifo        rx;
-  uint16_t      sock_available;
-  bool          sock_connected;
+  GsmClient*    sockets[5];
 };
+
+typedef TinyGsm::GsmClient TinyGsmClient;
 
 #endif

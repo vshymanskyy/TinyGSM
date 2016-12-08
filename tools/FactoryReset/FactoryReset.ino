@@ -10,7 +10,7 @@
  **************************************************************/
 
 // Set serial for debug console (to the Serial Monitor, speed 115200)
-#define SerialMonitor Serial
+#define SerialMon Serial
 
 // Set serial for AT commands (to the module)
 // Use Hardware Serial on Mega, Leonardo, Micro
@@ -22,33 +22,33 @@
 
 #include <TinyGsmClient.h>
 #include <StreamDebugger.h>
-StreamDebugger DebugAT(SerialAT, SerialMonitor);
-TinyGsmClient gsm(DebugAT);
+StreamDebugger debugger(SerialAT, SerialMon);
+TinyGsm modem(debugger);
 
 void setup() {
   // Set console baud rate
-  SerialMonitor.begin(115200);
+  SerialMon.begin(115200);
   delay(10);
 
   // Set GSM module baud rate
   SerialAT.begin(115200);
   delay(3000);
 
-  if (!gsm.begin()) {
-    SerialMonitor.println(F("***********************************************************"));
-    SerialMonitor.println(F(" Cannot initialize module!"));
-    SerialMonitor.println(F("   Use File -> Examples -> TinyGSM -> tools -> AT_Debug"));
-    SerialMonitor.println(F("   to find correct configuration"));
-    SerialMonitor.println(F("***********************************************************"));
+  if (!modem.begin()) {
+    SerialMon.println(F("***********************************************************"));
+    SerialMon.println(F(" Cannot initialize module!"));
+    SerialMon.println(F("   Use File -> Examples -> TinyGSM -> tools -> AT_Debug"));
+    SerialMon.println(F("   to find correct configuration"));
+    SerialMon.println(F("***********************************************************"));
     return;
   }
 
-  bool ret = gsm.factoryDefault();
+  bool ret = modem.factoryDefault();
 
-  SerialMonitor.println(F("***********************************************************"));
-  SerialMonitor.print  (F(" Return settings to Factory Defaults: "));
-  SerialMonitor.println((ret) ? "OK" : "FAIL");
-  SerialMonitor.println(F("***********************************************************"));
+  SerialMon.println(F("***********************************************************"));
+  SerialMon.print  (F(" Return settings to Factory Defaults: "));
+  SerialMon.println((ret) ? "OK" : "FAIL");
+  SerialMon.println(F("***********************************************************"));
 }
 
 void loop() {

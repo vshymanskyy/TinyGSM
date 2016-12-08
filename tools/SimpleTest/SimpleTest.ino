@@ -12,15 +12,12 @@
 // Increase buffer fo see less commands
 #define GSM_RX_BUFFER 256
 
-#include <TinyGsmClient.h>
-#include <StreamDebugger.h>
-
 char apn[]  = "YourAPN";
 char user[] = "";
 char pass[] = "";
 
 // Set serial for debug console (to the Serial Monitor, speed 115200)
-#define SerialMonitor Serial
+#define SerialMon Serial
 
 // Set serial for AT commands (to the module)
 // Use Hardware Serial on Mega, Leonardo, Micro
@@ -30,15 +27,19 @@ char pass[] = "";
 //#include <SoftwareSerial.h>
 //SoftwareSerial SerialAT(2, 3); // RX, TX
 
-StreamDebugger DebugAT(SerialAT, SerialMonitor);
-TinyGsmClient client(DebugAT);
+#include <StreamDebugger.h>
+StreamDebugger debugger(SerialAT, SerialMon);
+
+#include <TinyGsmClient.h>
+TinyGsm modem(debugger);
+TinyGsmClient client(modem);
 
 char server[] = "cdn.rawgit.com";
 char resource[] = "/vshymanskyy/tinygsm/master/extras/test_simple.txt";
 
 void setup() {
   // Set console baud rate
-  SerialMonitor.begin(115200);
+  SerialMon.begin(115200);
   delay(10);
 
   // Set GSM module baud rate
@@ -47,12 +48,19 @@ void setup() {
 
   // Restart takes quite some time
   // You can skip it in many cases
-  SerialMonitor.println("Restarting modem...");
-  client.restart();
+  SerialMon.println("Restarting modem...");
+  modem.restart();
+
+  SerialMon.println("Waiting for network... ");
+  if (modem.waitForNetwork()) {
+    SerialMon.println("OK");
+  } else {
+    SerialMon.println("fail");
+  }
 }
 
 void loop() {
-  if (!client.networkConnect(apn, user, pass)) {
+  if (!modem.networkConnect(apn, user, pass)) {
     delay(10000);
     return;
   }
@@ -76,7 +84,7 @@ void loop() {
   while (client.connected() && millis() - timeout < 10000L) {
     while (client.available()) {
       char c = client.read();
-      //SerialMonitor.print(c);
+      //SerialMon.print(c);
       bytesReceived += 1;
       timeout = millis();
     }
@@ -84,16 +92,16 @@ void loop() {
 
   client.stop();
 
-  client.networkDisconnect();
+  modem.networkDisconnect();
 
-  SerialMonitor.println();
-  SerialMonitor.println("************************");
-  SerialMonitor.print  (" Received: ");
-  SerialMonitor.print(bytesReceived);
-  SerialMonitor.println("bytes");
-  SerialMonitor.print  (" Test:     ");
-  SerialMonitor.println((bytesReceived == 1000) ? "PASSED" : "FAIL");
-  SerialMonitor.println("************************");
+  SerialMon.println();
+  SerialMon.println("************************");
+  SerialMon.print  (" Received: ");
+  SerialMon.print(bytesReceived);
+  SerialMon.println("bytes");
+  SerialMon.print  (" Test:     ");
+  SerialMon.println((bytesReceived == 1000) ? "PASSED" : "FAIL");
+  SerialMon.println("************************");
 
   // Do nothing forevermore
   while (true) {

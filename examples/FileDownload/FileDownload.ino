@@ -19,13 +19,14 @@ char user[] = "";
 char pass[] = "";
 
 // Use Hardware Serial on Mega, Leonardo, Micro
-#define GsmSerial Serial1
+#define SerialAT Serial1
 
 // or Software Serial on Uno, Nano
 //#include <SoftwareSerial.h>
-//SoftwareSerial GsmSerial(2, 3); // RX, TX
+//SoftwareSerial SerialAT(2, 3); // RX, TX
 
-TinyGsmClient client(GsmSerial);
+TinyGsm modem(SerialAT);
+TinyGsmClient client(modem);
 
 char server[] = "cdn.rawgit.com";
 char resource[] = "/vshymanskyy/tinygsm/master/extras/test_10k.hex";
@@ -38,31 +39,38 @@ void setup() {
   delay(10);
 
   // Set GSM module baud rate
-  GsmSerial.begin(115200);
+  SerialAT.begin(115200);
   delay(3000);
 
   // Restart takes quite some time
   // You can skip it in many cases
-  Serial.println("Restarting modem...");
-  client.restart();
+  modem.restart();
 }
 
 void printPercent(uint32_t readLength, uint32_t contentLength) {
   // If we know the total length
   if (contentLength != -1) {
-    Serial.print(F("\r "));
+    Serial.print("\r ");
     Serial.print((100.0 * readLength) / contentLength);
-    Serial.println('%');
+    Serial.print('%');
   } else {
     Serial.println(readLength);
   }
 }
 
 void loop() {
+  Serial.print("Waiting for network...");
+  if (!modem.waitForNetwork()) {
+    Serial.println(" fail");
+    delay(10000);
+    return;
+  }
+  Serial.println(" OK");
+
   Serial.print("Connecting to ");
   Serial.print(apn);
-  if (!client.networkConnect(apn, user, pass)) {
-    Serial.println(" failed");
+  if (!modem.gprsConnect(apn, user, pass)) {
+    Serial.println(" fail");
     delay(10000);
     return;
   }
@@ -134,7 +142,7 @@ void loop() {
   client.stop();
   Serial.println("Server disconnected");
 
-  client.networkDisconnect();
+  modem.gprsDisconnect();
   Serial.println("GPRS disconnected");
   Serial.println();
 
