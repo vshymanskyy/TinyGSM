@@ -60,7 +60,7 @@ void setup() {
 }
 
 void loop() {
-  if (!modem.networkConnect(apn, user, pass)) {
+  if (!modem.gprsConnect(apn, user, pass)) {
     delay(10000);
     return;
   }
@@ -92,7 +92,7 @@ void loop() {
 
   client.stop();
 
-  modem.networkDisconnect();
+  modem.gprsDisconnect();
 
   SerialMon.println();
   SerialMon.println("************************");

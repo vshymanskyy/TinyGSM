@@ -6,7 +6,8 @@
 
 #include <TinyGsmClient.h>
 
-TinyGsmClient client(Serial);
+TinyGsm modem(Serial);
+TinyGsmClient client(modem);
 
 char server[] = "somewhere";
 char resource[] = "something";
@@ -14,11 +15,23 @@ char resource[] = "something";
 void setup() {
   Serial.begin(115200);
   delay(3000);
-  client.restart();
+  modem.restart();
 }
 
 void loop() {
-  if (!client.networkConnect("YourAPN", "", "")) {
+  modem.restart();
+
+  modem.begin();
+
+  modem.getOperator();
+
+  modem.getSimCCID();
+  
+  modem.getSimStatus();
+
+  modem.waitForNetwork();
+
+  if (!modem.gprsConnect("YourAPN", "", "")) {
     delay(10000);
     return;
   }
@@ -43,7 +56,7 @@ void loop() {
 
   client.stop();
 
-  client.networkDisconnect();
+  modem.gprsDisconnect();
 
   // Do nothing forevermore
   while (true) {
