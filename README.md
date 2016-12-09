@@ -33,10 +33,10 @@ Now, you have more space for your experiments.
 - [x] SIMCom SIM900, SIM900A, SIM900D, SIM908, SIM968
 
 More modules may be supported later:
-- [ ] SIMCom SIM5320, SIM5216
+- [ ] Neoway M590
 - [ ] AI-Thinker A6, A6C, A7
 - [ ] Quectel M10, M95, UG95
-- [ ] Neoway M590
+- [ ] SIMCom SIM5320, SIM5216
 - [ ] ZTE MG2639
 
 Watch this repo for new updates! And of course, contributions are welcome ;)
