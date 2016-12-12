@@ -28,11 +28,17 @@ Global variables use 649 bytes (31%) of dynamic memory. Maximum is 2,048 bytes.
 ```
 Now, you have more space for your experiments.
 
-### Supported modules
-- [x] SIMCom SIM800, SIM800A, SIM800C, SIM800L, SIM800H, SIM808, SIM868
-- [x] SIMCom SIM900, SIM900A, SIM900D, SIM908, SIM968
+### Supported modem models
+- [x] SIMCom SIM800 series (SIM800A, SIM800C, SIM800L, SIM800H, SIM808, SIM868)
+- [x] SIMCom SIM900 series (SIM900A, SIM900D, SIM908, SIM968)
 
-More modules may be supported later:
+### Supported modules
+- [x] GPRSbee
+- [x] Microduino GSM
+- [x] Adafruit FONA (Mini Cellular GSM Breakout)
+- [x] Adafruit FONA 800/808 Shield
+
+More modems may be supported later:
 - [ ] Neoway M590
 - [ ] AI-Thinker A6, A6C, A7
 - [ ] Quectel M10, M95, UG95
