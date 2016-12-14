@@ -63,16 +63,15 @@ enum RegStatus {
 
 class TinyGsm
 {
-  typedef TinyGsmFifo<uint8_t, TINY_GSM_RX_BUFFER> RxFifo;
 
 #ifdef GSM_DEBUG
   template<typename T>
-  void DBG(T last) {
+  static void DBG(T last) {
     GSM_DEBUG.println(last);
   }
 
   template<typename T, typename... Args>
-  void DBG(T head, Args... tail) {
+  static void DBG(T head, Args... tail) {
     GSM_DEBUG.print(head);
     GSM_DEBUG.print(' ');
     DBG(tail...);
@@ -146,7 +145,9 @@ public:
   }
 
   virtual int available() {
-    at->maintain();
+    if (!rx.size()) {
+      at->maintain();
+    }
     return rx.size() + sock_available;
   }
 
@@ -184,7 +185,9 @@ public:
   virtual void flush() { at->stream.flush(); }
 
   virtual uint8_t connected() {
-    at->maintain();
+    if (available()) {
+      return true;
+    }
     return sock_connected;
   }
   virtual operator bool() { return connected(); }
@@ -227,7 +230,7 @@ public:
 
   void maintain() {
     while (stream.available()) {
-      waitResponse(10);
+      waitResponse(10, NULL, NULL);
     }
   }
 
@@ -367,8 +370,40 @@ public:
   bool gprsConnect(const char* apn, const char* user, const char* pwd) {
     gprsDisconnect();
 
-    // AT+CGATT?
-    // AT+CGATT=1
+    sendAT(GF("+SAPBR=3,1,\"Contype\",\"GPRS\""));
+    waitResponse();
+
+    sendAT(GF("+SAPBR=3,1,\"APN\",\""), apn, '"');
+    waitResponse();
+
+    if (user) {
+      sendAT(GF("+SAPBR=3,1,\"USER\",\""), user, '"');
+      waitResponse();
+    }
+    if (pwd) {
+      sendAT(GF("+SAPBR=3,1,\"PWD\",\""), pwd, '"');
+      waitResponse();
+    }
+
+    sendAT(GF("+CGDCONT=1,\"IP\",\""), apn, '"');
+    waitResponse();
+
+    sendAT(GF("+CGACT=1,1"));
+    waitResponse(60000L);
+
+    // Open a GPRS context
+    sendAT(GF("+SAPBR=1,1"));
+    waitResponse(85000L);
+    // Query the GPRS context
+    sendAT(GF("+SAPBR=2,1"));
+    if (waitResponse(30000L) != 1)
+      return false;
+
+    sendAT(GF("+CGATT=1"));
+    if (waitResponse(60000L) != 1)
+      return false;
+
+    // TODO: wait AT+CGATT?
 
     sendAT(GF("+CIPMUX=1"));
     if (waitResponse() != 1) {
@@ -549,38 +584,45 @@ private:
                        GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),
                        GsmConstStr r3=NULL, GsmConstStr r4=NULL, GsmConstStr r5=NULL)
   {
+    /*String r1s(r1); r1s.trim();
+    String r2s(r2); r2s.trim();
+    String r3s(r3); r3s.trim();
+    String r4s(r4); r4s.trim();
+    String r5s(r5); r5s.trim();
+    DBG("### ..:", r1s, ",", r2s, ",", r3s, ",", r4s, ",", r5s);*/
     data.reserve(64);
     bool gotNewData = false;
     int index = 0;
-    for (unsigned long start = millis(); millis() - start < timeout; ) {
+    unsigned long startMillis = millis();
+    do {
       while (stream.available() > 0) {
         int a = streamRead();
         if (a <= 0) continue; // Skip 0x00 bytes, just in case
         data += (char)a;
-        if (r1 && data.indexOf(r1) >= 0) {
+        if (r1 && data.endsWith(r1)) {
           index = 1;
           goto finish;
-        } else if (r2 && data.indexOf(r2) >= 0) {
+        } else if (r2 && data.endsWith(r2)) {
           index = 2;
           goto finish;
-        } else if (r3 && data.indexOf(r3) >= 0) {
+        } else if (r3 && data.endsWith(r3)) {
           index = 3;
           goto finish;
-        } else if (r4 && data.indexOf(r4) >= 0) {
+        } else if (r4 && data.endsWith(r4)) {
           index = 4;
           goto finish;
-        } else if (r5 && data.indexOf(r5) >= 0) {
+        } else if (r5 && data.endsWith(r5)) {
           index = 5;
           goto finish;
-        } else if (data.indexOf(GF(GSM_NL "+CIPRXGET: 1,1" GSM_NL)) >= 0) { //TODO: use mux
+        } else if (data.endsWith(GF(GSM_NL "+CIPRXGET: 1,1" GSM_NL))) { //TODO: use mux
           gotNewData = true;
           data = "";
-        } else if (data.indexOf(GF(GSM_NL "1, CLOSED" GSM_NL)) >= 0) { //TODO: use mux
+        } else if (data.endsWith(GF(GSM_NL "1, CLOSED" GSM_NL))) { //TODO: use mux
           sockets[1]->sock_connected = false;
           data = "";
         }
       }
-    }
+    } while (millis() - startMillis < timeout);
 finish:
     if (!index) {
       if (data.length()) {
