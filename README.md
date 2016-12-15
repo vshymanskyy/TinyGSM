@@ -43,6 +43,7 @@ More modems may be supported later:
 - [ ] AI-Thinker A6, A6C, A7
 - [ ] Quectel M10, M95, UG95
 - [ ] SIMCom SIM5320, SIM5216
+- [ ] Telit GL865
 - [ ] ZTE MG2639
 
 Watch this repo for new updates! And of course, contributions are welcome ;)
