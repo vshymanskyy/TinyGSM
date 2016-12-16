@@ -337,12 +337,14 @@ public:
   bool waitForNetwork(unsigned long timeout = 60000L) {
     for (unsigned long start = millis(); millis() - start < timeout; ) {
       RegStatus s = getRegistrationStatus();
-      if(s == REG_OK_HOME || s == REG_OK_ROAMING) {
+      if (s == REG_OK_HOME || s == REG_OK_ROAMING) {
         return true;
+      } else if (s == REG_UNREGISTERED) {
+        return false;
       }
       delay(1000);
     }
-    return true;
+    return false;
   }
 
   /*
