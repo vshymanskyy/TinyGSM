@@ -23,8 +23,8 @@ Examples for **PubSubClient ([MQTT](http://mqtt.org/))**, **[Blynk](http://blynk
 ### TinyGSM is tiny
 WebClient example for Arduino Nano (with Software Serial) takes little resources:
 ```
-Sketch uses 11,916 bytes (38%) of program storage space. Maximum is 30,720 bytes.
-Global variables use 649 bytes (31%) of dynamic memory. Maximum is 2,048 bytes.
+Sketch uses 13,802 bytes (44%) of program storage space. Maximum is 30,720 bytes.
+Global variables use 661 bytes (32%) of dynamic memory. Maximum is 2,048 bytes.
 ```
 Now, you have more space for your experiments.
 
@@ -65,8 +65,18 @@ TinyGSM pulls data gently from the modem (whenever possible), so it can operate 
 
 ## Troubleshooting
 
-When using ```Software Serial``` (on Uno, Nano, etc), the speed **115200** may not work.  
-Try selecting **57600**, **38400**, or even lower - the one that works best for you.
+### SoftwareSerial problems
+
+When using ```SoftwareSerial``` (on Uno, Nano, etc), the speed **115200** may not work.  
+Try selecting **57600**, **38400**, or even lower - the one that works best for you.  
+Be sure to set correct TX/RX pins in the sketch.
+
+### Diagnostics sketch
+
+Use this sketch to diagnose your SIM card and GPRS connection:  
+  File -> Examples -> TynyGSM -> tools -> [Diagnostics](https://github.com/vshymanskyy/TinyGSM/blob/master/tools/Diagnostics/Diagnostics.ino)
+
+### Broken initial configuration
 
 Sometimes (especially if you played with AT comands), your module configuration may become invalid.  
 This may result in problems such as:
