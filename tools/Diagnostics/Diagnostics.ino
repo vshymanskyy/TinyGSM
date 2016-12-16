@@ -12,9 +12,14 @@
 // Increase buffer fo see less commands
 #define GSM_RX_BUFFER 256
 
-char apn[]  = "YourAPN";
-char user[] = "";
-char pass[] = "";
+#include <TinyGsmClient.h>
+#include <StreamDebugger.h>
+
+// Your GPRS credentials
+// Leave empty, if missing user or pass
+const char apn[]  = "YourAPN";
+const char user[] = "";
+const char pass[] = "";
 
 // Set serial for debug console (to the Serial Monitor, speed 115200)
 #define SerialMon Serial
@@ -27,15 +32,13 @@ char pass[] = "";
 //#include <SoftwareSerial.h>
 //SoftwareSerial SerialAT(2, 3); // RX, TX
 
-#include <StreamDebugger.h>
-StreamDebugger debugger(SerialAT, SerialMon);
 
-#include <TinyGsmClient.h>
+StreamDebugger debugger(SerialAT, SerialMon);
 TinyGsm modem(debugger);
 TinyGsmClient client(modem);
 
-char server[] = "cdn.rawgit.com";
-char resource[] = "/vshymanskyy/tinygsm/master/extras/test_simple.txt";
+const char server[] = "cdn.rawgit.com";
+const char resource[] = "/vshymanskyy/tinygsm/master/extras/test_simple.txt";
 
 void setup() {
   // Set console baud rate
@@ -52,25 +55,44 @@ void setup() {
 
   // Unlock your SIM card with a PIN
   //modem.simUnlock("1234");
-
-  SerialMon.println("Waiting for network... ");
-  if (modem.waitForNetwork()) {
-    SerialMon.println("OK");
-  } else {
-    SerialMon.println("fail");
-  }
 }
 
 void loop() {
-  if (!modem.gprsConnect(apn, user, pass)) {
+  SerialMon.print("Waiting for network...");
+  if (!modem.waitForNetwork()) {
+    SerialMon.println(" fail");
+    SerialMon.println("************************");
+    SerialMon.println(" Is your sim card locked?");
+    SerialMon.println(" Do you have a good signal?");
+    SerialMon.println(" Is antenna attached?");
+    SerialMon.println(" Does the SIM card work with your phone?");
+    SerialMon.println("************************");
     delay(10000);
     return;
   }
+  SerialMon.println(" OK");
 
-  if (!client.connect(server, 80)) {
+  SerialMon.print("Connecting to ");
+  SerialMon.print(apn);
+  if (!modem.gprsConnect(apn, user, pass)) {
+    SerialMon.println(" fail");
+    SerialMon.println("************************");
+    SerialMon.println(" Is GPRS enabled by network provider?");
+    SerialMon.println(" Try checking your card balance.");
+    SerialMon.println("************************");
     delay(10000);
     return;
   }
+  SerialMon.println(" OK");
+
+  SerialMon.print("Connecting to ");
+  SerialMon.print(server);
+  if (!client.connect(server, 80)) {
+    SerialMon.println(" fail");
+    delay(10000);
+    return;
+  }
+  SerialMon.println(" OK");
 
   // Make a HTTP GET request:
   client.print(String("GET ") + resource + " HTTP/1.0\r\n");
@@ -93,8 +115,10 @@ void loop() {
   }
 
   client.stop();
+  SerialMon.println("Server disconnected");
 
   modem.gprsDisconnect();
+  SerialMon.println("GPRS disconnected");
 
   SerialMon.println();
   SerialMon.println("************************");
