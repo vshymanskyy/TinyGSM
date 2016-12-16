@@ -501,15 +501,16 @@ private:
   size_t modemRead(size_t size, uint8_t mux) {
 #ifdef GSM_USE_HEX
     sendAT(GF("+CIPRXGET=3,"), mux, ',', size);
-    if (waitResponse(GF("+CIPRXGET: 3,")) != 1) {
+    if (waitResponse(GF("+CIPRXGET:")) != 1) {
       return 0;
     }
 #else
     sendAT(GF("+CIPRXGET=2,"), mux, ',', size);
-    if (waitResponse(GF("+CIPRXGET: 2,")) != 1) {
+    if (waitResponse(GF("+CIPRXGET:")) != 1) {
       return 0;
     }
 #endif
+    stream.readStringUntil(','); // Skip mode 2/3
     stream.readStringUntil(','); // Skip mux
     size_t len = stream.readStringUntil(',').toInt();
     sockets[mux]->sock_available = stream.readStringUntil('\n').toInt();
@@ -535,10 +536,10 @@ private:
     sendAT(GF("+CIPRXGET=4,"), mux);
     size_t result = 0;
     for (byte i = 0; i < 2; i++) {
-      int res = waitResponse(GF("+CIPRXGET: 4"), GFP(GSM_OK), GFP(GSM_ERROR));
+      int res = waitResponse(GF("+CIPRXGET:"), GFP(GSM_OK), GFP(GSM_ERROR));
       if (res == 1) {
-        stream.readStringUntil(',');
-        stream.readStringUntil(',');
+        stream.readStringUntil(','); // Skip mode 4
+        stream.readStringUntil(','); // Skip mux
         result = stream.readStringUntil('\n').toInt();
       } else if (res == 2) {
       } else {
@@ -591,7 +592,8 @@ private:
     String r5s(r5); r5s.trim();
     DBG("### ..:", r1s, ",", r2s, ",", r3s, ",", r4s, ",", r5s);*/
     data.reserve(64);
-    bool gotNewData = false;
+    bool gotData = false;
+    int mux = -1;
     int index = 0;
     unsigned long startMillis = millis();
     do {
@@ -614,12 +616,23 @@ private:
         } else if (r5 && data.endsWith(r5)) {
           index = 5;
           goto finish;
-        } else if (data.endsWith(GF(GSM_NL "+CIPRXGET: 1,1" GSM_NL))) { //TODO: use mux
-          gotNewData = true;
-          data = "";
-        } else if (data.endsWith(GF(GSM_NL "1, CLOSED" GSM_NL))) { //TODO: use mux
-          sockets[1]->sock_connected = false;
-          data = "";
+        } else if (data.endsWith(GF(GSM_NL "+CIPRXGET:"))) {
+          String mode = stream.readStringUntil(',');
+          if (mode.toInt() == 1) {
+            mux = stream.readStringUntil('\n').toInt();
+            gotData = true;
+            data = "";
+          } else {
+            data += mode;
+          }
+        } else if (data.endsWith(GF("CLOSED" GSM_NL))) {
+          int nl = data.lastIndexOf(GSM_NL, data.length()-8);
+          int coma = data.indexOf(',', nl+2);
+          mux = data.substring(nl+2, coma).toInt();
+          if (mux) {
+            sockets[mux]->sock_connected = false;
+            data = "";
+          }
         }
       }
     } while (millis() - startMillis < timeout);
@@ -630,8 +643,8 @@ finish:
       }
       data = "";
     }
-    if (gotNewData) {
-      sockets[1]->sock_available = modemGetAvailable(1);
+    if (gotData) {
+      sockets[mux]->sock_available = modemGetAvailable(mux);
     }
     return index;
   }
