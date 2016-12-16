@@ -65,6 +65,9 @@ TinyGSM pulls data gently from the modem (whenever possible), so it can operate 
 
 ## Troubleshooting
 
+When using ```Software Serial``` (on Uno, Nano, etc), the speed **115200** may not work.  
+Try selecting **57600**, **38400**, or even lower - the one that works best for you.
+
 Sometimes (especially if you played with AT comands), your module configuration may become invalid.  
 This may result in problems such as:
 
