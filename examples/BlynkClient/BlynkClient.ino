@@ -49,7 +49,6 @@ const char pass[] = "";
 //SoftwareSerial SerialAT(2, 3); // RX, TX
 
 TinyGsm modem(SerialAT);
-TinyGsmClient client(modem);
 
 void setup()
 {
