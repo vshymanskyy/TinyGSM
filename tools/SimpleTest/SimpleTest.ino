@@ -47,9 +47,11 @@ void setup() {
   delay(3000);
 
   // Restart takes quite some time
-  // You can skip it in many cases
-  SerialMon.println("Restarting modem...");
+  // To skip it, call init() instead of restart()
   modem.restart();
+
+  // Unlock your SIM card with a PIN
+  //modem.simUnlock("1234");
 
   SerialMon.println("Waiting for network... ");
   if (modem.waitForNetwork()) {

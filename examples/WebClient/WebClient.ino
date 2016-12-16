@@ -39,8 +39,11 @@ void setup() {
   delay(3000);
 
   // Restart takes quite some time
-  // You can skip it in many cases
+  // To skip it, call init() instead of restart()
   modem.restart();
+
+  // Unlock your SIM card with a PIN
+  //modem.simUnlock("1234");
 }
 
 void loop() {
@@ -64,7 +67,7 @@ void loop() {
   Serial.print("Connecting to ");
   Serial.print(server);
   if (!client.connect(server, 80)) {
-    Serial.println(" failed");
+    Serial.println(" fail");
     delay(10000);
     return;
   }
