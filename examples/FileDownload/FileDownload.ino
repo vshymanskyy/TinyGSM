@@ -149,15 +149,13 @@ void loop() {
   Serial.println("GPRS disconnected");
   Serial.println();
 
-  float timeSpent = float(timeElapsed) / 1000;
-  float theorLimit = ((8.0 * readLength) / 85.6) / 1000;
+  float duration = float(timeElapsed) / 1000;
 
   Serial.print("Content-Length: ");   Serial.println(contentLength);
   Serial.print("Actually read:  ");   Serial.println(readLength);
   Serial.print("Calc. CRC32:    0x"); Serial.println(crc.finalize(), HEX);
   Serial.print("Known CRC32:    0x"); Serial.println(knownCRC32, HEX);
-  Serial.print("Time spent:     ");   Serial.print(timeSpent); Serial.println("s");
-  Serial.print("85.6kBps limit: ");   Serial.print(theorLimit); Serial.println("s");
+  Serial.print("Duration:       ");   Serial.print(duration); Serial.println("s");
 
   // Do nothing forevermore
   while (true) {
