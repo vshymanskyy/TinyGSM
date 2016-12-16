@@ -34,7 +34,7 @@ void setup() {
   SerialAT.begin(115200);
   delay(3000);
 
-  if (!modem.begin()) {
+  if (!modem.init()) {
     SerialMon.println(F("***********************************************************"));
     SerialMon.println(F(" Cannot initialize module!"));
     SerialMon.println(F("   Use File -> Examples -> TinyGSM -> tools -> AT_Debug"));

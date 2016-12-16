@@ -14,9 +14,9 @@
 
 // Your GPRS credentials
 // Leave empty, if missing user or pass
-char apn[]  = "YourAPN";
-char user[] = "";
-char pass[] = "";
+const char apn[]  = "YourAPN";
+const char user[] = "";
+const char pass[] = "";
 
 // Use Hardware Serial on Mega, Leonardo, Micro
 #define SerialAT Serial1
@@ -28,8 +28,8 @@ char pass[] = "";
 TinyGsm modem(SerialAT);
 TinyGsmClient client(modem);
 
-char server[] = "cdn.rawgit.com";
-char resource[] = "/vshymanskyy/tinygsm/master/extras/test_10k.hex";
+const char server[] = "cdn.rawgit.com";
+const char resource[] = "/vshymanskyy/tinygsm/master/extras/test_10k.hex";
 uint32_t knownCRC32 = 0x54b3dcbf;
 uint32_t knownFileSize = 10240;   // In case server does not send it
 

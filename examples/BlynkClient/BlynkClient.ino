@@ -33,13 +33,13 @@
 
 // You should get Auth Token in the Blynk App.
 // Go to the Project Settings (nut icon).
-char auth[] = "YourAuthToken";
+const char auth[] = "YourAuthToken";
 
 // Your GPRS credentials
 // Leave empty, if missing user or pass
-char apn[]  = "YourAPN";
-char user[] = "";
-char pass[] = "";
+const char apn[]  = "YourAPN";
+const char user[] = "";
+const char pass[] = "";
 
 // Hardware Serial on Mega, Leonardo, Micro
 #define SerialAT Serial1
