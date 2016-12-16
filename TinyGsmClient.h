@@ -205,6 +205,10 @@ public:
    * Basic functions
    */
   bool begin() {
+    return init();
+  }
+
+  bool init() {
     if (!autoBaud()) {
       return false;
     }
@@ -218,7 +222,7 @@ public:
 
   bool autoBaud(unsigned long timeout = 10000L) {
     for (unsigned long start = millis(); millis() - start < timeout; ) {
-      sendAT("");
+      sendAT(GF(""));
       if (waitResponse(200) == 1) {
           delay(100);
           return true;
@@ -254,10 +258,6 @@ public:
    */
 
   bool restart() {
-    return resetSoft();
-  }
-
-  bool resetSoft() {
     if (!autoBaud()) {
       return false;
     }
@@ -270,27 +270,7 @@ public:
       return false;
     }
     delay(3000);
-    return begin();
-  }
-
-  // Reboot the module by setting the specified pin LOW, then HIGH.
-  // (The pin should be connected to a P-MOSFET)
-  bool resetHard(int pwrPin) {
-    powerOff(pwrPin);
-    delay(100);
-    return powerOn(pwrPin);
-  }
-
-  void powerOff(int pwrPin) {
-    pinMode(pwrPin, OUTPUT);
-    digitalWrite(pwrPin, LOW);
-  }
-
-  bool powerOn(int pwrPin) {
-    pinMode(pwrPin, OUTPUT);
-    digitalWrite(pwrPin, HIGH);
-    delay(3000);
-    return begin();
+    return init();
   }
 
   /*
@@ -304,7 +284,7 @@ public:
 
   String getSimCCID() {
     sendAT(GF("+ICCID"));
-    if (waitResponse(GF(GSM_NL "+ICCID: ")) != 1) {
+    if (waitResponse(GF(GSM_NL "+ICCID:")) != 1) {
       return "";
     }
     String res = stream.readStringUntil('\n');
@@ -316,7 +296,7 @@ public:
   SimStatus getSimStatus(unsigned long timeout = 10000L) {
     for (unsigned long start = millis(); millis() - start < timeout; ) {
       sendAT(GF("+CPIN?"));
-      if (waitResponse(GF(GSM_NL "+CPIN: ")) != 1) {
+      if (waitResponse(GF(GSM_NL "+CPIN:")) != 1) {
         delay(1000);
         continue;
       }
@@ -334,9 +314,10 @@ public:
 
   RegStatus getRegistrationStatus() {
     sendAT(GF("+CREG?"));
-    if (waitResponse(GF(GSM_NL "+CREG: 0,")) != 1) {
+    if (waitResponse(GF(GSM_NL "+CREG:")) != 1) {
       return REG_UNKNOWN;
     }
+    streamSkipUntil(','); // Skip format (0)
     int status = stream.readStringUntil('\n').toInt();
     waitResponse();
     return (RegStatus)status;
@@ -344,10 +325,10 @@ public:
 
   String getOperator() {
     sendAT(GF("+COPS?"));
-    if (waitResponse(GF(GSM_NL "+COPS: ")) != 1) {
+    if (waitResponse(GF(GSM_NL "+COPS:")) != 1) {
       return "";
     }
-    stream.readStringUntil('"'); // Skip mode and format
+    streamSkipUntil('"'); // Skip mode and format
     String res = stream.readStringUntil('"');
     waitResponse();
     return res;
@@ -493,9 +474,8 @@ private:
     if (waitResponse(GF(GSM_NL "DATA ACCEPT:")) != 1) {
       return -1;
     }
-    stream.readStringUntil(',');
-    String data = stream.readStringUntil('\n');
-    return data.toInt();
+    streamSkipUntil(','); // Skip mux
+    return stream.readStringUntil('\n').toInt();
   }
 
   size_t modemRead(size_t size, uint8_t mux) {
@@ -510,20 +490,20 @@ private:
       return 0;
     }
 #endif
-    stream.readStringUntil(','); // Skip mode 2/3
-    stream.readStringUntil(','); // Skip mux
+    streamSkipUntil(','); // Skip mode 2/3
+    streamSkipUntil(','); // Skip mux
     size_t len = stream.readStringUntil(',').toInt();
     sockets[mux]->sock_available = stream.readStringUntil('\n').toInt();
 
     for (size_t i=0; i<len; i++) {
 #ifdef GSM_USE_HEX
-      while (stream.available() < 2) { delay(1); }
+      while (stream.available() < 2) {}
       char buf[4] = { 0, };
       buf[0] = stream.read();
       buf[1] = stream.read();
       char c = strtol(buf, NULL, 16);
 #else
-      while (stream.available() < 1) { delay(1); }
+      while (!stream.available()) {}
       char c = stream.read();
 #endif
       sockets[mux]->rx.put(c);
@@ -535,16 +515,11 @@ private:
   size_t modemGetAvailable(uint8_t mux) {
     sendAT(GF("+CIPRXGET=4,"), mux);
     size_t result = 0;
-    for (byte i = 0; i < 2; i++) {
-      int res = waitResponse(GF("+CIPRXGET:"), GFP(GSM_OK), GFP(GSM_ERROR));
-      if (res == 1) {
-        stream.readStringUntil(','); // Skip mode 4
-        stream.readStringUntil(','); // Skip mux
-        result = stream.readStringUntil('\n').toInt();
-      } else if (res == 2) {
-      } else {
-        return result;
-      }
+    if (waitResponse(GF("+CIPRXGET:")) == 1) {
+      streamSkipUntil(','); // Skip mode 4
+      streamSkipUntil(','); // Skip mux
+      result = stream.readStringUntil('\n').toInt();
+      waitResponse();
     }
     if (!result) {
       sockets[mux]->sock_connected = modemGetConnected(mux);
@@ -572,6 +547,15 @@ private:
   }
 
   int streamRead() { return stream.read(); }
+
+  bool streamSkipUntil(char c) { //TODO: timeout
+    while (true) {
+      while (!stream.available()) {}
+      if (stream.read() == c)
+        return true;
+    }
+    return false;
+  }
 
   template<typename... Args>
   void sendAT(Args... cmd) {
