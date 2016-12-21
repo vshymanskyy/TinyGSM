@@ -23,12 +23,12 @@
 #include <TinyGsmFifo.h>
 
 #if defined(__AVR__)
-  #define GSM_PROGMEM PROGMEM
+  #define TINY_GSM_PROGMEM PROGMEM
   typedef const __FlashStringHelper* GsmConstStr;
   #define GFP(x) (reinterpret_cast<GsmConstStr>(x))
   #define GF(x)  F(x)
 #else
-  #define GSM_PROGMEM
+  #define TINY_GSM_PROGMEM
   typedef const char* GsmConstStr;
   #define GFP(x) x
   #define GF(x)  x
@@ -42,8 +42,10 @@
 #endif
 
 #define GSM_NL "\r\n"
-static const char GSM_OK[] GSM_PROGMEM = "OK" GSM_NL;
-static const char GSM_ERROR[] GSM_PROGMEM = "ERROR" GSM_NL;
+static const char GSM_OK[] TINY_GSM_PROGMEM = "OK" GSM_NL;
+static const char GSM_ERROR[] TINY_GSM_PROGMEM = "ERROR" GSM_NL;
+
+#define TINY_GSM_YIELD() delay(0)
 
 enum SimStatus {
   SIM_ERROR = 0,
@@ -563,6 +565,7 @@ private:
   void sendAT(Args... cmd) {
     streamWrite("AT", cmd..., GSM_NL);
     stream.flush();
+    TINY_GSM_YIELD();
     //DBG("### AT:", cmd...);
   }
 
@@ -583,6 +586,7 @@ private:
     int index = 0;
     unsigned long startMillis = millis();
     do {
+      TINY_GSM_YIELD();
       while (stream.available() > 0) {
         int a = streamRead();
         if (a <= 0) continue; // Skip 0x00 bytes, just in case
