@@ -7,7 +7,18 @@
  * TinyGSM Getting Started guide:
  *   http://tiny.cc/tiny-gsm-readme
  *
+ * ATTENTION! Downloading big files requires quite a lot
+ * of knowledge - so this is for more experienced developers.
+ *
  **************************************************************/
+
+// Select your modem:
+#define TINY_GSM_MODEM_SIM800
+//#define TINY_GSM_MODEM_SIM900
+//#define TINY_GSM_MODEM_M590
+
+// Increase RX buffer
+#define TINY_GSM_RX_BUFFER 1030
 
 #include <TinyGsmClient.h>
 #include <CRC32.h>
@@ -29,9 +40,9 @@ TinyGsm modem(SerialAT);
 TinyGsmClient client(modem);
 
 const char server[] = "cdn.rawgit.com";
-const char resource[] = "/vshymanskyy/tinygsm/master/extras/test_10k.hex";
-uint32_t knownCRC32 = 0x54b3dcbf;
-uint32_t knownFileSize = 10240;   // In case server does not send it
+const char resource[] = "/vshymanskyy/tinygsm/master/extras/test_1k.bin";
+uint32_t knownCRC32 = 0x6f50d767;
+uint32_t knownFileSize = 1024;   // In case server does not send it
 
 void setup() {
   // Set console baud rate
@@ -44,6 +55,7 @@ void setup() {
 
   // Restart takes quite some time
   // To skip it, call init() instead of restart()
+  Serial.println("Initializing modem...");
   modem.restart();
 
   // Unlock your SIM card with a PIN

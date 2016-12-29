@@ -25,6 +25,11 @@
  *
  **************************************************************/
 
+// Select your modem:
+#define TINY_GSM_MODEM_SIM800
+//#define TINY_GSM_MODEM_SIM900
+//#define TINY_GSM_MODEM_M590
+
 #include <TinyGsmClient.h>
 #include <PubSubClient.h>
 
@@ -69,6 +74,7 @@ void setup() {
 
   // Restart takes quite some time
   // To skip it, call init() instead of restart()
+  Serial.println("Initializing modem...");
   modem.restart();
 
   // Unlock your SIM card with a PIN
