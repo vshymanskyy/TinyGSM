@@ -9,6 +9,11 @@
  *
  **************************************************************/
 
+// Select your modem:
+#define TINY_GSM_MODEM_SIM800
+//#define TINY_GSM_MODEM_SIM900
+//#define TINY_GSM_MODEM_M590
+
 // Increase buffer fo see less commands
 #define GSM_RX_BUFFER 256
 
@@ -48,25 +53,36 @@ void setup() {
   // Set GSM module baud rate
   SerialAT.begin(115200);
   delay(3000);
-
-  // Restart takes quite some time
-  // To skip it, call init() instead of restart()
-  modem.restart();
-
-  // Unlock your SIM card with a PIN
-  //modem.simUnlock("1234");
 }
 
 void loop() {
+  // Restart takes quite some time
+  // To skip it, call init() instead of restart()
+  SerialMon.print("Initializing modem...");
+  if (!modem.restart()) {
+    SerialMon.println(" fail");
+    SerialMon.println(F("************************"));
+    SerialMon.println(F(" Is your modem connected properly?"));
+    SerialMon.println(F(" Is your serial speed (baud rate) correct?"));
+    SerialMon.println(F(" Is your modem powered on?"));
+    SerialMon.println(F(" Do you use a good, stable power source?"));
+    SerialMon.println(F(" Try useing File -> Examples -> TinyGSM -> tools -> AT_Debug to find correct configuration"));
+    SerialMon.println(F("************************"));
+    delay(10000);
+  }
+
+  // Unlock your SIM card with a PIN
+  //modem.simUnlock("1234");
+
   SerialMon.print("Waiting for network...");
   if (!modem.waitForNetwork()) {
     SerialMon.println(" fail");
-    SerialMon.println("************************");
-    SerialMon.println(" Is your sim card locked?");
-    SerialMon.println(" Do you have a good signal?");
-    SerialMon.println(" Is antenna attached?");
-    SerialMon.println(" Does the SIM card work with your phone?");
-    SerialMon.println("************************");
+    SerialMon.println(F("************************"));
+    SerialMon.println(F(" Is your sim card locked?"));
+    SerialMon.println(F(" Do you have a good signal?"));
+    SerialMon.println(F(" Is antenna attached?"));
+    SerialMon.println(F(" Does the SIM card work with your phone?"));
+    SerialMon.println(F("************************"));
     delay(10000);
     return;
   }
@@ -76,10 +92,10 @@ void loop() {
   SerialMon.print(apn);
   if (!modem.gprsConnect(apn, user, pass)) {
     SerialMon.println(" fail");
-    SerialMon.println("************************");
-    SerialMon.println(" Is GPRS enabled by network provider?");
-    SerialMon.println(" Try checking your card balance.");
-    SerialMon.println("************************");
+    SerialMon.println(F("************************"));
+    SerialMon.println(F(" Is GPRS enabled by network provider?"));
+    SerialMon.println(F(" Try checking your card balance."));
+    SerialMon.println(F("************************"));
     delay(10000);
     return;
   }
