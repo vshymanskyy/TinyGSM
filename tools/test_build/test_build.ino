@@ -4,6 +4,8 @@
  *
  **************************************************************/
 
+#define TINY_GSM_MODEM_SIM800
+
 #include <TinyGsmClient.h>
 
 TinyGsm modem(Serial);
