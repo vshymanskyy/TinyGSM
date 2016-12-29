@@ -8,6 +8,13 @@
  *
  **************************************************************/
 
+// Select your modem:
+#define TINY_GSM_MODEM_SIM800
+//#define TINY_GSM_MODEM_SIM900
+//#define TINY_GSM_MODEM_M590
+
+#include <TinyGsmClient.h>
+
 // Set serial for debug console (to the Serial Monitor, speed 115200)
 #define SerialMon Serial
 
@@ -19,8 +26,10 @@
 //#include <SoftwareSerial.h>
 //SoftwareSerial SerialAT(2, 3); // RX, TX
 
-#include <TinyGsmClient.h>
 TinyGsm modem(SerialAT);
+
+// Module baud rate
+uint32_t rate = 0; // Set to 0 for Auto-Detect
 
 void setup() {
   // Set console baud rate
@@ -29,22 +38,23 @@ void setup() {
 }
 
 void loop() {
-  // Detect module baud rate
-  uint32_t rate = 0;
-  uint32_t rates[] = { 115200, 9600, 57600, 19200, 74400, 74880 };
 
-  SerialMon.println("Autodetecting baud rate");
-  for (unsigned i = 0; i < sizeof(rates)/sizeof(rates[0]); i++) {
-    SerialMon.print(String("Trying baud rate ") + rates[i] + "... ");
-    SerialAT.begin(rates[i]);
-    delay(10);
-    if (modem.autoBaud(2000)) {
-      rate = rates[i];
-      SerialMon.println(F("OK"));
-      break;
-    } else {
-      SerialMon.println(F("fail"));
-    }
+  if (!rate) {
+      static uint32_t rates[] = { 115200, 9600, 57600, 19200, 38400, 74400, 74880, 230400, 460800, 2400, 4800, 14400, 28800 };
+
+      SerialMon.println("Autodetecting baud rate");
+      for (unsigned i = 0; i < sizeof(rates)/sizeof(rates[0]); i++) {
+        SerialMon.print(String("Trying baud rate ") + rates[i] + "... ");
+        SerialAT.begin(rates[i]);
+        delay(10);
+        if (modem.autoBaud(1000)) {
+          rate = rates[i];
+          SerialMon.println(F("OK"));
+          break;
+        } else {
+          SerialMon.println(F("fail"));
+        }
+      }
   }
 
   if (!rate) {
