@@ -31,6 +31,8 @@ Now, you have more space for your experiments.
 ### Supported modem models
 - [x] SIMCom SIM800 series (SIM800A, SIM800C, SIM800L, SIM800H, SIM808, SIM868)
 - [x] SIMCom SIM900 series (SIM900A, SIM900D, SIM908, SIM968)
+- [x] Neoway M590
+- [x] ESP8266 (AT commands interface, similar to GSM modems)
 
 ### Supported modules
 - [x] GPRSbee
@@ -39,7 +41,6 @@ Now, you have more space for your experiments.
 - [x] Adafruit FONA 800/808 Shield
 
 More modems may be supported later:
-- [ ] Neoway M590
 - [ ] AI-Thinker A6, A6C, A7
 - [ ] Quectel M10, M95, UG95
 - [ ] SIMCom SIM5320, SIM5216
@@ -58,7 +59,7 @@ TinyGSM pulls data gently from the modem (whenever possible), so it can operate 
     - Check your ballance
     - Check that APN,User,Pass are correct and you have internet
   2. Ensure the SIM card is correctly inserted into the module
-  3. Provide a good, [stable power supply](https://github.com/vshymanskyy/TinyGSM/wiki/Powering-GSM-module) (up to 2A, 4.0-4.2V or 5V according to your module documentation)
+  3. Provide a good, [stable power supply](https://github.com/vshymanskyy/TinyGSM/wiki/Powering-GSM-module) (up to 2A and specific voltage according to your module documentation)
   4. Check if serial connection is working (Hardware Serial is recommended)  
      Send an ```AT``` command using [this sketch](tools/AT_Debug/AT_Debug.ino)
   5. Check if GSM antenna is attached
