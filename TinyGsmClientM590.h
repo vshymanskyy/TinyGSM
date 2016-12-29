@@ -1,51 +1,24 @@
 /**
- * @file       TinyGsmClient.h
+ * @file       TinyGsmClientM590.h
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
  * @date       Nov 2016
  */
 
-#ifndef TinyGsmClient_h
-#define TinyGsmClient_h
-
-#if defined(SPARK) || defined(PARTICLE)
-    #include "Particle.h"
-#elif defined(ARDUINO)
-    #if ARDUINO >= 100
-        #include "Arduino.h"
-    #else
-        #include "WProgram.h"
-    #endif
-#endif
-
-#include <Client.h>
-#include <TinyGsmFifo.h>
-
-#if defined(__AVR__)
-  #define TINY_GSM_PROGMEM PROGMEM
-  typedef const __FlashStringHelper* GsmConstStr;
-  #define GFP(x) (reinterpret_cast<GsmConstStr>(x))
-  #define GF(x)  F(x)
-#else
-  #define TINY_GSM_PROGMEM
-  typedef const char* GsmConstStr;
-  #define GFP(x) x
-  #define GF(x)  x
-#endif
+#ifndef TinyGsmClientM590_h
+#define TinyGsmClientM590_h
 
 //#define GSM_DEBUG Serial
 //#define GSM_USE_HEX
 
-#if !defined(GSM_RX_BUFFER)
-  #define GSM_RX_BUFFER 256
+#if !defined(TINY_GSM_RX_BUFFER)
+  #define TINY_GSM_RX_BUFFER 256
 #endif
 
 #define GSM_NL "\r\n"
 static const char GSM_OK[] TINY_GSM_PROGMEM = "OK" GSM_NL;
 static const char GSM_ERROR[] TINY_GSM_PROGMEM = "ERROR" GSM_NL;
-
-#define TINY_GSM_YIELD() delay(0)
 
 enum SimStatus {
   SIM_ERROR = 0,
@@ -92,7 +65,7 @@ public:
 class GsmClient : public Client
 {
   friend class TinyGsm;
-  typedef TinyGsmFifo<uint8_t, GSM_RX_BUFFER> RxFifo;
+  typedef TinyGsmFifo<uint8_t, TINY_GSM_RX_BUFFER> RxFifo;
 
 public:
 

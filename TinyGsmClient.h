@@ -22,6 +22,10 @@
 #include <Client.h>
 #include <TinyGsmFifo.h>
 
+#ifndef TINY_GSM_YIELD
+  #define TINY_GSM_YIELD() { delay(0); }
+#endif
+
 #if defined(__AVR__)
   #define TINY_GSM_PROGMEM PROGMEM
   typedef const __FlashStringHelper* GsmConstStr;
@@ -34,7 +38,7 @@
   #define GF(x)  x
 #endif
 
-#if defined(TINY_GSM_MODEM_SIM800) || defined(TINY_GSM_MODEM_SIM900)
+#if   defined(TINY_GSM_MODEM_SIM800) || defined(TINY_GSM_MODEM_SIM900)
   #include <TinyGsmClientSIM800.h>
 #elif defined(TINY_GSM_MODEM_M590)
   #include <TinyGsmClientM590.h>
