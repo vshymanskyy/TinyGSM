@@ -16,6 +16,8 @@
   #define TINY_GSM_RX_BUFFER 64
 #endif
 
+#include <TinyGsmCommon.h>
+
 #define GSM_NL "\r\n"
 static const char GSM_OK[] TINY_GSM_PROGMEM = "OK" GSM_NL;
 static const char GSM_ERROR[] TINY_GSM_PROGMEM = "ERROR" GSM_NL;
@@ -38,22 +40,6 @@ enum RegStatus {
 
 class TinyGsm
 {
-
-#ifdef GSM_DEBUG
-  template<typename T>
-  static void DBG(T last) {
-    GSM_DEBUG.println(last);
-  }
-
-  template<typename T, typename... Args>
-  static void DBG(T head, Args... tail) {
-    GSM_DEBUG.print(head);
-    GSM_DEBUG.print(' ');
-    DBG(tail...);
-  }
-#else
-  #define DBG(...)
-#endif
 
 public:
   TinyGsm(Stream& stream)

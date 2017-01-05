@@ -10,11 +10,12 @@
 #define TinyWiFiClientESP8266_h
 
 //#define GSM_DEBUG Serial
-//#define GSM_USE_HEX
 
 #if !defined(TINY_GSM_RX_BUFFER)
   #define TINY_GSM_RX_BUFFER 256
 #endif
+
+#include <TinyGsmCommon.h>
 
 #define GSM_NL "\r\n"
 static const char GSM_OK[] TINY_GSM_PROGMEM = "OK" GSM_NL;
@@ -22,22 +23,6 @@ static const char GSM_ERROR[] TINY_GSM_PROGMEM = "ERROR" GSM_NL;
 
 class TinyGsm
 {
-
-#ifdef GSM_DEBUG
-  template<typename T>
-  static void DBG(T last) {
-    GSM_DEBUG.println(last);
-  }
-
-  template<typename T, typename... Args>
-  static void DBG(T head, Args... tail) {
-    GSM_DEBUG.print(head);
-    GSM_DEBUG.print(' ');
-    DBG(tail...);
-  }
-#else
-  #define DBG(...)
-#endif
 
 public:
   TinyGsm(Stream& stream)
