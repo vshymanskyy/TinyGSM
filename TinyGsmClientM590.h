@@ -53,14 +53,13 @@ class GsmClient : public Client
   typedef TinyGsmFifo<uint8_t, TINY_GSM_RX_BUFFER> RxFifo;
 
 public:
-
   GsmClient() {}
 
-  GsmClient(TinyGsm& modem, uint8_t mux = 0) {
+  GsmClient(TinyGsm& modem, uint8_t mux = 1) {
     init(&modem, mux);
   }
 
-  bool init(TinyGsm* modem, uint8_t mux = 0) {
+  bool init(TinyGsm* modem, uint8_t mux = 1) {
     this->at = modem;
     this->mux = mux;
     sock_connected = false;
@@ -119,7 +118,7 @@ public:
     TINY_GSM_YIELD();
     size_t cnt = 0;
     while (cnt < size) {
-      size_t chunk = min(size-cnt, rx.size());
+      size_t chunk = TinyGsmMin(size-cnt, rx.size());
       if (chunk > 0) {
         rx.get(buf, chunk);
         buf += chunk;

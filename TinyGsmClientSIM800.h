@@ -122,7 +122,7 @@ public:
     at->maintain();
     size_t cnt = 0;
     while (cnt < size) {
-      size_t chunk = min(size-cnt, rx.size());
+      size_t chunk = TinyGsmMin(size-cnt, rx.size());
       if (chunk > 0) {
         rx.get(buf, chunk);
         buf += chunk;

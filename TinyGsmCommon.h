@@ -56,4 +56,16 @@ namespace {
   #define DBG(...)
 #endif
 
+template<class T>
+const T& TinyGsmMin(const T& a, const T& b)
+{
+    return (b < a) ? b : a;
+}
+
+template<class T>
+const T& TinyGsmMax(const T& a, const T& b)
+{
+    return (b < a) ? a : b;
+}
+
 #endif

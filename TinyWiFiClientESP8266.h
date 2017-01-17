@@ -37,24 +37,25 @@ class GsmClient : public Client
   typedef TinyGsmFifo<uint8_t, TINY_GSM_RX_BUFFER> RxFifo;
 
 public:
-  GsmClient() {
-    init(NULL, -1);
+  GsmClient() {}
+
+  GsmClient(TinyGsm& modem, uint8_t mux = 1) {
+    init(&modem, mux);
   }
 
-  GsmClient(TinyGsm& at, uint8_t mux = 1) {
-    init(&at, mux);
-  }
-
-  bool init(TinyGsm* at, uint8_t mux = 1) {
-    this->at = at;
+  bool init(TinyGsm* modem, uint8_t mux = 1) {
+    this->at = modem;
     this->mux = mux;
-    at->sockets[mux] = this;
     sock_connected = false;
+
+    at->sockets[mux] = this;
+
     return true;
   }
 
 public:
   virtual int connect(const char *host, uint16_t port) {
+    TINY_GSM_YIELD();
     rx.clear();
     sock_connected = at->modemConnect(host, port, mux);
     return sock_connected;
@@ -73,12 +74,14 @@ public:
   }
 
   virtual void stop() {
+    TINY_GSM_YIELD();
     at->sendAT(GF("+CIPCLOSE="), mux);
     sock_connected = false;
     at->waitResponse();
   }
 
   virtual size_t write(const uint8_t *buf, size_t size) {
+    TINY_GSM_YIELD();
     //at->maintain();
     return at->modemSend(buf, size, mux);
   }
@@ -88,6 +91,7 @@ public:
   }
 
   virtual int available() {
+    TINY_GSM_YIELD();
     if (!rx.size()) {
       at->maintain();
     }
@@ -95,9 +99,10 @@ public:
   }
 
   virtual int read(uint8_t *buf, size_t size) {
+    TINY_GSM_YIELD();
     size_t cnt = 0;
     while (cnt < size) {
-      size_t chunk = min(size-cnt, rx.size());
+      size_t chunk = TinyGsmMin(size-cnt, rx.size());
       if (chunk > 0) {
         rx.get(buf, chunk);
         buf += chunk;
