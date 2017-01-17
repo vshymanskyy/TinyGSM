@@ -26,7 +26,8 @@ WebClient example for Arduino Nano (with Software Serial) takes little resources
 Sketch uses 13,802 bytes (44%) of program storage space. Maximum is 30,720 bytes.
 Global variables use 661 bytes (32%) of dynamic memory. Maximum is 2,048 bytes.
 ```
-Now, you have more space for your experiments.
+Now, you have more space for your experiments.  
+TinyGSM also pulls data gently from the modem (whenever possible), so it can operate on very little RAM.
 
 ### Supported modem models
 - [x] SIMCom SIM800 series (SIM800A, SIM800C, SIM800L, SIM800H, SIM808, SIM868)
@@ -48,9 +49,6 @@ More modems may be supported later:
 - [ ] ZTE MG2639
 
 Watch this repo for new updates! And of course, contributions are welcome ;)
-
-### Uses internal modem buffer for receive
-TinyGSM pulls data gently from the modem (whenever possible), so it can operate on very little RAM.
 
 ## Getting Started
 
