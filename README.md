@@ -26,7 +26,7 @@ WebClient example for Arduino Nano (with Software Serial) takes little resources
 Sketch uses 13,802 bytes (44%) of program storage space. Maximum is 30,720 bytes.
 Global variables use 661 bytes (32%) of dynamic memory. Maximum is 2,048 bytes.
 ```
-Now, you have more space for your experiments.
+Now, you have more space for your experiments.  
 TinyGSM also pulls data gently from the modem (whenever possible), so it can operate on very little RAM.
 
 ### Supported modem models
