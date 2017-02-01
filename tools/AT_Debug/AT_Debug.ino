@@ -67,6 +67,8 @@ void loop() {
     return;
   }
 
+  SerialAT.begin(rate);
+
   // Access AT commands from Serial Monitor
   SerialMon.println(F("***********************************************************"));
   SerialMon.println(F(" You can now send AT commands"));

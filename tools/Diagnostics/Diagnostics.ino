@@ -12,10 +12,11 @@
 // Select your modem:
 #define TINY_GSM_MODEM_SIM800
 //#define TINY_GSM_MODEM_SIM900
+//#define TINY_GSM_MODEM_A6
 //#define TINY_GSM_MODEM_M590
 
 // Increase buffer fo see less commands
-#define GSM_RX_BUFFER 256
+#define TINY_GSM_RX_BUFFER 256
 
 #include <TinyGsmClient.h>
 #include <StreamDebugger.h>
