@@ -15,6 +15,7 @@
 // Select your modem:
 #define TINY_GSM_MODEM_SIM800
 //#define TINY_GSM_MODEM_SIM900
+//#define TINY_GSM_MODEM_A6
 //#define TINY_GSM_MODEM_M590
 
 // Increase RX buffer
