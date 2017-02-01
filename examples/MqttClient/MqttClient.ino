@@ -36,9 +36,9 @@
 
 // Your GPRS credentials
 // Leave empty, if missing user or pass
-const char apn[]  = "www.ab.kyivstar.net";
-const char user[] = "igprs";
-const char pass[] = "internet";
+const char apn[]  = "YourAPN";
+const char user[] = "";
+const char pass[] = "";
 
 // Use Hardware Serial on Mega, Leonardo, Micro
 #define SerialAT Serial1
