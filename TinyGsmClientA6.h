@@ -29,8 +29,8 @@ enum SimStatus {
 
 enum RegStatus {
   REG_UNREGISTERED = 0,
-  REG_SEARCHING    = 3,
-  REG_DENIED       = 2,
+  REG_SEARCHING    = 2,
+  REG_DENIED       = 3,
   REG_OK_HOME      = 1,
   REG_OK_ROAMING   = 5,
   REG_UNKNOWN      = 4,
@@ -60,8 +60,8 @@ public:
   }
 
   bool init(TinyGsm* modem) {
-    at = modem;
-    mux = -1;
+    this->at = modem;
+    this->mux = -1;
     sock_connected = false;
 
     return true;
@@ -360,11 +360,6 @@ public:
       return false;
     }
 
-    /*sendAT(GF("+CIICR"));
-    if (waitResponse(60000L) != 1) {
-      return false;
-    }*/
-
     sendAT(GF("+CGACT=1,1"));
     waitResponse(60000L);
 
@@ -439,20 +434,8 @@ private:
     return (1 == rsp);
   }
 
- int modemSend2(const void* buff, size_t len, uint8_t mux) {
-    streamWrite(GF("AT+CIPSEND="), mux, ",", len, ",");
-    stream.write((uint8_t*)buff, len);
-    stream.print(GSM_NL);
-    stream.flush();
-
-    if (waitResponse(10000L, GF(GSM_NL "OK"), GF(GSM_NL "FAIL")) != 1) {
-      return -1;
-    }
-    return len;
-  }
-
   int modemSend(const void* buff, size_t len, uint8_t mux) {
-    sendAT(GF("+CIPSEND="), mux, ",", len);
+    sendAT(GF("+CIPSEND="), mux, ',', len);
     if (waitResponse(10000L, GF(GSM_NL ">")) != 1) {
       return -1;
     }
@@ -464,8 +447,7 @@ private:
     return len;
   }
 
-
-  bool modemGetConnected(uint8_t mux) {
+  bool modemGetConnected(uint8_t mux) { //TODO mux?
     sendAT(GF("+CIPSTATUS"));
     int res = waitResponse(GF(",\"CONNECTED\""), GF(",\"CLOSED\""), GF(",\"CLOSING\""), GF(",\"INITIAL\""));
     waitResponse();
@@ -587,7 +569,7 @@ finish:
 
 private:
   Stream&       stream;
-  GsmClient*    sockets[2];
+  GsmClient*    sockets[8];
 };
 
 typedef TinyGsm::GsmClient TinyGsmClient;

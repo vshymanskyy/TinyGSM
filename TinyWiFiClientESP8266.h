@@ -341,6 +341,7 @@ private:
     } while (millis() - startMillis < timeout);
 finish:
     if (!index) {
+      data.trim();
       if (data.length()) {
         DBG("### Unhandled:", data);
       }
