@@ -32,6 +32,7 @@ TinyGSM also pulls data gently from the modem (whenever possible), so it can ope
 ### Supported modem models
 - [x] SIMCom SIM800 series (SIM800A, SIM800C, SIM800L, SIM800H, SIM808, SIM868)
 - [x] SIMCom SIM900 series (SIM900A, SIM900D, SIM908, SIM968)
+- [x] AI-Thinker A6, A6C, A7
 - [x] Neoway M590
 - [x] ESP8266 (AT commands interface, similar to GSM modems)
 
@@ -42,7 +43,6 @@ TinyGSM also pulls data gently from the modem (whenever possible), so it can ope
 - [x] Adafruit FONA 800/808 Shield
 
 More modems may be supported later:
-- [ ] AI-Thinker A6, A6C, A7
 - [ ] Quectel M10, M95, UG95
 - [ ] SIMCom SIM5320, SIM5216
 - [ ] Telit GL865
