@@ -9,7 +9,7 @@
 #ifndef TinyGsmClientM590_h
 #define TinyGsmClientM590_h
 
-//#define GSM_DEBUG Serial
+//#define TINY_GSM_DEBUG Serial
 
 #if !defined(TINY_GSM_RX_BUFFER)
   #define TINY_GSM_RX_BUFFER 256
@@ -176,7 +176,7 @@ public:
     if (waitResponse() != 1) {
       return false;
     }
-#ifdef GSM_DEBUG
+#ifdef TINY_GSM_DEBUG
     sendAT(GF("+CMEE=2"));
     waitResponse();
 #endif

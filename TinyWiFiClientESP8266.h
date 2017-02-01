@@ -9,7 +9,7 @@
 #ifndef TinyWiFiClientESP8266_h
 #define TinyWiFiClientESP8266_h
 
-//#define GSM_DEBUG Serial
+//#define TINY_GSM_DEBUG Serial
 
 #if !defined(TINY_GSM_RX_BUFFER)
   #define TINY_GSM_RX_BUFFER 256

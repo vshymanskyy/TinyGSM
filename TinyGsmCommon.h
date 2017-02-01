@@ -38,17 +38,17 @@
   #define GF(x)  x
 #endif
 
-#ifdef GSM_DEBUG
+#ifdef TINY_GSM_DEBUG
 namespace {
   template<typename T>
   static void DBG(T last) {
-    GSM_DEBUG.println(last);
+    TINY_GSM_DEBUG.println(last);
   }
 
   template<typename T, typename... Args>
   static void DBG(T head, Args... tail) {
-    GSM_DEBUG.print(head);
-    GSM_DEBUG.print(' ');
+    TINY_GSM_DEBUG.print(head);
+    TINY_GSM_DEBUG.print(' ');
     DBG(tail...);
   }
 }

@@ -9,8 +9,8 @@
 #ifndef TinyGsmClientSIM800_h
 #define TinyGsmClientSIM800_h
 
-//#define GSM_DEBUG Serial
-//#define GSM_USE_HEX
+//#define TINY_GSM_DEBUG Serial
+//#define TINY_GSM_USE_HEX
 
 #if !defined(TINY_GSM_RX_BUFFER)
   #define TINY_GSM_RX_BUFFER 64
@@ -537,7 +537,7 @@ private:
   }
 
   size_t modemRead(size_t size, uint8_t mux) {
-#ifdef GSM_USE_HEX
+#ifdef TINY_GSM_USE_HEX
     sendAT(GF("+CIPRXGET=3,"), mux, ',', size);
     if (waitResponse(GF("+CIPRXGET:")) != 1) {
       return 0;
@@ -554,7 +554,7 @@ private:
     sockets[mux]->sock_available = stream.readStringUntil('\n').toInt();
 
     for (size_t i=0; i<len; i++) {
-#ifdef GSM_USE_HEX
+#ifdef TINY_GSM_USE_HEX
       while (stream.available() < 2) {}
       char buf[4] = { 0, };
       buf[0] = stream.read();
