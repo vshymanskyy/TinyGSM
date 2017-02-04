@@ -35,6 +35,8 @@ TinyGsmClient client(modem);
 const char server[] = "cdn.rawgit.com";
 const char resource[] = "/vshymanskyy/tinygsm/master/extras/logo.txt";
 
+int port = 80;
+
 void setup() {
   // Set console baud rate
   Serial.begin(115200);
@@ -46,7 +48,7 @@ void setup() {
 
   // Restart takes quite some time
   // To skip it, call init() instead of restart()
-  Serial.println("Initializing modem...");
+  Serial.println(F("Initializing modem..."));
   modem.restart();
 
   // Unlock your SIM card with a PIN
@@ -54,7 +56,7 @@ void setup() {
 }
 
 void loop() {
-  Serial.print("Waiting for network...");
+  Serial.print(F("Waiting for network..."));
   if (!modem.waitForNetwork()) {
     Serial.println(" fail");
     delay(10000);
@@ -62,7 +64,7 @@ void loop() {
   }
   Serial.println(" OK");
 
-  Serial.print("Connecting to ");
+  Serial.print(F("Connecting to "));
   Serial.print(apn);
   if (!modem.gprsConnect(apn, user, pass)) {
     Serial.println(" fail");
@@ -71,9 +73,9 @@ void loop() {
   }
   Serial.println(" OK");
 
-  Serial.print("Connecting to ");
+  Serial.print(F("Connecting to "));
   Serial.print(server);
-  if (!client.connect(server, 80)) {
+  if (!client.connect(server, port)) {
     Serial.println(" fail");
     delay(10000);
     return;
