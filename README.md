@@ -27,8 +27,8 @@ Sketch uses 14094 bytes (43%) of program storage space. Maximum is 32256 bytes.
 Global variables use 625 bytes (30%) of dynamic memory, leaving 1423 bytes for local variables. Maximum is 2048 bytes.
 ```
 Arduino GSM library uses 15868 bytes (49%) of Flash and 1113 bytes (54%) of RAM in a similar scenario.  
-TinyGSM also pulls data gently from the modem (whenever possible), so it can operate on very little RAM.
-**Now, you have more space for your experiments.**  
+TinyGSM also pulls data gently from the modem (whenever possible), so it can operate on very little RAM.  
+**Now, you have more space for your experiments.**
 
 ### Supported modem models
 - [x] SIMCom SIM800 series (SIM800A, SIM800C, SIM800L, SIM800H, SIM808, SIM868)
