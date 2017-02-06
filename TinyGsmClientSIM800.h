@@ -512,6 +512,19 @@ public:
   /*
    * Battery functions
    */
+  // Use: float vBatt = modem.getBattVoltage() / 1000.0;
+  uint16_t getBattVoltage() {
+    sendAT(GF("+CBC"));
+    if (waitResponse(GF(GSM_NL "+CBC:")) != 1) {
+      return 0;
+    }
+    streamSkipUntil(','); // Skip
+    streamSkipUntil(','); // Skip
+
+    uint16_t res = stream.readStringUntil(',').toInt();
+    waitResponse();
+    return res;
+  }
 
 private:
   int modemConnect(const char* host, uint16_t port, uint8_t mux) {
