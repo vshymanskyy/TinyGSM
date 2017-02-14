@@ -1,4 +1,4 @@
-![TinyGSM logo](https://cdn.rawgit.com/vshymanskyy/TinyGSM/a5a91bfe1018f59123364ad6070595d9fabb0bd4/extras/logo.svg)
+![TinyGSM logo](https://cdn.rawgit.com/vshymanskyy/TinyGSM/d18e93dc51fe988a0b175aac647185457ef640b5/extras/logo.svg)
 
 A small Arduino library for GSM modules, that just works.
 <!---
