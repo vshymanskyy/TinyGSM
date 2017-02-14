@@ -4,7 +4,7 @@
      xmlns:xlink="http://www.w3.org/1999/xlink"
      width="500" height="80"
 >
-  <text x="0" y="0" font-size="18px" font-family="'Ubuntu Mono',monospace" white-space="pre" >
+  <text x="0" y="0" font-size="18px" font-family="'Ubuntu Mono',monospace" white-space="pre" xml:space="preserve" >
     <tspan x="0" dy="18px">  _____            _____  _____  _____ </tspan>
     <tspan x="0" dy="18px">    |  | |\ | \_/ |  ___ |_____ |  |  |</tspan>
     <tspan x="0" dy="18px">    |  | | \|  |  |_____| _____||  |  |</tspan>
