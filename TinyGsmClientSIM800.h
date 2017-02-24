@@ -506,7 +506,38 @@ public:
   /*
    * Location functions
    */
-  void getLocation() {
+  bool poweronGPS() {
+    sendAT(GF("+CGNSPWR=1"));
+    if (waitResponse(GF("OK")) != 1) {
+      return false;
+    } else {
+      return true;
+    }
+  }
+
+  bool poweroffGPS() {
+    sendAT(GF("+CGNSPWR=0"));
+    if (waitResponse(GF("OK")) != 1) {
+      return false;
+    } else {
+      return true;
+    }
+  }
+
+  String getLocation() {
+    sendAT(GF("+CGPSSTATUS?"));
+    if (waitResponse(GF("Location 3D Fix")) != 1) {
+      return "Not located";
+    } else {
+      sendAT(GF("+CGPSINF=0"));
+      if (waitResponse(GF(GSM_NL "+CGPSINF:")) != 1) {
+        return "Not located";
+      }
+      String res = stream.readStringUntil('\n');
+      waitResponse();
+      res.trim();
+      return res;
+    }
   }
 
   /*
