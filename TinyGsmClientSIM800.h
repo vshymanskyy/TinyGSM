@@ -9,7 +9,7 @@
 #ifndef TinyGsmClientSIM800_h
 #define TinyGsmClientSIM800_h
 
-//#define TINY_GSM_DEBUG Serial
+#define TINY_GSM_DEBUG Serial
 //#define TINY_GSM_USE_HEX
 
 #if !defined(TINY_GSM_RX_BUFFER)
@@ -253,9 +253,8 @@ public:
     if (waitResponse(GF(GSM_NL "+ICCID:")) != 1) {
       return "";
     }
-    String res = stream.readStringUntil('\n');
+    String res = streamReadUntil('\n');
     waitResponse();
-    res.trim();
     return res;
   }
 
@@ -264,9 +263,8 @@ public:
     if (waitResponse(GF(GSM_NL)) != 1) {
       return "";
     }
-    String res = stream.readStringUntil('\n');
+    String res = streamReadUntil('\n');
     waitResponse();
-    res.trim();
     return res;
   }
 
@@ -275,7 +273,7 @@ public:
     if (waitResponse(GF(GSM_NL "+CSQ:")) != 1) {
       return 99;
     }
-    int res = stream.readStringUntil(',').toInt();
+    int res = streamReadUntil(',').toInt();
     waitResponse();
     return res;
   }
@@ -285,9 +283,8 @@ public:
     if (waitResponse(GF(GSM_NL "+CIPGSMLOC:")) != 1) {
       return "";
     }
-    String res = stream.readStringUntil('\n');
+    String res = streamReadUntil('\n');
     waitResponse();
-    res.trim();
     return res;
   }
 
@@ -353,7 +350,7 @@ public:
     for (unsigned long start = millis(); millis() - start < timeout; ) {
       sendAT(GF("+CPIN?"));
       if (waitResponse(GF(GSM_NL "+CPIN:")) != 1) {
-        delay(1000);
+        delay(250);
         continue;
       }
       int status = waitResponse(GF("READY"), GF("SIM PIN"), GF("SIM PUK"), GF("NOT INSERTED"));
@@ -374,7 +371,7 @@ public:
       return REG_UNKNOWN;
     }
     streamSkipUntil(','); // Skip format (0)
-    int status = stream.readStringUntil('\n').toInt();
+    int status = streamReadUntil('\n').toInt();
     waitResponse();
     return (RegStatus)status;
   }
@@ -385,22 +382,22 @@ public:
       return "";
     }
     streamSkipUntil('"'); // Skip mode and format
-    String res = stream.readStringUntil('"');
+    String res = streamReadUntil('"');
     waitResponse();
     return res;
   }
 
   bool waitForNetwork(unsigned long timeout = 60000L) {
-    for (unsigned long start = millis(); millis() - start < timeout; ) {
+    unsigned long start = millis();
+    bool is_registered = false;
+    while (millis() - start < timeout && is_registered == false){
       RegStatus s = getRegistrationStatus();
       if (s == REG_OK_HOME || s == REG_OK_ROAMING) {
-        return true;
-      } else if (s == REG_UNREGISTERED) {
-        return false;
+        is_registered = true;
       }
       delay(1000);
     }
-    return false;
+    return is_registered;
   }
 
   /*
@@ -415,11 +412,11 @@ public:
     sendAT(GF("+SAPBR=3,1,\"APN\",\""), apn, '"');
     waitResponse();
 
-    if (user) {
+    if (!strcmp(user, "")) {
       sendAT(GF("+SAPBR=3,1,\"USER\",\""), user, '"');
       waitResponse();
     }
-    if (pwd) {
+    if (!strcmp(pwd, "")) {
       sendAT(GF("+SAPBR=3,1,\"PWD\",\""), pwd, '"');
       waitResponse();
     }
@@ -521,7 +518,7 @@ public:
     streamSkipUntil(','); // Skip
     streamSkipUntil(','); // Skip
 
-    uint16_t res = stream.readStringUntil(',').toInt();
+    uint16_t res = streamReadUntil(',').toInt();
     waitResponse();
     return res;
   }
@@ -542,11 +539,12 @@ private:
       return -1;
     }
     stream.write((uint8_t*)buff, len);
+    stream.flush();
     if (waitResponse(GF(GSM_NL "DATA ACCEPT:")) != 1) {
       return -1;
     }
     streamSkipUntil(','); // Skip mux
-    return stream.readStringUntil('\n').toInt();
+    return streamReadUntil('\n').toInt();
   }
 
   size_t modemRead(size_t size, uint8_t mux) {
@@ -563,19 +561,19 @@ private:
 #endif
     streamSkipUntil(','); // Skip mode 2/3
     streamSkipUntil(','); // Skip mux
-    size_t len = stream.readStringUntil(',').toInt();
-    sockets[mux]->sock_available = stream.readStringUntil('\n').toInt();
+    size_t len = streamReadUntil(',').toInt();
+    sockets[mux]->sock_available = streamReadUntil('\n').toInt();
 
     for (size_t i=0; i<len; i++) {
 #ifdef TINY_GSM_USE_HEX
       while (stream.available() < 2) {}
       char buf[4] = { 0, };
-      buf[0] = stream.read();
-      buf[1] = stream.read();
+      buf[0] = streamRead(); DBG(buf[0]);
+      buf[1] = streamRead(); DBG(buf[1]);
       char c = strtol(buf, NULL, 16);
 #else
       while (!stream.available()) {}
-      char c = stream.read();
+      char c = streamRead(); DBG(c);
 #endif
       sockets[mux]->rx.put(c);
     }
@@ -589,7 +587,7 @@ private:
     if (waitResponse(GF("+CIPRXGET:")) == 1) {
       streamSkipUntil(','); // Skip mode 4
       streamSkipUntil(','); // Skip mux
-      result = stream.readStringUntil('\n').toInt();
+      result = streamReadUntil('\n').toInt();
       waitResponse();
     }
     if (!result) {
@@ -617,15 +615,33 @@ private:
     streamWrite(tail...);
   }
 
-  int streamRead() { return stream.read(); }
+  int streamRead() {
+    // int r = stream.read();
+    // if (String((char)r) == GSM_NL || String((char)r) == "\n"){
+    //   DBG((char)r, "    ");
+    // } else DBG((char)r);
+    // return r;
+    return stream.read();
+  }
+
+  String streamReadUntil(char c) {
+    String return_string = stream.readStringUntil(c);
+    return_string.trim();
+    if (String(c) == GSM_NL || String(c) == "\n"){
+      DBG(return_string, c, "    ");
+    } else DBG(return_string, c);
+    return return_string;
+  }
 
   bool streamSkipUntil(char c) { //TODO: timeout
-    while (true) {
-      while (!stream.available()) {}
-      if (stream.read() == c)
-        return true;
-    }
-    return false;
+    String skipped = stream.readStringUntil(c);
+    skipped.trim();
+    if (skipped.length()) {
+      if (String(c) == GSM_NL || String(c) == "\n"){
+        DBG(skipped, c, "    ");
+      } else DBG(skipped, c);
+      return true;
+    } else return false;
   }
 
   template<typename... Args>
@@ -633,7 +649,7 @@ private:
     streamWrite("AT", cmd..., GSM_NL);
     stream.flush();
     TINY_GSM_YIELD();
-    //DBG("### AT:", cmd...);
+    DBG(GSM_NL, ">>> AT:", cmd...);
   }
 
   // TODO: Optimize this!
@@ -674,9 +690,9 @@ private:
           index = 5;
           goto finish;
         } else if (data.endsWith(GF(GSM_NL "+CIPRXGET:"))) {
-          String mode = stream.readStringUntil(',');
+          String mode = streamReadUntil(',');
           if (mode.toInt() == 1) {
-            mux = stream.readStringUntil('\n').toInt();
+            mux = streamReadUntil('\n').toInt();
             gotData = true;
             data = "";
           } else {
@@ -693,11 +709,20 @@ private:
         }
       }
     } while (millis() - startMillis < timeout);
-finish:
+  finish:
     if (!index) {
       data.trim();
       if (data.length()) {
         DBG("### Unhandled:", data);
+      }
+      data = "";
+    }
+    else {
+      data.trim();
+      data.replace(GSM_NL GSM_NL, GSM_NL);
+      data.replace(GSM_NL, GSM_NL "    ");
+      if (data.length()) {
+        DBG(GSM_NL, "<<< ", data);
       }
       data = "";
     }

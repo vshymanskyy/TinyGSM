@@ -23,7 +23,7 @@
 #include <TinyGsmFifo.h>
 
 #ifndef TINY_GSM_YIELD
-  #define TINY_GSM_YIELD() { delay(0); }
+  #define TINY_GSM_YIELD() { delay(2); }
 #endif
 
 #if defined(__AVR__)
@@ -42,13 +42,14 @@
 namespace {
   template<typename T>
   static void DBG(T last) {
-    TINY_GSM_DEBUG.println(last);
+    // TINY_GSM_DEBUG.println(last);
+    TINY_GSM_DEBUG.print(last);
   }
 
   template<typename T, typename... Args>
   static void DBG(T head, Args... tail) {
     TINY_GSM_DEBUG.print(head);
-    TINY_GSM_DEBUG.print(' ');
+    // TINY_GSM_DEBUG.print(' ');
     DBG(tail...);
   }
 }
