@@ -233,55 +233,13 @@ public:
     return waitResponse(10000L) == 1;
   }
 
-private:
-  int modemConnect(const char* host, uint16_t port, uint8_t mux) {
-    sendAT(GF("+CIPSTART="), mux, ',', GF("\"TCP"), GF("\",\""), host, GF("\","), port, GF(",120"));
-    int rsp = waitResponse(75000L,
-                           GFP(GSM_OK),
-                           GFP(GSM_ERROR),
-                           GF(GSM_NL "ALREADY CONNECT" GSM_NL));
-    return (1 == rsp);
-  }
-
-  int modemSend(const void* buff, size_t len, uint8_t mux) {
-    sendAT(GF("+CIPSEND="), mux, ',', len);
-    if (waitResponse(GF(">")) != 1) {
-      return -1;
-    }
-    stream.write((uint8_t*)buff, len);
-    if (waitResponse(GF(GSM_NL "SEND OK" GSM_NL)) != 1) {
-      return -1;
-    }
-    return len;
-  }
-
-  bool modemGetConnected(uint8_t mux) {
-    sendAT(GF("+CIPSTATUS="), mux);
-    int res = waitResponse(GF(",\"CONNECTED\""), GF(",\"CLOSED\""), GF(",\"CLOSING\""), GF(",\"INITIAL\""));
-    waitResponse();
-    return 1 == res;
-  }
-
-  /* Utilities */
-  template<typename T>
-  void streamWrite(T last) {
-    stream.print(last);
-  }
-
-  template<typename T, typename... Args>
-  void streamWrite(T head, Args... tail) {
-    stream.print(head);
-    streamWrite(tail...);
-  }
-
-  int streamRead() { return stream.read(); }
-
+  /* Public Utilities */
   template<typename... Args>
   void sendAT(Args... cmd) {
     streamWrite("AT", cmd..., GSM_NL);
     stream.flush();
     TINY_GSM_YIELD();
-    //DBG("### AT:", cmd...);
+    DBG(GSM_NL, ">>> AT:", cmd...);
   }
 
   // TODO: Optimize this!
@@ -339,7 +297,7 @@ private:
         }
       }
     } while (millis() - startMillis < timeout);
-finish:
+  finish:
     if (!index) {
       data.trim();
       if (data.length()) {
@@ -363,6 +321,49 @@ finish:
   {
     return waitResponse(1000, r1, r2, r3, r4, r5);
   }
+
+private:
+  int modemConnect(const char* host, uint16_t port, uint8_t mux) {
+    sendAT(GF("+CIPSTART="), mux, ',', GF("\"TCP"), GF("\",\""), host, GF("\","), port, GF(",120"));
+    int rsp = waitResponse(75000L,
+                           GFP(GSM_OK),
+                           GFP(GSM_ERROR),
+                           GF(GSM_NL "ALREADY CONNECT" GSM_NL));
+    return (1 == rsp);
+  }
+
+  int modemSend(const void* buff, size_t len, uint8_t mux) {
+    sendAT(GF("+CIPSEND="), mux, ',', len);
+    if (waitResponse(GF(">")) != 1) {
+      return -1;
+    }
+    stream.write((uint8_t*)buff, len);
+    if (waitResponse(GF(GSM_NL "SEND OK" GSM_NL)) != 1) {
+      return -1;
+    }
+    return len;
+  }
+
+  bool modemGetConnected(uint8_t mux) {
+    sendAT(GF("+CIPSTATUS="), mux);
+    int res = waitResponse(GF(",\"CONNECTED\""), GF(",\"CLOSED\""), GF(",\"CLOSING\""), GF(",\"INITIAL\""));
+    waitResponse();
+    return 1 == res;
+  }
+
+  /* Private Utilities */
+  template<typename T>
+  void streamWrite(T last) {
+    stream.print(last);
+  }
+
+  template<typename T, typename... Args>
+  void streamWrite(T head, Args... tail) {
+    stream.print(head);
+    streamWrite(tail...);
+  }
+
+  int streamRead() { return stream.read(); }
 
 private:
   Stream&       stream;
