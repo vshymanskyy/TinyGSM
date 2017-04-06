@@ -187,6 +187,7 @@ public:
   }
 
   bool autoBaud(unsigned long timeout = 10000L) {
+    streamWrite(GF("AAAAAAAAAAAA"));  // some extra A's to help detect the baud rate
     for (unsigned long start = millis(); millis() - start < timeout; ) {
       sendAT(GF(""));
       if (waitResponse(200) == 1) {
@@ -620,9 +621,9 @@ private:
   String streamReadUntil(char c) {
     String return_string = stream.readStringUntil(c);
     return_string.trim();
-    // if (String(c) == GSM_NL || String(c) == "\n"){
-    //   DBG(return_string, c, "    ");
-    // } else DBG(return_string, c);
+    if (String(c) == GSM_NL || String(c) == "\n"){
+      DBG(return_string, c, "    ");
+    } else DBG(return_string, c);
     return return_string;
   }
 
@@ -630,9 +631,9 @@ private:
     String skipped = stream.readStringUntil(c);
     skipped.trim();
     if (skipped.length()) {
-    //   if (String(c) == GSM_NL || String(c) == "\n"){
-    //     DBG(skipped, c, "    ");
-    //   } else DBG(skipped, c);
+      if (String(c) == GSM_NL || String(c) == "\n"){
+        DBG(skipped, c, "    ");
+      } else DBG(skipped, c);
       return true;
     } else return false;
   }
@@ -710,15 +711,15 @@ private:
       }
       data = "";
     }
-    // else {
-    //   data.trim();
-    //   data.replace(GSM_NL GSM_NL, GSM_NL);
-    //   data.replace(GSM_NL, GSM_NL "    ");
-    //   if (data.length()) {
-    //     DBG(GSM_NL, "<<< ", data);
-    //   }
-    //   data = "";
-    // }
+    else {
+      data.trim();
+      data.replace(GSM_NL GSM_NL, GSM_NL);
+      data.replace(GSM_NL, GSM_NL "    ");
+      if (data.length()) {
+        DBG(GSM_NL, "<<< ", data);
+      }
+      data = "";
+    }
     if (gotData) {
       sockets[mux]->sock_available = modemGetAvailable(mux);
     }
