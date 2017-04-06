@@ -594,7 +594,7 @@ private:
     return return_string;
   }
 
-  bool streamSkipUntil(char c) { //TODO: timeout
+  bool streamSkipUntil(char c) {
     String skipped = stream.readStringUntil(c);
     skipped.trim();
     if (skipped.length()) {
