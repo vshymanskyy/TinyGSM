@@ -21,3 +21,9 @@
 # Extras
 extras/docs/*
 
+.pioenvs
+.piolibdeps
+.clang_complete
+.gcc-flags.json
+platformio.ini
+lib/readme.txt

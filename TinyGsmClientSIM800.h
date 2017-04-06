@@ -9,8 +9,8 @@
 #ifndef TinyGsmClientSIM800_h
 #define TinyGsmClientSIM800_h
 
-#define TINY_GSM_DEBUG Serial
-//#define TINY_GSM_USE_HEX
+// #define TINY_GSM_DEBUG Serial
+// #define TINY_GSM_USE_HEX
 
 #if !defined(TINY_GSM_RX_BUFFER)
   #define TINY_GSM_RX_BUFFER 64
@@ -568,12 +568,12 @@ private:
 #ifdef TINY_GSM_USE_HEX
       while (stream.available() < 2) {}
       char buf[4] = { 0, };
-      buf[0] = streamRead(); DBG(buf[0]);
-      buf[1] = streamRead(); DBG(buf[1]);
+      buf[0] = streamRead();
+      buf[1] = streamRead();
       char c = strtol(buf, NULL, 16);
 #else
       while (!stream.available()) {}
-      char c = streamRead(); DBG(c);
+      char c = streamRead();  // DBG(c);
 #endif
       sockets[mux]->rx.put(c);
     }
@@ -615,21 +615,14 @@ private:
     streamWrite(tail...);
   }
 
-  int streamRead() {
-    // int r = stream.read();
-    // if (String((char)r) == GSM_NL || String((char)r) == "\n"){
-    //   DBG((char)r, "    ");
-    // } else DBG((char)r);
-    // return r;
-    return stream.read();
-  }
+  int streamRead() { return stream.read(); }
 
   String streamReadUntil(char c) {
     String return_string = stream.readStringUntil(c);
     return_string.trim();
-    if (String(c) == GSM_NL || String(c) == "\n"){
-      DBG(return_string, c, "    ");
-    } else DBG(return_string, c);
+    // if (String(c) == GSM_NL || String(c) == "\n"){
+    //   DBG(return_string, c, "    ");
+    // } else DBG(return_string, c);
     return return_string;
   }
 
@@ -637,9 +630,9 @@ private:
     String skipped = stream.readStringUntil(c);
     skipped.trim();
     if (skipped.length()) {
-      if (String(c) == GSM_NL || String(c) == "\n"){
-        DBG(skipped, c, "    ");
-      } else DBG(skipped, c);
+    //   if (String(c) == GSM_NL || String(c) == "\n"){
+    //     DBG(skipped, c, "    ");
+    //   } else DBG(skipped, c);
       return true;
     } else return false;
   }
@@ -717,15 +710,15 @@ private:
       }
       data = "";
     }
-    else {
-      data.trim();
-      data.replace(GSM_NL GSM_NL, GSM_NL);
-      data.replace(GSM_NL, GSM_NL "    ");
-      if (data.length()) {
-        DBG(GSM_NL, "<<< ", data);
-      }
-      data = "";
-    }
+    // else {
+    //   data.trim();
+    //   data.replace(GSM_NL GSM_NL, GSM_NL);
+    //   data.replace(GSM_NL, GSM_NL "    ");
+    //   if (data.length()) {
+    //     DBG(GSM_NL, "<<< ", data);
+    //   }
+    //   data = "";
+    // }
     if (gotData) {
       sockets[mux]->sock_available = modemGetAvailable(mux);
     }

@@ -23,7 +23,7 @@
 #include <TinyGsmFifo.h>
 
 #ifndef TINY_GSM_YIELD
-  #define TINY_GSM_YIELD() { delay(2); }
+  #define TINY_GSM_YIELD() { delay(0); }
 #endif
 
 #if defined(__AVR__)
