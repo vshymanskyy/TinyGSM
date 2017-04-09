@@ -519,7 +519,11 @@ private:
     streamWrite(tail...);
   }
 
-  int streamRead() { return stream.read(); }
+  int streamRead() {
+    int c = stream.read();
+    DBG((char)c)
+    return c;
+  }
 
   String streamReadUntil(char c) {
     String return_string = stream.readStringUntil(c);
