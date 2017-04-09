@@ -6,8 +6,8 @@
  * @date       Nov 2016
  */
 
-#ifndef TinyWiFiClientXBee_h
-#define TinyWiFiClientXBee_h
+#ifndef TinyGsmClientXBee_h
+#define TinyGsmClientXBee_h
 
 // #define TINY_GSM_DEBUG Serial
 
