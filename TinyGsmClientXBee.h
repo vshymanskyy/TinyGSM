@@ -521,7 +521,7 @@ private:
 
   int streamRead() {
     int c = stream.read();
-    DBG((char)c)
+    DBG((char)c);
     return c;
   }
 
