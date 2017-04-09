@@ -323,7 +323,7 @@ public:
   /*
    * GPRS functions
    */
-  bool gprsConnect(const char* apn) {
+  bool gprsConnect(const char* apn, const char* user = "", const char* pw = "") {
 
     commandMode();
 
@@ -378,25 +378,6 @@ public:
     stream.flush();
     TINY_GSM_YIELD();
     DBG(GSM_NL, ">>> AT:", cmd...);
-  }
-
-  bool commandMode(void){
-    delay(1000);  // cannot send anything for 1 second before entering command mode
-    streamWrite("+++");  // enter command mode
-    waitResponse(1100);
-    return 1 == waitResponse(1100);  // wait another second for an "OK\r"
-  }
-
-  void writeChanges(void){
-    streamWrite("ATWR", GSM_NL);  // Write changes to flash
-    waitResponse();
-    streamWrite("ATAC", GSM_NL);  // Apply changes
-    waitResponse();
-  }
-
-  void exitCommand(void){
-    streamWrite("ATCN", GSM_NL);  // Exit command mode
-    waitResponse();
   }
 
   // TODO: Optimize this!
@@ -539,6 +520,25 @@ private:
       DBG(return_string, c, "    ");
     } else DBG(return_string, c);
     return return_string;
+  }
+
+  bool commandMode(void){
+    delay(1000);  // cannot send anything for 1 second before entering command mode
+    streamWrite(GF("+++"));  // enter command mode
+    waitResponse(1100);
+    return 1 == waitResponse(1100);  // wait another second for an "OK\r"
+  }
+
+  void writeChanges(void){
+    sendAT(GF("WR"));  // Write changes to flash
+    waitResponse();
+    sendAT(GF("AC"));  // Apply changes
+    waitResponse();
+  }
+
+  void exitCommand(void){
+    sendAT(GF("CN"));  // Exit command mode
+    waitResponse();
   }
 
 private:

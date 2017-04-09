@@ -233,6 +233,17 @@ public:
     return waitResponse(10000L) == 1;
   }
 
+  /*
+   * GPRS functions
+   */
+  bool gprsConnect(const char* apn, const char* user, const char* pwd) {
+    return false;
+  }
+
+  bool gprsDisconnect() {
+    return false;
+  }
+
   /* Public Utilities */
   template<typename... Args>
   void sendAT(Args... cmd) {

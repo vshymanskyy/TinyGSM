@@ -316,6 +316,17 @@ public:
   }
 
   /*
+   * WiFi functions
+   */
+  bool networkConnect(const char* ssid, const char* pwd) {
+    return false;
+  }
+
+  bool networkDisconnect() {
+    return false;
+  }
+
+  /*
    * GPRS functions
    */
   bool gprsConnect(const char* apn, const char* user, const char* pwd) {
