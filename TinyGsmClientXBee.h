@@ -21,6 +21,12 @@
 static const char GSM_OK[] TINY_GSM_PROGMEM = "OK" GSM_NL;
 static const char GSM_ERROR[] TINY_GSM_PROGMEM = "ERROR" GSM_NL;
 
+enum SimStatus {
+  SIM_ERROR = 0,
+  SIM_READY = 1,
+  SIM_LOCKED = 2,
+};
+
 enum RegStatus {
   REG_UNREGISTERED = 0,
   REG_SEARCHING    = 2,
@@ -29,6 +35,7 @@ enum RegStatus {
   REG_OK_ROAMING   = 5,
   REG_UNKNOWN      = 4,
 };
+
 
 class TinyGsm
 {
@@ -160,9 +167,7 @@ public:
   }
 
   bool init() {
-    if (!autoBaud()) {
-      return false;
-    }
+    factoryDefault();
     return true;
   }
 
@@ -243,6 +248,10 @@ public:
     return intr;
   }
 
+  SimStatus getSimStatus(unsigned long timeout = 10000L) {
+    return SIM_READY;  // unsupported
+  }
+
   RegStatus getRegistrationStatus() {
     commandMode();
     sendAT(GF("AI"));
@@ -317,7 +326,7 @@ public:
   }
 
   bool networkDisconnect() {
-    return false;
+    return false;  // Doesn't support disconnecting
   }
 
   /*
@@ -377,7 +386,7 @@ public:
     streamWrite("AT", cmd..., GSM_NL);
     stream.flush();
     TINY_GSM_YIELD();
-    DBG(GSM_NL, ">>> AT:", cmd...);
+    DBG("\r\n", ">>> AT:", cmd...);
   }
 
   // TODO: Optimize this!
@@ -415,23 +424,6 @@ public:
         } else if (r5 && data.endsWith(r5)) {
           index = 5;
           goto finish;
-        } else if (data.endsWith(GF(GSM_NL "+IPD,"))) {
-          int mux = stream.readStringUntil(',').toInt();
-          int len = stream.readStringUntil(':').toInt();
-          if (len > sockets[mux]->rx.free()) {
-            DBG("### Buffer overflow: ", len, "->", sockets[mux]->rx.free());
-          } else {
-            DBG("### Got: ", len, "->", sockets[mux]->rx.free());
-          }
-          while (len--) {
-            while (!stream.available()) {}
-            sockets[mux]->rx.put(stream.read());
-          }
-          data = "";
-          return index;
-        } else if (data.endsWith(GF(GSM_NL "1,CLOSED" GSM_NL))) { //TODO: use mux
-          sockets[1]->sock_connected = false;
-          data = "";
         }
       }
     } while (millis() - startMillis < timeout);
@@ -443,6 +435,18 @@ public:
       }
       data = "";
     }
+    else {
+      data.trim();
+      data.replace(GSM_NL GSM_NL, GSM_NL);
+      data.replace(GSM_NL, "\r\n" "    ");
+      if (data.length()) {
+        DBG(GSM_NL, "<<< ", data);
+      }
+    }
+    // if (gotData) {
+    //   sockets[mux]->sock_available = modemGetAvailable(mux);
+    // }
+    data = "";
     return index;
   }
 
