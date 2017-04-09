@@ -674,9 +674,11 @@ private:
       buf[0] = streamRead();
       buf[1] = streamRead();
       char c = strtol(buf, NULL, 16);
+      // DBG(c);
 #else
       while (!stream.available()) {}
-      char c = streamRead();  // DBG(c);
+      char c = streamRead();
+      // DBG(c);
 #endif
       sockets[mux]->rx.put(c);
     }
