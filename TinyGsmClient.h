@@ -17,6 +17,8 @@
   #include <TinyGsmClientM590.h>
 #elif defined(TINY_GSM_MODEM_ESP8266)
   #include <TinyGsmClientESP8266.h>
+#elif defined(TINY_GSM_MODEM_XBEE)
+  #include <TinyWiFiClientXBee.h>
 #else
   #error "Please define GSM modem model"
 #endif

@@ -343,11 +343,11 @@ public:
     sendAT(GF("+SAPBR=3,1,\"APN\",\""), apn, '"');
     waitResponse();
 
-    if (!strcmp(user, "")) {
+    if (user) {
       sendAT(GF("+SAPBR=3,1,\"USER\",\""), user, '"');
       waitResponse();
     }
-    if (!strcmp(pwd, "")) {
+    if (pwd) {
       sendAT(GF("+SAPBR=3,1,\"PWD\",\""), pwd, '"');
       waitResponse();
     }
