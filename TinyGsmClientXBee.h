@@ -537,7 +537,7 @@ private:
   bool commandMode(void){
     delay(1000);  // cannot send anything for 1 second before entering command mode
     streamWrite(GF("+++"));  // enter command mode
-    DBG("+++\r\n");
+    DBG("\r\n+++\r\n");
     waitResponse(1100);
     return 1 == waitResponse(1100);  // wait another second for an "OK\r"
   }
