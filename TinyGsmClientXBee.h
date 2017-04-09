@@ -338,11 +338,14 @@ public:
 
     sendAT(GF("AP"), 0);  // Put in transparent mode
     waitResponse();
-    sendAT(GF("IP"), 0);  // Put in UDP mode
+    sendAT(GF("IP"), 1);  // Put in TCP mode
     waitResponse();
 
-    sendAT(GF("AN"), apn);
+    sendAT(GF("AN"), apn);  // Set the APN
     waitResponse();
+
+    writeChanges();
+    exitCommand();
 
     return true;
   }
@@ -430,10 +433,11 @@ public:
   finish:
     if (!index) {
       data.trim();
+      data.replace(GSM_NL GSM_NL, GSM_NL);
+      data.replace(GSM_NL, "\r\n" "    ");
       if (data.length()) {
         DBG("### Unhandled:", data);
       }
-      data = "";
     }
     else {
       data.trim();
@@ -529,6 +533,7 @@ private:
   bool commandMode(void){
     delay(1000);  // cannot send anything for 1 second before entering command mode
     streamWrite(GF("+++"));  // enter command mode
+    DBG("+++\r\n");
     waitResponse(1100);
     return 1 == waitResponse(1100);  // wait another second for an "OK\r"
   }
