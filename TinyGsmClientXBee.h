@@ -98,7 +98,7 @@ public:
     at->exitCommand();
     at->modemSend("", 1, mux);
     at->waitResponse();
-    delay(100);
+    at->waitResponse();  // To clear the buffer
     at->commandMode();
     at->sendAT(GF("TM64"));  // Set socket timeout back to 10seconds;
     at->waitResponse();
