@@ -90,7 +90,7 @@ public:
     return sock_connected;
   }
 
-  virtual void stop() {
+  virtual void stop() {  // Not supported
     sock_connected = false;
   }
 
@@ -106,38 +106,16 @@ public:
 
   virtual int available() {
     TINY_GSM_YIELD();
-    if (!rx.size()) {
-      at->maintain();
-    }
-    return rx.size();
+    return at->stream.available();
   }
 
   virtual int read(uint8_t *buf, size_t size) {
-    TINY_GSM_YIELD();
-    size_t cnt = 0;
-    while (cnt < size) {
-      size_t chunk = TinyGsmMin(size-cnt, rx.size());
-      if (chunk > 0) {
-        rx.get(buf, chunk);
-        buf += chunk;
-        cnt += chunk;
-        continue;
-      }
-      // TODO: Read directly into user buffer?
-      if (!rx.size()) {
-        at->maintain();
-        //break;
-      }
-    }
-    return cnt;
+    return available();
   }
 
   virtual int read() {
-    uint8_t c;
-    if (read(&c, 1) == 1) {
-      return c;
-    }
-    return -1;
+    TINY_GSM_YIELD();
+    return at->stream.read();
   }
 
   virtual int peek() { return at->stream.peek(); }
@@ -167,7 +145,15 @@ public:
   }
 
   bool init() {
-    factoryDefault();
+    guardTime = 1100;
+    commandMode();
+    sendAT(GF("AP0"));  // Put in transparent mode
+    waitResponse();
+    sendAT(GF("GTFA")); // shorten the guard time to 250ms
+    waitResponse();
+    writeChanges();
+    exitCommand();
+    guardTime = 300;
     return true;
   }
 
@@ -222,7 +208,7 @@ public:
   String getSimCCID() {
     commandMode();
     sendAT(GF("S#"));
-    String res = streamReadUntil('\r');
+    String res = streamReadUntil('\r');  // Does not send an OK, just the result
     exitCommand();
     return res;
   }
@@ -230,7 +216,7 @@ public:
   String getIMEI() {
     commandMode();
     sendAT(GF("IM"));
-    String res = streamReadUntil('\r');
+    String res = streamReadUntil('\r');  // Does not send an OK, just the result
     exitCommand();
     return res;
   }
@@ -238,7 +224,7 @@ public:
   int getSignalQuality() {
     commandMode();
     sendAT(GF("DB"));
-    char buf[4] = { 0, };
+    char buf[4] = { 0, };  // Does not send an OK, just the result
     buf[0] = streamRead();
     buf[1] = streamRead();
     buf[2] = streamRead();
@@ -255,7 +241,7 @@ public:
   RegStatus getRegistrationStatus() {
     commandMode();
     sendAT(GF("AI"));
-    String res = streamReadUntil('\r');
+    String res = streamReadUntil('\r');  // Does not send an OK, just the result
     exitCommand();
 
     if(res == GF("0x00"))
@@ -277,7 +263,7 @@ public:
   String getOperator() {
     commandMode();
     sendAT(GF("MN"));
-    String res = streamReadUntil('\r');
+    String res = streamReadUntil('\r');  // Does not send an OK, just the result
     exitCommand();
     return res;
   }
@@ -287,10 +273,9 @@ public:
     for (unsigned long start = millis(); millis() - start < timeout; ) {
       commandMode();
       sendAT(GF("AI"));
-      waitResponse();
-      String res = streamReadUntil('\r');
+      String res = streamReadUntil('\r');  // Does not send an OK, just the result
       exitCommand();
-      if (res == 0) {
+      if (res == GF("0")) {
         return true;
       }
       delay(1000);
@@ -308,6 +293,8 @@ public:
     sendAT(GF("AP"), 0);  // Put in transparent mode
     waitResponse();
     sendAT(GF("IP"), 1);  // Put in TCP mode
+    waitResponse();
+    sendAT(GF("EE"), 2);  // Set security to WPA2
     waitResponse();
 
     sendAT(GF("ID"), ssid);
@@ -338,20 +325,15 @@ public:
    * GPRS functions
    */
   bool gprsConnect(const char* apn, const char* user = "", const char* pw = "") {
-
     commandMode();
-
     sendAT(GF("AP"), 0);  // Put in transparent mode
     waitResponse();
     sendAT(GF("IP"), 1);  // Put in TCP mode
     waitResponse();
-
     sendAT(GF("AN"), apn);  // Set the APN
     waitResponse();
-
     writeChanges();
     exitCommand();
-
     return true;
   }
 
@@ -371,20 +353,18 @@ public:
 
   bool sendSMS(const String& number, const String& text) {
     commandMode();
-    sendAT(GF("AP"), 0);
+    sendAT(GF("AP"), 0);  // Put in transparent mode
     waitResponse();
-    sendAT(GF("IP"), 2);
+    sendAT(GF("IP"), 2);  // Put in text messaging mode
     waitResponse();
-    sendAT(GF("PH"), number);
+    sendAT(GF("PH"), number);  // Set the phone number
     waitResponse();
-    sendAT(GF("TD D"));
-    waitResponse();
-    sendAT(GF("TD D"));
+    sendAT(GF("TDD"));  // Set the text delimiter to the standard 0x0D (carriabe return)
     waitResponse();
     writeChanges();
     exitCommand();
     stream.print(text);
-    stream.write((char)0x0D);
+    stream.write((char)0x0D);  // close off with the carriage return
     return true;
   }
 
@@ -394,7 +374,7 @@ public:
     streamWrite("AT", cmd..., GSM_NL);
     stream.flush();
     TINY_GSM_YIELD();
-    DBG("\r\n", ">>> AT ", cmd..., "\r\n");
+    DBG(">>> AT ", cmd..., "\r\n");
   }
 
   // TODO: Optimize this!
@@ -447,9 +427,9 @@ public:
     else {
       data.trim();
       data.replace(GSM_NL GSM_NL, GSM_NL);
-      data.replace(GSM_NL, "\r\n" "    ");
+      data.replace(GSM_NL, "\r\n    ");
       if (data.length()) {
-        DBG("\r\n", "<<< ", data);
+        DBG("<<< ", data, "\r\n");
       }
     }
     // if (gotData) {
@@ -532,17 +512,17 @@ private:
   String streamReadUntil(char c) {
     String return_string = stream.readStringUntil(c);
     return_string.trim();
-    if (String(c) == GSM_NL || String(c) == "\n"){
-      DBG(return_string, c, "    ");
+    if (String(c) == GSM_NL){
+      DBG(return_string, "\r\n");
     } else DBG(return_string, c);
     return return_string;
   }
 
   bool commandMode(void){
-    delay(1000);  // cannot send anything for 1 second before entering command mode
+    delay(guardTime);  // cannot send anything for 1 second before entering command mode
     streamWrite(GF("+++"));  // enter command mode
     DBG("\r\n+++\r\n");
-    waitResponse(1100);
+    waitResponse(guardTime);
     return 1 == waitResponse(1100);  // wait another second for an "OK\r"
   }
 
@@ -559,6 +539,7 @@ private:
   }
 
 private:
+  int           guardTime;
   Stream&       stream;
   GsmClient*    sockets[1];
 };
