@@ -93,13 +93,15 @@ public:
     TINY_GSM_YIELD();
     at->commandMode();
     at->sendAT(GF("TM0"));  // Set socket timeout to 0;
+    at->waitResponse();
     at->writeChanges();
     at->exitCommand();
     at->modemSend("", 1, mux);
     at->waitResponse();
-    delay(200);
+    delay(100);
     at->commandMode();
     at->sendAT(GF("TM64"));  // Set socket timeout back to 10seconds;
+    at->waitResponse();
     at->writeChanges();
     at->exitCommand();
     sock_connected = false;
@@ -159,11 +161,11 @@ public:
     commandMode();
     sendAT(GF("AP0"));  // Put in transparent mode
     waitResponse();
-    sendAT(GF("GTC8")); // shorten the guard time to 200ms
+    sendAT(GF("GT64")); // shorten the guard time to 100ms
     waitResponse();
     writeChanges();
     exitCommand();
-    guardTime = 225;
+    guardTime = 125;
     return true;
   }
 
