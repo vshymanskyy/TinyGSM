@@ -87,7 +87,21 @@ public:
     return sock_connected;
   }
 
-  virtual void stop() {  // Not supported
+  // This is a hack to shut the socket by setting the timeout to zero and
+  //  then sending an empty line to the server.
+  virtual void stop() {
+    TINY_GSM_YIELD();
+    at->commandMode();
+    at->sendAT(GF("TM0"));  // Set socket timeout to 0;
+    at->writeChanges();
+    at->exitCommand();
+    at->modemSend("", 1, mux);
+    at->waitResponse();
+    delay(200);
+    at->commandMode();
+    at->sendAT(GF("TM64"));  // Set socket timeout back to 10seconds;
+    at->writeChanges();
+    at->exitCommand();
     sock_connected = false;
   }
 
