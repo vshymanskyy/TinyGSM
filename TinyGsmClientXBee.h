@@ -50,7 +50,6 @@ public:
 class GsmClient : public Client
 {
   friend class TinyGsm;
-  typedef TinyGsmFifo<uint8_t, TINY_GSM_RX_BUFFER> RxFifo;
 
 public:
   GsmClient() {}
@@ -72,7 +71,6 @@ public:
 public:
   virtual int connect(const char *host, uint16_t port) {
     TINY_GSM_YIELD();
-    rx.clear();
     at->commandMode();
     sock_connected = at->modemConnect(host, port, mux);
     at->writeChanges();
@@ -82,7 +80,6 @@ public:
 
   virtual int connect(IPAddress ip, uint16_t port) {
     TINY_GSM_YIELD();
-    rx.clear();
     at->commandMode();
     sock_connected = at->modemConnect(ip, port, mux);
     at->writeChanges();
@@ -132,7 +129,6 @@ private:
   TinyGsm*      at;
   uint8_t       mux;
   bool          sock_connected;
-  RxFifo        rx;
 };
 
 public:
@@ -149,11 +145,11 @@ public:
     commandMode();
     sendAT(GF("AP0"));  // Put in transparent mode
     waitResponse();
-    sendAT(GF("GTFA")); // shorten the guard time to 250ms
+    sendAT(GF("GTC8")); // shorten the guard time to 200ms
     waitResponse();
     writeChanges();
     exitCommand();
-    guardTime = 300;
+    guardTime = 225;
     return true;
   }
 
@@ -195,6 +191,16 @@ public:
     }
     exitCommand();
     return false;;
+  }
+
+  void setupPinSleep() {
+    commandMode();
+    sendAT(GF("SM"),1);
+    waitResponse();
+    sendAT(GF("SO"),200);
+    waitResponse();
+    writeChanges();
+    exitCommand();
   }
 
   /*
