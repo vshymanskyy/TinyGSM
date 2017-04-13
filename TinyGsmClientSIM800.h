@@ -618,7 +618,6 @@ public:
     if (gotData) {
       sockets[mux]->sock_available = modemGetAvailable(mux);
     }
-    data = "";
     return index;
   }
 

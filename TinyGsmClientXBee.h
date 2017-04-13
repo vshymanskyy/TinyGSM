@@ -285,7 +285,12 @@ public:
 
   bool waitForNetwork(unsigned long timeout = 60000L) {
     for (unsigned long start = millis(); millis() - start < timeout; ) {
-      if (modemGetConnected()) {
+      commandMode();
+      sendAT(GF("AI"));
+      waitResponse();
+      String res = streamReadUntil('\r');
+      exitCommand();
+      if (res == 0) {
         return true;
       }
       delay(1000);
@@ -389,7 +394,7 @@ public:
     streamWrite("AT", cmd..., GSM_NL);
     stream.flush();
     TINY_GSM_YIELD();
-    DBG("\r\n", ">>> AT:", cmd...);
+    DBG("\r\n", ">>> AT ", cmd..., "\r\n");
   }
 
   // TODO: Optimize this!
@@ -444,13 +449,12 @@ public:
       data.replace(GSM_NL GSM_NL, GSM_NL);
       data.replace(GSM_NL, "\r\n" "    ");
       if (data.length()) {
-        DBG(GSM_NL, "<<< ", data);
+        DBG("\r\n", "<<< ", data);
       }
     }
     // if (gotData) {
     //   sockets[mux]->sock_available = modemGetAvailable(mux);
     // }
-    data = "";
     return index;
   }
 
