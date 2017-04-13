@@ -325,6 +325,17 @@ public:
   }
 
   /*
+   * WiFi functions
+   */
+  bool networkConnect(const char* ssid, const char* pwd) {
+    return false;
+  }
+
+  bool networkDisconnect() {
+    return false;
+  }
+
+  /*
    * GPRS functions
    */
   bool gprsConnect(const char* apn, const char* user, const char* pwd) {
@@ -529,7 +540,6 @@ private:
   }
 
   int modemConnect(const char* host, uint16_t port, uint8_t mux) {
-    int rsp = 0;
     for (int i=0; i<3; i++) {
       String ip = dnsIpQuery(host);
 

@@ -9,7 +9,7 @@
 #ifndef TinyGsmClient_h
 #define TinyGsmClient_h
 
-#if   defined(TINY_GSM_MODEM_SIM800) || defined(TINY_GSM_MODEM_SIM900)
+#if defined(TINY_GSM_MODEM_SIM800) || defined(TINY_GSM_MODEM_SIM900)
   #include <TinyGsmClientSIM800.h>
 #elif defined(TINY_GSM_MODEM_A6) || defined(TINY_GSM_MODEM_A7)
   #include <TinyGsmClientA6.h>
@@ -17,6 +17,8 @@
   #include <TinyGsmClientM590.h>
 #elif defined(TINY_GSM_MODEM_ESP8266)
   #include <TinyGsmClientESP8266.h>
+#elif defined(TINY_GSM_MODEM_XBEE)
+  #include <TinyGsmClientXBee.h>
 #else
   #error "Please define GSM modem model"
 #endif

@@ -332,6 +332,17 @@ public:
   }
 
   /*
+   * WiFi functions
+   */
+  bool networkConnect(const char* ssid, const char* pwd) {
+    return false;
+  }
+
+  bool networkDisconnect() {
+    return false;
+  }
+
+  /*
    * GPRS functions
    */
   bool gprsConnect(const char* apn, const char* user, const char* pwd) {
@@ -343,11 +354,11 @@ public:
     sendAT(GF("+SAPBR=3,1,\"APN\",\""), apn, '"');
     waitResponse();
 
-    if (!strcmp(user, "")) {
+    if (user) {
       sendAT(GF("+SAPBR=3,1,\"USER\",\""), user, '"');
       waitResponse();
     }
-    if (!strcmp(pwd, "")) {
+    if (pwd) {
       sendAT(GF("+SAPBR=3,1,\"PWD\",\""), pwd, '"');
       waitResponse();
     }
@@ -570,21 +581,21 @@ public:
           index = 5;
           goto finish;
         } else if (data.endsWith(GF(GSM_NL "+CIPRXGET:"))) {
+          index = 6;
           String mode = streamReadUntil(',');
           if (mode.toInt() == 1) {
             mux = streamReadUntil('\n').toInt();
             gotData = true;
-            data = "";
           } else {
             data += mode;
           }
         } else if (data.endsWith(GF("CLOSED" GSM_NL))) {
+          index = 7;
           int nl = data.lastIndexOf(GSM_NL, data.length()-8);
           int coma = data.indexOf(',', nl+2);
           mux = data.substring(nl+2, coma).toInt();
           if (mux) {
             sockets[mux]->sock_connected = false;
-            data = "";
           }
         }
       }
@@ -595,7 +606,6 @@ public:
       if (data.length()) {
         DBG("### Unhandled:", data);
       }
-      data = "";
     }
     else {
       data.trim();
@@ -604,7 +614,6 @@ public:
       if (data.length()) {
         DBG(GSM_NL, "<<< ", data);
       }
-      data = "";
     }
     if (gotData) {
       sockets[mux]->sock_available = modemGetAvailable(mux);
@@ -674,9 +683,11 @@ private:
       buf[0] = streamRead();
       buf[1] = streamRead();
       char c = strtol(buf, NULL, 16);
+      DBG(c);
 #else
       while (!stream.available()) {}
-      char c = streamRead();  // DBG(c);
+      char c = streamRead();
+      DBG(c);
 #endif
       sockets[mux]->rx.put(c);
     }
