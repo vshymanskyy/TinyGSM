@@ -9,7 +9,7 @@
 #ifndef TinyGsmClientSIM800_h
 #define TinyGsmClientSIM800_h
 
-//#define TINY_GSM_DEBUG Serial
+#define TINY_GSM_DEBUG Serial
 //#define TINY_GSM_USE_HEX
 
 #if !defined(TINY_GSM_RX_BUFFER)
@@ -484,10 +484,18 @@ public:
     return true;
   }
 
-  bool gprsDisconnect() {
-    sendAT(GF("+CIPSHUT"));
-    return waitResponse(60000L) == 1;
-  }
+    bool gprsDisconnect() {
+        sendAT(GF("+CIPSHUT"));
+        waitResponse(60000L);
+        //return waitResponse(60000L) == 1;
+        sendAT(GF("+SAPBR=0,1"));
+        waitResponse(60000L);
+        //return waitResponse(60000L) == 1;
+        sendAT(GF("+CGATT=0"));
+        waitResponse(60000L);
+        //return waitResponse(60000L) == 1;
+        return true;
+    }
 
   /*
    * Phone Call functions
@@ -500,31 +508,208 @@ public:
   void sendUSSD() {
   }
 
-  void sendSMS() {
-  }
+  //void sendSMS() {
+  //}
+    
+    int getNumSMS() {
+        
+        sendAT(GF("+CMGF=1"));
+        if (waitResponse() != 1) {
+            return 0;
+        }
+        
+        sendAT(GF("+CPMS?"));
+        if (waitResponse(GF(GSM_NL "+CPMS:")) != 1) {
+            return 0;
+        }
+        String res = stream.readStringUntil('\n');
+        int index1 = res.indexOf(",");
+        int index2 = res.indexOf(",", index1+1);
+        String tmp = res.substring(index1+1,index2);
+        waitResponse();
+        //res.trim();
+        tmp.trim();
+        //return res;
+        //int num = tmp.toInt();
+        return tmp.toInt();
+    }
+    
+    String readSMS(int num, char *sender) {
+        //char buffer[180];
+        String buffer;
+        
+        //uint16_t replyidx = 0;
+        
+        sendAT(GF("+CMGF=1"));
+        if (waitResponse() != 1) {
+            return "";
+        }
+        sendAT(GF("+CSDH=1"));
+        if (waitResponse() != 1) {
+            return "";
+        }
+        
+        
+        sendAT(GF("+CMGR="), num, GF(""));
+        if (waitResponse(GF(GSM_NL "+CMGR:")) != 1) {
+            return "";
+        }
+        
+        stream.readStringUntil(',');
+        buffer = stream.readStringUntil(',');
+        buffer.replace('"', ' ');
+        buffer.trim();
+        buffer.toCharArray(sender, 18);
+
+        stream.readStringUntil('\r');
+        
+        buffer = "";
+        
+        delay(20); // Wait a moment to get data into the buffer
+        while (stream.available()) {
+            char c = stream.read();
+            buffer = buffer + c;
+            //buffer[replyidx] = c;
+            //replyidx++;
+        }
+        //String res = stream.readStringUntil('OK');
+        
+        String res = buffer;
+        waitResponse();
+        res.trim();
+        return res;
+    }
+    
+    boolean deleteSMS(int num) {
+        sendAT(GF("+CMGD="), num, GF(""));
+        if (waitResponse(GF(GSM_NL "+CMGD:")) != 1) {
+            return false;
+        }
+        return true;
+    }
 
   /*
    * Location functions
    */
   void getLocation() {
   }
+  
+    // enable GPS
+    boolean enableGPS() {
+        uint16_t state;
+      
+        sendAT(GF("+CGNSPWR=1"));
+        if (waitResponse() != 1) {
+            return false;
+        }
+    
+        return true;
+    }
+    
+    // Get the RAW GPS output
+    String getGPSraw() {
+        sendAT(GF("+CGNSINF"));
+        if (waitResponse(GF(GSM_NL "+CGNSINF:")) != 1) {
+            return "";
+        }
+        String res = stream.readStringUntil('\n');
+        waitResponse();
+        res.trim();
+        return res;
+    }
+    
+    // Get GPS informations
+    // works only with ans Sim808 V2
+    boolean getGPS(float *lat, float *lon, float *speed=0, float *alt=0, int *vsat=0, int *usat=0) {
+        //String buffer = "";
+        char chr_buffer[12];
+        boolean fix = false;
+        
+        sendAT(GF("+CGNSINF"));
+        if (waitResponse(GF(GSM_NL "+CGNSINF:")) != 1) {
+            return false;
+        }
+        
+        stream.readStringUntil(','); // mode
+        if ( stream.readStringUntil(',').toInt() == 1 ) fix = true;
+        //*fix = stream.readStringUntil(',').toInt(); //fixstatus
+        stream.readStringUntil(','); //utctime
+        *lat =  stream.readStringUntil(',').toFloat(); //lat
+        *lon =  stream.readStringUntil(',').toFloat(); //lon
+        if (alt != NULL) *alt =  stream.readStringUntil(',').toFloat(); //lon
+        if (speed != NULL) *speed = stream.readStringUntil(',').toFloat(); //speed
+        stream.readStringUntil(',');
+        stream.readStringUntil(',');
+        stream.readStringUntil(',');
+        stream.readStringUntil(',');
+        stream.readStringUntil(',');
+        stream.readStringUntil(',');
+        stream.readStringUntil(',');
+        if (vsat != NULL) *vsat = stream.readStringUntil(',').toInt(); //viewed satelites
+        if (usat != NULL) *usat = stream.readStringUntil(',').toInt(); //used satelites
+        stream.readStringUntil('\n');
+        
+        
+        waitResponse();
+    
+        return fix;
+    }
+
+    boolean getGPSTime(int *year, int *month, int *day, int *hour, int *minute, int *second) {
+        boolean fix = false;
+        char chr_buffer[12];
+        sendAT(GF("+CGNSINF"));
+        if (waitResponse(GF(GSM_NL "+CGNSINF:")) != 1) {
+            return false;
+        }
+        for (int i = 0; i < 3; i++) {
+            String buffer = stream.readStringUntil(',');
+            buffer.toCharArray(chr_buffer, sizeof(chr_buffer));
+            switch (i) {
+                case 0:
+                    //mode
+                    break;
+                case 1:
+                    //fixstatus
+                    if ( buffer.toInt() == 1 ) {
+                        fix = buffer.toInt();
+                    }
+                    break;
+                case 2:
+                    //utctime
+                    /*if (utctime != NULL) {
+                     char utc_buff[20];
+                     buffer.toCharArray(utc_buff, 20);
+                     *utctime = utc_buff;
+                     }*/
+                    *year = buffer.substring(0,4).toInt();
+                    *month = buffer.substring(4,6).toInt();
+                    *day = buffer.substring(6,8).toInt();
+                    *hour = buffer.substring(8,10).toInt();
+                    *minute = buffer.substring(10,12).toInt();
+                    *second = buffer.substring(12,14).toInt();
+                    //*utctime = buffer.substring(0,14).toInt();
+                    break;
+                    
+                default:
+                    // if nothing else matches, do the default
+                    // default is optional
+                    break;
+            }
+        }
+        String res = stream.readStringUntil('\n');
+        waitResponse();
+        
+        if (fix) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 
   /*
    * Battery functions
    */
-  // Use: float vBatt = modem.getBattVoltage() / 1000.0;
-  uint16_t getBattVoltage() {
-    sendAT(GF("+CBC"));
-    if (waitResponse(GF(GSM_NL "+CBC:")) != 1) {
-      return 0;
-    }
-    streamSkipUntil(','); // Skip
-    streamSkipUntil(','); // Skip
-
-    uint16_t res = stream.readStringUntil(',').toInt();
-    waitResponse();
-    return res;
-  }
 
 private:
   int modemConnect(const char* host, uint16_t port, uint8_t mux) {
