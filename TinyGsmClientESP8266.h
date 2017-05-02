@@ -12,7 +12,7 @@
 //#define TINY_GSM_DEBUG Serial
 
 #if !defined(TINY_GSM_RX_BUFFER)
-  #define TINY_GSM_RX_BUFFER 256
+  #define TINY_GSM_RX_BUFFER 512
 #endif
 
 #include <TinyGsmCommon.h>
@@ -202,7 +202,19 @@ public:
   }
 
   bool waitForNetwork(unsigned long timeout = 60000L) {
-    return true;
+    for (unsigned long start = millis(); millis() - start < timeout; ) {
+      sendAT(GF("+CIPSTATUS"));
+      String res1 = stream.readStringUntil(':');
+      DBG(GSM_NL, res1, ':');
+      String res2 = stream.readStringUntil(*GSM_NL);
+      DBG(res2);
+      waitResponse();
+      if (res2 == GF("2") || res2 == GF("3") || res2 == GF("4")) {
+        return true;
+      }
+      delay(1000);
+    }
+    return false;
   }
 
   /*
@@ -265,6 +277,9 @@ public:
     String r5s(r5); r5s.trim();
     DBG("### ..:", r1s, ",", r2s, ",", r3s, ",", r4s, ",", r5s);*/
     data.reserve(64);
+    bool gotData = false;
+    int mux = -1;
+    int len = 0;
     int index = 0;
     unsigned long startMillis = millis();
     do {
@@ -289,22 +304,19 @@ public:
           index = 5;
           goto finish;
         } else if (data.endsWith(GF(GSM_NL "+IPD,"))) {
-          int mux = stream.readStringUntil(',').toInt();
-          int len = stream.readStringUntil(':').toInt();
-          if (len > sockets[mux]->rx.free()) {
-            DBG("### Buffer overflow: ", len, "->", sockets[mux]->rx.free());
-          } else {
-            DBG("### Got: ", len, "->", sockets[mux]->rx.free());
-          }
-          while (len--) {
-            while (!stream.available()) {}
-            sockets[mux]->rx.put(stream.read());
-          }
-          data = "";
-          return index;
-        } else if (data.endsWith(GF(GSM_NL "1,CLOSED" GSM_NL))) { //TODO: use mux
+          mux = stream.readStringUntil(',').toInt();
+          data += mux;
+          data += (',');
+          len = stream.readStringUntil(':').toInt();
+          data += len;
+          data += (':');
+          gotData = true;
+          index = 6;
+          goto finish;
+        } else if (data.endsWith(GF("1,CLOSED" GSM_NL))) { //TODO: use mux
           sockets[1]->sock_connected = false;
-          data = "";
+          index = 7;
+          goto finish;
         }
       }
     } while (millis() - startMillis < timeout);
@@ -314,7 +326,31 @@ public:
       if (data.length()) {
         DBG("### Unhandled:", data);
       }
-      data = "";
+    }
+    else {
+      data.trim();
+      data.replace(GSM_NL GSM_NL, GSM_NL);
+      data.replace(GSM_NL, GSM_NL "    ");
+      if (data.length()) {
+        DBG(GSM_NL, "<<< ", data);
+      }
+    }
+    if (gotData) {
+      int len_orig = len;
+      if (len > sockets[mux]->rx.free()) {
+        DBG(GSM_NL, "### Buffer overflow: ", len, "->", sockets[mux]->rx.free());
+      } else {
+        DBG(GSM_NL, "### Got: ", len, "->", sockets[mux]->rx.free());
+      }
+      while (len--) {
+        char c[2] = {0};
+        stream.readBytes(c, 1);  // readBytes includes a timeout
+        if(c[0]) sockets[mux]->rx.put(c[0]);
+        // DBG(GSM_NL, c[0], "    ", len, "    ", stream.available(), "     ", sockets[mux]->available());
+      }
+      if (len_orig > sockets[mux]->available()) {
+        DBG(GSM_NL, "### Fewer characters received than expected: ", len_orig, "->", sockets[mux]->available());
+      }
     }
     return index;
   }
