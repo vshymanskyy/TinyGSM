@@ -539,10 +539,8 @@ public:
   }
 
 private:
-  int modemConnect(const char* host, uint16_t port, uint8_t* mux, bool isUDP=false) {
+  int modemConnect(const char* host, uint16_t port, uint8_t* mux) {
     sendAT(GF("+CIPSTART="),  GF("\"TCP"), GF("\",\""), host, GF("\","), port);
-      if (isUDP) sendAT(GF("+CIPSTART="),  GF("\"UDP"), GF("\",\""), host, GF("\","), port);
-      else sendAT(GF("+CIPSTART="),  GF("\"TCP"), GF("\",\""), host, GF("\","), port);
 
     if (waitResponse(75000L, GF(GSM_NL "+CIPNUM:")) != 1) {
       return -1;

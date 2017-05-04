@@ -465,16 +465,16 @@ public:
   }
 
 private:
-  int modemConnect(const char* host, uint16_t port, uint8_t mux = 1, bool isUDP=false) {
+  int modemConnect(const char* host, uint16_t port, uint8_t mux = 1) {
     sendAT(GF("LA"), host);
     String ipadd; ipadd.reserve(16);
     ipadd = streamReadUntil('\r');
     IPAddress ip;
     ip.fromString(ipadd);
-    return modemConnect(ip, port, mux, isUDP);
+    return modemConnect(ip, port);
   }
 
-  int modemConnect(IPAddress ip, uint16_t port, uint8_t mux = 1, bool isUDP=false) {
+  int modemConnect(IPAddress ip, uint16_t port, uint8_t mux = 1) {
     String host; host.reserve(16);
     host += ip[0];
     host += ".";
@@ -483,16 +483,11 @@ private:
     host += ip[2];
     host += ".";
     host += ip[3];
-    if (isUDP) {
-      sendAT(GF("IP"), 0);  // Put in UDP mode
-      waitResponse();
-    } else {
-      sendAT(GF("IP"), 1);  // Put in TCP mode
-      waitResponse();
-    }
-    sendAT(GF("DL"), host);
+    sendAT(GF("IP"), 1);  // Put in TCP mode
     waitResponse();
-    sendAT(GF("DE"), String(port, HEX));
+    sendAT(GF("DL"), host);  // Set the "Destination Address Low"
+    waitResponse();
+    sendAT(GF("DE"), String(port, HEX));  // Set the destination port
     int rsp = waitResponse();
     return rsp;
   }
