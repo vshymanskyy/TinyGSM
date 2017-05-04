@@ -312,10 +312,6 @@ public:
 
     commandMode();
 
-    sendAT(GF("AP"), 0);  // Put in transparent mode
-    waitResponse();
-    sendAT(GF("IP"), 1);  // Put in TCP mode
-    waitResponse();
     sendAT(GF("EE"), 2);  // Set security to WPA2
     waitResponse();
 
@@ -348,10 +344,6 @@ public:
    */
   bool gprsConnect(const char* apn, const char* user = "", const char* pw = "") {
     commandMode();
-    sendAT(GF("AP"), 0);  // Put in transparent mode
-    waitResponse();
-    sendAT(GF("IP"), 1);  // Put in TCP mode
-    waitResponse();
     sendAT(GF("AN"), apn);  // Set the APN
     waitResponse();
     writeChanges();
@@ -375,8 +367,6 @@ public:
 
   bool sendSMS(const String& number, const String& text) {
     commandMode();
-    sendAT(GF("AP"), 0);  // Put in transparent mode
-    waitResponse();
     sendAT(GF("IP"), 2);  // Put in text messaging mode
     waitResponse();
     sendAT(GF("PH"), number);  // Set the phone number
@@ -493,9 +483,11 @@ private:
     host += ip[2];
     host += ".";
     host += ip[3];
-    sendAT(GF("DL"), host);
+    sendAT(GF("IP"), 1);  // Put in TCP mode
     waitResponse();
-    sendAT(GF("DE"), String(port, HEX));
+    sendAT(GF("DL"), host);  // Set the "Destination Address Low"
+    waitResponse();
+    sendAT(GF("DE"), String(port, HEX));  // Set the destination port
     int rsp = waitResponse();
     return rsp;
   }

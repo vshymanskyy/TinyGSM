@@ -448,6 +448,9 @@ public:
     String r5s(r5); r5s.trim();
     DBG("### ..:", r1s, ",", r2s, ",", r3s, ",", r4s, ",", r5s);*/
     data.reserve(64);
+    bool gotData = false;
+    int mux = -1;
+    int len = 0;
     int index = 0;
     unsigned long startMillis = millis();
     do {
@@ -472,24 +475,24 @@ public:
           index = 5;
           goto finish;
         } else if (data.endsWith(GF("+TCPRECV:"))) {
-          int mux = streamReadUntil(',').toInt();
-          int len = streamReadUntil(',').toInt();
-          if (len > sockets[mux]->rx.free()) {
-            DBG("### Buffer overflow: ", len, "->", sockets[mux]->rx.free());
-          } else {
-            DBG("### Got: ", len, "->", sockets[mux]->rx.free());
-          }
-          while (len--) {
-            while (!stream.available()) {}
-            sockets[mux]->rx.put(stream.read());
-          }
-          data = "";
-          return index;
+          mux = stream.readStringUntil(',').toInt();
+          data += mux;
+          data += (',');
+          len = stream.readStringUntil(',').toInt();
+          data += len;
+          data += (',');
+          gotData = true;
+          index = 6;
+          goto finish;
         } else if (data.endsWith(GF("+TCPCLOSE:"))) {
-          int mux = streamReadUntil(',').toInt();
-          streamReadUntil('\n');
+          mux = stream.readStringUntil(',').toInt();
+          data += mux;
+          data += (',');
+          String concl = stream.readStringUntil('\n');
+          data += concl;
           sockets[mux]->sock_connected = false;
-          data = "";
+          index = 7;
+          goto finish;
         }
       }
     } while (millis() - startMillis < timeout);
@@ -499,7 +502,6 @@ public:
       if (data.length()) {
         DBG("### Unhandled:", data);
       }
-      data = "";
     }
     else {
       data.trim();
@@ -508,7 +510,23 @@ public:
       if (data.length()) {
         DBG(GSM_NL, "<<< ", data);
       }
-      data = "";
+    }
+    if (gotData) {
+      int len_orig = len;
+    if (len > sockets[mux]->rx.free()) {
+        DBG(GSM_NL, "### Buffer overflow: ", len, "->", sockets[mux]->rx.free());
+    } else {
+        DBG(GSM_NL, "### Got: ", len, "->", sockets[mux]->rx.free());
+    }
+    while (len--) {
+        char c[2] = {0};
+        stream.readBytes(c, 1);  // readBytes includes a timeout
+        if(c[0]) sockets[mux]->rx.put(c[0]);
+        // DBG(GSM_NL, c[0], "    ", len, "    ", stream.available(), "     ", sockets[mux]->available());
+    }
+      if (len_orig > sockets[mux]->available()) {
+        DBG(GSM_NL, "### Fewer characters received than expected: ", len_orig, "->", sockets[mux]->available());
+      }
     }
     return index;
   }
