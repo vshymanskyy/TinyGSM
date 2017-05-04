@@ -398,8 +398,8 @@ public:
   /*
    * Messaging functions
    */
-  bool gprsConnect(const char* apn, const char* user, const char* pwd) {
-    return false;
+
+  void sendUSSD() {
   }
 
   void sendSMS() {
