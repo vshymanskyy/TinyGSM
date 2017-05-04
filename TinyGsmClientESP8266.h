@@ -370,8 +370,9 @@ public:
   }
 
 private:
-  int modemConnect(const char* host, uint16_t port, uint8_t mux) {
-    sendAT(GF("+CIPSTART="), mux, ',', GF("\"TCP"), GF("\",\""), host, GF("\","), port, GF(",120"));
+  int modemConnect(const char* host, uint16_t port, uint8_t mux, bool isUDP=false) {
+    if (isUDP) sendAT(GF("+CIPSTART="), mux, ',', GF("\"UDP"), GF("\",\""), host, GF("\","), port, GF(",120"));
+    else sendAT(GF("+CIPSTART="), mux, ',', GF("\"TCP"), GF("\",\""), host, GF("\","), port, GF(",120"));
     int rsp = waitResponse(75000L,
                            GFP(GSM_OK),
                            GFP(GSM_ERROR),

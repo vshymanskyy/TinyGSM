@@ -476,13 +476,11 @@ public:
             while (!stream.available()) {}
             sockets[mux]->rx.put(stream.read());
           }
-          data = "";
           return index;
         } else if (data.endsWith(GF("+TCPCLOSED:"))) {
           int mux = streamReadUntil(',').toInt();
          streamReadUntil('\n');
          sockets[mux]->sock_connected = false;
-         data = "";
         }
       }
     } while (millis() - startMillis < timeout);
@@ -492,7 +490,6 @@ public:
       if (data.length()) {
         DBG("### Unhandled:", data);
       }
-      data = "";
     }
     else {
       data.trim();
@@ -501,7 +498,6 @@ public:
       if (data.length()) {
         DBG(GSM_NL, "<<< ", data);
       }
-      data = "";
     }
     return index;
   }
@@ -521,8 +517,10 @@ public:
   }
 
 private:
-  int modemConnect(const char* host, uint16_t port, uint8_t* mux) {
+  int modemConnect(const char* host, uint16_t port, uint8_t* mux, bool isUDP=false) {
     sendAT(GF("+CIPSTART="),  GF("\"TCP"), GF("\",\""), host, GF("\","), port);
+      if (isUDP) sendAT(GF("+CIPSTART="),  GF("\"UDP"), GF("\",\""), host, GF("\","), port);
+      else sendAT(GF("+CIPSTART="),  GF("\"TCP"), GF("\",\""), host, GF("\","), port);
 
     if (waitResponse(75000L, GF(GSM_NL "+CIPNUM:")) != 1) {
       return -1;
