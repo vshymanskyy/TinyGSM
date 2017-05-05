@@ -70,7 +70,7 @@ public:
 
 public:
   virtual int connect(const char *host, uint16_t port) {
-    TINY_GSM_YIELD();
+    at->streamClear();  // Empty anything remaining in the buffer;
     at->commandMode();
     sock_connected = at->modemConnect(host, port, mux);
     at->writeChanges();
@@ -79,7 +79,7 @@ public:
   }
 
   virtual int connect(IPAddress ip, uint16_t port) {
-    TINY_GSM_YIELD();
+    at->streamClear();  // Empty anything remaining in the buffer;
     at->commandMode();
     sock_connected = at->modemConnect(ip, port, mux);
     at->writeChanges();
@@ -90,26 +90,23 @@ public:
   // This is a hack to shut the socket by setting the timeout to zero and
   //  then sending an empty line to the server.
   virtual void stop() {
-    TINY_GSM_YIELD();
     at->commandMode();
     at->sendAT(GF("TM0"));  // Set socket timeout to 0;
     at->waitResponse();
     at->writeChanges();
     at->exitCommand();
     at->modemSend("", 1, mux);
-    at->waitResponse();
-    at->waitResponse();  // To clear the buffer
+    at->streamClear();  // Empty anything remaining in the buffer;
     at->commandMode();
     at->sendAT(GF("TM64"));  // Set socket timeout back to 10seconds;
     at->waitResponse();
     at->writeChanges();
     at->exitCommand();
+    at->streamClear();  // Empty anything remaining in the buffer;
     sock_connected = false;
   }
 
   virtual size_t write(const uint8_t *buf, size_t size) {
-    TINY_GSM_YIELD();
-    //at->maintain();
     return at->modemSend(buf, size, mux);
   }
 
@@ -118,7 +115,6 @@ public:
   }
 
   virtual int available() {
-    TINY_GSM_YIELD();
     return at->stream.available();
   }
 
@@ -173,11 +169,7 @@ public:
     return false;
   }
 
-  void maintain() {
-    //while (stream.available()) {
-      waitResponse(10, NULL, NULL);
-    //}
-  }
+  void maintain() {}
 
   bool factoryDefault() {
     commandMode();
@@ -230,6 +222,7 @@ public:
   String getSimCCID() {
     commandMode();
     sendAT(GF("S#"));
+    while (!stream.available()) {};  // wait for the response
     String res = streamReadUntil('\r');  // Does not send an OK, just the result
     exitCommand();
     return res;
@@ -238,6 +231,7 @@ public:
   String getIMEI() {
     commandMode();
     sendAT(GF("IM"));
+    while (!stream.available()) {};  // wait for the response
     String res = streamReadUntil('\r');  // Does not send an OK, just the result
     exitCommand();
     return res;
@@ -246,6 +240,7 @@ public:
   int getSignalQuality() {
     commandMode();
     sendAT(GF("DB"));
+    while (!stream.available()) {};  // wait for the response
     char buf[4] = { 0, };  // Does not send an OK, just the result
     buf[0] = streamRead();
     buf[1] = streamRead();
@@ -263,6 +258,7 @@ public:
   RegStatus getRegistrationStatus() {
     commandMode();
     sendAT(GF("AI"));
+    while (!stream.available()) {};  // wait for the response
     String res = streamReadUntil('\r');  // Does not send an OK, just the result
     exitCommand();
 
@@ -285,6 +281,7 @@ public:
   String getOperator() {
     commandMode();
     sendAT(GF("MN"));
+    while (!stream.available()) {};  // wait for the response
     String res = streamReadUntil('\r');  // Does not send an OK, just the result
     exitCommand();
     return res;
@@ -295,6 +292,7 @@ public:
     for (unsigned long start = millis(); millis() - start < timeout; ) {
       commandMode();
       sendAT(GF("AI"));
+      while (!stream.available()) {};  // wait for the response
       String res = streamReadUntil('\r');  // Does not send an OK, just the result
       exitCommand();
       if (res == GF("0")) {
@@ -434,7 +432,7 @@ public:
       data.replace(GSM_NL, "\r\n" "    ");
       if (data.length()) {
         DBG("### Unhandled:", data, "\r\n");
-      } else DBG(GSM_NL, "### NO RESPONSE!");
+    } else DBG("### NO RESPONSE!\r\n");
     }
     else {
       data.trim();
@@ -464,10 +462,11 @@ public:
 private:
   int modemConnect(const char* host, uint16_t port, uint8_t mux = 1) {
     sendAT(GF("LA"), host);
-    String ipadd; ipadd.reserve(16);
-    ipadd = streamReadUntil('\r');
+    String IPaddr; IPaddr.reserve(16);
+    while (!stream.available()) {};  // wait for the response
+    IPaddr = streamReadUntil('\r');  // read result
     IPAddress ip;
-    ip.fromString(ipadd);
+    ip.fromString(IPaddr);
     return modemConnect(ip, port);
   }
 
@@ -491,6 +490,7 @@ private:
 
   int modemSend(const void* buff, size_t len, uint8_t mux = 1) {
     stream.write((uint8_t*)buff, len);
+    stream.flush();
     return len;
   }
 
@@ -531,12 +531,16 @@ private:
     return return_string;
   }
 
+  void streamClear(void) {
+    while (stream.available())
+    {streamRead();}
+  }
+
   bool commandMode(void){
     delay(guardTime);  // cannot send anything for 1 second before entering command mode
     streamWrite(GF("+++"));  // enter command mode
     DBG("\r\n+++\r\n");
-    waitResponse(guardTime);
-    return 1 == waitResponse(1100);  // wait another second for an "OK\r"
+    return 1 == waitResponse(guardTime*2);
   }
 
   void writeChanges(void){
