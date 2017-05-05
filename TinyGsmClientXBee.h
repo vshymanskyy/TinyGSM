@@ -433,8 +433,8 @@ public:
       data.replace(GSM_NL GSM_NL, GSM_NL);
       data.replace(GSM_NL, "\r\n" "    ");
       if (data.length()) {
-        DBG("### Unhandled:", data);
-      }
+        DBG("### Unhandled:", data, "\r\n");
+      } else DBG(GSM_NL, "### NO RESPONSE!");
     }
     else {
       data.trim();
@@ -444,9 +444,6 @@ public:
         DBG("<<< ", data, "\r\n");
       }
     }
-    // if (gotData) {
-    //   sockets[mux]->sock_available = modemGetAvailable(mux);
-    // }
     return index;
   }
 
@@ -518,12 +515,14 @@ private:
   }
 
   int streamRead() {
+    TINY_GSM_YIELD();
     int c = stream.read();
     DBG((char)c);
     return c;
   }
 
   String streamReadUntil(char c) {
+    TINY_GSM_YIELD();
     String return_string = stream.readStringUntil(c);
     return_string.trim();
     if (String(c) == GSM_NL){

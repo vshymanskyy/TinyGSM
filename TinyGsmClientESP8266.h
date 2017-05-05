@@ -12,7 +12,7 @@
 //#define TINY_GSM_DEBUG Serial
 
 #if !defined(TINY_GSM_RX_BUFFER)
-  #define TINY_GSM_RX_BUFFER 512
+  #define TINY_GSM_RX_BUFFER 256
 #endif
 
 #include <TinyGsmCommon.h>
@@ -20,6 +20,7 @@
 #define GSM_NL "\r\n"
 static const char GSM_OK[] TINY_GSM_PROGMEM = "OK" GSM_NL;
 static const char GSM_ERROR[] TINY_GSM_PROGMEM = "ERROR" GSM_NL;
+static unsigned int TCP_KEEP_ALIVE = 120;
 
 class TinyGsm
 {
@@ -77,6 +78,7 @@ public:
     TINY_GSM_YIELD();
     at->sendAT(GF("+CIPCLOSE="), mux);
     sock_connected = false;
+    at->waitResponse();
     at->waitResponse();
   }
 
@@ -324,7 +326,7 @@ public:
     if (!index) {
       data.trim();
       if (data.length()) {
-        DBG("### Unhandled:", data);
+        DBG(GSM_NL, "### Unhandled:", data);
       }
     }
     else {
@@ -335,23 +337,23 @@ public:
         DBG(GSM_NL, "<<< ", data);
       }
     }
-    if (gotData) {
-      int len_orig = len;
-      if (len > sockets[mux]->rx.free()) {
-        DBG(GSM_NL, "### Buffer overflow: ", len, "->", sockets[mux]->rx.free());
-      } else {
-        DBG(GSM_NL, "### Got: ", len, "->", sockets[mux]->rx.free());
+      if (gotData) {
+        int len_orig = len;
+        if (len > sockets[mux]->rx.free()) {
+          DBG(GSM_NL, "### Buffer overflow: ", len, "->", sockets[mux]->rx.free());
+        } else {
+          DBG(GSM_NL, "### Got: ", len, "->", sockets[mux]->rx.free());
+        }
+        while (len--) {
+          TINY_GSM_YIELD();
+          int r = stream.read();
+          if (r <= 0) continue; // Skip 0x00 bytes, just in case
+          sockets[mux]->rx.put((char)r);
+        }
+        if (len_orig > sockets[mux]->available()) {
+          DBG(GSM_NL, "### Fewer characters received than expected: ", sockets[mux]->available(), " vs ", len_orig);
+        }
       }
-      while (len--) {
-        char c[2] = {0};
-        stream.readBytes(c, 1);  // readBytes includes a timeout
-        if(c[0]) sockets[mux]->rx.put(c[0]);
-        // DBG(GSM_NL, c[0], "    ", len, "    ", stream.available(), "     ", sockets[mux]->available());
-      }
-      if (len_orig > sockets[mux]->available()) {
-        DBG(GSM_NL, "### Fewer characters received than expected: ", len_orig, "->", sockets[mux]->available());
-      }
-    }
     return index;
   }
 
@@ -371,11 +373,12 @@ public:
 
 private:
   int modemConnect(const char* host, uint16_t port, uint8_t mux) {
-    sendAT(GF("+CIPSTART="), mux, ',', GF("\"TCP"), GF("\",\""), host, GF("\","), port, GF(",120"));
+    sendAT(GF("+CIPSTART="), mux, ',', GF("\"TCP"), GF("\",\""), host, GF("\","), port, GF(","), TCP_KEEP_ALIVE);
     int rsp = waitResponse(75000L,
                            GFP(GSM_OK),
                            GFP(GSM_ERROR),
                            GF(GSM_NL "ALREADY CONNECT" GSM_NL));
+    waitResponse(100, GF("1,CONNECT"));
     return (1 == rsp);
   }
 

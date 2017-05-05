@@ -604,7 +604,7 @@ public:
     if (!index) {
       data.trim();
       if (data.length()) {
-        DBG("### Unhandled:", data);
+        DBG(GSM_NL, "### Unhandled:", data);
       }
     }
     else {

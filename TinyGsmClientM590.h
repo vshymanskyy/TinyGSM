@@ -500,7 +500,7 @@ public:
     if (!index) {
       data.trim();
       if (data.length()) {
-        DBG("### Unhandled:", data);
+        DBG(GSM_NL, "### Unhandled:", data);
       }
     }
     else {
@@ -519,13 +519,13 @@ public:
         DBG(GSM_NL, "### Got: ", len, "->", sockets[mux]->rx.free());
     }
     while (len--) {
-        char c[2] = {0};
-        stream.readBytes(c, 1);  // readBytes includes a timeout
-        if(c[0]) sockets[mux]->rx.put(c[0]);
-        // DBG(GSM_NL, c[0], "    ", len, "    ", stream.available(), "     ", sockets[mux]->available());
+          TINY_GSM_YIELD();
+          int r = stream.read();
+          if (r <= 0) continue; // Skip 0x00 bytes, just in case
+          sockets[mux]->rx.put((char)r);
     }
       if (len_orig > sockets[mux]->available()) {
-        DBG(GSM_NL, "### Fewer characters received than expected: ", len_orig, "->", sockets[mux]->available());
+          DBG(GSM_NL, "### Fewer characters received than expected: ", sockets[mux]->available(), " vs ", len_orig);
       }
     }
     return index;
