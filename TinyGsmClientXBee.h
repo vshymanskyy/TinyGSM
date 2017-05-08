@@ -477,7 +477,7 @@ private:
     String IPaddr; IPaddr.reserve(16);
     // wait for the response
     unsigned long startMillis = millis();
-    while (!stream.available() && millis() - startMillis < 1000) {};
+    while (!stream.available() && millis() - startMillis < 10000) {};
     IPaddr = streamReadUntil('\r');  // read result
     IPAddress ip;
     ip.fromString(IPaddr);
