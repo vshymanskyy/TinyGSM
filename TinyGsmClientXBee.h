@@ -222,7 +222,9 @@ public:
   String getSimCCID() {
     commandMode();
     sendAT(GF("S#"));
-    while (!stream.available()) {};  // wait for the response
+    // wait for the response
+    unsigned long startMillis = millis();
+    while (!stream.available() && millis() - startMillis < 1000) {};
     String res = streamReadUntil('\r');  // Does not send an OK, just the result
     exitCommand();
     return res;
@@ -231,7 +233,9 @@ public:
   String getIMEI() {
     commandMode();
     sendAT(GF("IM"));
-    while (!stream.available()) {};  // wait for the response
+    // wait for the response
+    unsigned long startMillis = millis();
+    while (!stream.available() && millis() - startMillis < 1000) {};
     String res = streamReadUntil('\r');  // Does not send an OK, just the result
     exitCommand();
     return res;
@@ -240,7 +244,9 @@ public:
   int getSignalQuality() {
     commandMode();
     sendAT(GF("DB"));
-    while (!stream.available()) {};  // wait for the response
+    // wait for the response
+    unsigned long startMillis = millis();
+    while (!stream.available() && millis() - startMillis < 1000) {};
     char buf[4] = { 0, };  // Does not send an OK, just the result
     buf[0] = streamRead();
     buf[1] = streamRead();
@@ -258,7 +264,9 @@ public:
   RegStatus getRegistrationStatus() {
     commandMode();
     sendAT(GF("AI"));
-    while (!stream.available()) {};  // wait for the response
+    // wait for the response
+    unsigned long startMillis = millis();
+    while (!stream.available() && millis() - startMillis < 1000) {};
     String res = streamReadUntil('\r');  // Does not send an OK, just the result
     exitCommand();
 
@@ -281,7 +289,9 @@ public:
   String getOperator() {
     commandMode();
     sendAT(GF("MN"));
-    while (!stream.available()) {};  // wait for the response
+    // wait for the response
+    unsigned long startMillis = millis();
+    while (!stream.available() && millis() - startMillis < 1000) {};
     String res = streamReadUntil('\r');  // Does not send an OK, just the result
     exitCommand();
     return res;
@@ -292,7 +302,9 @@ public:
     for (unsigned long start = millis(); millis() - start < timeout; ) {
       commandMode();
       sendAT(GF("AI"));
-      while (!stream.available()) {};  // wait for the response
+      // wait for the response
+      unsigned long startMillis = millis();
+      while (!stream.available() && millis() - startMillis < 1000) {};
       String res = streamReadUntil('\r');  // Does not send an OK, just the result
       exitCommand();
       if (res == GF("0")) {
@@ -463,7 +475,9 @@ private:
   int modemConnect(const char* host, uint16_t port, uint8_t mux = 1) {
     sendAT(GF("LA"), host);
     String IPaddr; IPaddr.reserve(16);
-    while (!stream.available()) {};  // wait for the response
+    // wait for the response
+    unsigned long startMillis = millis();
+    while (!stream.available() && millis() - startMillis < 1000) {};
     IPaddr = streamReadUntil('\r');  // read result
     IPAddress ip;
     ip.fromString(IPaddr);
