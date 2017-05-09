@@ -738,21 +738,21 @@ public:
         return res;
     }
     
-    boolean standby() {
+    /*boolean standby() {
         sendAT(GF("+CFUN=4"));
         if (waitResponse(GF(GSM_NL "OK")) != 1) {
             return false;
         }
         return true;
-    }
+    }*/
     
-    boolean wakeup() {
+    /*boolean wakeup() {
         sendAT(GF("+CFUN=1"));
         if (waitResponse(GF(GSM_NL "OK")) != 1) {
             return false;
         }
         return true;
-    }
+    }*/
 
 private:
   int modemConnect(const char* host, uint16_t port, uint8_t mux) {
