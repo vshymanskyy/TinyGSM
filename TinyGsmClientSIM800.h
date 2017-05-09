@@ -535,10 +535,7 @@ public:
     }
     
     String readSMS(int num, char *sender) {
-        //char buffer[180];
         String buffer;
-        
-        //uint16_t replyidx = 0;
         
         sendAT(GF("+CMGF=1"));
         if (waitResponse() != 1) {
@@ -569,10 +566,7 @@ public:
         while (stream.available()) {
             char c = stream.read();
             buffer = buffer + c;
-            //buffer[replyidx] = c;
-            //replyidx++;
         }
-        //String res = stream.readStringUntil('OK');
         
         String res = buffer;
         waitResponse();
@@ -606,7 +600,19 @@ public:
         return true;
     }
     
+    boolean disableGPS() {
+        uint16_t state;
+        
+        sendAT(GF("+CGNSPWR=0"));
+        if (waitResponse() != 1) {
+            return false;
+        }
+        
+        return true;
+    }
+    
     // Get the RAW GPS output
+    // works only with ans Sim808 V2
     String getGPSraw() {
         sendAT(GF("+CGNSINF"));
         if (waitResponse(GF(GSM_NL "+CGNSINF:")) != 1) {
@@ -632,7 +638,6 @@ public:
         
         stream.readStringUntil(','); // mode
         if ( stream.readStringUntil(',').toInt() == 1 ) fix = true;
-        //*fix = stream.readStringUntil(',').toInt(); //fixstatus
         stream.readStringUntil(','); //utctime
         *lat =  stream.readStringUntil(',').toFloat(); //lat
         *lon =  stream.readStringUntil(',').toFloat(); //lon
@@ -662,6 +667,8 @@ public:
         if (waitResponse(GF(GSM_NL "+CGNSINF:")) != 1) {
             return false;
         }
+        
+        
         for (int i = 0; i < 3; i++) {
             String buffer = stream.readStringUntil(',');
             buffer.toCharArray(chr_buffer, sizeof(chr_buffer));
@@ -676,19 +683,12 @@ public:
                     }
                     break;
                 case 2:
-                    //utctime
-                    /*if (utctime != NULL) {
-                     char utc_buff[20];
-                     buffer.toCharArray(utc_buff, 20);
-                     *utctime = utc_buff;
-                     }*/
                     *year = buffer.substring(0,4).toInt();
                     *month = buffer.substring(4,6).toInt();
                     *day = buffer.substring(6,8).toInt();
                     *hour = buffer.substring(8,10).toInt();
                     *minute = buffer.substring(10,12).toInt();
                     *second = buffer.substring(12,14).toInt();
-                    //*utctime = buffer.substring(0,14).toInt();
                     break;
                     
                 default:
@@ -710,6 +710,49 @@ public:
   /*
    * Battery functions
    */
+    // Use: float vBatt = modem.getBattVoltage() / 1000.0;
+    uint16_t getBattVoltage() {
+        sendAT(GF("+CBC"));
+        if (waitResponse(GF(GSM_NL "+CBC:")) != 1) {
+            return 0;
+        }
+        streamSkipUntil(','); // Skip
+        streamSkipUntil(','); // Skip
+        
+        uint16_t res = stream.readStringUntil(',').toInt();
+        waitResponse();
+            return res;
+    }
+    
+    // Use: float percent = modem.getBattPercent();
+    uint8_t getBattPercent() {
+        sendAT(GF("+CBC"));
+        if (waitResponse(GF(GSM_NL "+CBC:")) != 1) {
+            return 0;
+        }
+        streamSkipUntil(','); // Skip
+        //streamSkipUntil(','); // Skip
+        
+        uint16_t res = stream.readStringUntil(',').toInt();
+        waitResponse();
+        return res;
+    }
+    
+    boolean standby() {
+        sendAT(GF("+CFUN=4"));
+        if (waitResponse(GF(GSM_NL "OK")) != 1) {
+            return false;
+        }
+        return true;
+    }
+    
+    boolean wakeup() {
+        sendAT(GF("+CFUN=1"));
+        if (waitResponse(GF(GSM_NL "OK")) != 1) {
+            return false;
+        }
+        return true;
+    }
 
 private:
   int modemConnect(const char* host, uint16_t port, uint8_t mux) {
