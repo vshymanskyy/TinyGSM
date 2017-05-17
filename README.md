@@ -69,7 +69,8 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
 
 When using ```SoftwareSerial``` (on Uno, Nano, etc), the speed **115200** may not work.  
 Try selecting **57600**, **38400**, or even lower - the one that works best for you.  
-Be sure to set correct TX/RX pins in the sketch.
+Be sure to set correct TX/RX pins in the sketch.  
+**Read more about SoftSerial options and configuration [here](https://www.pjrc.com/teensy/td_libs_AltSoftSerial.html).**
 
 ### Diagnostics sketch
 
