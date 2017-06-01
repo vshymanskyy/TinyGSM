@@ -11,11 +11,8 @@
 
 #if   defined(TINY_GSM_MODEM_SIM800) || defined(TINY_GSM_MODEM_SIM900)
   #include <TinyGsmClientSIM800.h>
-<<<<<<< HEAD
-#elif   defined(TINY_GSM_MODEM_SIM808)
-  #include <TinyGsmClientSIM808.h>
-=======
->>>>>>> 5e53d77d7bd989b7d673bab61444cdd6fd495364
+#elif defined(TINY_GSM_MODEM_SIM808v2)
+  #include <TinyGsmClientSIM808v2.h>
 #elif defined(TINY_GSM_MODEM_A6) || defined(TINY_GSM_MODEM_A7)
   #include <TinyGsmClientA6.h>
 #elif defined(TINY_GSM_MODEM_M590)
