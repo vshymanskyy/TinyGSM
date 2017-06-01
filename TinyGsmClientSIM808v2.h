@@ -1,13 +1,13 @@
 /**
- * @file       TinyGsmClientSIM800.h
- * @author     Volodymyr Shymanskyy
+ * @file       TinyGsmClientSIM808v2.h
+ * @author     Volodymyr Shymanskyy, Brun von der Goenne
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
  * @date       Nov 2016
  */
 
-#ifndef TinyGsmClientSIM800_h
-#define TinyGsmClientSIM800_h
+#ifndef TinyGsmClientSIM808v2_h
+#define TinyGsmClientSIM808v2_h
 
 #define TINY_GSM_DEBUG Serial
 //#define TINY_GSM_USE_HEX
@@ -508,8 +508,6 @@ public:
   void sendUSSD() {
   }
 
-  //void sendSMS() {
-  //}
     
     int getNumSMS() {
         
@@ -611,8 +609,8 @@ public:
         return true;
     }
     
-    // Get the RAW GPS output
-    // works only with ans Sim808 V2
+    // get the RAW GPS output
+    // works only with ans SIM808 V2
     String getGPSraw() {
         sendAT(GF("+CGNSINF"));
         if (waitResponse(GF(GSM_NL "+CGNSINF:")) != 1) {
@@ -624,8 +622,8 @@ public:
         return res;
     }
     
-    // Get GPS informations
-    // works only with ans Sim808 V2
+    // get GPS informations
+    // works only with ans SIM808 V2
     boolean getGPS(float *lat, float *lon, float *speed=0, int *alt=0, int *vsat=0, int *usat=0) {
         //String buffer = "";
         char chr_buffer[12];
@@ -660,6 +658,8 @@ public:
         return fix;
     }
 
+    // get GPS time
+    // works only with SIM808 V2
     boolean getGPSTime(int *year, int *month, int *day, int *hour, int *minute, int *second) {
         boolean fix = false;
         char chr_buffer[12];
