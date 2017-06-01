@@ -626,7 +626,11 @@ public:
     
     // Get GPS informations
     // works only with ans Sim808 V2
+<<<<<<< HEAD
     boolean getGPS(float *lat, float *lon, float *speed=0, int *alt=0, int *vsat=0, int *usat=0) {
+=======
+    boolean getGPS(float *lat, float *lon, float *speed=0, float *alt=0, int *vsat=0, int *usat=0) {
+>>>>>>> 5e53d77d7bd989b7d673bab61444cdd6fd495364
         //String buffer = "";
         char chr_buffer[12];
         boolean fix = false;
