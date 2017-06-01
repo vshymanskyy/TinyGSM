@@ -1,0 +1,23 @@
+# Compiled files, executables
+*.o
+*.a
+*.exe
+*.out
+*.app
+
+# Junk
+*.orig
+*.log
+*.bak
+
+# IDE project files
+.cproject
+.project
+.settings
+
+# Markers
+.development
+
+# Extras
+extras/docs/*
+

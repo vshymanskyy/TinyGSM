@@ -1,0 +1,23 @@
+#######################################
+# Data types (KEYWORD1)
+#######################################
+TinyGsm	KEYWORD1
+TinyGsmClient	KEYWORD1
+
+SerialAT	KEYWORD1
+SerialMon	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+begin	KEYWORD2
+restart	KEYWORD2
+waitForNetwork	KEYWORD2
+getSimStatus	KEYWORD2
+gprsConnect	KEYWORD2
+gprsDisconnect	KEYWORD2
+factoryReset	KEYWORD2
+
+#######################################
+# Literals (LITERAL1)
+#######################################
