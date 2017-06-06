@@ -160,7 +160,14 @@ public:
     sendAT(GF("GT64")); // shorten the guard time to 100ms
     waitResponse();
     writeChanges();
+    sendAT(GF("IM"));  // Get the Hardware series; 0x601 for S6B (Wifi)
+    // wait for the response
+    unsigned long startMillis = millis();
+    while (!stream.available() && millis() - startMillis < 1000) {};
+    String res = streamReadUntil('\r');  // Does not send an OK, just the result
     exitCommand();
+    if (res == "0x601") series = "WIFI";
+    else series = "CELL";
     guardTime = 125;
     return true;
   }
@@ -243,7 +250,8 @@ public:
 
   int getSignalQuality() {
     commandMode();
-    sendAT(GF("DB"));
+    if (series == "WIFI") sendAT(GF("DB"));
+    else sendAT(GF("LM"));
     // wait for the response
     unsigned long startMillis = millis();
     while (!stream.available() && millis() - startMillis < 1000) {};
@@ -263,7 +271,8 @@ public:
 
   RegStatus getRegistrationStatus() {
     commandMode();
-    sendAT(GF("AI"));
+    if (series == "WIFI") sendAT(GF("AI"));
+    else sendAT(GF("CI"));
     // wait for the response
     unsigned long startMillis = millis();
     while (!stream.available() && millis() - startMillis < 1000) {};
@@ -571,6 +580,7 @@ private:
 
 private:
   int           guardTime;
+  String        series;
   Stream&       stream;
   GsmClient*    sockets[1];
 };
