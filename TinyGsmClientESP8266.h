@@ -203,6 +203,20 @@ public:
     return autoBaud();
   }
 
+  /*
+   * SIM card & Network Operator functions
+   */
+
+   int getSignalQuality() {
+     sendAT(GF("+CWLAP=\""), _ssid, GF("\""));
+     String res1 = stream.readStringUntil(':');
+     DBG(GSM_NL, res1, ':');
+     String res2 = stream.readStringUntil(',');
+     DBG(res2);
+     waitResponse();
+     return res2.toInt();
+   }
+
   bool waitForNetwork(unsigned long timeout = 60000L) {
     for (unsigned long start = millis(); millis() - start < timeout; ) {
       sendAT(GF("+CIPSTATUS"));
@@ -223,6 +237,8 @@ public:
    * WiFi functions
    */
   bool networkConnect(const char* ssid, const char* pwd) {
+
+    _ssid = ssid;
 
     sendAT(GF("+CIPMUX=1"));
     if (waitResponse() != 1) {
@@ -418,6 +434,7 @@ private:
 private:
   Stream&       stream;
   GsmClient*    sockets[5];
+  const char*   _ssid;
 };
 
 typedef TinyGsm::GsmClient TinyGsmClient;
