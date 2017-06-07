@@ -263,7 +263,7 @@ public:
     char buf[2] = {0};  // Set up buffer for response
     buf[0] = streamRead();
     buf[1] = streamRead();
-    DBG(buf, "\n");
+    DBG(buf[0], buf[1], "\n");
     exitCommand();
     int intr = strtol(buf, 0, 16);
     if (beeType == S6B) return -93 + intr;  // the maximum sensitivity is -93dBm
