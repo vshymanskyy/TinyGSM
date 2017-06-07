@@ -27,6 +27,11 @@ enum SimStatus {
   SIM_LOCKED = 2,
 };
 
+enum XBeeType {
+  S6B    = 0,
+  LTEC1 = 1,
+};
+
 enum RegStatus {
   REG_UNREGISTERED = 0,
   REG_SEARCHING    = 2,
@@ -160,7 +165,14 @@ public:
     sendAT(GF("GT64")); // shorten the guard time to 100ms
     waitResponse();
     writeChanges();
+    sendAT(GF("HS"));  // Get the "Hardware Series"; 0x601 for S6B (Wifi)
+    // wait for the response
+    unsigned long startMillis = millis();
+    while (!stream.available() && millis() - startMillis < 1000) {};
+    String res = streamReadUntil('\r');  // Does not send an OK, just the result
     exitCommand();
+    if (res == "601") beeType = S6B;
+    else beeType = LTEC1;
     guardTime = 125;
     return true;
   }
@@ -212,7 +224,7 @@ public:
   }
 
   /*
-   * SIM card & Networ Operator functions
+   * SIM card & Network Operator functions
    */
 
   bool simUnlock(const char *pin) {  // Not supported
@@ -243,18 +255,19 @@ public:
 
   int getSignalQuality() {
     commandMode();
-    sendAT(GF("DB"));
+    if (beeType == S6B) sendAT(GF("LM"));  // ask for the "link margin" - the dB above sensitivity
+    else sendAT(GF("DB"));  // ask for the cell strenght in dBm
     // wait for the response
     unsigned long startMillis = millis();
     while (!stream.available() && millis() - startMillis < 1000) {};
-    char buf[4] = { 0, };  // Does not send an OK, just the result
+    char buf[2] = {0};  // Set up buffer for response
     buf[0] = streamRead();
     buf[1] = streamRead();
-    buf[2] = streamRead();
-    buf[3] = streamRead();
+    DBG(buf[0], buf[1], "\n");
     exitCommand();
     int intr = strtol(buf, 0, 16);
-    return intr;
+    if (beeType == S6B) return -93 + intr;  // the maximum sensitivity is -93dBm
+    else return -1*intr; // need to convert to negative number
   }
 
   SimStatus getSimStatus(unsigned long timeout = 10000L) {
@@ -263,24 +276,25 @@ public:
 
   RegStatus getRegistrationStatus() {
     commandMode();
-    sendAT(GF("AI"));
+    if (beeType == S6B) sendAT(GF("AI"));
+    else sendAT(GF("CI"));
     // wait for the response
     unsigned long startMillis = millis();
     while (!stream.available() && millis() - startMillis < 1000) {};
     String res = streamReadUntil('\r');  // Does not send an OK, just the result
     exitCommand();
 
-    if(res == GF("0x00"))
+    if(res == GF("0"))
       return REG_OK_HOME;
 
-    else if(res == GF("0x13") || res == GF("0x2A"))
+    else if(res == GF("13") || res == GF("2A"))
       return REG_UNREGISTERED;
 
-    else if(res == GF("0xFF") || res == GF("0x22") || res == GF("0x23") ||
-            res == GF("0x40") || res == GF("0x41") || res == GF("0x42"))
+    else if(res == GF("FF") || res == GF("22") || res == GF("23") ||
+            res == GF("40") || res == GF("41") || res == GF("42"))
       return REG_SEARCHING;
 
-    else if(res == GF("0x24"))
+    else if(res == GF("24"))
       return REG_DENIED;
 
     else return REG_UNKNOWN;
@@ -301,7 +315,8 @@ public:
   bool waitForNetwork(unsigned long timeout = 60000L) {
     for (unsigned long start = millis(); millis() - start < timeout; ) {
       commandMode();
-      sendAT(GF("AI"));
+      if (beeType == S6B) sendAT(GF("AI"));
+      else sendAT(GF("CI"));
       // wait for the response
       unsigned long startMillis = millis();
       while (!stream.available() && millis() - startMillis < 1000) {};
@@ -510,7 +525,8 @@ private:
 
   bool modemGetConnected(uint8_t mux = 1) {
     commandMode();
-    sendAT(GF("AI"));
+    if (beeType == S6B) sendAT(GF("AI"));
+    else sendAT(GF("CI"));
     int res = waitResponse(GF("0"));
     exitCommand();
     return 1 == res;
@@ -528,12 +544,7 @@ private:
     streamWrite(tail...);
   }
 
-  int streamRead() {
-    TINY_GSM_YIELD();
-    int c = stream.read();
-    DBG((char)c);
-    return c;
-  }
+  int streamRead() { return stream.read(); }
 
   String streamReadUntil(char c) {
     TINY_GSM_YIELD();
@@ -571,6 +582,7 @@ private:
 
 private:
   int           guardTime;
+  XBeeType      beeType;
   Stream&       stream;
   GsmClient*    sockets[1];
 };

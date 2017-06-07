@@ -203,13 +203,29 @@ public:
     return autoBaud();
   }
 
+  /*
+   * SIM card & Network Operator functions
+   */
+
+  int getSignalQuality() {
+    sendAT(GF("+CWLAP=\""), _ssid, GF("\""));
+    DBG(GSM_NL, "<<< ");
+    streamSkipUntil(':');
+    streamSkipUntil(',');
+    streamSkipUntil(',');
+    streamSkipUntil(',');
+    String res2 = streamReadUntil(',');
+    streamSkipUntil(')');
+    waitResponse();
+    return res2.toInt();
+  }
+
   bool waitForNetwork(unsigned long timeout = 60000L) {
     for (unsigned long start = millis(); millis() - start < timeout; ) {
       sendAT(GF("+CIPSTATUS"));
-      String res1 = stream.readStringUntil(':');
-      DBG(GSM_NL, res1, ':');
-      String res2 = stream.readStringUntil(*GSM_NL);
-      DBG(res2);
+      DBG(GSM_NL, "<<< ");
+      String res1 = streamReadUntil(':');
+      String res2 = streamReadUntil(*GSM_NL);
       waitResponse();
       if (res2 == GF("2") || res2 == GF("3") || res2 == GF("4")) {
         return true;
@@ -223,6 +239,8 @@ public:
    * WiFi functions
    */
   bool networkConnect(const char* ssid, const char* pwd) {
+
+    _ssid = ssid;
 
     sendAT(GF("+CIPMUX=1"));
     if (waitResponse() != 1) {
@@ -264,7 +282,7 @@ public:
     streamWrite("AT", cmd..., GSM_NL);
     stream.flush();
     TINY_GSM_YIELD();
-    DBG(GSM_NL, ">>> AT:", cmd...);
+    DBG(GSM_NL, ">>> AT", cmd...);
   }
 
   // TODO: Optimize this!
@@ -415,9 +433,30 @@ private:
 
   int streamRead() { return stream.read(); }
 
+  String streamReadUntil(char c) {
+    String return_string = stream.readStringUntil(c);
+    return_string.trim();
+    if (String(c) == GSM_NL || String(c) == "\n"){
+      DBG(return_string, c, "    ");
+    } else DBG(return_string, c);
+    return return_string;
+  }
+
+  bool streamSkipUntil(char c) {
+    String skipped = stream.readStringUntil(c);
+    skipped.trim();
+    if (skipped.length()) {
+      if (String(c) == GSM_NL || String(c) == "\n"){
+        DBG(skipped, c, "    ");
+      } else DBG(skipped, c);
+      return true;
+    } else return false;
+  }
+
 private:
   Stream&       stream;
   GsmClient*    sockets[5];
+  const char*   _ssid;
 };
 
 typedef TinyGsm::GsmClient TinyGsmClient;

@@ -241,7 +241,7 @@ public:
   }
 
   /*
-   * SIM card & Networ Operator functions
+   * SIM card & Network Operator functions
    */
 
   bool simUnlock(const char *pin) {
