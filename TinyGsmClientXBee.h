@@ -255,10 +255,10 @@ public:
     // wait for the response
     unsigned long startMillis = millis();
     while (!stream.available() && millis() - startMillis < 1000) {};
-    char buf[3] = { 0, };  // Does not send an OK, just the result
+    char buf[2] = {0};  // Set up buffer for response
     buf[0] = streamRead();
     buf[1] = streamRead();
-    DBG("\n");
+    DBG(buf, "\n");
     exitCommand();
     int intr = strtol(buf, 0, 16);
     return intr;
@@ -538,12 +538,7 @@ private:
     streamWrite(tail...);
   }
 
-  int streamRead() {
-    TINY_GSM_YIELD();
-    int c = stream.read();
-    DBG((char)c);
-    return c;
-  }
+  int streamRead() { return stream.read(); }
 
   String streamReadUntil(char c) {
     TINY_GSM_YIELD();
