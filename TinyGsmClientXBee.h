@@ -160,7 +160,7 @@ public:
     sendAT(GF("GT64")); // shorten the guard time to 100ms
     waitResponse();
     writeChanges();
-    sendAT(GF("IM"));  // Get the Hardware series; 0x601 for S6B (Wifi)
+    sendAT(GF("HS"));  // Get the Hardware series; 0x601 for S6B (Wifi)
     // wait for the response
     unsigned long startMillis = millis();
     while (!stream.available() && millis() - startMillis < 1000) {};
