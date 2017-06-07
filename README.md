@@ -42,8 +42,10 @@ TinyGSM also pulls data gently from the modem (whenever possible), so it can ope
 - [x] Microduino GSM
 - [x] Adafruit FONA (Mini Cellular GSM Breakout)
 - [x] Adafruit FONA 800/808 Shield
+- [x] ... other modules based on supported modems
 
 More modems may be supported later:
+- [ ] Hi-Link HLK-RM04
 - [ ] Quectel M10, M95, UG95
 - [ ] SIMCom SIM5320, SIM5216
 - [ ] Telit GL865
@@ -69,7 +71,8 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
 
 When using ```SoftwareSerial``` (on Uno, Nano, etc), the speed **115200** may not work.  
 Try selecting **57600**, **38400**, or even lower - the one that works best for you.  
-Be sure to set correct TX/RX pins in the sketch.
+Be sure to set correct TX/RX pins in the sketch. Please note that not every Arduino pin can serve as TX or RX pin.  
+**Read more about SoftSerial options and configuration [here](https://www.pjrc.com/teensy/td_libs_AltSoftSerial.html) and [here](https://www.arduino.cc/en/Reference/SoftwareSerial).**
 
 ### Diagnostics sketch
 
