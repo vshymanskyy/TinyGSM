@@ -27,6 +27,11 @@ enum SimStatus {
   SIM_LOCKED = 2,
 };
 
+enum XBeeType {
+  S6B    = 0,
+  LTEC1 = 1,
+};
+
 enum RegStatus {
   REG_UNREGISTERED = 0,
   REG_SEARCHING    = 2,
@@ -160,14 +165,14 @@ public:
     sendAT(GF("GT64")); // shorten the guard time to 100ms
     waitResponse();
     writeChanges();
-    sendAT(GF("HS"));  // Get the Hardware series; 0x601 for S6B (Wifi)
+    sendAT(GF("HS"));  // Get the "Hardware Series"; 0x601 for S6B (Wifi)
     // wait for the response
     unsigned long startMillis = millis();
     while (!stream.available() && millis() - startMillis < 1000) {};
     String res = streamReadUntil('\r');  // Does not send an OK, just the result
     exitCommand();
-    if (res == "601") series = "WIFI";
-    else series = "CELL";
+    if (res == "601") beeType = S6B;
+    else beeType = LTEC1;
     guardTime = 125;
     return true;
   }
@@ -250,8 +255,8 @@ public:
 
   int getSignalQuality() {
     commandMode();
-    if (series == "WIFI") sendAT(GF("LM"));
-    else sendAT(GF("DB"));
+    if (beeType == S6B) sendAT(GF("LM"));  // ask for the "link margin" - the dB above sensitivity
+    else sendAT(GF("DB"));  // ask for the cell strenght in dBm
     // wait for the response
     unsigned long startMillis = millis();
     while (!stream.available() && millis() - startMillis < 1000) {};
@@ -261,7 +266,8 @@ public:
     DBG(buf, "\n");
     exitCommand();
     int intr = strtol(buf, 0, 16);
-    return intr;
+    if (beeType == S6B) return -93 + intr;  // the maximum sensitivity is -93dBm
+    else return -1*intr; // need to convert to negative number
   }
 
   SimStatus getSimStatus(unsigned long timeout = 10000L) {
@@ -270,7 +276,7 @@ public:
 
   RegStatus getRegistrationStatus() {
     commandMode();
-    if (series == "WIFI") sendAT(GF("AI"));
+    if (beeType == S6B) sendAT(GF("AI"));
     else sendAT(GF("CI"));
     // wait for the response
     unsigned long startMillis = millis();
@@ -309,7 +315,7 @@ public:
   bool waitForNetwork(unsigned long timeout = 60000L) {
     for (unsigned long start = millis(); millis() - start < timeout; ) {
       commandMode();
-      if (series == "WIFI") sendAT(GF("AI"));
+      if (beeType == S6B) sendAT(GF("AI"));
       else sendAT(GF("CI"));
       // wait for the response
       unsigned long startMillis = millis();
@@ -519,7 +525,7 @@ private:
 
   bool modemGetConnected(uint8_t mux = 1) {
     commandMode();
-    if (series == "WIFI") sendAT(GF("AI"));
+    if (beeType == S6B) sendAT(GF("AI"));
     else sendAT(GF("CI"));
     int res = waitResponse(GF("0"));
     exitCommand();
@@ -576,7 +582,7 @@ private:
 
 private:
   int           guardTime;
-  String        series;
+  XBeeType      beeType;
   Stream&       stream;
   GsmClient*    sockets[1];
 };
