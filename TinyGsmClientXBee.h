@@ -166,7 +166,7 @@ public:
     while (!stream.available() && millis() - startMillis < 1000) {};
     String res = streamReadUntil('\r');  // Does not send an OK, just the result
     exitCommand();
-    if (res == "0x601") series = "WIFI";
+    if (res == "601") series = "WIFI";
     else series = "CELL";
     guardTime = 125;
     return true;
@@ -250,16 +250,15 @@ public:
 
   int getSignalQuality() {
     commandMode();
-    if (series == "WIFI") sendAT(GF("DB"));
-    else sendAT(GF("LM"));
+    if (series == "WIFI") sendAT(GF("LM"));
+    else sendAT(GF("DB"));
     // wait for the response
     unsigned long startMillis = millis();
     while (!stream.available() && millis() - startMillis < 1000) {};
-    char buf[4] = { 0, };  // Does not send an OK, just the result
+    char buf[3] = { 0, };  // Does not send an OK, just the result
     buf[0] = streamRead();
     buf[1] = streamRead();
-    buf[2] = streamRead();
-    buf[3] = streamRead();
+    DBG("\n");
     exitCommand();
     int intr = strtol(buf, 0, 16);
     return intr;
@@ -279,17 +278,17 @@ public:
     String res = streamReadUntil('\r');  // Does not send an OK, just the result
     exitCommand();
 
-    if(res == GF("0x00"))
+    if(res == GF("0"))
       return REG_OK_HOME;
 
-    else if(res == GF("0x13") || res == GF("0x2A"))
+    else if(res == GF("13") || res == GF("2A"))
       return REG_UNREGISTERED;
 
-    else if(res == GF("0xFF") || res == GF("0x22") || res == GF("0x23") ||
-            res == GF("0x40") || res == GF("0x41") || res == GF("0x42"))
+    else if(res == GF("FF") || res == GF("22") || res == GF("23") ||
+            res == GF("40") || res == GF("41") || res == GF("42"))
       return REG_SEARCHING;
 
-    else if(res == GF("0x24"))
+    else if(res == GF("24"))
       return REG_DENIED;
 
     else return REG_UNKNOWN;
@@ -310,7 +309,8 @@ public:
   bool waitForNetwork(unsigned long timeout = 60000L) {
     for (unsigned long start = millis(); millis() - start < timeout; ) {
       commandMode();
-      sendAT(GF("AI"));
+      if (series == "WIFI") sendAT(GF("AI"));
+      else sendAT(GF("CI"));
       // wait for the response
       unsigned long startMillis = millis();
       while (!stream.available() && millis() - startMillis < 1000) {};
@@ -519,7 +519,8 @@ private:
 
   bool modemGetConnected(uint8_t mux = 1) {
     commandMode();
-    sendAT(GF("AI"));
+    if (series == "WIFI") sendAT(GF("AI"));
+    else sendAT(GF("CI"));
     int res = waitResponse(GF("0"));
     exitCommand();
     return 1 == res;
