@@ -420,124 +420,6 @@ public:
    * Battery functions
    */
 
-  /* Public Utilities */
-  template<typename... Args>
-  void sendAT(Args... cmd) {
-    streamWrite("AT", cmd..., GSM_NL);
-    stream.flush();
-    TINY_GSM_YIELD();
-    DBG(GSM_NL, ">>> AT:", cmd...);
-  }
-
-  // TODO: Optimize this!
-  uint8_t waitResponse(uint32_t timeout, String& data,
-                       GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),
-                       GsmConstStr r3=NULL, GsmConstStr r4=NULL, GsmConstStr r5=NULL)
-  {
-    /*String r1s(r1); r1s.trim();
-    String r2s(r2); r2s.trim();
-    String r3s(r3); r3s.trim();
-    String r4s(r4); r4s.trim();
-    String r5s(r5); r5s.trim();
-    DBG("### ..:", r1s, ",", r2s, ",", r3s, ",", r4s, ",", r5s);*/
-    data.reserve(64);
-    bool gotData = false;
-    int mux = -1;
-    int len = 0;
-    int index = 0;
-    unsigned long startMillis = millis();
-    do {
-      TINY_GSM_YIELD();
-      while (stream.available() > 0) {
-        int a = streamRead();
-        if (a <= 0) continue; // Skip 0x00 bytes, just in case
-        data += (char)a;
-        if (r1 && data.endsWith(r1)) {
-          index = 1;
-          goto finish;
-        } else if (r2 && data.endsWith(r2)) {
-          index = 2;
-          goto finish;
-        } else if (r3 && data.endsWith(r3)) {
-          index = 3;
-          goto finish;
-        } else if (r4 && data.endsWith(r4)) {
-          index = 4;
-          goto finish;
-        } else if (r5 && data.endsWith(r5)) {
-          index = 5;
-          goto finish;
-        } else if (data.endsWith(GF("+CIPRCV:"))) {
-          mux = stream.readStringUntil(',').toInt();
-          data += mux;
-          data += (',');
-          len = stream.readStringUntil(',').toInt();
-          data += len;
-          data += (',');
-          gotData = true;
-          index = 6;
-          goto finish;
-        } else if (data.endsWith(GF("+TCPCLOSED:"))) {
-          mux = stream.readStringUntil(',').toInt();
-          data += mux;
-          data += (',');
-          String concl = stream.readStringUntil('\n');
-          data += concl;
-         sockets[mux]->sock_connected = false;
-          index = 7;
-          goto finish;
-        }
-      }
-    } while (millis() - startMillis < timeout);
-  finish:
-    if (!index) {
-      data.trim();
-      if (data.length()) {
-        DBG(GSM_NL, "### Unhandled:", data);
-      }
-    }
-    else {
-      data.trim();
-      data.replace(GSM_NL GSM_NL, GSM_NL);
-      data.replace(GSM_NL, GSM_NL "    ");
-      if (data.length()) {
-        DBG(GSM_NL, "<<< ", data);
-      }
-    }
-    if (gotData) {
-      int len_orig = len;
-    if (len > sockets[mux]->rx.free()) {
-        DBG(GSM_NL, "### Buffer overflow: ", len, "->", sockets[mux]->rx.free());
-    } else {
-        DBG(GSM_NL, "### Got: ", len, "->", sockets[mux]->rx.free());
-    }
-    while (len--) {
-          TINY_GSM_YIELD();
-          int r = stream.read();
-          if (r <= 0) continue; // Skip 0x00 bytes, just in case
-          sockets[mux]->rx.put((char)r);
-    }
-      if (len_orig > sockets[mux]->available()) {
-          DBG(GSM_NL, "### Fewer characters received than expected: ", sockets[mux]->available(), " vs ", len_orig);
-      }
-    }
-    return index;
-  }
-
-  uint8_t waitResponse(uint32_t timeout,
-                       GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),
-                       GsmConstStr r3=NULL, GsmConstStr r4=NULL, GsmConstStr r5=NULL)
-  {
-    String data;
-    return waitResponse(timeout, data, r1, r2, r3, r4, r5);
-  }
-
-  uint8_t waitResponse(GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),
-                       GsmConstStr r3=NULL, GsmConstStr r4=NULL, GsmConstStr r5=NULL)
-  {
-    return waitResponse(1000, r1, r2, r3, r4, r5);
-  }
-
 private:
   int modemConnect(const char* host, uint16_t port, uint8_t* mux) {
     sendAT(GF("+CIPSTART="),  GF("\"TCP"), GF("\",\""), host, GF("\","), port);
@@ -611,6 +493,123 @@ private:
       } else DBG(skipped, c);
       return true;
     } else return false;
+  }
+
+  template<typename... Args>
+  void sendAT(Args... cmd) {
+   streamWrite("AT", cmd..., GSM_NL);
+   stream.flush();
+   TINY_GSM_YIELD();
+   DBG(GSM_NL, ">>> AT:", cmd...);
+  }
+
+  // TODO: Optimize this!
+  uint8_t waitResponse(uint32_t timeout, String& data,
+                      GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),
+                      GsmConstStr r3=NULL, GsmConstStr r4=NULL, GsmConstStr r5=NULL)
+  {
+   /*String r1s(r1); r1s.trim();
+   String r2s(r2); r2s.trim();
+   String r3s(r3); r3s.trim();
+   String r4s(r4); r4s.trim();
+   String r5s(r5); r5s.trim();
+   DBG("### ..:", r1s, ",", r2s, ",", r3s, ",", r4s, ",", r5s);*/
+   data.reserve(64);
+   bool gotData = false;
+   int mux = -1;
+   int len = 0;
+   int index = 0;
+   unsigned long startMillis = millis();
+   do {
+     TINY_GSM_YIELD();
+     while (stream.available() > 0) {
+       int a = streamRead();
+       if (a <= 0) continue; // Skip 0x00 bytes, just in case
+       data += (char)a;
+       if (r1 && data.endsWith(r1)) {
+         index = 1;
+         goto finish;
+       } else if (r2 && data.endsWith(r2)) {
+         index = 2;
+         goto finish;
+       } else if (r3 && data.endsWith(r3)) {
+         index = 3;
+         goto finish;
+       } else if (r4 && data.endsWith(r4)) {
+         index = 4;
+         goto finish;
+       } else if (r5 && data.endsWith(r5)) {
+         index = 5;
+         goto finish;
+       } else if (data.endsWith(GF("+CIPRCV:"))) {
+         mux = stream.readStringUntil(',').toInt();
+         data += mux;
+         data += (',');
+         len = stream.readStringUntil(',').toInt();
+         data += len;
+         data += (',');
+         gotData = true;
+         index = 6;
+         goto finish;
+       } else if (data.endsWith(GF("+TCPCLOSED:"))) {
+         mux = stream.readStringUntil(',').toInt();
+         data += mux;
+         data += (',');
+         String concl = stream.readStringUntil('\n');
+         data += concl;
+        sockets[mux]->sock_connected = false;
+         index = 7;
+         goto finish;
+       }
+     }
+   } while (millis() - startMillis < timeout);
+  finish:
+   if (!index) {
+     data.trim();
+     if (data.length()) {
+       DBG(GSM_NL, "### Unhandled:", data);
+     }
+   }
+   else {
+     data.trim();
+     data.replace(GSM_NL GSM_NL, GSM_NL);
+     data.replace(GSM_NL, GSM_NL "    ");
+     if (data.length()) {
+       DBG(GSM_NL, "<<< ", data);
+     }
+   }
+   if (gotData) {
+     int len_orig = len;
+   if (len > sockets[mux]->rx.free()) {
+       DBG(GSM_NL, "### Buffer overflow: ", len, "->", sockets[mux]->rx.free());
+   } else {
+       DBG(GSM_NL, "### Got: ", len, "->", sockets[mux]->rx.free());
+   }
+   while (len--) {
+         TINY_GSM_YIELD();
+         int r = stream.read();
+         if (r <= 0) continue; // Skip 0x00 bytes, just in case
+         sockets[mux]->rx.put((char)r);
+   }
+     if (len_orig > sockets[mux]->available()) {
+         DBG(GSM_NL, "### Fewer characters received than expected: ", sockets[mux]->available(), " vs ", len_orig);
+     }
+   }
+   return index;
+  }
+
+  uint8_t waitResponse(uint32_t timeout,
+                      GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),
+                      GsmConstStr r3=NULL, GsmConstStr r4=NULL, GsmConstStr r5=NULL)
+  {
+   String data;
+   return waitResponse(timeout, data, r1, r2, r3, r4, r5);
+  }
+
+  uint8_t waitResponse(GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),
+                      GsmConstStr r3=NULL, GsmConstStr r4=NULL, GsmConstStr r5=NULL)
+  {
+   return waitResponse(1000, r1, r2, r3, r4, r5);
   }
 
 private:

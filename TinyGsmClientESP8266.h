@@ -276,7 +276,70 @@ public:
     return false;
   }
 
-  /* Public Utilities */
+private:
+  int modemConnect(const char* host, uint16_t port, uint8_t mux) {
+    sendAT(GF("+CIPSTART="), mux, ',', GF("\"TCP"), GF("\",\""), host, GF("\","), port, GF(","), TCP_KEEP_ALIVE);
+    int rsp = waitResponse(75000L,
+                           GFP(GSM_OK),
+                           GFP(GSM_ERROR),
+                           GF(GSM_NL "ALREADY CONNECT" GSM_NL));
+    waitResponse(100, GF("1,CONNECT"));
+    return (1 == rsp);
+  }
+
+  int modemSend(const void* buff, size_t len, uint8_t mux) {
+    sendAT(GF("+CIPSEND="), mux, ',', len);
+    if (waitResponse(GF(">")) != 1) {
+      return -1;
+    }
+    stream.write((uint8_t*)buff, len);
+    if (waitResponse(GF(GSM_NL "SEND OK" GSM_NL)) != 1) {
+      return -1;
+    }
+    return len;
+  }
+
+  bool modemGetConnected(uint8_t mux) {
+    sendAT(GF("+CIPSTATUS="), mux);
+    int res = waitResponse(GF(",\"CONNECTED\""), GF(",\"CLOSED\""), GF(",\"CLOSING\""), GF(",\"INITIAL\""));
+    waitResponse();
+    return 1 == res;
+  }
+
+  /* Private Utilities */
+  template<typename T>
+  void streamWrite(T last) {
+    stream.print(last);
+  }
+
+  template<typename T, typename... Args>
+  void streamWrite(T head, Args... tail) {
+    stream.print(head);
+    streamWrite(tail...);
+  }
+
+  int streamRead() { return stream.read(); }
+
+  String streamReadUntil(char c) {
+    String return_string = stream.readStringUntil(c);
+    return_string.trim();
+    if (String(c) == GSM_NL || String(c) == "\n"){
+      DBG(return_string, c, "    ");
+    } else DBG(return_string, c);
+    return return_string;
+  }
+
+  bool streamSkipUntil(char c) {
+    String skipped = stream.readStringUntil(c);
+    skipped.trim();
+    if (skipped.length()) {
+      if (String(c) == GSM_NL || String(c) == "\n"){
+        DBG(skipped, c, "    ");
+      } else DBG(skipped, c);
+      return true;
+    } else return false;
+  }
+
   template<typename... Args>
   void sendAT(Args... cmd) {
     streamWrite("AT", cmd..., GSM_NL);
@@ -387,70 +450,6 @@ public:
                        GsmConstStr r3=NULL, GsmConstStr r4=NULL, GsmConstStr r5=NULL)
   {
     return waitResponse(1000, r1, r2, r3, r4, r5);
-  }
-
-private:
-  int modemConnect(const char* host, uint16_t port, uint8_t mux) {
-    sendAT(GF("+CIPSTART="), mux, ',', GF("\"TCP"), GF("\",\""), host, GF("\","), port, GF(","), TCP_KEEP_ALIVE);
-    int rsp = waitResponse(75000L,
-                           GFP(GSM_OK),
-                           GFP(GSM_ERROR),
-                           GF(GSM_NL "ALREADY CONNECT" GSM_NL));
-    waitResponse(100, GF("1,CONNECT"));
-    return (1 == rsp);
-  }
-
-  int modemSend(const void* buff, size_t len, uint8_t mux) {
-    sendAT(GF("+CIPSEND="), mux, ',', len);
-    if (waitResponse(GF(">")) != 1) {
-      return -1;
-    }
-    stream.write((uint8_t*)buff, len);
-    if (waitResponse(GF(GSM_NL "SEND OK" GSM_NL)) != 1) {
-      return -1;
-    }
-    return len;
-  }
-
-  bool modemGetConnected(uint8_t mux) {
-    sendAT(GF("+CIPSTATUS="), mux);
-    int res = waitResponse(GF(",\"CONNECTED\""), GF(",\"CLOSED\""), GF(",\"CLOSING\""), GF(",\"INITIAL\""));
-    waitResponse();
-    return 1 == res;
-  }
-
-  /* Private Utilities */
-  template<typename T>
-  void streamWrite(T last) {
-    stream.print(last);
-  }
-
-  template<typename T, typename... Args>
-  void streamWrite(T head, Args... tail) {
-    stream.print(head);
-    streamWrite(tail...);
-  }
-
-  int streamRead() { return stream.read(); }
-
-  String streamReadUntil(char c) {
-    String return_string = stream.readStringUntil(c);
-    return_string.trim();
-    if (String(c) == GSM_NL || String(c) == "\n"){
-      DBG(return_string, c, "    ");
-    } else DBG(return_string, c);
-    return return_string;
-  }
-
-  bool streamSkipUntil(char c) {
-    String skipped = stream.readStringUntil(c);
-    skipped.trim();
-    if (skipped.length()) {
-      if (String(c) == GSM_NL || String(c) == "\n"){
-        DBG(skipped, c, "    ");
-      } else DBG(skipped, c);
-      return true;
-    } else return false;
   }
 
 private:

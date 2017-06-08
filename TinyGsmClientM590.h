@@ -427,7 +427,94 @@ public:
    * Battery functions
    */
 
-  /* Public Utilities */
+private:
+  String dnsIpQuery(const char* host) {
+   sendAT(GF("+DNS=\""), host, GF("\""));
+   if (waitResponse(10000L, GF(GSM_NL "+DNS:")) != 1) {
+     return "";
+   }
+   String res = streamReadUntil('\n');
+   waitResponse(GF("+DNS:OK" GSM_NL));
+   res.trim();
+   return res;
+  }
+
+  int modemConnect(const char* host, uint16_t port, uint8_t mux) {
+    for (int i=0; i<3; i++) {
+      String ip = dnsIpQuery(host);
+
+      sendAT(GF("+TCPSETUP="), mux, GF(","), ip, GF(","), port);
+      int rsp = waitResponse(75000L,
+                            GF(",OK" GSM_NL),
+                            GF(",FAIL" GSM_NL),
+                            GF("+TCPSETUP:Error" GSM_NL));
+      if (1 == rsp) {
+        return true;
+      } else if (3 == rsp) {
+        sendAT(GF("+TCPCLOSE="), mux);
+        waitResponse();
+      }
+      delay(1000);
+    }
+    return false;
+  }
+
+  int modemSend(const void* buff, size_t len, uint8_t mux) {
+    sendAT(GF("+TCPSEND="), mux, ',', len);
+    if (waitResponse(GF(">")) != 1) {
+      return 0;
+    }
+    stream.write((uint8_t*)buff, len);
+    stream.write((char)0x0D);
+
+    if (waitResponse(30000L, GF(GSM_NL "+TCPSEND:")) != 1) {
+      return 0;
+    }
+    streamReadUntil('\n');
+    return len;
+  }
+
+  bool modemGetConnected(uint8_t mux) {
+    sendAT(GF("+CIPSTATUS="), mux);
+    int res = waitResponse(GF(",\"CONNECTED\""), GF(",\"CLOSED\""), GF(",\"CLOSING\""), GF(",\"INITIAL\""));
+    waitResponse();
+    return 1 == res;
+  }
+
+  /* Private Utilities */
+  template<typename T>
+  void streamWrite(T last) {
+    stream.print(last);
+  }
+
+  template<typename T, typename... Args>
+  void streamWrite(T head, Args... tail) {
+    stream.print(head);
+    streamWrite(tail...);
+  }
+
+  int streamRead() { return stream.read(); }
+
+  String streamReadUntil(char c) {
+    String return_string = stream.readStringUntil(c);
+    return_string.trim();
+    if (String(c) == GSM_NL || String(c) == "\n"){
+      DBG(return_string, c, "    ");
+    } else DBG(return_string, c);
+    return return_string;
+  }
+
+  bool streamSkipUntil(char c) {
+    String skipped = stream.readStringUntil(c);
+    skipped.trim();
+    if (skipped.length()) {
+      if (String(c) == GSM_NL || String(c) == "\n"){
+        DBG(skipped, c, "    ");
+      } else DBG(skipped, c);
+      return true;
+    } else return false;
+  }
+
   template<typename... Args>
   void sendAT(Args... cmd) {
     streamWrite("AT", cmd..., GSM_NL);
@@ -543,94 +630,6 @@ public:
                        GsmConstStr r3=NULL, GsmConstStr r4=NULL, GsmConstStr r5=NULL)
   {
     return waitResponse(1000, r1, r2, r3, r4, r5);
-  }
-
-private:
-  String dnsIpQuery(const char* host) {
-   sendAT(GF("+DNS=\""), host, GF("\""));
-   if (waitResponse(10000L, GF(GSM_NL "+DNS:")) != 1) {
-     return "";
-   }
-   String res = streamReadUntil('\n');
-   waitResponse(GF("+DNS:OK" GSM_NL));
-   res.trim();
-   return res;
-  }
-
-  int modemConnect(const char* host, uint16_t port, uint8_t mux) {
-    for (int i=0; i<3; i++) {
-      String ip = dnsIpQuery(host);
-
-      sendAT(GF("+TCPSETUP="), mux, GF(","), ip, GF(","), port);
-      int rsp = waitResponse(75000L,
-                            GF(",OK" GSM_NL),
-                            GF(",FAIL" GSM_NL),
-                            GF("+TCPSETUP:Error" GSM_NL));
-      if (1 == rsp) {
-        return true;
-      } else if (3 == rsp) {
-        sendAT(GF("+TCPCLOSE="), mux);
-        waitResponse();
-      }
-      delay(1000);
-    }
-    return false;
-  }
-
-  int modemSend(const void* buff, size_t len, uint8_t mux) {
-    sendAT(GF("+TCPSEND="), mux, ',', len);
-    if (waitResponse(GF(">")) != 1) {
-      return 0;
-    }
-    stream.write((uint8_t*)buff, len);
-    stream.write((char)0x0D);
-
-    if (waitResponse(30000L, GF(GSM_NL "+TCPSEND:")) != 1) {
-      return 0;
-    }
-    streamReadUntil('\n');
-    return len;
-  }
-
-  bool modemGetConnected(uint8_t mux) {
-    sendAT(GF("+CIPSTATUS="), mux);
-    int res = waitResponse(GF(",\"CONNECTED\""), GF(",\"CLOSED\""), GF(",\"CLOSING\""), GF(",\"INITIAL\""));
-    waitResponse();
-    return 1 == res;
-  }
-
-  /* Private Utilities */
-  template<typename T>
-  void streamWrite(T last) {
-    stream.print(last);
-  }
-
-  template<typename T, typename... Args>
-  void streamWrite(T head, Args... tail) {
-    stream.print(head);
-    streamWrite(tail...);
-  }
-
-  int streamRead() { return stream.read(); }
-
-  String streamReadUntil(char c) {
-    String return_string = stream.readStringUntil(c);
-    return_string.trim();
-    if (String(c) == GSM_NL || String(c) == "\n"){
-      DBG(return_string, c, "    ");
-    } else DBG(return_string, c);
-    return return_string;
-  }
-
-  bool streamSkipUntil(char c) {
-    String skipped = stream.readStringUntil(c);
-    skipped.trim();
-    if (skipped.length()) {
-      if (String(c) == GSM_NL || String(c) == "\n"){
-        DBG(skipped, c, "    ");
-      } else DBG(skipped, c);
-      return true;
-    } else return false;
   }
 
 private:

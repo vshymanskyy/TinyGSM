@@ -405,86 +405,6 @@ public:
     return true;
   }
 
-  /* Public Utilities */
-  template<typename... Args>
-  void sendAT(Args... cmd) {
-    streamWrite("AT", cmd..., GSM_NL);
-    stream.flush();
-    TINY_GSM_YIELD();
-    DBG(">>> AT ", cmd..., "\r\n");
-  }
-
-  // TODO: Optimize this!
-  uint8_t waitResponse(uint32_t timeout, String& data,
-                       GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),
-                       GsmConstStr r3=NULL, GsmConstStr r4=NULL, GsmConstStr r5=NULL)
-  {
-    /*String r1s(r1); r1s.trim();
-    String r2s(r2); r2s.trim();
-    String r3s(r3); r3s.trim();
-    String r4s(r4); r4s.trim();
-    String r5s(r5); r5s.trim();
-    DBG("### ..:", r1s, ",", r2s, ",", r3s, ",", r4s, ",", r5s);*/
-    data.reserve(64);
-    int index = 0;
-    unsigned long startMillis = millis();
-    do {
-      TINY_GSM_YIELD();
-      while (stream.available() > 0) {
-        int a = streamRead();
-        if (a <= 0) continue; // Skip 0x00 bytes, just in case
-        data += (char)a;
-        if (r1 && data.endsWith(r1)) {
-          index = 1;
-          goto finish;
-        } else if (r2 && data.endsWith(r2)) {
-          index = 2;
-          goto finish;
-        } else if (r3 && data.endsWith(r3)) {
-          index = 3;
-          goto finish;
-        } else if (r4 && data.endsWith(r4)) {
-          index = 4;
-          goto finish;
-        } else if (r5 && data.endsWith(r5)) {
-          index = 5;
-          goto finish;
-        }
-      }
-    } while (millis() - startMillis < timeout);
-  finish:
-    if (!index) {
-      data.trim();
-      data.replace(GSM_NL GSM_NL, GSM_NL);
-      data.replace(GSM_NL, "\r\n" "    ");
-      if (data.length()) {
-        DBG("### Unhandled:", data, "\r\n");
-    } else DBG("### NO RESPONSE!\r\n");
-    }
-    else {
-      data.trim();
-      data.replace(GSM_NL GSM_NL, GSM_NL);
-      data.replace(GSM_NL, "\r\n    ");
-      if (data.length()) {
-        DBG("<<< ", data, "\r\n");
-      }
-    }
-    return index;
-  }
-
-  uint8_t waitResponse(uint32_t timeout,
-                       GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),
-                       GsmConstStr r3=NULL, GsmConstStr r4=NULL, GsmConstStr r5=NULL)
-  {
-    String data;
-    return waitResponse(timeout, data, r1, r2, r3, r4, r5);
-  }
-
-  uint8_t waitResponse(GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),
-                       GsmConstStr r3=NULL, GsmConstStr r4=NULL, GsmConstStr r5=NULL)
-  {
-    return waitResponse(1000, r1, r2, r3, r4, r5);
-  }
 
 private:
   int modemConnect(const char* host, uint16_t port, uint8_t mux = 1) {
@@ -578,6 +498,86 @@ private:
   void exitCommand(void){
     sendAT(GF("CN"));  // Exit command mode
     waitResponse();
+  }
+
+  template<typename... Args>
+  void sendAT(Args... cmd) {
+    streamWrite("AT", cmd..., GSM_NL);
+    stream.flush();
+    TINY_GSM_YIELD();
+    DBG(">>> AT ", cmd..., "\r\n");
+  }
+
+  // TODO: Optimize this!
+  uint8_t waitResponse(uint32_t timeout, String& data,
+                       GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),
+                       GsmConstStr r3=NULL, GsmConstStr r4=NULL, GsmConstStr r5=NULL)
+  {
+    /*String r1s(r1); r1s.trim();
+    String r2s(r2); r2s.trim();
+    String r3s(r3); r3s.trim();
+    String r4s(r4); r4s.trim();
+    String r5s(r5); r5s.trim();
+    DBG("### ..:", r1s, ",", r2s, ",", r3s, ",", r4s, ",", r5s);*/
+    data.reserve(64);
+    int index = 0;
+    unsigned long startMillis = millis();
+    do {
+      TINY_GSM_YIELD();
+      while (stream.available() > 0) {
+        int a = streamRead();
+        if (a <= 0) continue; // Skip 0x00 bytes, just in case
+        data += (char)a;
+        if (r1 && data.endsWith(r1)) {
+          index = 1;
+          goto finish;
+        } else if (r2 && data.endsWith(r2)) {
+          index = 2;
+          goto finish;
+        } else if (r3 && data.endsWith(r3)) {
+          index = 3;
+          goto finish;
+        } else if (r4 && data.endsWith(r4)) {
+          index = 4;
+          goto finish;
+        } else if (r5 && data.endsWith(r5)) {
+          index = 5;
+          goto finish;
+        }
+      }
+    } while (millis() - startMillis < timeout);
+  finish:
+    if (!index) {
+      data.trim();
+      data.replace(GSM_NL GSM_NL, GSM_NL);
+      data.replace(GSM_NL, "\r\n" "    ");
+      if (data.length()) {
+        DBG("### Unhandled:", data, "\r\n");
+    } else DBG("### NO RESPONSE!\r\n");
+    }
+    else {
+      data.trim();
+      data.replace(GSM_NL GSM_NL, GSM_NL);
+      data.replace(GSM_NL, "\r\n    ");
+      if (data.length()) {
+        DBG("<<< ", data, "\r\n");
+      }
+    }
+    return index;
+  }
+
+  uint8_t waitResponse(uint32_t timeout,
+                       GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),
+                       GsmConstStr r3=NULL, GsmConstStr r4=NULL, GsmConstStr r5=NULL)
+  {
+    String data;
+    return waitResponse(timeout, data, r1, r2, r3, r4, r5);
+  }
+
+  uint8_t waitResponse(GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),
+                       GsmConstStr r3=NULL, GsmConstStr r4=NULL, GsmConstStr r5=NULL)
+  {
+    return waitResponse(1000, r1, r2, r3, r4, r5);
   }
 
 private:
