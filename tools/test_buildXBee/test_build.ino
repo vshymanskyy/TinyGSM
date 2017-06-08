@@ -33,11 +33,13 @@ void loop() {
   modem.factoryDefault();
 
   // Test the SIM card functions
+  #if defined(TINY_GSM_MODEM_SIM800) || defined(TINY_GSM_MODEM_A6) || defined(TINY_GSM_MODEM_M590) || defined(TINY_GSM_MODEM_XBEE)
   modem.getSimCCID();
   modem.getIMEI();
   modem.getSimStatus();
   modem.getRegistrationStatus();
   modem.getOperator();
+  #endif
 
 
   // Test the Networking functions
@@ -72,6 +74,6 @@ void loop() {
   #if defined(TINY_GSM_MODEM_SIM800) || defined(TINY_GSM_MODEM_A6) || defined(TINY_GSM_MODEM_M590)
   modem.gprsDisconnect();
   #else
-  networkDisconnect()
+  modem.networkDisconnect()
   #endif
 }
