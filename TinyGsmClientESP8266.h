@@ -208,32 +208,38 @@ public:
    */
 
   /*
-   * Generic network functions 
+   * Generic network functions
    */
 
   int getSignalQuality() {
-    sendAT(GF("+CWLAP=\""), _ssid, GF("\""));
-    DBG(GSM_NL, "<<< ");
-    streamSkipUntil(':');
-    streamSkipUntil(',');
-    streamSkipUntil(',');
-    streamSkipUntil(',');
-    String res2 = streamReadUntil(',');
-    streamSkipUntil(')');
+    sendAT(GF("+CWJAP_CUR?"));
+    int res1 = waitResponse(GF("No AP"), GF("+CWJAP_CUR:"));
+    if (res1 != 2){
+      waitResponse();
+      return 0;
+    }
+    streamSkipUntil(',');  // Skip SSID
+    streamSkipUntil(',');  // Skip BSSID/MAC address
+    streamSkipUntil(',');  // Skip Chanel number
+    int res2 = stream.parseInt();  // Read RSSI
+    DBG(res2);
     waitResponse();
-    return res2.toInt();
+    return res2;
   }
 
   bool waitForNetwork(unsigned long timeout = 60000L) {
     for (unsigned long start = millis(); millis() - start < timeout; ) {
       sendAT(GF("+CIPSTATUS"));
-      DBG(GSM_NL, "<<< ");
-      String res1 = streamReadUntil(':');
-      String res2 = streamReadUntil(*GSM_NL);
-      waitResponse();
-      if (res2 == GF("2") || res2 == GF("3") || res2 == GF("4")) {
-        return true;
+      int res1 = waitResponse(3000, GF("busy p..."), GF("STATUS:"));
+      if (res1 == 2){
+        int res2 = waitResponse(GFP(GSM_ERROR), GF("2"), GF("3"), GF("4"), GF("5"));
+        if (res2 == 2 || res2 == 3 || res2 == 4) return true;
       }
+      // <stat> status of ESP8266 station interface
+      // 2 : ESP8266 station connected to an AP and has obtained IP
+      // 3 : ESP8266 station created a TCP or UDP transmission
+      // 4 : the TCP or UDP transmission of ESP8266 station disconnected (but AP is connected)
+      // 5 : ESP8266 station did NOT connect to an AP
       delay(1000);
     }
     return false;
@@ -243,8 +249,6 @@ public:
    * WiFi functions
    */
   bool networkConnect(const char* ssid, const char* pwd) {
-
-    _ssid = ssid;
 
     sendAT(GF("+CIPMUX=1"));
     if (waitResponse() != 1) {
@@ -459,7 +463,6 @@ private:
 private:
   Stream&       stream;
   GsmClient*    sockets[5];
-  const char*   _ssid;
 };
 
 typedef TinyGsm::GsmClient TinyGsmClient;
