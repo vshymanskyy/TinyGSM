@@ -14,9 +14,12 @@
 
 // Select your modem:
 #define TINY_GSM_MODEM_SIM800
-//#define TINY_GSM_MODEM_SIM900
-//#define TINY_GSM_MODEM_A6
-//#define TINY_GSM_MODEM_M590
+// #define TINY_GSM_MODEM_SIM900
+// #define TINY_GSM_MODEM_A6
+// #define TINY_GSM_MODEM_A7
+// #define TINY_GSM_MODEM_M590
+// #define TINY_GSM_MODEM_ESP8266
+// #define TINY_GSM_MODEM_XBEE 
 
 // Increase RX buffer
 #define TINY_GSM_RX_BUFFER 1030
@@ -126,7 +129,7 @@ void loop() {
     //Serial.println(line);    // Uncomment this to show response header
     line.toLowerCase();
     if (line.startsWith("content-length:")) {
-      contentLength = line.substring(line.lastIndexOf(':') + 1).toInt();  
+      contentLength = line.substring(line.lastIndexOf(':') + 1).toInt();
     } else if (line.length() == 0) {
       break;
     }
@@ -175,4 +178,3 @@ void loop() {
     delay(1000);
   }
 }
-
