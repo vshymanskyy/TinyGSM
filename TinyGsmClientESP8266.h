@@ -204,7 +204,11 @@ public:
   }
 
   /*
-   * SIM card & Network Operator functions
+   * SIM card functions
+   */
+
+  /*
+   * Generic network functions 
    */
 
   int getSignalQuality() {

@@ -234,7 +234,7 @@ public:
   }
 
   /*
-   * SIM card & Network Operator functions
+   * SIM card functions
    */
 
   bool simUnlock(const char *pin) {
@@ -258,16 +258,6 @@ public:
       return "";
     }
     String res = streamReadUntil('\n');
-    waitResponse();
-    return res;
-  }
-
-  int getSignalQuality() {
-    sendAT(GF("+CSQ"));
-    if (waitResponse(GF(GSM_NL "+CSQ:")) != 1) {
-      return 99;
-    }
-    int res = streamReadUntil(',').toInt();
     waitResponse();
     return res;
   }
@@ -309,6 +299,20 @@ public:
     }
     streamSkipUntil('"'); // Skip mode and format
     String res = streamReadUntil('"');
+    waitResponse();
+    return res;
+  }
+
+ /*
+  * Generic network functions
+  */
+
+  int getSignalQuality() {
+    sendAT(GF("+CSQ"));
+    if (waitResponse(GF(GSM_NL "+CSQ:")) != 1) {
+      return 99;
+    }
+    int res = streamReadUntil(',').toInt();
     waitResponse();
     return res;
   }
@@ -399,12 +403,6 @@ public:
    * Messaging functions
    */
 
-  void sendUSSD() {
-  }
-
-  void sendSMS() {
-  }
-
   bool sendSMS(const String& number, const String& text) {
     sendAT(GF("+CMGF=1"));
     waitResponse();
@@ -420,8 +418,6 @@ public:
   /*
    * Location functions
    */
-  void getLocation() {
-  }
 
   /*
    * Battery functions

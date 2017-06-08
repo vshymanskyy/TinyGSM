@@ -225,7 +225,7 @@ public:
   }
 
   /*
-   * SIM card & Network Operator functions
+   * SIM card functions
    */
 
   bool simUnlock(const char *pin) {
@@ -249,16 +249,6 @@ public:
       return "";
     }
     String res = streamReadUntil('\n');
-    waitResponse();
-    return res;
-  }
-
-  int getSignalQuality() {
-    sendAT(GF("+CSQ"));
-    if (waitResponse(GF(GSM_NL "+CSQ:")) != 1) {
-      return 99;
-    }
-    int res = streamReadUntil(',').toInt();
     waitResponse();
     return res;
   }
@@ -300,6 +290,20 @@ public:
     }
     streamSkipUntil('"'); // Skip mode and format
     String res = streamReadUntil('"');
+    waitResponse();
+    return res;
+  }
+
+  /*
+   * Generic network functions 
+   */
+
+  int getSignalQuality() {
+    sendAT(GF("+CSQ"));
+    if (waitResponse(GF(GSM_NL "+CSQ:")) != 1) {
+      return 99;
+    }
+    int res = streamReadUntil(',').toInt();
     waitResponse();
     return res;
   }
@@ -392,12 +396,6 @@ public:
    * Messaging functions
    */
 
-  void sendUSSD() {
-  }
-
-  void sendSMS() {
-  }
-
   bool sendSMS(const String& number, const String& text) {
     sendAT(GF("+CMGF=1"));
     waitResponse();
@@ -413,8 +411,7 @@ public:
   /*
    * Location functions
    */
-  void getLocation() {
-  }
+
 
   /*
    * Battery functions
@@ -505,8 +502,8 @@ private:
 
   // TODO: Optimize this!
   uint8_t waitResponse(uint32_t timeout, String& data,
-                      GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),
-                      GsmConstStr r3=NULL, GsmConstStr r4=NULL, GsmConstStr r5=NULL)
+                       GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),
+                       GsmConstStr r3=NULL, GsmConstStr r4=NULL, GsmConstStr r5=NULL)
   {
     /*String r1s(r1); r1s.trim();
     String r2s(r2); r2s.trim();
@@ -599,15 +596,15 @@ private:
   }
 
   uint8_t waitResponse(uint32_t timeout,
-                      GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),
-                      GsmConstStr r3=NULL, GsmConstStr r4=NULL, GsmConstStr r5=NULL)
+                       GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),
+                       GsmConstStr r3=NULL, GsmConstStr r4=NULL, GsmConstStr r5=NULL)
   {
    String data;
    return waitResponse(timeout, data, r1, r2, r3, r4, r5);
   }
 
   uint8_t waitResponse(GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),
-                      GsmConstStr r3=NULL, GsmConstStr r4=NULL, GsmConstStr r5=NULL)
+                       GsmConstStr r3=NULL, GsmConstStr r4=NULL, GsmConstStr r5=NULL)
   {
    return waitResponse(1000, r1, r2, r3, r4, r5);
   }

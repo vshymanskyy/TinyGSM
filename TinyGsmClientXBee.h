@@ -224,7 +224,7 @@ public:
   }
 
   /*
-   * SIM card & Network Operator functions
+   * SIM card functions
    */
 
   bool simUnlock(const char *pin) {  // Not supported
@@ -251,23 +251,6 @@ public:
     String res = streamReadUntil('\r');  // Does not send an OK, just the result
     exitCommand();
     return res;
-  }
-
-  int getSignalQuality() {
-    commandMode();
-    if (beeType == S6B) sendAT(GF("LM"));  // ask for the "link margin" - the dB above sensitivity
-    else sendAT(GF("DB"));  // ask for the cell strenght in dBm
-    // wait for the response
-    unsigned long startMillis = millis();
-    while (!stream.available() && millis() - startMillis < 1000) {};
-    char buf[2] = {0};  // Set up buffer for response
-    buf[0] = streamRead();
-    buf[1] = streamRead();
-    DBG(buf[0], buf[1], "\n");
-    exitCommand();
-    int intr = strtol(buf, 0, 16);
-    if (beeType == S6B) return -93 + intr;  // the maximum sensitivity is -93dBm
-    else return -1*intr; // need to convert to negative number
   }
 
   SimStatus getSimStatus(unsigned long timeout = 10000L) {
@@ -311,6 +294,26 @@ public:
     return res;
   }
 
+ /*
+  * Generic network functions
+  */
+
+  int getSignalQuality() {
+    commandMode();
+    if (beeType == S6B) sendAT(GF("LM"));  // ask for the "link margin" - the dB above sensitivity
+    else sendAT(GF("DB"));  // ask for the cell strenght in dBm
+    // wait for the response
+    unsigned long startMillis = millis();
+    while (!stream.available() && millis() - startMillis < 1000) {};
+    char buf[2] = {0};  // Set up buffer for response
+    buf[0] = streamRead();
+    buf[1] = streamRead();
+    DBG(buf[0], buf[1], "\n");
+    exitCommand();
+    int intr = strtol(buf, 0, 16);
+    if (beeType == S6B) return -93 + intr;  // the maximum sensitivity is -93dBm
+    else return -1*intr; // need to convert to negative number
+  }
 
   bool waitForNetwork(unsigned long timeout = 60000L) {
     for (unsigned long start = millis(); millis() - start < timeout; ) {
