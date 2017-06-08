@@ -18,7 +18,11 @@ env:
     - PLATFORMIO_CI_SRC=tools/FactoryReset
 
     # Arduino test
-    - PLATFORMIO_CI_SRC=tools/test_build PLATFORMIO_CI_ARGS="--project-option='framework=arduino' --board=uno --board=leonardo --board=yun --board=megaatmega2560 --board=genuino101 --board=mkr1000USB --board=zero --board=teensy31 --board=bluepill_f103c8 --board=uno_pic32 --board=esp01 --board=nodemcuv2 --board=esp32dev"
+    - PLATFORMIO_CI_SRC=tools/test_build PLATFORMIO_CI_ARGS="--project-option='build_flag=-DTINY_GSM_MODEM_SIM800' --project-option='framework=arduino' --board=uno --board=leonardo --board=yun --board=megaatmega2560 --board=genuino101 --board=mkr1000USB --board=zero --board=teensy31 --board=bluepill_f103c8 --board=uno_pic32 --board=esp01 --board=nodemcuv2 --board=esp32dev"
+    - PLATFORMIO_CI_SRC=tools/test_build PLATFORMIO_CI_ARGS="--project-option='build_flag=-DTINY_GSM_MODEM_A6' --project-option='framework=arduino' --board=uno --board=leonardo --board=yun --board=megaatmega2560 --board=genuino101 --board=mkr1000USB --board=zero --board=teensy31 --board=bluepill_f103c8 --board=uno_pic32 --board=esp01 --board=nodemcuv2 --board=esp32dev"
+    - PLATFORMIO_CI_SRC=tools/test_build PLATFORMIO_CI_ARGS="--project-option='build_flag=-DTINY_GSM_MODEM_M590' --project-option='framework=arduino' --board=uno --board=leonardo --board=yun --board=megaatmega2560 --board=genuino101 --board=mkr1000USB --board=zero --board=teensy31 --board=bluepill_f103c8 --board=uno_pic32 --board=esp01 --board=nodemcuv2 --board=esp32dev"
+    - PLATFORMIO_CI_SRC=tools/test_build PLATFORMIO_CI_ARGS="--project-option='build_flag=-DTINY_GSM_MODEM_ESP8266' --project-option='framework=arduino' --board=uno --board=leonardo --board=yun --board=megaatmega2560 --board=genuino101 --board=mkr1000USB --board=zero --board=teensy31 --board=bluepill_f103c8 --board=uno_pic32 --board=esp01 --board=nodemcuv2 --board=esp32dev"
+    - PLATFORMIO_CI_SRC=tools/test_build PLATFORMIO_CI_ARGS="--project-option='build_flag=-DTINY_GSM_MODEM_XBEE' --project-option='framework=arduino' --board=uno --board=leonardo --board=yun --board=megaatmega2560 --board=genuino101 --board=mkr1000USB --board=zero --board=teensy31 --board=bluepill_f103c8 --board=uno_pic32 --board=esp01 --board=nodemcuv2 --board=esp32dev"
 
     # Energia test
     - PLATFORMIO_CI_SRC=tools/test_build PLATFORMIO_CI_ARGS="--project-option='framework=energia' --board=lplm4f120h5qr"

@@ -4,7 +4,11 @@
  *
  **************************************************************/
 
-#define TINY_GSM_MODEM_SIM800
+ #define TINY_GSM_MODEM_SIM800
+ //#define TINY_GSM_MODEM_A6
+ //#define TINY_GSM_MODEM_M590
+ //#define TINY_GSM_MODEM_ESP8266
+ //#define TINY_GSM_MODEM_XBEE
 
 #include <TinyGsmClient.h>
 
@@ -21,26 +25,34 @@ void setup() {
 }
 
 void loop() {
+
+  // Test the start/restart functions
   modem.restart();
-
   modem.begin();
+  modem.autoBaud();
+  modem.factoryDefault();
 
+  // Test the SIM card functions
+  modem.getSimCCID();
+  modem.getIMEI();
+  modem.getSimStatus();
+  modem.getRegistrationStatus();
   modem.getOperator();
 
-  modem.getSimCCID();
-  
-  modem.getSimStatus();
 
+  // Test the Networking functions
+  modem.getSignalQuality();
+
+
+  #if defined(TINY_GSM_MODEM_SIM800) || defined(TINY_GSM_MODEM_A6) || defined(TINY_GSM_MODEM_M590)
   modem.waitForNetwork();
+  modem.gprsConnect("YourAPN", "", "");
+  #else
+    modem.networkConnect("YourSSID", "YourPWD");
+    modem.waitForNetwork();
+  #endif
 
-  if (!modem.gprsConnect("YourAPN", "", "")) {
-    delay(10000);
-    return;
-  }
-  if (!client.connect(server, 80)) {
-    delay(10000);
-    return;
-  }
+  client.connect(server, 80);
 
   // Make a HTTP GET request:
   client.print(String("GET ") + resource + " HTTP/1.0\r\n");
@@ -49,20 +61,17 @@ void loop() {
 
   unsigned long timeout = millis();
   while (client.connected() && millis() - timeout < 10000L) {
-    // Print available data
     while (client.available()) {
-      char c = client.read();
+      client.read();
       timeout = millis();
     }
   }
 
   client.stop();
 
+  #if defined(TINY_GSM_MODEM_SIM800) || defined(TINY_GSM_MODEM_A6) || defined(TINY_GSM_MODEM_M590)
   modem.gprsDisconnect();
-
-  // Do nothing forevermore
-  while (true) {
-    delay(1000);
-  }
+  #else
+  networkDisconnect()
+  #endif
 }
-
