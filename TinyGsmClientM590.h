@@ -358,8 +358,14 @@ public:
   /*
    * GPRS functions
    */
-  bool gprsConnect(const char* apn, const char* user, const char* pwd) {
-    gprsDisconnect();
+  bool gprsConnect(const char* apn, const char* user, const char* pwd, unsigned long timeout = 10000L) {
+    // There is not command for gprsDisconnect in AT command set XIIC=0 does not work at all
+    //gprsDisconnect();
+
+    // Do not connect again if already connected
+    if (gprsConnected()) {
+        return true;
+    }
 
     sendAT(GF("+XISP=0"));
     waitResponse();
@@ -375,10 +381,12 @@ public:
     sendAT(GF("+XIIC=1"));
     waitResponse();
 
-    delay(10000L); // TODO
-
-    sendAT(GF("+XIIC?"));
-    waitResponse();
+    for (unsigned long start = millis(); millis() - start < timeout; ) {
+      if (gprsConnected()) {
+        break;
+      }
+      delay(1000);
+    }
 
     /*sendAT(GF("+DNSSERVER=1,8.8.8.8"));
     waitResponse();
@@ -388,14 +396,26 @@ public:
       return false;
     }*/
 
-    return true;
+    return gprsConnected();
   }
 
   bool gprsDisconnect() {
-    sendAT(GF("+XIIC=0"));
-    return waitResponse(60000L) == 1;
+//    There is not command for gprsDisconnect in AT command set XIIC=0 does not work at all
+//    TODO: maybe there is different way (than reset) to hang up PPP line
+//    sendAT(GF("+XIIC=0"));
+//    return waitResponse(60000L) == 1;
+    return true;
   }
 
+  bool gprsConnected() {
+    sendAT(GF("+XIIC?"));
+    if (waitResponse(GF(GSM_NL "+XIIC:")) != 1) {
+      return false;
+    }
+    int status = waitResponse(GF("0"), GF("1"));
+    waitResponse();
+    return status == 2;
+  }
   /*
    * Phone Call functions
    */
