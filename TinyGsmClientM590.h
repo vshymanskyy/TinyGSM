@@ -234,7 +234,7 @@ public:
   }
 
   /*
-   * SIM card & Networ Operator functions
+   * SIM card functions
    */
 
   bool simUnlock(const char *pin) {
@@ -247,9 +247,8 @@ public:
     if (waitResponse(GF(GSM_NL "+CCID:")) != 1) {
       return "";
     }
-    String res = stream.readStringUntil('\n');
+    String res = streamReadUntil('\n');
     waitResponse();
-    res.trim();
     return res;
   }
 
@@ -258,47 +257,9 @@ public:
     if (waitResponse(GF(GSM_NL)) != 1) {
       return "";
     }
-    String res = stream.readStringUntil('\n');
-    waitResponse();
-    res.trim();
-    return res;
-  }
-
-  int getSignalQuality() {
-    sendAT(GF("+CSQ"));
-    if (waitResponse(GF(GSM_NL "+CSQ:")) != 1) {
-      return 99;
-    }
-    int res = stream.readStringUntil(',').toInt();
+    String res = streamReadUntil('\n');
     waitResponse();
     return res;
-  }
-
-  bool callAnswer() {
-    sendAT(GF("A"));
-    return waitResponse() == 1;
-  }
-
-  bool callNumber(const String& number) {
-    sendAT(GF("D"), number);
-    return waitResponse() == 1;
-  }
-
-  bool callHangup(const String& number) {
-    sendAT(GF("H"), number);
-    return waitResponse() == 1;
-  }
-
-  bool sendSMS(const String& number, const String& text) {
-    sendAT(GF("+CMGF=1"));
-    waitResponse();
-    sendAT(GF("+CMGS=\""), number, GF("\""));
-    if (waitResponse(GF(">")) != 1) {
-      return false;
-    }
-    stream.print(text);
-    stream.write((char)0x1A);
-    return waitResponse(60000L) == 1;
   }
 
   SimStatus getSimStatus(unsigned long timeout = 10000L) {
@@ -326,7 +287,7 @@ public:
       return REG_UNKNOWN;
     }
     streamSkipUntil(','); // Skip format (0)
-    int status = stream.readStringUntil('\n').toInt();
+    int status = streamReadUntil('\n').toInt();
     waitResponse();
     return (RegStatus)status;
   }
@@ -337,7 +298,21 @@ public:
       return "";
     }
     streamSkipUntil('"'); // Skip mode and format
-    String res = stream.readStringUntil('"');
+    String res = streamReadUntil('"');
+    waitResponse();
+    return res;
+  }
+
+ /*
+  * Generic network functions
+  */
+
+  int getSignalQuality() {
+    sendAT(GF("+CSQ"));
+    if (waitResponse(GF(GSM_NL "+CSQ:")) != 1) {
+      return 99;
+    }
+    int res = streamReadUntil(',').toInt();
     waitResponse();
     return res;
   }
@@ -347,11 +322,20 @@ public:
       RegStatus s = getRegistrationStatus();
       if (s == REG_OK_HOME || s == REG_OK_ROAMING) {
         return true;
-      } else if (s == REG_UNREGISTERED) {
-        return false;
       }
       delay(1000);
     }
+    return false;
+  }
+
+  /*
+   * WiFi functions
+   */
+  bool networkConnect(const char* ssid, const char* pwd) {
+    return false;
+  }
+
+  bool networkDisconnect() {
     return false;
   }
 
@@ -400,21 +384,40 @@ public:
    * Phone Call functions
    */
 
+  bool callAnswer() {
+    sendAT(GF("A"));
+    return waitResponse() == 1;
+  }
+
+  bool callNumber(const String& number) {
+    sendAT(GF("D"), number);
+    return waitResponse() == 1;
+  }
+
+  bool callHangup(const String& number) {
+    sendAT(GF("H"), number);
+    return waitResponse() == 1;
+  }
+
   /*
    * Messaging functions
    */
 
-  void sendUSSD() {
-  }
-
-  void sendSMS() {
+  bool sendSMS(const String& number, const String& text) {
+    sendAT(GF("+CMGF=1"));
+    waitResponse();
+    sendAT(GF("+CMGS=\""), number, GF("\""));
+    if (waitResponse(GF(">")) != 1) {
+      return false;
+    }
+    stream.print(text);
+    stream.write((char)0x1A);
+    return waitResponse(60000L) == 1;
   }
 
   /*
    * Location functions
    */
-  void getLocation() {
-  }
 
   /*
    * Battery functions
@@ -422,18 +425,17 @@ public:
 
 private:
   String dnsIpQuery(const char* host) {
-    sendAT(GF("+DNS=\""), host, GF("\""));
-    if (waitResponse(10000L, GF(GSM_NL "+DNS:")) != 1) {
-      return "";
-    }
-    String res = stream.readStringUntil('\n');
-    waitResponse(GF("+DNS:OK" GSM_NL));
-    res.trim();
-    return res;
+   sendAT(GF("+DNS=\""), host, GF("\""));
+   if (waitResponse(10000L, GF(GSM_NL "+DNS:")) != 1) {
+     return "";
+   }
+   String res = streamReadUntil('\n');
+   waitResponse(GF("+DNS:OK" GSM_NL));
+   res.trim();
+   return res;
   }
 
   int modemConnect(const char* host, uint16_t port, uint8_t mux) {
-    int rsp = 0;
     for (int i=0; i<3; i++) {
       String ip = dnsIpQuery(host);
 
@@ -464,7 +466,7 @@ private:
     if (waitResponse(30000L, GF(GSM_NL "+TCPSEND:")) != 1) {
       return 0;
     }
-    stream.readStringUntil('\n');
+    streamReadUntil('\n');
     return len;
   }
 
@@ -475,7 +477,7 @@ private:
     return 1 == res;
   }
 
-  /* Utilities */
+  /* Private Utilities */
   template<typename T>
   void streamWrite(T last) {
     stream.print(last);
@@ -489,13 +491,24 @@ private:
 
   int streamRead() { return stream.read(); }
 
-  bool streamSkipUntil(char c) { //TODO: timeout
-    while (true) {
-      while (!stream.available()) {}
-      if (stream.read() == c)
-        return true;
-    }
-    return false;
+  String streamReadUntil(char c) {
+    String return_string = stream.readStringUntil(c);
+    return_string.trim();
+    if (String(c) == GSM_NL || String(c) == "\n"){
+      DBG(return_string, c, "    ");
+    } else DBG(return_string, c);
+    return return_string;
+  }
+
+  bool streamSkipUntil(char c) {
+    String skipped = stream.readStringUntil(c);
+    skipped.trim();
+    if (skipped.length()) {
+      if (String(c) == GSM_NL || String(c) == "\n"){
+        DBG(skipped, c, "    ");
+      } else DBG(skipped, c);
+      return true;
+    } else return false;
   }
 
   template<typename... Args>
@@ -503,7 +516,7 @@ private:
     streamWrite("AT", cmd..., GSM_NL);
     stream.flush();
     TINY_GSM_YIELD();
-    //DBG("### AT:", cmd...);
+    DBG(GSM_NL, ">>> AT:", cmd...);
   }
 
   // TODO: Optimize this!
@@ -518,6 +531,9 @@ private:
     String r5s(r5); r5s.trim();
     DBG("### ..:", r1s, ",", r2s, ",", r3s, ",", r4s, ",", r5s);*/
     data.reserve(64);
+    bool gotData = false;
+    int mux = -1;
+    int len = 0;
     int index = 0;
     unsigned long startMillis = millis();
     do {
@@ -542,34 +558,58 @@ private:
           index = 5;
           goto finish;
         } else if (data.endsWith(GF("+TCPRECV:"))) {
-          int mux = stream.readStringUntil(',').toInt();
-          int len = stream.readStringUntil(',').toInt();
-          if (len > sockets[mux]->rx.free()) {
-            DBG("### Buffer overflow: ", len, "->", sockets[mux]->rx.free());
-          } else {
-            DBG("### Got: ", len, "->", sockets[mux]->rx.free());
-          }
-          while (len--) {
-            while (!stream.available()) {}
-            sockets[mux]->rx.put(stream.read());
-          }
-          data = "";
-          return index;
+          mux = stream.readStringUntil(',').toInt();
+          data += mux;
+          data += (',');
+          len = stream.readStringUntil(',').toInt();
+          data += len;
+          data += (',');
+          gotData = true;
+          index = 6;
+          goto finish;
         } else if (data.endsWith(GF("+TCPCLOSE:"))) {
-          int mux = stream.readStringUntil(',').toInt();
-          stream.readStringUntil('\n');
+          mux = stream.readStringUntil(',').toInt();
+          data += mux;
+          data += (',');
+          String concl = stream.readStringUntil('\n');
+          data += concl;
           sockets[mux]->sock_connected = false;
-          data = "";
+          index = 7;
+          goto finish;
         }
       }
     } while (millis() - startMillis < timeout);
-finish:
+  finish:
     if (!index) {
       data.trim();
       if (data.length()) {
-        DBG("### Unhandled:", data);
+        DBG(GSM_NL, "### Unhandled:", data);
       }
-      data = "";
+    }
+    else {
+      data.trim();
+      data.replace(GSM_NL GSM_NL, GSM_NL);
+      data.replace(GSM_NL, GSM_NL "    ");
+      if (data.length()) {
+        DBG(GSM_NL, "<<< ", data);
+      }
+    }
+    if (gotData) {
+      int len_orig = len;
+    if (len > sockets[mux]->rx.free()) {
+        DBG(GSM_NL, "### Buffer overflow: ", len, "->", sockets[mux]->rx.free());
+    } else {
+        DBG(GSM_NL, "### Got: ", len, "->", sockets[mux]->rx.free());
+    }
+    while (len--) {
+          TINY_GSM_YIELD();
+          int r = stream.read();
+          if (r <= 0) continue; // Skip 0x00 bytes, just in case
+          sockets[mux]->rx.put((char)r);
+    }
+      if (len_orig > sockets[mux]->available()) {
+          DBG(GSM_NL, "### Fewer characters received than expected: ", sockets[mux]->available(), " vs ", len_orig);
+      }
     }
     return index;
   }

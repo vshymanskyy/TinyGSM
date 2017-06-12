@@ -20,6 +20,7 @@
 #define GSM_NL "\r\n"
 static const char GSM_OK[] TINY_GSM_PROGMEM = "OK" GSM_NL;
 static const char GSM_ERROR[] TINY_GSM_PROGMEM = "ERROR" GSM_NL;
+static unsigned int TCP_KEEP_ALIVE = 120;
 
 class TinyGsm
 {
@@ -77,6 +78,7 @@ public:
     TINY_GSM_YIELD();
     at->sendAT(GF("+CIPCLOSE="), mux);
     sock_connected = false;
+    at->waitResponse();
     at->waitResponse();
   }
 
@@ -201,8 +203,46 @@ public:
     return autoBaud();
   }
 
+  /*
+   * SIM card functions
+   */
+
+  /*
+   * Generic network functions
+   */
+
+  int getSignalQuality() {
+    sendAT(GF("+CWJAP_CUR?"));
+    int res1 = waitResponse(GF("No AP"), GF("+CWJAP_CUR:"));
+    if (res1 != 2){
+      waitResponse();
+      return 0;
+    }
+    streamSkipUntil(',');  // Skip SSID
+    streamSkipUntil(',');  // Skip BSSID/MAC address
+    streamSkipUntil(',');  // Skip Chanel number
+    int res2 = stream.parseInt();  // Read RSSI
+    DBG(res2);
+    waitResponse();
+    return res2;
+  }
+
   bool waitForNetwork(unsigned long timeout = 60000L) {
-    return true;
+    for (unsigned long start = millis(); millis() - start < timeout; ) {
+      sendAT(GF("+CIPSTATUS"));
+      int res1 = waitResponse(3000, GF("busy p..."), GF("STATUS:"));
+      if (res1 == 2){
+        int res2 = waitResponse(GFP(GSM_ERROR), GF("2"), GF("3"), GF("4"), GF("5"));
+        if (res2 == 2 || res2 == 3 || res2 == 4) return true;
+      }
+      // <stat> status of ESP8266 station interface
+      // 2 : ESP8266 station connected to an AP and has obtained IP
+      // 3 : ESP8266 station created a TCP or UDP transmission
+      // 4 : the TCP or UDP transmission of ESP8266 station disconnected (but AP is connected)
+      // 5 : ESP8266 station did NOT connect to an AP
+      delay(1000);
+    }
+    return false;
   }
 
   /*
@@ -233,13 +273,25 @@ public:
     return waitResponse(10000L) == 1;
   }
 
+  /*
+   * GPRS functions
+   */
+  bool gprsConnect(const char* apn, const char* user, const char* pwd) {
+    return false;
+  }
+
+  bool gprsDisconnect() {
+    return false;
+  }
+
 private:
   int modemConnect(const char* host, uint16_t port, uint8_t mux) {
-    sendAT(GF("+CIPSTART="), mux, ',', GF("\"TCP"), GF("\",\""), host, GF("\","), port, GF(",120"));
+    sendAT(GF("+CIPSTART="), mux, ',', GF("\"TCP"), GF("\",\""), host, GF("\","), port, GF(","), TCP_KEEP_ALIVE);
     int rsp = waitResponse(75000L,
                            GFP(GSM_OK),
                            GFP(GSM_ERROR),
                            GF(GSM_NL "ALREADY CONNECT" GSM_NL));
+    waitResponse(100, GF("1,CONNECT"));
     return (1 == rsp);
   }
 
@@ -262,7 +314,7 @@ private:
     return 1 == res;
   }
 
-  /* Utilities */
+  /* Private Utilities */
   template<typename T>
   void streamWrite(T last) {
     stream.print(last);
@@ -276,12 +328,32 @@ private:
 
   int streamRead() { return stream.read(); }
 
+  String streamReadUntil(char c) {
+    String return_string = stream.readStringUntil(c);
+    return_string.trim();
+    if (String(c) == GSM_NL || String(c) == "\n"){
+      DBG(return_string, c, "    ");
+    } else DBG(return_string, c);
+    return return_string;
+  }
+
+  bool streamSkipUntil(char c) {
+    String skipped = stream.readStringUntil(c);
+    skipped.trim();
+    if (skipped.length()) {
+      if (String(c) == GSM_NL || String(c) == "\n"){
+        DBG(skipped, c, "    ");
+      } else DBG(skipped, c);
+      return true;
+    } else return false;
+  }
+
   template<typename... Args>
   void sendAT(Args... cmd) {
     streamWrite("AT", cmd..., GSM_NL);
     stream.flush();
     TINY_GSM_YIELD();
-    //DBG("### AT:", cmd...);
+    DBG(GSM_NL, ">>> AT", cmd...);
   }
 
   // TODO: Optimize this!
@@ -296,6 +368,9 @@ private:
     String r5s(r5); r5s.trim();
     DBG("### ..:", r1s, ",", r2s, ",", r3s, ",", r4s, ",", r5s);*/
     data.reserve(64);
+    bool gotData = false;
+    int mux = -1;
+    int len = 0;
     int index = 0;
     unsigned long startMillis = millis();
     do {
@@ -320,33 +395,54 @@ private:
           index = 5;
           goto finish;
         } else if (data.endsWith(GF(GSM_NL "+IPD,"))) {
-          int mux = stream.readStringUntil(',').toInt();
-          int len = stream.readStringUntil(':').toInt();
-          if (len > sockets[mux]->rx.free()) {
-            DBG("### Buffer overflow: ", len, "->", sockets[mux]->rx.free());
-          } else {
-            DBG("### Got: ", len, "->", sockets[mux]->rx.free());
-          }
-          while (len--) {
-            while (!stream.available()) {}
-            sockets[mux]->rx.put(stream.read());
-          }
-          data = "";
-          return index;
-        } else if (data.endsWith(GF(GSM_NL "1,CLOSED" GSM_NL))) { //TODO: use mux
+          mux = stream.readStringUntil(',').toInt();
+          data += mux;
+          data += (',');
+          len = stream.readStringUntil(':').toInt();
+          data += len;
+          data += (':');
+          gotData = true;
+          index = 6;
+          goto finish;
+        } else if (data.endsWith(GF("1,CLOSED" GSM_NL))) { //TODO: use mux
           sockets[1]->sock_connected = false;
-          data = "";
+          index = 7;
+          goto finish;
         }
       }
     } while (millis() - startMillis < timeout);
-finish:
+  finish:
     if (!index) {
       data.trim();
       if (data.length()) {
-        DBG("### Unhandled:", data);
+        DBG(GSM_NL, "### Unhandled:", data);
       }
-      data = "";
     }
+    else {
+      data.trim();
+      data.replace(GSM_NL GSM_NL, GSM_NL);
+      data.replace(GSM_NL, GSM_NL "    ");
+      if (data.length()) {
+        DBG(GSM_NL, "<<< ", data);
+      }
+    }
+      if (gotData) {
+        int len_orig = len;
+        if (len > sockets[mux]->rx.free()) {
+          DBG(GSM_NL, "### Buffer overflow: ", len, "->", sockets[mux]->rx.free());
+        } else {
+          DBG(GSM_NL, "### Got: ", len, "->", sockets[mux]->rx.free());
+        }
+        while (len--) {
+          TINY_GSM_YIELD();
+          int r = stream.read();
+          if (r <= 0) continue; // Skip 0x00 bytes, just in case
+          sockets[mux]->rx.put((char)r);
+        }
+        if (len_orig > sockets[mux]->available()) {
+          DBG(GSM_NL, "### Fewer characters received than expected: ", sockets[mux]->available(), " vs ", len_orig);
+        }
+      }
     return index;
   }
 
