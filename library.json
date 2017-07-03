@@ -5,16 +5,16 @@
   "keywords": "GSM, AT commands, AT, SIM800, SIM900, A6, A7, M590, ESP8266, SIM800A, SIM800C, SIM800L, SIM800H, SIM808, SIM868, SIM900A, SIM900D, SIM908, SIM968",
   "authors":
   {
-    "name":  "Volodymyr Shymanskyy",
-    "url":   "https://github.com/vshymanskyy",
+    "name":  "Lukasz Wozniak",
+    "url":   "https://github.com/stlhrt",
     "maintainer": true
   },
   "repository":
   {
     "type": "git",
-    "url": "https://github.com/vshymanskyy/TinyGSM.git"
+    "url": "https://github.com/stlhrt/TinyGSM.git"
   },
-  "homepage": "https://github.com/vshymanskyy/TinyGSM",
+  "homepage": "https://github.com/stlhrt/TinyGSM",
   "export": {
     "exclude": [ "extras", "tools" ]
   },
