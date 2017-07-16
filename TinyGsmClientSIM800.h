@@ -239,6 +239,18 @@ public:
     return init();
   }
 
+bool radiostop() {
+    if (!autoBaud()) {
+      return false;
+    }
+    sendAT(GF("+CFUN=0"));
+    if (waitResponse(10000L) != 1) {
+      return false;
+    }
+    delay(3000);
+    return true;
+  }
+
   /*
    * SIM card & Networ Operator functions
    */
@@ -522,6 +534,20 @@ public:
     streamSkipUntil(','); // Skip
 
     uint16_t res = stream.readStringUntil(',').toInt();
+    waitResponse();
+    return res;
+  }
+
+int getBattPercent() {
+      if (!autoBaud()) {
+      return false;
+    }
+    sendAT(GF("+CBC"));
+    if (waitResponse(GF(GSM_NL "+CBC:")) != 1) {
+      return false;
+    }
+    stream.readStringUntil(',');
+    int res = stream.readStringUntil(',').toInt();
     waitResponse();
     return res;
   }
