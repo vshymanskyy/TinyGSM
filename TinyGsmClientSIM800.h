@@ -65,6 +65,7 @@ public:
     this->mux = mux;
     sock_available = 0;
     sock_connected = false;
+    got_data = false;
 
     at->sockets[mux] = this;
 
@@ -162,6 +163,7 @@ private:
   uint8_t       mux;
   uint16_t      sock_available;
   bool          sock_connected;
+  bool          got_data;
   RxFifo        rx;
 };
 
@@ -199,6 +201,12 @@ public:
   }
 
   void maintain() {
+    for (int mux = 1; mux < 5; mux++) {
+      if (sockets[mux] && sockets[mux]->got_data) {
+        sockets[mux]->got_data = false;
+        sockets[mux]->sock_available = modemGetAvailable(mux);
+      }
+    }
     while (stream.available()) {
       waitResponse(10, NULL, NULL);
     }
@@ -648,7 +656,6 @@ private:
     String r5s(r5); r5s.trim();
     DBG("### ..:", r1s, ",", r2s, ",", r3s, ",", r4s, ",", r5s);*/
     data.reserve(64);
-    bool gotData = false;
     int mux = -1;
     int index = 0;
     unsigned long startMillis = millis();
@@ -677,8 +684,8 @@ private:
           String mode = stream.readStringUntil(',');
           if (mode.toInt() == 1) {
             mux = stream.readStringUntil('\n').toInt();
-            gotData = true;
             data = "";
+            sockets[mux]->got_data = true;
           } else {
             data += mode;
           }
@@ -700,9 +707,6 @@ finish:
         DBG("### Unhandled:", data);
       }
       data = "";
-    }
-    if (gotData) {
-      sockets[mux]->sock_available = modemGetAvailable(mux);
     }
     return index;
   }
