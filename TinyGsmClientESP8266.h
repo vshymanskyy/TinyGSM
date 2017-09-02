@@ -1,19 +1,21 @@
 /**
- * @file       TinyWiFiClientESP8266.h
+ * @file       TinyGsmClientESP8266.h
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
  * @date       Nov 2016
  */
 
-#ifndef TinyWiFiClientESP8266_h
-#define TinyWiFiClientESP8266_h
+#ifndef TinyGsmClientESP8266_h
+#define TinyGsmClientESP8266_h
 
 //#define TINY_GSM_DEBUG Serial
 
 #if !defined(TINY_GSM_RX_BUFFER)
   #define TINY_GSM_RX_BUFFER 256
 #endif
+
+#define TINY_GSM_MUX_COUNT 5
 
 #include <TinyGsmCommon.h>
 
@@ -366,7 +368,7 @@ finish:
 
 private:
   Stream&       stream;
-  GsmClient*    sockets[5];
+  GsmClient*    sockets[TINY_GSM_MUX_COUNT];
 };
 
 typedef TinyGsm::GsmClient TinyGsmClient;
