@@ -235,6 +235,11 @@ public:
     return init();
   }
 
+  bool poweroff() {
+    sendAT(GF("+CPWROFF"));
+    return waitResponse(30000L) == 1;
+  }
+
   /*
    * SIM card functions
    */
