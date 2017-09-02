@@ -290,6 +290,8 @@ public:
   }
 
   bool sendSMS(const String& number, const String& text) {
+    sendAT(GF("+CSCS=\"gsm\""));
+    waitResponse();
     sendAT(GF("+CMGF=1"));
     waitResponse();
     sendAT(GF("+CMGS=\""), number, GF("\""));
