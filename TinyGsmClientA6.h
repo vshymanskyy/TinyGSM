@@ -113,7 +113,7 @@ public:
 
   virtual int available() {
     TINY_GSM_YIELD();
-    if (!rx.size()) {
+    if (!rx.size() && sock_connected) {
       at->maintain();
     }
     return rx.size();
@@ -541,8 +541,7 @@ private:
           data = "";
           return index;
         } else if (data.endsWith(GF("+TCPCLOSED:"))) {
-          int mux = stream.readStringUntil(',').toInt();
-          stream.readStringUntil('\n');
+          int mux = stream.readStringUntil('\n').toInt(); // TODO: No comma?
           sockets[mux]->sock_connected = false;
           data = "";
         }
@@ -552,7 +551,12 @@ finish:
     if (!index) {
       data.trim();
       if (data.length()) {
-        DBG("### Unhandled:", data);
+        if (data.endsWith(GF("+TCPCLOSED:"))) {
+          int mux = stream.readStringUntil('\n').toInt();
+          sockets[mux]->sock_connected = false;
+        } else {
+          DBG("### Unhandled:", data);
+        }
       }
       data = "";
     }
