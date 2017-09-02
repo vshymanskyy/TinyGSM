@@ -524,7 +524,7 @@ public:
 
   String getGsmLocation() {
     sendAT(GF("+CIPGSMLOC=1,1"));
-    if (waitResponse(GF(GSM_NL "+CIPGSMLOC:")) != 1) {
+    if (waitResponse(10000L, GF(GSM_NL "+CIPGSMLOC:")) != 1) {
       return "";
     }
     String res = stream.readStringUntil('\n');
