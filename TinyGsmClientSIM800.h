@@ -66,6 +66,7 @@ public:
     this->at = modem;
     this->mux = mux;
     sock_available = 0;
+    prev_check = 0;
     sock_connected = false;
     got_data = false;
 
@@ -113,7 +114,14 @@ public:
 
   virtual int available() {
     TINY_GSM_YIELD();
-    if (!rx.size()) {
+    if (sock_connected && !rx.size()) {
+      // Workaround: sometimes SIM800 forgets to notify about data arrival.
+      // TODO: Currently we ping the module periodically,
+      // but maybe there's a better indicator that we need to poll
+      if (millis() - prev_check > 500) {
+        got_data = true;
+        prev_check = millis();
+      }
       at->maintain();
     }
     return rx.size() + sock_available;
@@ -164,6 +172,7 @@ private:
   TinyGsm*      at;
   uint8_t       mux;
   uint16_t      sock_available;
+  uint32_t      prev_check;
   bool          sock_connected;
   bool          got_data;
   RxFifo        rx;
@@ -191,7 +200,7 @@ public:
   }
 
   bool autoBaud(unsigned long timeout = 10000L) {
-    streamWrite(GF("AAAAAAA"));  // extra A's to help detect the baud rate
+    //streamWrite(GF("AAAAA" GSM_NL));  // TODO: extra A's to help detect the baud rate
     for (unsigned long start = millis(); millis() - start < timeout; ) {
       sendAT(GF(""));
       if (waitResponse(200) == 1) {
@@ -205,9 +214,10 @@ public:
 
   void maintain() {
     for (int mux = 0; mux < TINY_GSM_MUX_COUNT; mux++) {
-      if (sockets[mux] && sockets[mux]->got_data) {
-        sockets[mux]->got_data = false;
-        sockets[mux]->sock_available = modemGetAvailable(mux);
+      GsmClient* sock = sockets[mux];
+      if (sock && sock->got_data) {
+        sock->got_data = false;
+        sock->sock_available = modemGetAvailable(mux);
       }
     }
     while (stream.available()) {
