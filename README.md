@@ -65,6 +65,11 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
      Send an ```AT``` command using [this sketch](tools/AT_Debug/AT_Debug.ino)
   5. Check if GSM antenna is attached
 
+## How does it work?
+
+Many GSM modems, WiFi and radio modules can be controlled by sending AT commands over Serial.  
+TinyGSM knows which commands to send, and how to handle AT responses, and wraps that into standard Arduino Client interface.
+
 ## Troubleshooting
 
 ### SoftwareSerial problems
