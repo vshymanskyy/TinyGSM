@@ -251,6 +251,7 @@ private:
       return -1;
     }
     stream.write((uint8_t*)buff, len);
+    stream.flush();
     if (waitResponse(GF(GSM_NL "SEND OK" GSM_NL)) != 1) {
       return -1;
     }

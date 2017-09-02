@@ -486,6 +486,7 @@ public:
     }
     stream.print(text);
     stream.write((char)0x1A);
+    stream.flush();
     return waitResponse(60000L) == 1;
   }
 
@@ -512,6 +513,7 @@ public:
       stream.print(c, HEX);
     }
     stream.write((char)0x1A);
+    stream.flush();
     return waitResponse(60000L) == 1;
   }
 

@@ -411,6 +411,7 @@ public:
     }
     stream.print(text);
     stream.write((char)0x1A);
+    stream.flush();
     return waitResponse(60000L) == 1;
   }
 
@@ -466,7 +467,7 @@ private:
     }
     stream.write((uint8_t*)buff, len);
     stream.write((char)0x0D);
-
+    stream.flush();
     if (waitResponse(30000L, GF(GSM_NL "+TCPSEND:")) != 1) {
       return 0;
     }
