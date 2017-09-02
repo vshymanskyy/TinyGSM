@@ -568,13 +568,13 @@ private:
 
     for (size_t i=0; i<len; i++) {
 #ifdef TINY_GSM_USE_HEX
-      while (stream.available() < 2) {}
+      while (stream.available() < 2) { TINY_GSM_YIELD(); }
       char buf[4] = { 0, };
       buf[0] = stream.read();
       buf[1] = stream.read();
       char c = strtol(buf, NULL, 16);
 #else
-      while (!stream.available()) {}
+      while (!stream.available()) { TINY_GSM_YIELD(); }
       char c = stream.read();
 #endif
       sockets[mux]->rx.put(c);
@@ -621,7 +621,7 @@ private:
 
   bool streamSkipUntil(char c) { //TODO: timeout
     while (true) {
-      while (!stream.available()) {}
+      while (!stream.available()) { TINY_GSM_YIELD(); }
       if (stream.read() == c)
         return true;
     }

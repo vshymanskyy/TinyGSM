@@ -470,7 +470,7 @@ private:
 
   bool streamSkipUntil(char c) { //TODO: timeout
     while (true) {
-      while (!stream.available()) {}
+      while (!stream.available()) { TINY_GSM_YIELD(); }
       if (stream.read() == c)
         return true;
     }
@@ -529,7 +529,7 @@ private:
             DBG("### Got: ", len, "->", sockets[mux]->rx.free());
           }
           while (len--) {
-            while (!stream.available()) {}
+            while (!stream.available()) { TINY_GSM_YIELD(); }
             sockets[mux]->rx.put(stream.read());
           }
           data = "";
