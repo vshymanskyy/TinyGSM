@@ -528,7 +528,62 @@ public:
   /*
    * Location functions
    */
-  void getLocation() {
+  bool poweronGPS() {
+    sendAT(GF("+CGNSPWR=1"));
+    if (waitResponse(GF("OK")) != 1) {
+      return false;
+    } else {
+      return true;
+    }
+  }
+
+  bool poweroffGPS() {
+    sendAT(GF("+CGNSPWR=0"));
+    if (waitResponse(GF("OK")) != 1) {
+      return false;
+    } else {
+      return true;
+    }
+  }
+
+  bool poweroffSIM808() {
+    sendAT(GF("+CPOWD=1"));
+    if (waitResponse(GF("DOWN")) != 1) {
+      return false;
+    } else {
+      return true;
+    }
+  }
+
+  String getLocation() {
+    int c = 0;
+    int checksum = 0;
+    sendAT(GF("+CGPSSTATUS?"));
+    if (waitResponse(GF("Location 3D Fix")) != 1) {
+      return "Not located";
+    } else {
+      sendAT(GF("+CGPSINF=32"));
+      if (waitResponse(GF(GSM_NL "+CGPSINF:")) != 1) {
+        return "Not located";
+      }
+      String res = stream.readStringUntil('\n');
+      waitResponse();
+      res.trim();
+      res.remove(0,2);
+      res =  "$GPRMC" + res;
+      for (uint8_t i = 1; i < res.length()+1; i++) {
+        c = (unsigned char)res[i];
+        checksum ^= c;
+      }
+      res =  res + "*" + String(checksum,HEX) + "\n";
+      return res;
+    }
+  }
+
+  int getFixStatus() {
+    sendAT(GF("+CGPSSTATUS?"));
+    int status = waitResponse(GF("Location Unknown"), GF("Location Not Fix"), GF("Location 2D Fix"), GF("Location 3D Fix"));
+    return status;
   }
 
   /*
