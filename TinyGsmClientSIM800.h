@@ -16,6 +16,8 @@
   #define TINY_GSM_RX_BUFFER 64
 #endif
 
+#define TINY_GSM_MUX_COUNT 5
+
 #include <TinyGsmCommon.h>
 
 #define GSM_NL "\r\n"
@@ -65,6 +67,7 @@ public:
     this->mux = mux;
     sock_available = 0;
     sock_connected = false;
+    got_data = false;
 
     at->sockets[mux] = this;
 
@@ -162,6 +165,7 @@ private:
   uint8_t       mux;
   uint16_t      sock_available;
   bool          sock_connected;
+  bool          got_data;
   RxFifo        rx;
 };
 
@@ -199,6 +203,12 @@ public:
   }
 
   void maintain() {
+    for (int mux = 0; mux < TINY_GSM_MUX_COUNT; mux++) {
+      if (sockets[mux] && sockets[mux]->got_data) {
+        sockets[mux]->got_data = false;
+        sockets[mux]->sock_available = modemGetAvailable(mux);
+      }
+    }
     while (stream.available()) {
       waitResponse(10, NULL, NULL);
     }
@@ -237,6 +247,18 @@ public:
     }
     delay(3000);
     return init();
+  }
+
+  bool radioOff() {
+    if (!autoBaud()) {
+      return false;
+    }
+    sendAT(GF("+CFUN=0"));
+    if (waitResponse(10000L) != 1) {
+      return false;
+    }
+    delay(3000);
+    return true;
   }
 
   /*
@@ -526,6 +548,20 @@ public:
     return res;
   }
 
+  int getBattPercent() {
+    if (!autoBaud()) {
+      return false;
+    }
+    sendAT(GF("+CBC"));
+    if (waitResponse(GF(GSM_NL "+CBC:")) != 1) {
+      return false;
+    }
+    stream.readStringUntil(',');
+    int res = stream.readStringUntil(',').toInt();
+    waitResponse();
+    return res;
+  }
+
 private:
   int modemConnect(const char* host, uint16_t port, uint8_t mux) {
     sendAT(GF("+CIPSTART="), mux, ',', GF("\"TCP"), GF("\",\""), host, GF("\","), port);
@@ -648,7 +684,6 @@ private:
     String r5s(r5); r5s.trim();
     DBG("### ..:", r1s, ",", r2s, ",", r3s, ",", r4s, ",", r5s);*/
     data.reserve(64);
-    bool gotData = false;
     int mux = -1;
     int index = 0;
     unsigned long startMillis = millis();
@@ -677,8 +712,8 @@ private:
           String mode = stream.readStringUntil(',');
           if (mode.toInt() == 1) {
             mux = stream.readStringUntil('\n').toInt();
-            gotData = true;
             data = "";
+            sockets[mux]->got_data = true;
           } else {
             data += mode;
           }
@@ -701,9 +736,6 @@ finish:
       }
       data = "";
     }
-    if (gotData) {
-      sockets[mux]->sock_available = modemGetAvailable(mux);
-    }
     return index;
   }
 
@@ -723,7 +755,7 @@ finish:
 
 private:
   Stream&       stream;
-  GsmClient*    sockets[5];
+  GsmClient*    sockets[TINY_GSM_MUX_COUNT];
 };
 
 typedef TinyGsm::GsmClient TinyGsmClient;
