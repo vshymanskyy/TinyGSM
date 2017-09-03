@@ -22,6 +22,7 @@
 #define GSM_NL "\r\n"
 static const char GSM_OK[] TINY_GSM_PROGMEM = "OK" GSM_NL;
 static const char GSM_ERROR[] TINY_GSM_PROGMEM = "ERROR" GSM_NL;
+static unsigned TINY_GSM_TCP_KEEP_ALIVE = 120;
 
 class TinyGsm
 {
@@ -237,7 +238,7 @@ public:
 
 private:
   int modemConnect(const char* host, uint16_t port, uint8_t mux) {
-    sendAT(GF("+CIPSTART="), mux, ',', GF("\"TCP"), GF("\",\""), host, GF("\","), port, GF(",120"));
+    sendAT(GF("+CIPSTART="), mux, ',', GF("\"TCP"), GF("\",\""), host, GF("\","), port, GF(","), TINY_GSM_TCP_KEEP_ALIVE);
     int rsp = waitResponse(75000L,
                            GFP(GSM_OK),
                            GFP(GSM_ERROR),
