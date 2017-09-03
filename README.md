@@ -14,6 +14,9 @@ If you like **TinyGSM** - give it a star, or fork it and contribute!
 [![GitHub stars](https://img.shields.io/github/stars/vshymanskyy/TinyGSM.svg?style=social&label=Star)](https://github.com/vshymanskyy/TinyGSM/stargazers) 
 [![GitHub forks](https://img.shields.io/github/forks/vshymanskyy/TinyGSM.svg?style=social&label=Fork)](https://github.com/vshymanskyy/TinyGSM/network)
 
+You can also join our chat:
+[![Gitter](https://img.shields.io/gitter/room/vshymanskyy/TinyGSM.svg)](https://gitter.im/tinygsm)
+
 ### Arduino Client interface support
 This library is easy to integrate with lots of sketches, which use Ethernet or WiFi.  
 Examples for **PubSubClient ([MQTT](http://mqtt.org/))**, **[Blynk](http://blynk.cc)**, **Web Client** and **File Download** are provided.
