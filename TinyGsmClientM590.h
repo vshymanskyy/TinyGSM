@@ -440,7 +440,6 @@ private:
   }
 
   int modemConnect(const char* host, uint16_t port, uint8_t mux) {
-    int rsp = 0;
     for (int i=0; i<3; i++) {
       String ip = dnsIpQuery(host);
 
