@@ -28,11 +28,6 @@ class TinyGsm
 {
 
 public:
-  TinyGsm(Stream& stream)
-    : stream(stream)
-  {}
-
-public:
 
 class GsmClient : public Client
 {
@@ -95,7 +90,7 @@ public:
 
   virtual int available() {
     TINY_GSM_YIELD();
-    if (!rx.size()) {
+    if (!rx.size() && sock_connected) {
       at->maintain();
     }
     return rx.size();
@@ -147,6 +142,12 @@ private:
 };
 
 public:
+
+  TinyGsm(Stream& stream)
+    : stream(stream)
+  {
+    memset(sockets, 0, sizeof(sockets));
+  }
 
   /*
    * Basic functions
@@ -237,6 +238,7 @@ public:
   }
 
 private:
+
   int modemConnect(const char* host, uint16_t port, uint8_t mux) {
     sendAT(GF("+CIPSTART="), mux, ',', GF("\"TCP"), GF("\",\""), host, GF("\","), port, GF(","), TINY_GSM_TCP_KEEP_ALIVE);
     int rsp = waitResponse(75000L,
@@ -266,7 +268,10 @@ private:
     return 1 == res;
   }
 
+public:
+
   /* Utilities */
+
   template<typename T>
   void streamWrite(T last) {
     stream.print(last);
@@ -278,7 +283,14 @@ private:
     streamWrite(tail...);
   }
 
-  int streamRead() { return stream.read(); }
+  bool streamSkipUntil(char c) { //TODO: timeout
+    while (true) {
+      while (!stream.available()) { TINY_GSM_YIELD(); }
+      if (stream.read() == c)
+        return true;
+    }
+    return false;
+  }
 
   template<typename... Args>
   void sendAT(Args... cmd) {
@@ -305,7 +317,7 @@ private:
     do {
       TINY_GSM_YIELD();
       while (stream.available() > 0) {
-        int a = streamRead();
+        int a = stream.read();
         if (a <= 0) continue; // Skip 0x00 bytes, just in case
         data += (char)a;
         if (r1 && data.endsWith(r1)) {
