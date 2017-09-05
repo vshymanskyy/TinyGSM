@@ -26,6 +26,9 @@
   #define TINY_GSM_YIELD() { delay(0); }
 #endif
 
+#define TINY_GSM_ATTR_NOT_AVAILABLE __attribute__((error("Not available on this modem type")))
+#define TINY_GSM_ATTR_NOT_IMPLEMENTED __attribute__((error("Not implemented")))
+
 #if defined(__AVR__)
   #define TINY_GSM_PROGMEM PROGMEM
   typedef const __FlashStringHelper* GsmConstStr;
