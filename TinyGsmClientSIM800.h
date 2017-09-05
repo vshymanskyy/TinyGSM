@@ -44,11 +44,6 @@ class TinyGsm
 {
 
 public:
-  TinyGsm(Stream& stream)
-    : stream(stream)
-  {}
-
-public:
 
 class GsmClient : public Client
 {
@@ -180,6 +175,12 @@ private:
 
 public:
 
+  TinyGsm(Stream& stream)
+    : stream(stream)
+  {
+    memset(sockets, 0, sizeof(sockets));
+  }
+
   /*
    * Basic functions
    */
@@ -191,7 +192,9 @@ public:
     if (!autoBaud()) {
       return false;
     }
-    sendAT(GF("&FZE0"));  // Factory + Reset + Echo Off
+    sendAT(GF("&FZ"));  // Factory + Reset
+    waitResponse();
+    sendAT(GF("E0"));   // Echo Off
     if (waitResponse() != 1) {
       return false;
     }
@@ -344,9 +347,9 @@ public:
     return res;
   }
 
- /*
-  * Generic network functions
-  */
+  /*
+   * Generic network functions
+   */
 
   int getSignalQuality() {
     sendAT(GF("+CSQ"));
@@ -474,6 +477,11 @@ public:
     return waitResponse() == 1;
   }
 
+  void callRedial() {
+    sendAT(GF("DL"));
+    return waitResponse() == 1;
+  }
+
   bool callHangup(const String& number) {
     sendAT(GF("H"), number);
     return waitResponse() == 1;
@@ -483,9 +491,7 @@ public:
    * Messaging functions
    */
 
-  // TODO
-  void sendUSSD() {
-  }
+  void sendUSSD() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
   bool sendSMS(const String& number, const String& text) {
     sendAT(GF("+CMGF=1"));
@@ -654,7 +660,10 @@ private:
     return 1 == res;
   }
 
+public:
+
   /* Utilities */
+
   template<typename T>
   void streamWrite(T last) {
     stream.print(last);
@@ -665,8 +674,6 @@ private:
     stream.print(head);
     streamWrite(tail...);
   }
-
-  int streamRead() { return stream.read(); }
 
   bool streamSkipUntil(char c) { //TODO: timeout
     while (true) {
@@ -697,13 +704,12 @@ private:
     String r5s(r5); r5s.trim();
     DBG("### ..:", r1s, ",", r2s, ",", r3s, ",", r4s, ",", r5s);*/
     data.reserve(64);
-    int mux = -1;
     int index = 0;
     unsigned long startMillis = millis();
     do {
       TINY_GSM_YIELD();
       while (stream.available() > 0) {
-        int a = streamRead();
+        int a = stream.read();
         if (a <= 0) continue; // Skip 0x00 bytes, just in case
         data += (char)a;
         if (r1 && data.endsWith(r1)) {
@@ -724,20 +730,22 @@ private:
         } else if (data.endsWith(GF(GSM_NL "+CIPRXGET:"))) {
           String mode = stream.readStringUntil(',');
           if (mode.toInt() == 1) {
-            mux = stream.readStringUntil('\n').toInt();
+            int mux = stream.readStringUntil('\n').toInt();
+            if (mux >= 0 && mux < TINY_GSM_MUX_COUNT) {
+              sockets[mux]->got_data = true;
+            }
             data = "";
-            sockets[mux]->got_data = true;
           } else {
             data += mode;
           }
         } else if (data.endsWith(GF("CLOSED" GSM_NL))) {
           int nl = data.lastIndexOf(GSM_NL, data.length()-8);
           int coma = data.indexOf(',', nl+2);
-          mux = data.substring(nl+2, coma).toInt();
-          if (mux) {
+          int mux = data.substring(nl+2, coma).toInt();
+          if (mux >= 0 && mux < TINY_GSM_MUX_COUNT) {
             sockets[mux]->sock_connected = false;
-            data = "";
           }
+          data = "";
         }
       }
     } while (millis() - startMillis < timeout);
