@@ -43,11 +43,6 @@ class TinyGsm
 {
 
 public:
-  TinyGsm(Stream& stream)
-    : stream(stream)
-  {}
-
-public:
 
 class GsmClient : public Client
 {
@@ -110,7 +105,7 @@ public:
 
   virtual int available() {
     TINY_GSM_YIELD();
-    if (!rx.size()) {
+    if (!rx.size() && sock_connected) {
       at->maintain();
     }
     return rx.size();
@@ -162,6 +157,12 @@ private:
 };
 
 public:
+
+  TinyGsm(Stream& stream)
+    : stream(stream)
+  {
+    memset(sockets, 0, sizeof(sockets));
+  }
 
   /*
    * Basic functions
@@ -235,6 +236,8 @@ public:
     return init();
   }
 
+  bool poweroff() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
   /*
    * SIM card functions
    */
@@ -307,9 +310,9 @@ public:
     return res;
   }
 
- /*
-  * Generic network functions
-  */
+  /*
+   * Generic network functions
+   */
 
   int getSignalQuality() {
     sendAT(GF("+CSQ"));
@@ -357,13 +360,15 @@ public:
     sendAT(GF("+XIIC?"));
     waitResponse();
 
-    /*sendAT(GF("+DNSSERVER=1,8.8.8.8"));
+    /*
+    sendAT(GF("+DNSSERVER=1,8.8.8.8"));
     waitResponse();
 
     sendAT(GF("+DNSSERVER=2,8.8.4.4"));
     if (waitResponse() != 1) {
       return false;
-    }*/
+    }
+    */
 
     return true;
   }
@@ -377,6 +382,8 @@ public:
    * Phone Call functions
    */
 
+  bool setGsmBusy(bool busy = true) TINY_GSM_ATTR_NOT_AVAILABLE;
+
   bool callAnswer() {
     sendAT(GF("A"));
     return waitResponse() == 1;
@@ -387,6 +394,8 @@ public:
     return waitResponse() == 1;
   }
 
+  void callRedial() TINY_GSM_ATTR_NOT_AVAILABLE;
+
   bool callHangup(const String& number) {
     sendAT(GF("H"), number);
     return waitResponse() == 1;
@@ -396,9 +405,7 @@ public:
    * Messaging functions
    */
 
-  // TODO
-  void sendUSSD() {
-  }
+  void sendUSSD() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
   bool sendSMS(const String& number, const String& text) {
     sendAT(GF("+CSCS=\"gsm\""));
@@ -420,27 +427,16 @@ public:
    * Location functions
    */
 
-  void getGsmLocation() {
-  }
+  String getGsmLocation() TINY_GSM_ATTR_NOT_AVAILABLE;
 
   /*
    * Battery functions
    */
 
 private:
-  String dnsIpQuery(const char* host) {
-    sendAT(GF("+DNS=\""), host, GF("\""));
-    if (waitResponse(10000L, GF(GSM_NL "+DNS:")) != 1) {
-      return "";
-    }
-    String res = stream.readStringUntil('\n');
-    waitResponse(GF("+DNS:OK" GSM_NL));
-    res.trim();
-    return res;
-  }
 
   int modemConnect(const char* host, uint16_t port, uint8_t mux) {
-    for (int i=0; i<3; i++) {
+    for (int i=0; i<3; i++) { // TODO: no need for loop?
       String ip = dnsIpQuery(host);
 
       sendAT(GF("+TCPSETUP="), mux, GF(","), ip, GF(","), port);
@@ -481,7 +477,21 @@ private:
     return 1 == res;
   }
 
+  String dnsIpQuery(const char* host) {
+    sendAT(GF("+DNS=\""), host, GF("\""));
+    if (waitResponse(10000L, GF(GSM_NL "+DNS:")) != 1) {
+      return "";
+    }
+    String res = stream.readStringUntil('\n');
+    waitResponse(GF("+DNS:OK" GSM_NL));
+    res.trim();
+    return res;
+  }
+
+public:
+
   /* Utilities */
+
   template<typename T>
   void streamWrite(T last) {
     stream.print(last);
@@ -492,8 +502,6 @@ private:
     stream.print(head);
     streamWrite(tail...);
   }
-
-  int streamRead() { return stream.read(); }
 
   bool streamSkipUntil(char c) { //TODO: timeout
     while (true) {
@@ -529,7 +537,7 @@ private:
     do {
       TINY_GSM_YIELD();
       while (stream.available() > 0) {
-        int a = streamRead();
+        int a = stream.read();
         if (a <= 0) continue; // Skip 0x00 bytes, just in case
         data += (char)a;
         if (r1 && data.endsWith(r1)) {
