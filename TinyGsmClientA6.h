@@ -337,9 +337,17 @@ public:
   bool gprsConnect(const char* apn, const char* user, const char* pwd) {
     gprsDisconnect();
 
+    sendAT(GF("+CGATT=1"));
+    if (waitResponse(60000L) != 1)
+      return false;
+
+    // TODO: wait AT+CGATT?
+
     sendAT(GF("+CGDCONT=1,\"IP\",\""), apn, '"');
     waitResponse();
 
+    if (!user) user = "";
+    if (!pwd)  pwd = "";
     sendAT(GF("+CSTT=\""), apn, GF("\",\""), user, GF("\",\""), pwd, GF("\""));
     if (waitResponse(60000L) != 1) {
       return false;
@@ -347,12 +355,6 @@ public:
 
     sendAT(GF("+CGACT=1,1"));
     waitResponse(60000L);
-
-    sendAT(GF("+CGATT=1"));
-    if (waitResponse(60000L) != 1)
-      return false;
-
-    // TODO: wait AT+CGATT?
 
     sendAT(GF("+CIPMUX=1"));
     if (waitResponse() != 1) {
@@ -374,6 +376,16 @@ public:
   bool gprsDisconnect() {
     sendAT(GF("+CIPSHUT"));
     return waitResponse(60000L) == 1;
+  }
+
+  String getLocalIP() {
+    sendAT(GF("+CIFSR"));
+    String res;
+    if (waitResponse(10000L, res) != 1) {
+      return "";
+    }
+    res.trim();
+    return res;
   }
 
   /*
