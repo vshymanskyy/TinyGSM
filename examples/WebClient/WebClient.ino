@@ -37,7 +37,7 @@ TinyGsmClient client(modem);
 const char server[] = "cdn.rawgit.com";
 const char resource[] = "/vshymanskyy/tinygsm/master/extras/logo.txt";
 
-int port = 80;
+const int port = 80;
 
 void setup() {
   // Set console baud rate
