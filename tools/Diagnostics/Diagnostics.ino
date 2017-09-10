@@ -21,7 +21,6 @@
 #define TINY_GSM_RX_BUFFER 512
 
 #include <TinyGsmClient.h>
-#include <StreamDebugger.h>
 
 // Your GPRS credentials
 // Leave empty, if missing user or pass
@@ -41,6 +40,7 @@ const char pass[] = "";
 //SoftwareSerial SerialAT(2, 3); // RX, TX
 
 
+#include <StreamDebugger.h>
 StreamDebugger debugger(SerialAT, SerialMon);
 TinyGsm modem(debugger);
 TinyGsmClient client(modem);
