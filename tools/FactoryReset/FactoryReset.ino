@@ -18,7 +18,6 @@
 // #define TINY_GSM_MODEM_ESP8266
 
 #include <TinyGsmClient.h>
-#include <StreamDebugger.h>
 
 // Set serial for debug console (to the Serial Monitor, speed 115200)
 #define SerialMon Serial
@@ -31,6 +30,7 @@
 //#include <SoftwareSerial.h>
 //SoftwareSerial SerialAT(2, 3); // RX, TX
 
+#include <StreamDebugger.h>
 StreamDebugger debugger(SerialAT, SerialMon);
 TinyGsm modem(debugger);
 
