@@ -107,6 +107,7 @@ public:
   }
 
   virtual int available() {
+    //DBG("available?");
     TINY_GSM_YIELD();
     if (!rx.size() && sock_connected) {
       at->maintain();
@@ -115,6 +116,7 @@ public:
   }
 
   virtual int read(uint8_t *buf, size_t size) {
+    //DBG("read:", size);
     TINY_GSM_YIELD();
     size_t cnt = 0;
     while (cnt < size) {
@@ -432,11 +434,11 @@ public:
 
 private:
 
-  int modemConnect(const char* host, uint16_t port, uint8_t* mux) {
+  bool modemConnect(const char* host, uint16_t port, uint8_t* mux) {
     sendAT(GF("+CIPSTART="),  GF("\"TCP"), GF("\",\""), host, GF("\","), port);
 
     if (waitResponse(75000L, GF(GSM_NL "+CIPNUM:")) != 1) {
-      return -1;
+      return false;
     }
     int newMux = stream.readStringUntil('\n').toInt();
 
@@ -445,7 +447,7 @@ private:
                            GF("CONNECT FAIL" GSM_NL),
                            GF("ALREADY CONNECT" GSM_NL));
     if (waitResponse() != 1) {
-      return -1;
+      return false;
     }
     *mux = newMux;
 
@@ -556,6 +558,7 @@ public:
           int mux = stream.readStringUntil('\n').toInt();
           sockets[mux]->sock_connected = false;
           data = "";
+          DBG("### Closed: ", mux);
         }
       }
     } while (millis() - startMillis < timeout);
