@@ -163,6 +163,13 @@ public:
     return sock_connected;
   }
   virtual operator bool() { return connected(); }
+
+  /*
+   * Extended API
+   */
+
+  String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
 private:
   TinyGsm*      at;
   uint8_t       mux;
@@ -456,6 +463,16 @@ public:
   bool gprsDisconnect() {
     sendAT(GF("+CIPSHUT"));
     return waitResponse(60000L) == 1;
+  }
+
+  String getLocalIP() {
+    sendAT(GF("+CIFSR;E0"));
+    String res;
+    if (waitResponse(10000L, res) != 1) {
+      return "";
+    }
+    res.trim();
+    return res;
   }
 
   /*

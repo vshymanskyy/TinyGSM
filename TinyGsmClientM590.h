@@ -378,6 +378,8 @@ public:
     return waitResponse(60000L) == 1;
   }
 
+  String getLocalIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
   /*
    * Phone Call functions
    */
