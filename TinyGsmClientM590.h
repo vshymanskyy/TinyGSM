@@ -149,6 +149,13 @@ public:
     return sock_connected;
   }
   virtual operator bool() { return connected(); }
+
+  /*
+   * Extended API
+   */
+
+  String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
 private:
   TinyGsm*      at;
   uint8_t       mux;
@@ -435,6 +442,10 @@ public:
    * Battery functions
    */
 
+  uint16_t getBattVoltage() TINY_GSM_ATTR_NOT_AVAILABLE;
+
+  int getBattPercent() TINY_GSM_ATTR_NOT_AVAILABLE;
+
 private:
 
   int modemConnect(const char* host, uint16_t port, uint8_t mux) {
@@ -570,12 +581,12 @@ public:
             sockets[mux]->rx.put(stream.read());
           }
           data = "";
-          return index;
         } else if (data.endsWith(GF("+TCPCLOSE:"))) {
           int mux = stream.readStringUntil(',').toInt();
           stream.readStringUntil('\n');
           sockets[mux]->sock_connected = false;
           data = "";
+          DBG("### Closed: ", mux);
         }
       }
     } while (millis() - startMillis < timeout);
