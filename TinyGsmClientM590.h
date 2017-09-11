@@ -387,7 +387,11 @@ public:
 
   String getLocalIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
-  IPAddress localIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  IPAddress localIP() {
+    IPAddress res;
+    res.fromString(getLocalIP());
+    return res;
+  }
 
   /*
    * Phone Call functions
@@ -395,22 +399,13 @@ public:
 
   bool setGsmBusy(bool busy = true) TINY_GSM_ATTR_NOT_AVAILABLE;
 
-  bool callAnswer() {
-    sendAT(GF("A"));
-    return waitResponse() == 1;
-  }
+  bool callAnswer() TINY_GSM_ATTR_NOT_AVAILABLE;
 
-  bool callNumber(const String& number) {
-    sendAT(GF("D"), number);
-    return waitResponse() == 1;
-  }
+  bool callNumber(const String& number) TINY_GSM_ATTR_NOT_AVAILABLE;
 
   bool callRedial() TINY_GSM_ATTR_NOT_AVAILABLE;
 
-  bool callHangup(const String& number) {
-    sendAT(GF("H"), number);
-    return waitResponse() == 1;
-  }
+  bool callHangup() TINY_GSM_ATTR_NOT_AVAILABLE;
 
   /*
    * Messaging functions
