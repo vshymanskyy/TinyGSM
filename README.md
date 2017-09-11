@@ -73,6 +73,11 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
 Many GSM modems, WiFi and radio modules can be controlled by sending AT commands over Serial.  
 TinyGSM knows which commands to send, and how to handle AT responses, and wraps that into standard Arduino Client interface.
 
+## API Reference
+
+For GPRS data streams, this library provides the standard [Arduino Client](https://www.arduino.cc/en/Reference/ClientConstructor) interface.  
+For additional functions, please refer to [this example sketch](examples/AllFunctions/AllFunctions.ino)
+
 ## Troubleshooting
 
 ### SoftwareSerial problems
