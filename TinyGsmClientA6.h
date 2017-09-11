@@ -107,7 +107,6 @@ public:
   }
 
   virtual int available() {
-    //DBG("available?");
     TINY_GSM_YIELD();
     if (!rx.size() && sock_connected) {
       at->maintain();
@@ -116,7 +115,6 @@ public:
   }
 
   virtual int read(uint8_t *buf, size_t size) {
-    //DBG("read:", size);
     TINY_GSM_YIELD();
     size_t cnt = 0;
     while (cnt < size) {
@@ -154,6 +152,13 @@ public:
     return sock_connected;
   }
   virtual operator bool() { return connected(); }
+
+  /*
+   * Extended API
+   */
+
+  String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
 private:
   TinyGsm*      at;
   uint8_t       mux;
@@ -361,15 +366,6 @@ public:
       return false;
     }
 
-    /*
-    sendAT(GF("+CIFSR"));
-    String data;
-    if (waitResponse(10000L, data) != 1) {
-      data.replace(GSM_NL, "");
-      return false;
-    }
-    */
-
     return true;
   }
 
@@ -443,6 +439,10 @@ public:
   /*
    * Battery functions
    */
+
+  uint16_t getBattVoltage() TINY_GSM_ATTR_NOT_AVAILABLE;
+
+  int getBattPercent() TINY_GSM_ATTR_NOT_AVAILABLE;
 
 private:
 
