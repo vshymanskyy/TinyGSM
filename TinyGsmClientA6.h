@@ -401,18 +401,31 @@ public:
     return waitResponse() == 1;
   }
 
+  // Returns true on pick-up, false on error/busy
   bool callNumber(const String& number) {
-    sendAT(GF("D"), number);
-    return waitResponse() == 1;
+    sendAT(GF("D\""), number, "\";");
+    if (waitResponse() != 1) {
+      return false;
+    }
+
+    if (waitResponse(60000L, GF(GSM_NL "+CIEV: \"CALL\",1")) != 1) {
+      return false;
+    }
+
+    int rsp = waitResponse(60000L, GF(GSM_NL "+CIEV: \"SOUNDER\",0"));
+
+    int rsp2 = waitResponse(300L, GF(GSM_NL "BUSY" GSM_NL));
+
+    return rsp == 1 && rsp2 == 0;
   }
 
-  bool callRedial() {
-    sendAT(GF("DLST"));
-    return waitResponse() == 1;
-  }
+  //bool callRedial() {
+  //  sendAT(GF("DLST"));
+  //  return waitResponse() == 1;
+  //}
 
-  bool callHangup(const String& number) {
-    sendAT(GF("H"), number);
+  bool callHangup() {
+    sendAT(GF("H"));
     return waitResponse() == 1;
   }
 
@@ -420,7 +433,27 @@ public:
    * Messaging functions
    */
 
-  void sendUSSD() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  String sendUSSD(const String& code) {
+    sendAT(GF("+CSCS=HEX"));
+    waitResponse();
+    sendAT(GF("+CUSD=1,\""), code, GF("\",15"));
+    if (waitResponse(10000L) != 1) {
+      return "";
+    }
+    if (waitResponse(GF(GSM_NL "+CUSD:")) != 1) {
+      return "";
+    }
+    stream.readStringUntil('"');
+    String hex = stream.readStringUntil('"');
+    stream.readStringUntil(',');
+    int dcs = stream.readStringUntil('\n').toInt();
+
+    if (dcs == 15) {
+      return decodeHex7bit(hex);
+    } else {
+      return hex;
+    }
+  }
 
   bool sendSMS(const String& number, const String& text) {
     sendAT(GF("+CMGF=1"));
@@ -448,7 +481,16 @@ public:
 
   uint16_t getBattVoltage() TINY_GSM_ATTR_NOT_AVAILABLE;
 
-  int getBattPercent() TINY_GSM_ATTR_NOT_AVAILABLE;
+  int getBattPercent() {
+    sendAT(GF("+CBC?"));
+    if (waitResponse(GF(GSM_NL "+CBC:")) != 1) {
+      return false;
+    }
+    stream.readStringUntil(',');
+    int res = stream.readStringUntil('\n').toInt();
+    waitResponse();
+    return res;
+  }
 
 private:
 
@@ -490,6 +532,31 @@ private:
     int res = waitResponse(GF(",\"CONNECTED\""), GF(",\"CLOSED\""), GF(",\"CLOSING\""), GF(",\"INITIAL\""));
     waitResponse();
     return 1 == res;
+  }
+
+  static String decodeHex7bit(String &instr) {
+    String result;
+    byte reminder = 0;
+    int bitstate = 7;
+    for (unsigned i=0; i<instr.length(); i+=2) {
+      char buf[4] = { 0, };
+      buf[0] = instr[i];
+      buf[1] = instr[i+1];
+      byte b = strtol(buf, NULL, 16);
+
+      byte bb = b << (7 - bitstate);
+      char c = (bb + reminder) & 0x7F;
+      result += c;
+      reminder = b >> bitstate;
+      bitstate--;
+      if (bitstate == 0) {
+        char c = reminder;
+        result += c;
+        reminder = 0;
+        bitstate = 7;
+      }
+    }
+    return result;
   }
 
 public:
