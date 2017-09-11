@@ -63,6 +63,7 @@ void setup() {
 }
 
 void loop() {
+
   // Restart takes quite some time
   // To skip it, call init() instead of restart()
   DBG("Initializing modem...");
@@ -133,6 +134,8 @@ void loop() {
 #endif
 
 #ifdef CALL_TARGET
+  DBG("Calling:", CALL_TARGET);
+
   // This is NOT supported on M590
   res = modem.callNumber(CALL_TARGET);
   DBG("Call:", res ? "OK" : "fail");
