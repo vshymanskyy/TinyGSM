@@ -233,7 +233,7 @@ public:
       return "";
     }
     res.replace(GSM_NL "OK" GSM_NL, "");
-    res.replace(GSM_NL, "");
+    res.replace(GSM_NL, " ");
     res.trim();
     return res;
   }
@@ -255,7 +255,10 @@ public:
     return init();
   }
 
-  bool poweroff() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool poweroff() {
+    sendAT(GF("+CPWROFF"));
+    return waitResponse(3000L) == 1;
+  }
 
   /*
    * SIM card functions
@@ -397,7 +400,17 @@ public:
     return waitResponse(60000L) == 1;
   }
 
-  String getLocalIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  String getLocalIP() {
+    sendAT(GF("+XIIC?"));
+    if (waitResponse(GF(GSM_NL "+XIIC:")) != 1) {
+      return "";
+    }
+    stream.readStringUntil(',');
+    String res = stream.readStringUntil('\n');
+    waitResponse();
+    res.trim();
+    return res;
+  }
 
   IPAddress localIP() {
     IPAddress res;
@@ -423,10 +436,35 @@ public:
    * Messaging functions
    */
 
-  void sendUSSD() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  String sendUSSD(const String& code) {
+    sendAT(GF("+CMGF=1"));
+    waitResponse();
+    sendAT(GF("+CSCS=\"HEX\""));
+    waitResponse();
+    sendAT(GF("D"), code);
+    if (waitResponse(10000L, GF(GSM_NL "+CUSD:")) != 1) {
+      return "";
+    }
+    stream.readStringUntil('"');
+    String hex = stream.readStringUntil('"');
+    stream.readStringUntil(',');
+    int dcs = stream.readStringUntil('\n').toInt();
+
+    if (waitResponse() != 1) {
+      return "";
+    }
+
+    if (dcs == 15) {
+      return decodeHex8bit(hex);
+    } else if (dcs == 72) {
+      return decodeHex16bit(hex);
+    } else {
+      return hex;
+    }
+  }
 
   bool sendSMS(const String& number, const String& text) {
-    sendAT(GF("+CSCS=\"gsm\""));
+    sendAT(GF("+CSCS=\"GSM\""));
     waitResponse();
     sendAT(GF("+CMGF=1"));
     waitResponse();
@@ -440,6 +478,8 @@ public:
     return waitResponse(60000L) == 1;
   }
 
+  bool sendSMS_UTF16(const String& number, const void* text, size_t len)
+  TINY_GSM_ATTR_NOT_AVAILABLE;
 
   /*
    * Location functions
@@ -508,6 +548,37 @@ private:
     waitResponse(GF("+DNS:OK" GSM_NL));
     res.trim();
     return res;
+  }
+
+  static String decodeHex8bit(String &instr) {
+    String result;
+    for (unsigned i=0; i<instr.length(); i+=2) {
+      char buf[4] = { 0, };
+      buf[0] = instr[i];
+      buf[1] = instr[i+1];
+      char b = strtol(buf, NULL, 16);
+      result += b;
+    }
+    return result;
+  }
+
+  static String decodeHex16bit(String &instr) {
+    String result;
+    for (unsigned i=0; i<instr.length(); i+=4) {
+      char buf[4] = { 0, };
+      buf[0] = instr[i];
+      buf[1] = instr[i+1];
+      char b = strtol(buf, NULL, 16);
+      if (b) { // If high byte is non-zero, we can't handle it ;(
+        b = '?';
+      } else {
+        buf[0] = instr[i+2];
+        buf[1] = instr[i+3];
+        b = strtol(buf, NULL, 16);
+      }
+      result += b;
+    }
+    return result;
   }
 
 public:
