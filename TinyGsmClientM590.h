@@ -226,6 +226,16 @@ public:
     return waitResponse() == 1;
   }
 
+  String getModemInfo() {
+    sendAT(GF("I"));
+    String res;
+    if (waitResponse(1000L, res) != 1) {
+      return "";
+    }
+    res.trim();
+    return res;
+  }
+
   /*
    * Power functions
    */
@@ -581,7 +591,9 @@ public:
         } else if (data.endsWith(GF("+TCPCLOSE:"))) {
           int mux = stream.readStringUntil(',').toInt();
           stream.readStringUntil('\n');
-          sockets[mux]->sock_connected = false;
+          if (mux >= 0 && mux < TINY_GSM_MUX_COUNT) {
+            sockets[mux]->sock_connected = false;
+          }
           data = "";
           DBG("### Closed: ", mux);
         }
