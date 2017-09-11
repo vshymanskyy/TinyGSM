@@ -227,6 +227,8 @@ public:
     if (waitResponse(1000L, res) != 1) {
       return "";
     }
+    res.replace(GSM_NL "OK" GSM_NL, "");
+    res.replace(GSM_NL, "");
     res.trim();
     return res;
   }
