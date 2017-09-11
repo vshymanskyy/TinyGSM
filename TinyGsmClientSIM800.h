@@ -256,6 +256,8 @@ public:
     if (waitResponse(1000L, res) != 1) {
       return "";
     }
+    res.replace(GSM_NL "OK" GSM_NL, "");
+    res.replace(GSM_NL, "");
     res.trim();
     return res;
   }
@@ -278,6 +280,11 @@ public:
     }
     delay(3000);
     return init();
+  }
+
+  bool poweroff() {
+    sendAT(GF("+CPOWD=1"));
+    return waitResponse(GF("NORMAL POWER DOWN")) == 1;
   }
 
   bool radioOff() {
