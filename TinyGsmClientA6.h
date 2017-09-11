@@ -228,7 +228,7 @@ public:
       return "";
     }
     res.replace(GSM_NL "OK" GSM_NL, "");
-    res.replace(GSM_NL, "");
+    res.replace(GSM_NL, " ");
     res.trim();
     return res;
   }
@@ -420,13 +420,13 @@ public:
       return false;
     }
 
-    if (waitResponse(60000L, GF(GSM_NL "+CIEV: \"CALL\",1")) != 1) {
+    if (waitResponse(60000L, GF(GSM_NL "+CIEV: \"CALL\",1"), GF(GSM_NL "+CIEV: \"CALL\",0")) != 1) {
       return false;
     }
 
-    int rsp = waitResponse(60000L, GF(GSM_NL "+CIEV: \"SOUNDER\",0"));
+    int rsp = waitResponse(60000L, GF(GSM_NL "+CIEV: \"SOUNDER\",0"), GF(GSM_NL "+CIEV: \"CALL\",0"));
 
-    int rsp2 = waitResponse(300L, GF(GSM_NL "BUSY" GSM_NL));
+    int rsp2 = waitResponse(300L, GF(GSM_NL "BUSY" GSM_NL), GF(GSM_NL "NO ANSWER" GSM_NL));
 
     return rsp == 1 && rsp2 == 0;
   }
