@@ -387,6 +387,8 @@ public:
 
   String getLocalIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
+  IPAddress localIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
   /*
    * Phone Call functions
    */
@@ -448,7 +450,7 @@ public:
 
 private:
 
-  int modemConnect(const char* host, uint16_t port, uint8_t mux) {
+  bool modemConnect(const char* host, uint16_t port, uint8_t mux) {
     for (int i=0; i<3; i++) { // TODO: no need for loop?
       String ip = dnsIpQuery(host);
 

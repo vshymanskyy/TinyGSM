@@ -109,7 +109,7 @@ public:
 
   virtual int available() {
     TINY_GSM_YIELD();
-    if (sock_connected && !rx.size()) {
+    if (!rx.size() && sock_connected) {
       // Workaround: sometimes SIM800 forgets to notify about data arrival.
       // TODO: Currently we ping the module periodically,
       // but maybe there's a better indicator that we need to poll
@@ -446,9 +446,7 @@ public:
     }
 
     sendAT(GF("+CIFSR;E0"));
-    String data;
-    if (waitResponse(10000L, data) != 1) {
-      data.replace(GSM_NL, "");
+    if (waitResponse(10000L) != 1) {
       return false;
     }
 
@@ -474,6 +472,8 @@ public:
     res.trim();
     return res;
   }
+
+  IPAddress localIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
   /*
    * Phone Call functions
@@ -598,7 +598,8 @@ public:
   }
 
 private:
-  int modemConnect(const char* host, uint16_t port, uint8_t mux) {
+
+  bool modemConnect(const char* host, uint16_t port, uint8_t mux) {
     sendAT(GF("+CIPSTART="), mux, ',', GF("\"TCP"), GF("\",\""), host, GF("\","), port);
     int rsp = waitResponse(75000L,
                            GF("CONNECT OK" GSM_NL),
