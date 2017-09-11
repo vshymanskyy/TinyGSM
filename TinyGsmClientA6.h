@@ -221,6 +221,16 @@ public:
     return waitResponse() == 1;
   }
 
+  String getModemInfo() {
+    sendAT(GF("I"));
+    String res;
+    if (waitResponse(1000L, res) != 1) {
+      return "";
+    }
+    res.trim();
+    return res;
+  }
+
   /*
    * Power functions
    */
@@ -250,7 +260,7 @@ public:
 
   String getSimCCID() {
     sendAT(GF("+CCID"));
-    if (waitResponse(GF(GSM_NL "+ICCID:")) != 1) {
+    if (waitResponse(GF(GSM_NL "+SCID: SIM Card ID:")) != 1) {
       return "";
     }
     String res = stream.readStringUntil('\n');
@@ -641,7 +651,9 @@ public:
           data = "";
         } else if (data.endsWith(GF("+TCPCLOSED:"))) {
           int mux = stream.readStringUntil('\n').toInt();
-          sockets[mux]->sock_connected = false;
+          if (mux >= 0 && mux < TINY_GSM_MUX_COUNT) {
+            sockets[mux]->sock_connected = false;
+          }
           data = "";
           DBG("### Closed: ", mux);
         }
