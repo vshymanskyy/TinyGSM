@@ -16,8 +16,6 @@
 // #define TINY_GSM_MODEM_M590
 // #define TINY_GSM_MODEM_ESP8266
 
-#include <TinyGsmClient.h>
-
 // Set serial for debug console (to the Serial Monitor, speed 115200)
 #define SerialMon Serial
 
@@ -29,7 +27,9 @@
 //#include <SoftwareSerial.h>
 //SoftwareSerial SerialAT(2, 3); // RX, TX
 
-TinyGsm modem(SerialAT);
+#define TINY_GSM_DEBUG SerialMon
+
+#include <TinyGsmClient.h>
 
 // Module baud rate
 uint32_t rate = 0; // Set to 0 for Auto-Detect
@@ -43,21 +43,7 @@ void setup() {
 void loop() {
 
   if (!rate) {
-      static uint32_t rates[] = { 115200, 9600, 57600, 19200, 38400, 74400, 74880, 230400, 460800, 2400, 4800, 14400, 28800 };
-
-      SerialMon.println("Autodetecting baud rate");
-      for (unsigned i = 0; i < sizeof(rates)/sizeof(rates[0]); i++) {
-        SerialMon.print(String("Trying baud rate ") + rates[i] + "... ");
-        SerialAT.begin(rates[i]);
-        delay(10);
-        if (modem.autoBaud(1000)) {
-          rate = rates[i];
-          SerialMon.println(F("OK"));
-          break;
-        } else {
-          SerialMon.println(F("fail"));
-        }
-      }
+    rate = TinyGsmAutoBaud(SerialAT);
   }
 
   if (!rate) {
