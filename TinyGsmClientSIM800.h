@@ -250,6 +250,16 @@ public:
     return waitResponse() == 1;
   }
 
+  String getModemInfo() {
+    sendAT(GF("I"));
+    String res;
+    if (waitResponse(1000L, res) != 1) {
+      return "";
+    }
+    res.trim();
+    return res;
+  }
+
   /*
    * Power functions
    */
@@ -494,17 +504,23 @@ public:
   }
 
   bool callNumber(const String& number) {
-    sendAT(GF("D"), number);
-    return waitResponse() == 1;
+    sendAT(GF("D"), number, ";");
+    int status = waitResponse(60000L, GF("OK"), GF("BUSY"), GF("NO ANSWER"), GF("NO CARRIER"));
+    switch (status) {
+    case 1:  return true;
+    case 2:
+    case 3:  return false;
+    default: return false;
+    }
   }
 
-  bool callRedial() {
-    sendAT(GF("DL"));
-    return waitResponse() == 1;
-  }
+  //bool callRedial() {
+  //  sendAT(GF("DL"));
+  //  return waitResponse() == 1;
+  //}
 
-  bool callHangup(const String& number) {
-    sendAT(GF("H"), number);
+  bool callHangup() {
+    sendAT(GF("H"));
     return waitResponse() == 1;
   }
 
@@ -512,7 +528,21 @@ public:
    * Messaging functions
    */
 
-  void sendUSSD() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  String sendUSSD(const String& code) {
+    sendAT(GF("+CSCS=\"8859-1\""));
+    waitResponse();
+    sendAT(GF("+CUSD=1,\""), code, GF("\""));
+    if (waitResponse() != 1) {
+      return "";
+    }
+    if (waitResponse(10000L, GF(GSM_NL "+CUSD:")) != 1) {
+      return "";
+    }
+    stream.readStringUntil('"');
+    String res = stream.readStringUntil('"');
+    stream.readStringUntil('\n');
+    return res;
+  }
 
   bool sendSMS(const String& number, const String& text) {
     sendAT(GF("+CMGF=1"));
@@ -588,9 +618,6 @@ public:
   }
 
   int getBattPercent() {
-    if (!autoBaud()) {
-      return false;
-    }
     sendAT(GF("+CBC"));
     if (waitResponse(GF(GSM_NL "+CBC:")) != 1) {
       return false;
