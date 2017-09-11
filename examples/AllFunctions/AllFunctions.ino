@@ -30,6 +30,7 @@
 
 
 //#define DUMP_AT_COMMANDS
+#define TINY_GSM_DEBUG SerialMon
 
 // Set phone numbers, if you want to test SMS and Calls
 //#define SMS_TARGET  "+380xxxxxxxxx"
@@ -70,6 +71,9 @@ void loop() {
     return;
   }
 
+  String modemInfo = modem.getModemInfo();
+  DBG("Modem:", modemInfo);
+
   // Unlock your SIM card with a PIN
   //modem.simUnlock("1234");
 
@@ -86,9 +90,6 @@ void loop() {
   }
 
   bool res;
-
-  String modemInfo = modem.getModemInfo();
-  DBG("Modem:", modemInfo);
 
   String ccid = modem.getSimCCID();
   DBG("CCID:", ccid);
@@ -147,9 +148,14 @@ void loop() {
   modem.gprsDisconnect();
   DBG("GPRS disconnected");
 
+  // Try to power-off (modem may decide to restart automatically)
+  // To turn off modem completely, please use Reset/Enable pins
+  modem.poweroff();
+  DBG("Poweroff.");
+
   // Do nothing forevermore
   while (true) {
-    delay(1000);
+    modem.maintain();
   }
 }
 
