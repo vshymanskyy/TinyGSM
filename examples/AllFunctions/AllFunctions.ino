@@ -58,7 +58,7 @@ void setup() {
   delay(10);
 
   // Set GSM module baud rate
-  SerialAT.begin(115200);
+  TinyGsmAutoBaud(SerialAT);
   delay(3000);
 }
 
@@ -107,6 +107,7 @@ void loop() {
   int csq = modem.getSignalQuality();
   DBG("Signal quality:", csq);
 
+  // This is NOT supported on M590
   int battLevel = modem.getBattPercent();
   DBG("Battery lavel:", battLevel);
 
