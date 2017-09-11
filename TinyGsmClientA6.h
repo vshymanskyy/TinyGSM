@@ -384,6 +384,8 @@ public:
     return res;
   }
 
+  IPAddress localIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
   /*
    * Phone Call functions
    */

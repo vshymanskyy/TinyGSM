@@ -134,6 +134,13 @@ public:
     return sock_connected;
   }
   virtual operator bool() { return connected(); }
+
+  /*
+   * Extended API
+   */
+
+  String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
 private:
   TinyGsm*      at;
   uint8_t       mux;
@@ -236,6 +243,10 @@ public:
     sendAT(GF("+CWQAP"));
     return waitResponse(10000L) == 1;
   }
+
+  String getLocalIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
+  IPAddress localIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
 private:
 
