@@ -80,6 +80,10 @@ void setup() {
   Serial.println("Initializing modem...");
   modem.restart();
 
+  String modemInfo = modem.getModemInfo();
+  Serial.print("Modem: ");
+  Serial.println(modemInfo);
+
   // Unlock your SIM card with a PIN
   //modem.simUnlock("1234");
 
