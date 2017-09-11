@@ -503,6 +503,7 @@ public:
     return waitResponse() == 1;
   }
 
+  // Returns true on pick-up, false on error/busy
   bool callNumber(const String& number) {
     sendAT(GF("D"), number, ";");
     int status = waitResponse(60000L, GF("OK"), GF("BUSY"), GF("NO ANSWER"), GF("NO CARRIER"));
@@ -795,6 +796,7 @@ public:
             sockets[mux]->sock_connected = false;
           }
           data = "";
+          DBG("### Closed: ", mux);
         }
       }
     } while (millis() - startMillis < timeout);
