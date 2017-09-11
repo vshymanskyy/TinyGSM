@@ -257,7 +257,7 @@ public:
       return "";
     }
     res.replace(GSM_NL "OK" GSM_NL, "");
-    res.replace(GSM_NL, "");
+    res.replace(GSM_NL, " ");
     res.trim();
     return res;
   }
@@ -537,7 +537,9 @@ public:
    */
 
   String sendUSSD(const String& code) {
-    sendAT(GF("+CSCS=\"8859-1\""));
+    sendAT(GF("+CMGF=1"));
+    waitResponse();
+    sendAT(GF("+CSCS=\"HEX\""));
     waitResponse();
     sendAT(GF("+CUSD=1,\""), code, GF("\""));
     if (waitResponse() != 1) {
@@ -547,9 +549,17 @@ public:
       return "";
     }
     stream.readStringUntil('"');
-    String res = stream.readStringUntil('"');
-    stream.readStringUntil('\n');
-    return res;
+    String hex = stream.readStringUntil('"');
+    stream.readStringUntil(',');
+    int dcs = stream.readStringUntil('\n').toInt();
+
+    if (dcs == 15) {
+      return decodeHex8bit(hex);
+    } else if (dcs == 72) {
+      return decodeHex16bit(hex);
+    } else {
+      return hex;
+    }
   }
 
   bool sendSMS(const String& number, const String& text) {
@@ -715,6 +725,37 @@ private:
     int res = waitResponse(GF(",\"CONNECTED\""), GF(",\"CLOSED\""), GF(",\"CLOSING\""), GF(",\"INITIAL\""));
     waitResponse();
     return 1 == res;
+  }
+
+  static String decodeHex8bit(String &instr) {
+    String result;
+    for (unsigned i=0; i<instr.length(); i+=2) {
+      char buf[4] = { 0, };
+      buf[0] = instr[i];
+      buf[1] = instr[i+1];
+      char b = strtol(buf, NULL, 16);
+      result += b;
+    }
+    return result;
+  }
+
+  static String decodeHex16bit(String &instr) {
+    String result;
+    for (unsigned i=0; i<instr.length(); i+=4) {
+      char buf[4] = { 0, };
+      buf[0] = instr[i];
+      buf[1] = instr[i+1];
+      char b = strtol(buf, NULL, 16);
+      if (b) { // If high byte is non-zero, we can't handle it ;(
+        b = '?';
+      } else {
+        buf[0] = instr[i+2];
+        buf[1] = instr[i+3];
+        b = strtol(buf, NULL, 16);
+      }
+      result += b;
+    }
+    return result;
   }
 
 public:

@@ -446,7 +446,9 @@ public:
    */
 
   String sendUSSD(const String& code) {
-    sendAT(GF("+CSCS=HEX"));
+    sendAT(GF("+CMGF=1"));
+    waitResponse();
+    sendAT(GF("+CSCS=\"HEX\""));
     waitResponse();
     sendAT(GF("+CUSD=1,\""), code, GF("\",15"));
     if (waitResponse(10000L) != 1) {
@@ -462,6 +464,8 @@ public:
 
     if (dcs == 15) {
       return decodeHex7bit(hex);
+    } else if (dcs == 72) {
+      return decodeHex16bit(hex);
     } else {
       return hex;
     }
@@ -539,8 +543,8 @@ private:
     return len;
   }
 
-  bool modemGetConnected(uint8_t mux) { //TODO mux?
-    sendAT(GF("+CIPSTATUS"));
+  bool modemGetConnected(uint8_t mux) {
+    sendAT(GF("+CIPSTATUS")); //TODO mux?
     int res = waitResponse(GF(",\"CONNECTED\""), GF(",\"CLOSED\""), GF(",\"CLOSING\""), GF(",\"INITIAL\""));
     waitResponse();
     return 1 == res;
@@ -567,6 +571,25 @@ private:
         reminder = 0;
         bitstate = 7;
       }
+    }
+    return result;
+  }
+
+  static String decodeHex16bit(String &instr) {
+    String result;
+    for (unsigned i=0; i<instr.length(); i+=4) {
+      char buf[4] = { 0, };
+      buf[0] = instr[i];
+      buf[1] = instr[i+1];
+      char b = strtol(buf, NULL, 16);
+      if (b) { // If high byte is non-zero, we can't handle it ;(
+        b = '?';
+      } else {
+        buf[0] = instr[i+2];
+        buf[1] = instr[i+3];
+        b = strtol(buf, NULL, 16);
+      }
+      result += b;
     }
     return result;
   }
