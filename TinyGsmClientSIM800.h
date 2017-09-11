@@ -473,7 +473,11 @@ public:
     return res;
   }
 
-  IPAddress localIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  IPAddress localIP() {
+    IPAddress res;
+    res.fromString(getLocalIP());
+    return res;
+  }
 
   /*
    * Phone Call functions
