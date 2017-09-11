@@ -406,7 +406,7 @@ public:
     return waitResponse() == 1;
   }
 
-  void callRedial() {
+  bool callRedial() {
     sendAT(GF("DLST"));
     return waitResponse() == 1;
   }

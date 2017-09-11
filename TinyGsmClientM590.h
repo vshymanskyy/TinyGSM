@@ -405,7 +405,7 @@ public:
     return waitResponse() == 1;
   }
 
-  void callRedial() TINY_GSM_ATTR_NOT_AVAILABLE;
+  bool callRedial() TINY_GSM_ATTR_NOT_AVAILABLE;
 
   bool callHangup(const String& number) {
     sendAT(GF("H"), number);

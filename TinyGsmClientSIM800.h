@@ -498,7 +498,7 @@ public:
     return waitResponse() == 1;
   }
 
-  void callRedial() {
+  bool callRedial() {
     sendAT(GF("DL"));
     return waitResponse() == 1;
   }
