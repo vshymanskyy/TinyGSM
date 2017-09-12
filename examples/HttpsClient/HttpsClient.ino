@@ -80,7 +80,7 @@ void setup() {
 
 void loop() {
   if (!modem.hasSSL()) {
-    Serial.print("SSL is not supported by this modem");
+    Serial.println("SSL is not supported by this modem");
     delay(10000);
     return;
   }
