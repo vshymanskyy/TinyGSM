@@ -23,8 +23,7 @@
 // Increase RX buffer
 #define TINY_GSM_RX_BUFFER 1030
 
-#include <TinyGsmClient.h>
-#include <CRC32.h>
+//#define DUMP_AT_COMMANDS
 
 // Your GPRS credentials
 // Leave empty, if missing user or pass
@@ -39,12 +38,23 @@ const char pass[] = "";
 //#include <SoftwareSerial.h>
 //SoftwareSerial SerialAT(2, 3); // RX, TX
 
-TinyGsm modem(SerialAT);
+#include <TinyGsmClient.h>
+#include <CRC32.h>
+
+#ifdef DUMP_AT_COMMANDS
+  #include <StreamDebugger.h>
+  StreamDebugger debugger(SerialAT, Serial);
+  TinyGsm modem(debugger);
+#else
+  TinyGsm modem(SerialAT);
+#endif
 TinyGsmClient client(modem);
 
 const char server[] = "cdn.rawgit.com";
-const char resource[] = "/vshymanskyy/tinygsm/master/extras/test_1k.bin";
-uint32_t knownCRC32 = 0x6f50d767;
+const int  port     = 80;
+
+const char resource[]  = "/vshymanskyy/tinygsm/master/extras/test_1k.bin";
+uint32_t knownCRC32    = 0x6f50d767;
 uint32_t knownFileSize = 1024;   // In case server does not send it
 
 void setup() {
@@ -102,7 +112,7 @@ void loop() {
   Serial.print(server);
 
   // if you get a connection, report back via serial:
-  if (!client.connect(server, 80)) {
+  if (!client.connect(server, port)) {
     Serial.println(" fail");
     delay(10000);
     return;
