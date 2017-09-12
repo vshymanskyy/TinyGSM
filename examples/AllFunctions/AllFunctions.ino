@@ -11,6 +11,7 @@
 
 // Select your modem:
 #define TINY_GSM_MODEM_SIM800
+// #define TINY_GSM_MODEM_SIM808
 // #define TINY_GSM_MODEM_SIM900
 // #define TINY_GSM_MODEM_A6
 // #define TINY_GSM_MODEM_A7
@@ -125,7 +126,14 @@ void loop() {
   String ussd_phone_num = modem.sendUSSD("*161#");
   DBG("Phone number (USSD):", ussd_phone_num);
 
-#ifdef SMS_TARGET
+#if defined(TINY_GSM_MODEM_SIM808)
+  modem.enableGPS();
+  String gps_raw = modem.getGPSraw();
+  modem.disableGPS();
+  DBG("GPS raw data:", gps_raw);
+#endif
+
+#if defined(SMS_TARGET)
   res = modem.sendSMS(SMS_TARGET, String("Hello from ") + imei);
   DBG("SMS:", res ? "OK" : "fail");
 
@@ -134,7 +142,7 @@ void loop() {
   DBG("UTF16 SMS:", res ? "OK" : "fail");
 #endif
 
-#ifdef CALL_TARGET
+#if defined(CALL_TARGET)
   DBG("Calling:", CALL_TARGET);
 
   // This is NOT supported on M590

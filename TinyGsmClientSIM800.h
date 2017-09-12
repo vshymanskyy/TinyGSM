@@ -40,24 +40,24 @@ enum RegStatus {
 };
 
 
-class TinyGsm
+class TinyGsmSim800
 {
 
 public:
 
 class GsmClient : public Client
 {
-  friend class TinyGsm;
+  friend class TinyGsmSim800;
   typedef TinyGsmFifo<uint8_t, TINY_GSM_RX_BUFFER> RxFifo;
 
 public:
   GsmClient() {}
 
-  GsmClient(TinyGsm& modem, uint8_t mux = 1) {
+  GsmClient(TinyGsmSim800& modem, uint8_t mux = 1) {
     init(&modem, mux);
   }
 
-  bool init(TinyGsm* modem, uint8_t mux = 1) {
+  bool init(TinyGsmSim800* modem, uint8_t mux = 1) {
     this->at = modem;
     this->mux = mux;
     sock_available = 0;
@@ -171,7 +171,7 @@ public:
   String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
 private:
-  TinyGsm*      at;
+  TinyGsmSim800*      at;
   uint8_t       mux;
   uint16_t      sock_available;
   uint32_t      prev_check;
@@ -185,7 +185,7 @@ class GsmClientSecure : public GsmClient
 public:
   GsmClientSecure() {}
 
-  GsmClientSecure(TinyGsm& modem, uint8_t mux = 1)
+  GsmClientSecure(TinyGsmSim800& modem, uint8_t mux = 1)
     : GsmClient(modem, mux)
   {}
 
@@ -200,7 +200,7 @@ public:
 
 public:
 
-  TinyGsm(Stream& stream)
+  TinyGsmSim800(Stream& stream)
     : stream(stream)
   {
     memset(sockets, 0, sizeof(sockets));
@@ -672,7 +672,7 @@ public:
     return res;
   }
 
-private:
+protected:
 
   bool modemConnect(const char* host, uint16_t port, uint8_t mux, bool ssl = false) {
     sendAT(GF("+CIPSSL="), ssl);
@@ -904,12 +904,9 @@ finish:
     return waitResponse(1000, r1, r2, r3, r4, r5);
   }
 
-private:
+protected:
   Stream&       stream;
   GsmClient*    sockets[TINY_GSM_MUX_COUNT];
 };
-
-typedef TinyGsm::GsmClient TinyGsmClient;
-typedef TinyGsm::GsmClientSecure TinyGsmClientSecure;
 
 #endif

@@ -702,6 +702,4 @@ private:
   GsmClient*    sockets[TINY_GSM_MUX_COUNT];
 };
 
-typedef TinyGsm::GsmClient TinyGsmClient;
-
 #endif

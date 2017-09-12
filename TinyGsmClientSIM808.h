@@ -11,13 +11,13 @@
 
 #include <TinyGsmClientSIM800.h>
 
-class TinyGsmSim808: public TinyGsm
+class TinyGsmSim808: public TinyGsmSim800
 {
 
 public:
 
   TinyGsmSim808(Stream& stream)
-    : TinyGsm(stream)
+    : TinyGsmSim800(stream)
   {}
 
   /*
