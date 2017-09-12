@@ -42,7 +42,7 @@ const char pass[] = "";
 
 // Name of the server we want to connect to
 const char server[] = "cdn.rawgit.com";
-const int  port = 80;
+const int  port     = 443;
 // Path to download (this is the bit after the hostname in the URL)
 const char resource[] = "/vshymanskyy/tinygsm/master/extras/logo.txt";
 

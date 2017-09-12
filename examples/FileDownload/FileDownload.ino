@@ -24,6 +24,7 @@
 #define TINY_GSM_RX_BUFFER 1030
 
 //#define DUMP_AT_COMMANDS
+//#define TINY_GSM_DEBUG Serial
 
 // Your GPRS credentials
 // Leave empty, if missing user or pass
