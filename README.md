@@ -40,7 +40,7 @@ Feature \ Modem              | SIM800 | SIM8x8 | A6/A7/A20 | M590 | ESP8266
 **Data connections**
 TCP (HTTP, MQTT, Blynk, ...) | ✔      | ✔      | ✔         | ✔    | ✔
 UDP                          |        |        |           |      | 
-SSL/TLS (HTTPS)              | 🅧     | 🅧     | 🅧         | 🅧   | ◌
+SSL/TLS (HTTPS)              | ◌      | ◌      | 🅧         | 🅧   | ◌
 **USSD**
 Sending USSD requests        | ✔      | ✔      | ✔         | ✔    | 🅧
 Decoding 7,8,16-bit response | ✔      | ✔      | ✔         | ✔    | 🅧
