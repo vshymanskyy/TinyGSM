@@ -42,19 +42,19 @@ TCP (HTTP, MQTT, Blynk, ...) | ✔      | ✔      | ✔         | ✔    | ✔
 UDP                          |        |        |           |      | 
 SSL/TLS (HTTPS)              | ✔¹     | ✔¹     | 🅧         | 🅧   | ◌
 **USSD**
-Sending USSD requests        | ✔      | ✔      | ✔         | ✔    | 🅧
-Decoding 7,8,16-bit response | ✔      | ✔      | ✔         | ✔    | 🅧
+Sending USSD requests        | ✔      | ✔      | ✔         | ✔    | 
+Decoding 7,8,16-bit response | ✔      | ✔      | ✔         | ✔    | 
 **SMS**
-Sending                      | ✔      | ✔      | ✔         | ✔    | 🅧
-Sending Unicode              | ✔      | ✔      | ◌         | 🅧   | 🅧
-Receiving/Reading            |        |        |           |      | 🅧
+Sending                      | ✔      | ✔      | ✔         | ✔    | 
+Sending Unicode              | ✔      | ✔      | ◌         | 🅧   | 
+Receiving/Reading            |        |        |           |      | 
 **Calls**
-Dial, hangup                 | ✔      | ✔      | ✔         | 🅧   | 🅧
-Receiving calls              | ◌      | ◌      | ◌         | 🅧   | 🅧
-DTMF decoding                |        |        | 🅧        | 🅧   | 🅧
+Dial, hangup                 | ✔      | ✔      | ✔         | 🅧   | 
+Receiving calls              | ◌      | ◌      | ◌         | 🅧   | 
+DTMF decoding                |        |        | 🅧        | 🅧   | 
 **Location**
-GSM location service         | ✔      | ✔      | 🅧        | 🅧   | 🅧
-GPS/GNSS                     | 🅧     | ✔      | ◌¹        | 🅧   | 🅧
+GSM location service         | ✔      | ✔      | 🅧        | 🅧   | 
+GPS/GNSS                     | 🅧     | ✔      | ◌¹        | 🅧   | 
 
 ✔ - implemented  ◌ - planned  🅧 - not available for this modem  
 ¹ - supported only on some models or firmware revisions
