@@ -19,7 +19,7 @@ You can also join our chat:
 
 ### Arduino Client interface support
 This library is easy to integrate with lots of sketches, which use Ethernet or WiFi.  
-Examples for **PubSubClient ([MQTT](http://mqtt.org/))**, **[Blynk](http://blynk.cc)**, **Web Client** and **File Download** are provided.
+**PubSubClient ([MQTT](http://mqtt.org/))**, **[Blynk](http://blynk.cc)**, **HTTP Client** and **File Download** examples are provided.
 
 ![examples](/extras/examples.png)
 
@@ -33,7 +33,34 @@ Arduino GSM library uses 15868 bytes (49%) of Flash and 1113 bytes (54%) of RAM 
 TinyGSM also pulls data gently from the modem (whenever possible), so it can operate on very little RAM.  
 **Now, you have more space for your experiments.**
 
-### Supported modem models
+## Features
+
+Feature \ Modem              | SIM800 | SIM8x8 | A6/A7/A20 | M590 | ESP8266
+---                          | ---    | ---    | ---       | ---  | ---
+**Data connections**
+TCP (HTTP, MQTT, Blynk, ...) | ✔      | ✔      | ✔         | ✔    | ✔
+UDP                          |        |        |           |      | 
+SSL/TLS (HTTPS)              | ◌¹     | ◌¹     | 🅧         | 🅧   | ◌
+**USSD**
+Sending USSD requests        | ✔      | ✔      | ✔         | ✔    | 🅧
+Decoding 7,8,16-bit response | ✔      | ✔      | ✔         | ✔    | 🅧
+**SMS**
+Sending                      | ✔      | ✔      | ✔         | ✔    | 🅧
+Sending Unicode              | ✔      | ✔      | ◌         | 🅧   | 🅧
+Receiving/Reading            |        |        |           |      | 🅧
+**Calls**
+Dial, hangup                 | ✔      | ✔      | ✔         | 🅧   | 🅧
+Receiving calls              | ◌      | ◌      | ◌         | 🅧   | 🅧
+DTMF decoding                |        |        | 🅧        | 🅧   | 🅧
+**Location**
+GSM location service         | ✔      | ✔      | 🅧        | 🅧   | 🅧
+GPS/GNSS                     | 🅧     | ◌      | ◌¹        | 🅧   | 🅧
+
+✔ - implemented  ◌ - planned  🅧 - not available for this modem  
+¹ - supported only on some models or firmware revisions
+
+## Supported modems
+
 - [x] SIMCom SIM800 series (SIM800A, SIM800C, SIM800L, SIM800H, SIM808, SIM868)
 - [x] SIMCom SIM900 series (SIM900A, SIM900D, SIM908, SIM968)
 - [x] AI-Thinker A6, A6C, A7
