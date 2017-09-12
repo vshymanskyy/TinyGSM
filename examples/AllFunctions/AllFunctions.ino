@@ -16,7 +16,6 @@
 // #define TINY_GSM_MODEM_A6
 // #define TINY_GSM_MODEM_A7
 // #define TINY_GSM_MODEM_M590
-// #define TINY_GSM_MODEM_ESP8266
 
 // Set serial for debug console (to the Serial Monitor, speed 115200)
 #define SerialMon Serial
