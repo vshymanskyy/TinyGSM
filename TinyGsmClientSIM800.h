@@ -180,6 +180,24 @@ private:
   RxFifo        rx;
 };
 
+class GsmClientSecure : public GsmClient
+{
+public:
+  GsmClientSecure() {}
+
+  GsmClientSecure(TinyGsm& modem, uint8_t mux = 1)
+    : GsmClient(modem, mux)
+  {}
+
+public:
+  virtual int connect(const char *host, uint16_t port) {
+    TINY_GSM_YIELD();
+    rx.clear();
+    sock_connected = at->modemConnect(host, port, mux, true);
+    return sock_connected;
+  }
+};
+
 public:
 
   TinyGsm(Stream& stream)
@@ -260,6 +278,14 @@ public:
     res.replace(GSM_NL, " ");
     res.trim();
     return res;
+  }
+
+  bool hasSSL() {
+    sendAT(GF("+CIPSSL=?"));
+    if (waitResponse(GF(GSM_NL "+CIPSSL:")) != 1) {
+      return false;
+    }
+    return waitResponse() == 1;
   }
 
   /*
@@ -648,12 +674,17 @@ public:
 
 private:
 
-  bool modemConnect(const char* host, uint16_t port, uint8_t mux) {
+  bool modemConnect(const char* host, uint16_t port, uint8_t mux, bool ssl = false) {
+    sendAT(GF("+CIPSSL="), ssl);
+    int rsp = waitResponse();
+    if (ssl && rsp != 1) {
+      return false;
+    }
     sendAT(GF("+CIPSTART="), mux, ',', GF("\"TCP"), GF("\",\""), host, GF("\","), port);
-    int rsp = waitResponse(75000L,
-                           GF("CONNECT OK" GSM_NL),
-                           GF("CONNECT FAIL" GSM_NL),
-                           GF("ALREADY CONNECT" GSM_NL));
+    rsp = waitResponse(75000L,
+                       GF("CONNECT OK" GSM_NL),
+                       GF("CONNECT FAIL" GSM_NL),
+                       GF("ALREADY CONNECT" GSM_NL));
     return (1 == rsp);
   }
 
@@ -879,5 +910,6 @@ private:
 };
 
 typedef TinyGsm::GsmClient TinyGsmClient;
+typedef TinyGsm::GsmClientSecure TinyGsmClientSecure;
 
 #endif

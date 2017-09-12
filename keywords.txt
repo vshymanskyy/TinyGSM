@@ -3,6 +3,7 @@
 #######################################
 TinyGsm	KEYWORD1
 TinyGsmClient	KEYWORD1
+TinyGsmClientSecure	KEYWORD1
 
 SerialAT	KEYWORD1
 SerialMon	KEYWORD1
