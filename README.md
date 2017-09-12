@@ -57,7 +57,7 @@ GSM location service         | ✔      | ✔      | 🅧        | 🅧   |
 GPS/GNSS                     | 🅧     | ✔²      | ◌¹        | 🅧   | 
 
 ✔ - implemented  ◌ - planned  🅧 - not available for this modem  
-¹ - only some device models or firmware revisions have this feature
+¹ - only some device models or firmware revisions have this feature  
 ² - current implementation only supports SIM808 V2 GPS
 
 ## Supported modems
