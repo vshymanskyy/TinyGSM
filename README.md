@@ -54,7 +54,7 @@ Receiving calls              | ◌      | ◌      | ◌         | 🅧   | 🅧
 DTMF decoding                |        |        | 🅧        | 🅧   | 🅧
 **Location**
 GSM location service         | ✔      | ✔      | 🅧        | 🅧   | 🅧
-GPS/GNSS                     | 🅧     | ◌      | ◌¹        | 🅧   | 🅧
+GPS/GNSS                     | 🅧     | ✔      | ◌¹        | 🅧   | 🅧
 
 ✔ - implemented  ◌ - planned  🅧 - not available for this modem  
 ¹ - supported only on some models or firmware revisions
