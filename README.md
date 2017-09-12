@@ -51,6 +51,7 @@ Receiving/Reading            |        |        |           |      | 🅧
 **Calls**
 Dial, hangup                 | ✔      | ✔      | ✔         | 🅧   | 🅧
 Receiving calls              | ◌      | ◌      | ◌         | 🅧   | 🅧
+DTMF decoding                |        |        | 🅧        | 🅧   | 🅧
 **Location**
 GSM location service         | ✔      | ✔      | 🅧        | 🅧   | 🅧
 GPS/GNSS                     | 🅧     |        |           | 🅧   | 🅧
