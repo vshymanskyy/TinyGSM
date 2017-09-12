@@ -40,7 +40,7 @@ Feature \ Modem              | SIM800 | SIM8x8 | A6/A7/A20 | M590 | ESP8266
 **Data connections**
 TCP (HTTP, MQTT, Blynk, ...) | ✔      | ✔      | ✔         | ✔    | ✔
 UDP                          |        |        |           |      | 
-SSL/TLS (HTTPS)              | ◌      | ◌      | 🅧         | 🅧   | ◌
+SSL/TLS (HTTPS)              | ◌¹     | ◌¹     | 🅧         | 🅧   | ◌
 **USSD**
 Sending USSD requests        | ✔      | ✔      | ✔         | ✔    | 🅧
 Decoding 7,8,16-bit response | ✔      | ✔      | ✔         | ✔    | 🅧
@@ -54,9 +54,10 @@ Receiving calls              | ◌      | ◌      | ◌         | 🅧   | 🅧
 DTMF decoding                |        |        | 🅧        | 🅧   | 🅧
 **Location**
 GSM location service         | ✔      | ✔      | 🅧        | 🅧   | 🅧
-GPS/GNSS                     | 🅧     |        |           | 🅧   | 🅧
+GPS/GNSS                     | 🅧     | ◌      | ◌¹        | 🅧   | 🅧
 
-✔ - implemented  ◌ - planned  🅧 - not available for this modem
+✔ - implemented  ◌ - planned  🅧 - not available for this modem  
+¹ - supported only on some models or firmware revisions
 
 ## Supported modems
 
