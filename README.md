@@ -54,10 +54,11 @@ Receiving calls              | ◌      | ◌      | ◌         | 🅧   |
 DTMF decoding                |        |        | 🅧        | 🅧   | 
 **Location**
 GSM location service         | ✔      | ✔      | 🅧        | 🅧   | 
-GPS/GNSS                     | 🅧     | ✔      | ◌¹        | 🅧   | 
+GPS/GNSS                     | 🅧     | ✔²      | ◌¹        | 🅧   | 
 
 ✔ - implemented  ◌ - planned  🅧 - not available for this modem  
-¹ - supported only on some models or firmware revisions
+¹ - only some device models or firmware revisions have this feature
+² - current implementation only supports SIM808 V2 GPS
 
 ## Supported modems
 
