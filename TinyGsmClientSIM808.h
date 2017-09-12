@@ -601,6 +601,77 @@ public:
     stream.flush();
     return waitResponse(60000L) == 1;
   }
+    
+    int getNumSMS() {
+        
+        sendAT(GF("+CMGF=1"));
+        if (waitResponse() != 1) {
+            return 0;
+        }
+        
+        sendAT(GF("+CPMS?"));
+        if (waitResponse(GF(GSM_NL "+CPMS:")) != 1) {
+            return 0;
+        }
+        String res = stream.readStringUntil('\n');
+        int index1 = res.indexOf(",");
+        int index2 = res.indexOf(",", index1+1);
+        String tmp = res.substring(index1+1,index2);
+        waitResponse();
+        //res.trim();
+        tmp.trim();
+        //return res;
+        //int num = tmp.toInt();
+        return tmp.toInt();
+    }
+    
+    String readSMS(int num, char *sender) {
+        String buffer;
+        
+        sendAT(GF("+CMGF=1"));
+        if (waitResponse() != 1) {
+            return "";
+        }
+        sendAT(GF("+CSDH=1"));
+        if (waitResponse() != 1) {
+            return "";
+        }
+        
+        
+        sendAT(GF("+CMGR="), num, GF(""));
+        if (waitResponse(GF(GSM_NL "+CMGR:")) != 1) {
+            return "";
+        }
+        
+        stream.readStringUntil(',');
+        buffer = stream.readStringUntil(',');
+        buffer.replace('"', ' ');
+        buffer.trim();
+        buffer.toCharArray(sender, 18);
+        
+        stream.readStringUntil('\r');
+        
+        buffer = "";
+        
+        delay(20); // Wait a moment to get data into the buffer
+        while (stream.available()) {
+            char c = stream.read();
+            buffer = buffer + c;
+        }
+        
+        String res = buffer;
+        waitResponse();
+        res.trim();
+        return res;
+    }
+    
+    boolean deleteSMS(int num) {
+        sendAT(GF("+CMGD="), num, GF(""));
+        if (waitResponse(GF(GSM_NL "+CMGD:")) != 1) {
+            return false;
+        }
+        return true;
+    }
 
 
   /*
@@ -645,6 +716,16 @@ public:
     waitResponse();
     return res;
   }
+    
+    
+    
+    
+    
+/*
+ * Starting GPS functions
+ */
+    
+    
 
 private:
 
