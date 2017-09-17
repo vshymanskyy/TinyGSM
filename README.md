@@ -92,7 +92,7 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
 Your donations will be spent for:
 - Covering cellular network expences
 - Buying new hardware and modems for integration
-- Bounty Budget (to reward other developers for contributing into TinyGSM)
+- Bounty Budget (to reward other developers for their contributions)
 
 ## Getting Started
 
