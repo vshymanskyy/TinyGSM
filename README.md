@@ -84,6 +84,16 @@ More modems may be supported later:
 
 Watch this repo for new updates! And of course, contributions are welcome ;)
 
+## Donation
+
+[![Donate BountySource](https://img.shields.io/badge/Donate-BountySource-149E5E.svg)](https://salt.bountysource.com/checkout/amount?team=tinygsm-dev)
+[![Donate Bitcoin](https://img.shields.io/badge/Donate-Bitcoin-orange.svg)](http://tny.im/aen)
+
+Your donations will be spent for:
+- Covering cellular network expences
+- Buying new hardware and modems for integration
+- Bounty Budget (to reward other developers for contributing into TinyGSM)
+
 ## Getting Started
 
   1. Using your phone:
