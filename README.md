@@ -40,21 +40,24 @@ Feature \ Modem              | SIM800 | SIM8x8 | A6/A7/A20 | M590 | ESP8266
 **Data connections**
 TCP (HTTP, MQTT, Blynk, ...) | ✔      | ✔      | ✔         | ✔    | ✔
 UDP                          |        |        |           |      | 
-SSL/TLS (HTTPS)              | ✔¹     | ✔¹     | 🅧         | 🅧   | ◌
+SSL/TLS (HTTPS)              | ✔¹     | ✔¹     | 🅧        | 🅧   | ◌
 **USSD**
 Sending USSD requests        | ✔      | ✔      | ✔         | ✔    | 
 Decoding 7,8,16-bit response | ✔      | ✔      | ✔         | ✔    | 
 **SMS**
 Sending                      | ✔      | ✔      | ✔         | ✔    | 
 Sending Unicode              | ✔      | ✔      | ◌         | 🅧   | 
-Receiving/Reading            |        |        |           |      | 
+Reading                      |        |        |           |      | 
+Incoming message event       |        |        |           | ?    | 
 **Calls**
 Dial, hangup                 | ✔      | ✔      | ✔         | 🅧   | 
-Receiving calls              | ◌      | ◌      | ◌         | 🅧   | 
-DTMF decoding                |        |        | 🅧        | 🅧   | 
+Receiving calls              | ✔      | ✔      | ✔         | 🅧   | 
+Incoming event (RING)        | ◌      | ◌      | ◌         | 🅧   | 
+DTMF sending                 | ◌      | ◌      | ◌         | 🅧   | 
+DTMF decoding                | ◌      | ◌      | 🅧        | 🅧   | 
 **Location**
 GSM location service         | ✔      | ✔      | 🅧        | 🅧   | 
-GPS/GNSS                     | 🅧     | ✔²      | ◌¹        | 🅧   | 
+GPS/GNSS                     | 🅧     | ✔²     | ◌¹        | 🅧   | 
 
 ✔ - implemented  ◌ - planned  🅧 - not available for this modem  
 ¹ - only some device models or firmware revisions have this feature  
