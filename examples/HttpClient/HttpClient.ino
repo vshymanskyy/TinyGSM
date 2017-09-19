@@ -3,6 +3,10 @@
  * This sketch connects to a website and downloads a page.
  * It can be used to perform HTTP/RESTful API calls.
  *
+ * For this example, you need to install ArduinoHttpClient library:
+ *   https://github.com/arduino-libraries/ArduinoHttpClient
+ *   or from http://librarymanager/all#ArduinoHttpClient
+ *
  * TinyGSM Getting Started guide:
  *   http://tiny.cc/tiny-gsm-readme
  *
@@ -17,13 +21,8 @@
 // #define TINY_GSM_MODEM_M590
 // #define TINY_GSM_MODEM_ESP8266
 
-#include <TinyGsmClient.h>
-
-// Your GPRS credentials
-// Leave empty, if missing user or pass
-const char apn[]  = "YourAPN";
-const char user[] = "";
-const char pass[] = "";
+// Increase RX buffer
+#define TINY_GSM_RX_BUFFER 512
 
 // Use Hardware Serial on Mega, Leonardo, Micro
 #define SerialAT Serial1
@@ -32,13 +31,35 @@ const char pass[] = "";
 //#include <SoftwareSerial.h>
 //SoftwareSerial SerialAT(2, 3); // RX, TX
 
-TinyGsm modem(SerialAT);
-TinyGsmClient client(modem);
+//#define DUMP_AT_COMMANDS
+//#define TINY_GSM_DEBUG Serial
 
+
+// Your GPRS credentials
+// Leave empty, if missing user or pass
+const char apn[]  = "YourAPN";
+const char user[] = "";
+const char pass[] = "";
+
+// Name of the server we want to connect to
 const char server[] = "cdn.rawgit.com";
+const int  port     = 443;
+// Path to download (this is the bit after the hostname in the URL)
 const char resource[] = "/vshymanskyy/tinygsm/master/extras/logo.txt";
 
-const int port = 80;
+#include <TinyGsmClient.h>
+#include <ArduinoHttpClient.h>
+
+#ifdef DUMP_AT_COMMANDS
+  #include <StreamDebugger.h>
+  StreamDebugger debugger(SerialAT, Serial);
+  TinyGsm modem(debugger);
+#else
+  TinyGsm modem(SerialAT);
+#endif
+
+TinyGsmClient client(modem);
+HttpClient http(client, server, port);
 
 void setup() {
   // Set console baud rate
@@ -51,7 +72,7 @@ void setup() {
 
   // Restart takes quite some time
   // To skip it, call init() instead of restart()
-  Serial.println(F("Initializing modem..."));
+  Serial.println("Initializing modem...");
   modem.restart();
 
   String modemInfo = modem.getModemInfo();
@@ -80,33 +101,45 @@ void loop() {
   }
   Serial.println(" OK");
 
-  Serial.print(F("Connecting to "));
-  Serial.print(server);
-  if (!client.connect(server, port)) {
-    Serial.println(" fail");
+
+  Serial.print(F("Performing HTTP GET request... "));
+  int err = http.get(resource);
+  if (err != 0) {
+    Serial.println("failed to connect");
     delay(10000);
     return;
   }
-  Serial.println(" OK");
 
-  // Make a HTTP GET request:
-  client.print(String("GET ") + resource + " HTTP/1.0\r\n");
-  client.print(String("Host: ") + server + "\r\n");
-  client.print("Connection: close\r\n\r\n");
-
-  unsigned long timeout = millis();
-  while (client.connected() && millis() - timeout < 10000L) {
-    // Print available data
-    while (client.available()) {
-      char c = client.read();
-      Serial.print(c);
-      timeout = millis();
-    }
+  int status = http.responseStatusCode();
+  Serial.println(status);
+  if (!status) {
+    delay(10000);
+    return;
   }
-  Serial.println();
 
-  client.stop();
-  Serial.println("Server disconnected");
+  while (http.headerAvailable()) {
+    String headerName = http.readHeaderName();
+    String headerValue = http.readHeaderValue();
+    //Serial.println(headerName + " : " + headerValue);
+  }
+
+  int length = http.contentLength();
+  if (length >= 0) {
+    Serial.println(String("Content length is: ") + length);
+  }
+  if (http.isResponseChunked()) {
+    Serial.println("This response is chunked");
+  }
+
+  String body = http.responseBody();
+  Serial.println("Response:");
+  Serial.println(body);
+
+  Serial.println(String("Body length is: ") + body.length());
+
+  // Shutdown
+
+  http.stop();
 
   modem.gprsDisconnect();
   Serial.println("GPRS disconnected");
@@ -116,3 +149,4 @@ void loop() {
     delay(1000);
   }
 }
+

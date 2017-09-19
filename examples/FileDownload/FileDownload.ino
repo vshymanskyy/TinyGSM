@@ -1,7 +1,7 @@
 /**************************************************************
  *
  * For this example, you need to install CRC32 library:
- *   https://github.com/vshymanskyy/CRC32.git
+ *   https://github.com/bakercp/CRC32
  *   or from http://librarymanager/all#CRC32+checksum
  *
  * TinyGSM Getting Started guide:
@@ -14,18 +14,19 @@
 
 // Select your modem:
 #define TINY_GSM_MODEM_SIM800
+// #define TINY_GSM_MODEM_SIM808
 // #define TINY_GSM_MODEM_SIM900
 // #define TINY_GSM_MODEM_A6
 // #define TINY_GSM_MODEM_A7
 // #define TINY_GSM_MODEM_M590
 // #define TINY_GSM_MODEM_ESP8266
-// #define TINY_GSM_MODEM_XBEE 
+// #define TINY_GSM_MODEM_XBEE
 
 // Increase RX buffer
 #define TINY_GSM_RX_BUFFER 1030
 
-#include <TinyGsmClient.h>
-#include <CRC32.h>
+//#define DUMP_AT_COMMANDS
+//#define TINY_GSM_DEBUG Serial
 
 // Your GPRS credentials
 // Leave empty, if missing user or pass
@@ -40,12 +41,23 @@ const char pass[] = "";
 //#include <SoftwareSerial.h>
 //SoftwareSerial SerialAT(2, 3); // RX, TX
 
-TinyGsm modem(SerialAT);
+#include <TinyGsmClient.h>
+#include <CRC32.h>
+
+#ifdef DUMP_AT_COMMANDS
+  #include <StreamDebugger.h>
+  StreamDebugger debugger(SerialAT, Serial);
+  TinyGsm modem(debugger);
+#else
+  TinyGsm modem(SerialAT);
+#endif
 TinyGsmClient client(modem);
 
 const char server[] = "cdn.rawgit.com";
-const char resource[] = "/vshymanskyy/tinygsm/master/extras/test_1k.bin";
-uint32_t knownCRC32 = 0x6f50d767;
+const int  port     = 80;
+
+const char resource[]  = "/vshymanskyy/tinygsm/master/extras/test_1k.bin";
+uint32_t knownCRC32    = 0x6f50d767;
 uint32_t knownFileSize = 1024;   // In case server does not send it
 
 void setup() {
@@ -61,6 +73,10 @@ void setup() {
   // To skip it, call init() instead of restart()
   Serial.println("Initializing modem...");
   modem.restart();
+
+  String modemInfo = modem.getModemInfo();
+  Serial.print("Modem: ");
+  Serial.println(modemInfo);
 
   // Unlock your SIM card with a PIN
   //modem.simUnlock("1234");
@@ -99,7 +115,7 @@ void loop() {
   Serial.print(server);
 
   // if you get a connection, report back via serial:
-  if (!client.connect(server, 80)) {
+  if (!client.connect(server, port)) {
     Serial.println(" fail");
     delay(10000);
     return;

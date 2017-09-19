@@ -30,12 +30,13 @@
 
 // Select your modem:
 #define TINY_GSM_MODEM_SIM800
+// #define TINY_GSM_MODEM_SIM808
 // #define TINY_GSM_MODEM_SIM900
 // #define TINY_GSM_MODEM_A6
 // #define TINY_GSM_MODEM_A7
 // #define TINY_GSM_MODEM_M590
 // #define TINY_GSM_MODEM_ESP8266
-// #define TINY_GSM_MODEM_XBEE 
+// #define TINY_GSM_MODEM_XBEE
 
 #include <TinyGsmClient.h>
 #include <BlynkSimpleSIM800.h>
@@ -73,6 +74,10 @@ void setup()
   // To skip it, call init() instead of restart()
   Serial.println("Initializing modem...");
   modem.restart();
+
+  String modemInfo = modem.getModemInfo();
+  Serial.print("Modem: ");
+  Serial.println(modemInfo);
 
   // Unlock your SIM card with a PIN
   //modem.simUnlock("1234");

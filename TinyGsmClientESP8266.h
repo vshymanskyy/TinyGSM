@@ -1,13 +1,13 @@
 /**
- * @file       TinyWiFiClientESP8266.h
+ * @file       TinyGsmClientESP8266.h
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
  * @date       Nov 2016
  */
 
-#ifndef TinyWiFiClientESP8266_h
-#define TinyWiFiClientESP8266_h
+#ifndef TinyGsmClientESP8266_h
+#define TinyGsmClientESP8266_h
 
 //#define TINY_GSM_DEBUG Serial
 
@@ -15,20 +15,17 @@
   #define TINY_GSM_RX_BUFFER 256
 #endif
 
+#define TINY_GSM_MUX_COUNT 5
+
 #include <TinyGsmCommon.h>
 
 #define GSM_NL "\r\n"
 static const char GSM_OK[] TINY_GSM_PROGMEM = "OK" GSM_NL;
 static const char GSM_ERROR[] TINY_GSM_PROGMEM = "ERROR" GSM_NL;
-static unsigned int TCP_KEEP_ALIVE = 120;
+static unsigned TINY_GSM_TCP_KEEP_ALIVE = 120;
 
 class TinyGsm
 {
-
-public:
-  TinyGsm(Stream& stream)
-    : stream(stream)
-  {}
 
 public:
 
@@ -94,7 +91,7 @@ public:
 
   virtual int available() {
     TINY_GSM_YIELD();
-    if (!rx.size()) {
+    if (!rx.size() && sock_connected) {
       at->maintain();
     }
     return rx.size();
@@ -138,6 +135,13 @@ public:
     return sock_connected;
   }
   virtual operator bool() { return connected(); }
+
+  /*
+   * Extended API
+   */
+
+  String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
 private:
   TinyGsm*      at;
   uint8_t       mux;
@@ -146,6 +150,12 @@ private:
 };
 
 public:
+
+  TinyGsm(Stream& stream)
+    : stream(stream)
+  {
+    memset(sockets, 0, sizeof(sockets));
+  }
 
   /*
    * Basic functions
@@ -273,20 +283,21 @@ public:
     return waitResponse(10000L) == 1;
   }
 
+  String getLocalIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
+  IPAddress localIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
   /*
    * GPRS functions
    */
-  bool gprsConnect(const char* apn, const char* user, const char* pwd) {
-    return false;
-  }
+  bool gprsConnect(const char* apn, const char* user, const char* pwd) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
-  bool gprsDisconnect() {
-    return false;
-  }
+  bool gprsDisconnect() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
 private:
+
   int modemConnect(const char* host, uint16_t port, uint8_t mux) {
-    sendAT(GF("+CIPSTART="), mux, ',', GF("\"TCP"), GF("\",\""), host, GF("\","), port, GF(","), TCP_KEEP_ALIVE);
+    sendAT(GF("+CIPSTART="), mux, ',', GF("\"TCP"), GF("\",\""), host, GF("\","), port, GF(","), TINY_GSM_TCP_KEEP_ALIVE);
     int rsp = waitResponse(75000L,
                            GFP(GSM_OK),
                            GFP(GSM_ERROR),
@@ -301,6 +312,7 @@ private:
       return -1;
     }
     stream.write((uint8_t*)buff, len);
+    stream.flush();
     if (waitResponse(GF(GSM_NL "SEND OK" GSM_NL)) != 1) {
       return -1;
     }
@@ -314,7 +326,10 @@ private:
     return 1 == res;
   }
 
-  /* Private Utilities */
+public:
+
+  /* Utilities */
+
   template<typename T>
   void streamWrite(T last) {
     stream.print(last);
@@ -326,7 +341,14 @@ private:
     streamWrite(tail...);
   }
 
-  int streamRead() { return stream.read(); }
+  bool streamSkipUntil(char c) { //TODO: timeout
+    while (true) {
+      while (!stream.available()) { TINY_GSM_YIELD(); }
+      if (stream.read() == c)
+        return true;
+    }
+    return false;
+  }
 
   String streamReadUntil(char c) {
     String return_string = stream.readStringUntil(c);
@@ -376,7 +398,7 @@ private:
     do {
       TINY_GSM_YIELD();
       while (stream.available() > 0) {
-        int a = streamRead();
+        int a = stream.read();
         if (a <= 0) continue; // Skip 0x00 bytes, just in case
         data += (char)a;
         if (r1 && data.endsWith(r1)) {
@@ -395,16 +417,20 @@ private:
           index = 5;
           goto finish;
         } else if (data.endsWith(GF(GSM_NL "+IPD,"))) {
-          mux = stream.readStringUntil(',').toInt();
-          data += mux;
-          data += (',');
-          len = stream.readStringUntil(':').toInt();
-          data += len;
-          data += (':');
-          gotData = true;
-          index = 6;
-          goto finish;
-        } else if (data.endsWith(GF("1,CLOSED" GSM_NL))) { //TODO: use mux
+          int mux = stream.readStringUntil(',').toInt();
+          int len = stream.readStringUntil(':').toInt();
+          if (len > sockets[mux]->rx.free()) {
+            DBG("### Buffer overflow: ", len, "->", sockets[mux]->rx.free());
+          } else {
+            DBG("### Got: ", len, "->", sockets[mux]->rx.free());
+          }
+          while (len--) {
+            while (!stream.available()) { TINY_GSM_YIELD(); }
+            sockets[mux]->rx.put(stream.read());
+          }
+          data = "";
+          return index;
+        } else if (data.endsWith(GF(GSM_NL "1,CLOSED" GSM_NL))) { //TODO: use mux
           sockets[1]->sock_connected = false;
           index = 7;
           goto finish;
@@ -462,9 +488,7 @@ private:
 
 private:
   Stream&       stream;
-  GsmClient*    sockets[5];
+  GsmClient*    sockets[TINY_GSM_MUX_COUNT];
 };
-
-typedef TinyGsm::GsmClient TinyGsmClient;
 
 #endif

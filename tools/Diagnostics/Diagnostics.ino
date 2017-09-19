@@ -11,18 +11,18 @@
 
 // Select your modem:
 #define TINY_GSM_MODEM_SIM800
+// #define TINY_GSM_MODEM_SIM808
 // #define TINY_GSM_MODEM_SIM900
 // #define TINY_GSM_MODEM_A6
 // #define TINY_GSM_MODEM_A7
 // #define TINY_GSM_MODEM_M590
 // #define TINY_GSM_MODEM_ESP8266
-// #define TINY_GSM_MODEM_XBEE 
+// #define TINY_GSM_MODEM_XBEE
 
-// Increase buffer fo see less commands
-#define TINY_GSM_RX_BUFFER 256
+// Increase the buffer
+#define TINY_GSM_RX_BUFFER 512
 
 #include <TinyGsmClient.h>
-#include <StreamDebugger.h>
 
 // Your GPRS credentials
 // Leave empty, if missing user or pass
@@ -42,12 +42,13 @@ const char pass[] = "";
 //SoftwareSerial SerialAT(2, 3); // RX, TX
 
 
+#include <StreamDebugger.h>
 StreamDebugger debugger(SerialAT, SerialMon);
 TinyGsm modem(debugger);
 TinyGsmClient client(modem);
 
 const char server[] = "cdn.rawgit.com";
-const char resource[] = "/vshymanskyy/tinygsm/master/extras/test_simple.txt";
+const char resource[] = "/vshymanskyy/tinygsm/master/extras/logo.txt";
 
 void setup() {
   // Set console baud rate
@@ -144,9 +145,9 @@ void loop() {
   SerialMon.println("************************");
   SerialMon.print  (" Received: ");
   SerialMon.print(bytesReceived);
-  SerialMon.println("bytes");
+  SerialMon.println(" bytes");
   SerialMon.print  (" Test:     ");
-  SerialMon.println((bytesReceived == 1000) ? "PASSED" : "FAIL");
+  SerialMon.println((bytesReceived == 121) ? "PASSED" : "FAILED");
   SerialMon.println("************************");
 
   // Do nothing forevermore
