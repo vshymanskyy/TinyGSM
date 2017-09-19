@@ -473,7 +473,7 @@ private:
     TINY_GSM_YIELD();
     String return_string = stream.readStringUntil(c);
     return_string.trim();
-    if (String(c) == GSM_NL){
+    if (String(c) == GSM_NL) {
       DBG(return_string, "\r\n");
     } else DBG(return_string, c);
     return return_string;
@@ -484,21 +484,21 @@ private:
     {streamRead();}
   }
 
-  bool commandMode(void){
+  bool commandMode(void) {
     delay(guardTime);  // cannot send anything for 1 second before entering command mode
     streamWrite(GF("+++"));  // enter command mode
     DBG("\r\n+++\r\n");
     return 1 == waitResponse(guardTime*2);
   }
 
-  void writeChanges(void){
+  void writeChanges(void) {
     sendAT(GF("WR"));  // Write changes to flash
     waitResponse();
     sendAT(GF("AC"));  // Apply changes
     waitResponse();
   }
 
-  void exitCommand(void){
+  void exitCommand(void) {
     sendAT(GF("CN"));  // Exit command mode
     waitResponse();
   }

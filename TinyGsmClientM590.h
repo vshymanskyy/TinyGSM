@@ -274,7 +274,7 @@ public:
     if (waitResponse(GF(GSM_NL "+CCID:")) != 1) {
       return "";
     }
-    String res = streamReadUntil('\n');
+    String res = stream.readStringUntil('\n');
     waitResponse();
     return res;
   }
@@ -284,7 +284,7 @@ public:
     if (waitResponse(GF(GSM_NL)) != 1) {
       return "";
     }
-    String res = streamReadUntil('\n');
+    String res = stream.readStringUntil('\n');
     waitResponse();
     return res;
   }
@@ -314,7 +314,7 @@ public:
       return REG_UNKNOWN;
     }
     streamSkipUntil(','); // Skip format (0)
-    int status = streamReadUntil('\n').toInt();
+    int status = stream.readStringUntil('\n').toInt();
     waitResponse();
     return (RegStatus)status;
   }
@@ -325,7 +325,7 @@ public:
       return "";
     }
     streamSkipUntil('"'); // Skip mode and format
-    String res = streamReadUntil('"');
+    String res = stream.readStringUntil('"');
     waitResponse();
     return res;
   }
@@ -537,7 +537,7 @@ private:
     if (waitResponse(30000L, GF(GSM_NL "+TCPSEND:")) != 1) {
       return 0;
     }
-    streamReadUntil('\n');
+    stream.readStringUntil('\n');
     return len;
   }
 
@@ -619,7 +619,7 @@ public:
     streamWrite("AT", cmd..., GSM_NL);
     stream.flush();
     TINY_GSM_YIELD();
-    DBG(GSM_NL, ">>> AT:", cmd...);
+    DBG("### AT:", cmd...);
   }
 
   // TODO: Optimize this!
@@ -634,9 +634,6 @@ public:
     String r5s(r5); r5s.trim();
     DBG("### ..:", r1s, ",", r2s, ",", r3s, ",", r4s, ",", r5s);*/
     data.reserve(64);
-    bool gotData = false;
-    int mux = -1;
-    int len = 0;
     int index = 0;
     unsigned long startMillis = millis();
     do {
@@ -663,6 +660,7 @@ public:
         } else if (data.endsWith(GF("+TCPRECV:"))) {
           int mux = stream.readStringUntil(',').toInt();
           int len = stream.readStringUntil(',').toInt();
+          int len_orig = len;
           if (len > sockets[mux]->rx.free()) {
             DBG("### Buffer overflow: ", len, "->", sockets[mux]->rx.free());
           } else {
@@ -671,6 +669,9 @@ public:
           while (len--) {
             while (!stream.available()) { TINY_GSM_YIELD(); }
             sockets[mux]->rx.put(stream.read());
+          }
+          if (len_orig > sockets[mux]->available()) {
+            DBG(GSM_NL, "### Fewer characters received than expected: ", sockets[mux]->available(), " vs ", len_orig);
           }
           data = "";
         } else if (data.endsWith(GF("+TCPCLOSE:"))) {
@@ -688,33 +689,9 @@ public:
     if (!index) {
       data.trim();
       if (data.length()) {
-        DBG(GSM_NL, "### Unhandled:", data);
+        DBG("### Unhandled:", data);
       }
-    }
-    else {
-      data.trim();
-      data.replace(GSM_NL GSM_NL, GSM_NL);
-      data.replace(GSM_NL, GSM_NL "    ");
-      if (data.length()) {
-        DBG(GSM_NL, "<<< ", data);
-      }
-    }
-    if (gotData) {
-      int len_orig = len;
-    if (len > sockets[mux]->rx.free()) {
-        DBG(GSM_NL, "### Buffer overflow: ", len, "->", sockets[mux]->rx.free());
-    } else {
-        DBG(GSM_NL, "### Got: ", len, "->", sockets[mux]->rx.free());
-    }
-    while (len--) {
-          TINY_GSM_YIELD();
-          int r = stream.read();
-          if (r <= 0) continue; // Skip 0x00 bytes, just in case
-          sockets[mux]->rx.put((char)r);
-    }
-      if (len_orig > sockets[mux]->available()) {
-          DBG(GSM_NL, "### Fewer characters received than expected: ", sockets[mux]->available(), " vs ", len_orig);
-      }
+      data = "";
     }
     return index;
   }

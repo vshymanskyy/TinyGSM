@@ -45,14 +45,14 @@
 namespace {
   template<typename T>
   static void DBG(T last) {
-    // TINY_GSM_DEBUG.println(last);
-    TINY_GSM_DEBUG.print(last);
+    TINY_GSM_DEBUG.println(last);
+    // TINY_GSM_DEBUG.print(last);
   }
 
   template<typename T, typename... Args>
   static void DBG(T head, Args... tail) {
     TINY_GSM_DEBUG.print(head);
-    // TINY_GSM_DEBUG.print(' ');
+    TINY_GSM_DEBUG.print(' ');
     DBG(tail...);
   }
 }

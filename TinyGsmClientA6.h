@@ -265,7 +265,7 @@ public:
     if (waitResponse(GF(GSM_NL "+SCID: SIM Card ID:")) != 1) {
       return "";
     }
-    String res = streamReadUntil('\n');
+    String res = stream.readStringUntil('\n');
     waitResponse();
     return res;
   }
@@ -275,7 +275,7 @@ public:
     if (waitResponse(GF(GSM_NL)) != 1) {
       return "";
     }
-    String res = streamReadUntil('\n');
+    String res = stream.readStringUntil('\n');
     waitResponse();
     return res;
   }
@@ -305,7 +305,7 @@ public:
       return REG_UNKNOWN;
     }
     streamSkipUntil(','); // Skip format (0)
-    int status = streamReadUntil('\n').toInt();
+    int status = stream.readStringUntil('\n').toInt();
     waitResponse();
     return (RegStatus)status;
   }
@@ -316,7 +316,7 @@ public:
       return "";
     }
     streamSkipUntil('"'); // Skip mode and format
-    String res = streamReadUntil('"');
+    String res = stream.readStringUntil('"');
     waitResponse();
     return res;
   }
@@ -525,7 +525,7 @@ private:
     if (waitResponse(75000L, GF(GSM_NL "+CIPNUM:")) != 1) {
       return false;
     }
-    int newMux = streamReadUntil('\n').toInt();
+    int newMux = stream.readStringUntil('\n').toInt();
 
     int rsp = waitResponse(75000L,
                            GF("CONNECT OK" GSM_NL),
@@ -618,15 +618,13 @@ public:
     streamWrite(tail...);
   }
 
-  bool streamSkipUntil(char c) {
-    String skipped = stream.readStringUntil(c);
-    skipped.trim();
-    if (skipped.length()) {
-      if (String(c) == GSM_NL || String(c) == "\n"){
-        DBG(skipped, c, "    ");
-      } else DBG(skipped, c);
-      return true;
-    } else return false;
+  bool streamSkipUntil(char c) { //TODO: timeout
+    while (true) {
+      while (!stream.available()) { TINY_GSM_YIELD(); }
+      if (stream.read() == c)
+        return true;
+    }
+    return false;
   }
 
   template<typename... Args>
@@ -634,7 +632,7 @@ public:
    streamWrite("AT", cmd..., GSM_NL);
    stream.flush();
    TINY_GSM_YIELD();
-   DBG(GSM_NL, ">>> AT:", cmd...);
+   // DBG("### AT:", cmd...);
   }
 
   // TODO: Optimize this!
@@ -678,6 +676,7 @@ public:
         } else if (data.endsWith(GF("+CIPRCV:"))) {
           int mux = stream.readStringUntil(',').toInt();
           int len = stream.readStringUntil(',').toInt();
+          int len_orig = len;
           if (len > sockets[mux]->rx.free()) {
             DBG("### Buffer overflow: ", len, "->", sockets[mux]->rx.free());
           } else {
@@ -686,6 +685,9 @@ public:
           while (len--) {
             while (!stream.available()) { TINY_GSM_YIELD(); }
             sockets[mux]->rx.put(stream.read());
+          }
+          if (len_orig > sockets[mux]->available()) {
+            DBG(GSM_NL, "### Fewer characters received than expected: ", sockets[mux]->available(), " vs ", len_orig);
           }
           data = "";
         } else if (data.endsWith(GF("+TCPCLOSED:"))) {
@@ -702,33 +704,9 @@ public:
     if (!index) {
       data.trim();
       if (data.length()) {
-        DBG(GSM_NL, "### Unhandled:", data);
+        DBG("### Unhandled:", data);
       }
-    }
-    else {
-      data.trim();
-      data.replace(GSM_NL GSM_NL, GSM_NL);
-      data.replace(GSM_NL, GSM_NL "    ");
-      if (data.length()) {
-        DBG(GSM_NL, "<<< ", data);
-      }
-    }
-    if (gotData) {
-      int len_orig = len;
-    if (len > sockets[mux]->rx.free()) {
-        DBG(GSM_NL, "### Buffer overflow: ", len, "->", sockets[mux]->rx.free());
-    } else {
-        DBG(GSM_NL, "### Got: ", len, "->", sockets[mux]->rx.free());
-    }
-    while (len--) {
-          TINY_GSM_YIELD();
-          int r = stream.read();
-          if (r <= 0) continue; // Skip 0x00 bytes, just in case
-          sockets[mux]->rx.put((char)r);
-    }
-      if (len_orig > sockets[mux]->available()) {
-          DBG(GSM_NL, "### Fewer characters received than expected: ", sockets[mux]->available(), " vs ", len_orig);
-      }
+      data = "";
     }
     return index;
   }
@@ -737,14 +715,14 @@ public:
                        GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),
                        GsmConstStr r3=NULL, GsmConstStr r4=NULL, GsmConstStr r5=NULL)
   {
-   String data;
-   return waitResponse(timeout, data, r1, r2, r3, r4, r5);
+    String data;
+    return waitResponse(timeout, data, r1, r2, r3, r4, r5);
   }
 
   uint8_t waitResponse(GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),
                        GsmConstStr r3=NULL, GsmConstStr r4=NULL, GsmConstStr r5=NULL)
   {
-   return waitResponse(1000, r1, r2, r3, r4, r5);
+    return waitResponse(1000, r1, r2, r3, r4, r5);
   }
 
 private:
