@@ -14,9 +14,12 @@ If you like **TinyGSM** - give it a star, or fork it and contribute!
 [![GitHub stars](https://img.shields.io/github/stars/vshymanskyy/TinyGSM.svg?style=social&label=Star)](https://github.com/vshymanskyy/TinyGSM/stargazers) 
 [![GitHub forks](https://img.shields.io/github/forks/vshymanskyy/TinyGSM.svg?style=social&label=Fork)](https://github.com/vshymanskyy/TinyGSM/network)
 
+You can also join our chat:
+[![Gitter](https://img.shields.io/gitter/room/vshymanskyy/TinyGSM.svg)](https://gitter.im/tinygsm)
+
 ### Arduino Client interface support
 This library is easy to integrate with lots of sketches, which use Ethernet or WiFi.  
-Examples for **PubSubClient ([MQTT](http://mqtt.org/))**, **[Blynk](http://blynk.cc)**, **Web Client** and **File Download** are provided.
+**PubSubClient ([MQTT](http://mqtt.org/))**, **[Blynk](http://blynk.cc)**, **HTTP Client** and **File Download** examples are provided.
 
 ![examples](/extras/examples.png)
 
@@ -30,7 +33,38 @@ Arduino GSM library uses 15868 bytes (49%) of Flash and 1113 bytes (54%) of RAM 
 TinyGSM also pulls data gently from the modem (whenever possible), so it can operate on very little RAM.  
 **Now, you have more space for your experiments.**
 
-### Supported modem models
+## Features
+
+Feature \ Modem              | SIM800 | SIM8x8 | A6/A7/A20 | M590 | ESP8266
+---                          | ---    | ---    | ---       | ---  | ---
+**Data connections**
+TCP (HTTP, MQTT, Blynk, ...) | ✔      | ✔      | ✔         | ✔    | ✔
+UDP                          |        |        |           |      | 
+SSL/TLS (HTTPS)              | ✔¹     | ✔¹     | 🅧        | 🅧   | ◌
+**USSD**
+Sending USSD requests        | ✔      | ✔      | ✔         | ✔    | 
+Decoding 7,8,16-bit response | ✔      | ✔      | ✔         | ✔    | 
+**SMS**
+Sending                      | ✔      | ✔      | ✔         | ✔    | 
+Sending Unicode              | ✔      | ✔      | ◌         | 🅧   | 
+Reading                      |        |        |           |      | 
+Incoming message event       |        |        |           | ?    | 
+**Calls**
+Dial, hangup                 | ✔      | ✔      | ✔         | 🅧   | 
+Receiving calls              | ✔      | ✔      | ✔         | 🅧   | 
+Incoming event (RING)        | ◌      | ◌      | ◌         | 🅧   | 
+DTMF sending                 | ◌      | ◌      | ◌         | 🅧   | 
+DTMF decoding                | ◌      | ◌      | 🅧        | 🅧   | 
+**Location**
+GSM location service         | ✔      | ✔      | 🅧        | 🅧   | 
+GPS/GNSS                     | 🅧     | ✔²     | ◌¹        | 🅧   | 
+
+✔ - implemented  ◌ - planned  🅧 - not available for this modem  
+¹ - only some device models or firmware revisions have this feature  
+² - current implementation only supports SIM808 V2 GPS
+
+## Supported modems
+
 - [x] SIMCom SIM800 series (SIM800A, SIM800C, SIM800L, SIM800H, SIM808, SIM868)
 - [x] SIMCom SIM900 series (SIM900A, SIM900D, SIM908, SIM968)
 - [x] AI-Thinker A6, A6C, A7
@@ -53,6 +87,19 @@ More modems may be supported later:
 
 Watch this repo for new updates! And of course, contributions are welcome ;)
 
+## Donation
+
+[![Donate BountySource](https://img.shields.io/badge/Donate-BountySource-149E5E.svg)](https://salt.bountysource.com/checkout/amount?team=tinygsm-dev)
+[![Donate Bitcoin](https://img.shields.io/badge/Donate-Bitcoin-orange.svg)](http://tny.im/aen)
+
+If you have found TinyGSM to be useful in your work, research or company, please consider making a donation to the project commensurate with your resources. Any amount helps!  
+**All donations will be used strictly to fund the development of TinyGSM:**
+- Covering cellular network expences
+- Buying new hardware and modems for integration
+- Bounty Budget (to reward other developers for their contributions)
+- Implementing new features
+- Quality Assurance
+
 ## Getting Started
 
   1. Using your phone:
@@ -64,6 +111,16 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
   4. Check if serial connection is working (Hardware Serial is recommended)  
      Send an ```AT``` command using [this sketch](tools/AT_Debug/AT_Debug.ino)
   5. Check if GSM antenna is attached
+
+## How does it work?
+
+Many GSM modems, WiFi and radio modules can be controlled by sending AT commands over Serial.  
+TinyGSM knows which commands to send, and how to handle AT responses, and wraps that into standard Arduino Client interface.
+
+## API Reference
+
+For GPRS data streams, this library provides the standard [Arduino Client](https://www.arduino.cc/en/Reference/ClientConstructor) interface.  
+For additional functions, please refer to [this example sketch](examples/AllFunctions/AllFunctions.ino)
 
 ## Troubleshooting
 

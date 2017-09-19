@@ -15,6 +15,8 @@
   #define TINY_GSM_RX_BUFFER 256
 #endif
 
+#define TINY_GSM_MUX_COUNT 8
+
 #include <TinyGsmCommon.h>
 
 #define GSM_NL "\r\n"
@@ -39,11 +41,6 @@ enum RegStatus {
 
 class TinyGsm
 {
-
-public:
-  TinyGsm(Stream& stream)
-    : stream(stream)
-  {}
 
 public:
 
@@ -111,7 +108,7 @@ public:
 
   virtual int available() {
     TINY_GSM_YIELD();
-    if (!rx.size()) {
+    if (!rx.size() && sock_connected) {
       at->maintain();
     }
     return rx.size();
@@ -155,6 +152,13 @@ public:
     return sock_connected;
   }
   virtual operator bool() { return connected(); }
+
+  /*
+   * Extended API
+   */
+
+  String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
 private:
   TinyGsm*      at;
   uint8_t       mux;
@@ -163,6 +167,12 @@ private:
 };
 
 public:
+
+  TinyGsm(Stream& stream)
+    : stream(stream)
+  {
+    memset(sockets, 0, sizeof(sockets));
+  }
 
   /*
    * Basic functions
@@ -211,6 +221,18 @@ public:
     return waitResponse() == 1;
   }
 
+  String getModemInfo() {
+    sendAT(GF("I"));
+    String res;
+    if (waitResponse(1000L, res) != 1) {
+      return "";
+    }
+    res.replace(GSM_NL "OK" GSM_NL, "");
+    res.replace(GSM_NL, " ");
+    res.trim();
+    return res;
+  }
+
   /*
    * Power functions
    */
@@ -224,6 +246,11 @@ public:
     return init();
   }
 
+  bool poweroff() {
+    sendAT(GF("+CPOF"));
+    return waitResponse() == 1;
+  }
+
   /*
    * SIM card functions
    */
@@ -235,7 +262,7 @@ public:
 
   String getSimCCID() {
     sendAT(GF("+CCID"));
-    if (waitResponse(GF(GSM_NL "+ICCID:")) != 1) {
+    if (waitResponse(GF(GSM_NL "+SCID: SIM Card ID:")) != 1) {
       return "";
     }
     String res = streamReadUntil('\n');
@@ -295,7 +322,7 @@ public:
   }
 
   /*
-   * Generic network functions 
+   * Generic network functions
    */
 
   int getSignalQuality() {
@@ -303,7 +330,7 @@ public:
     if (waitResponse(GF(GSM_NL "+CSQ:")) != 1) {
       return 99;
     }
-    int res = streamReadUntil(',').toInt();
+    int res = stream.readStringUntil(',').toInt();
     waitResponse();
     return res;
   }
@@ -336,9 +363,17 @@ public:
   bool gprsConnect(const char* apn, const char* user, const char* pwd) {
     gprsDisconnect();
 
+    sendAT(GF("+CGATT=1"));
+    if (waitResponse(60000L) != 1)
+      return false;
+
+    // TODO: wait AT+CGATT?
+
     sendAT(GF("+CGDCONT=1,\"IP\",\""), apn, '"');
     waitResponse();
 
+    if (!user) user = "";
+    if (!pwd)  pwd = "";
     sendAT(GF("+CSTT=\""), apn, GF("\",\""), user, GF("\",\""), pwd, GF("\""));
     if (waitResponse(60000L) != 1) {
       return false;
@@ -347,23 +382,10 @@ public:
     sendAT(GF("+CGACT=1,1"));
     waitResponse(60000L);
 
-    sendAT(GF("+CGATT=1"));
-    if (waitResponse(60000L) != 1)
-      return false;
-
-    // TODO: wait AT+CGATT?
-
     sendAT(GF("+CIPMUX=1"));
     if (waitResponse() != 1) {
       return false;
     }
-
-    /*sendAT(GF("+CIFSR"));
-    String data;
-    if (waitResponse(10000L, data) != 1) {
-      data.replace(GSM_NL, "");
-      return false;
-    }*/
 
     return true;
   }
@@ -373,28 +395,90 @@ public:
     return waitResponse(60000L) == 1;
   }
 
+  String getLocalIP() {
+    sendAT(GF("+CIFSR"));
+    String res;
+    if (waitResponse(10000L, res) != 1) {
+      return "";
+    }
+    res.trim();
+    return res;
+  }
+
+  IPAddress localIP() {
+    IPAddress res;
+    res.fromString(getLocalIP());
+    return res;
+  }
+
   /*
    * Phone Call functions
    */
+
+  bool setGsmBusy(bool busy = true) TINY_GSM_ATTR_NOT_AVAILABLE;
 
   bool callAnswer() {
     sendAT(GF("A"));
     return waitResponse() == 1;
   }
 
+  // Returns true on pick-up, false on error/busy
   bool callNumber(const String& number) {
-    sendAT(GF("D"), number);
-    return waitResponse() == 1;
+    sendAT(GF("D\""), number, "\";");
+    if (waitResponse() != 1) {
+      return false;
+    }
+
+    if (waitResponse(60000L, GF(GSM_NL "+CIEV: \"CALL\",1"), GF(GSM_NL "+CIEV: \"CALL\",0")) != 1) {
+      return false;
+    }
+
+    int rsp = waitResponse(60000L, GF(GSM_NL "+CIEV: \"SOUNDER\",0"), GF(GSM_NL "+CIEV: \"CALL\",0"));
+
+    int rsp2 = waitResponse(300L, GF(GSM_NL "BUSY" GSM_NL), GF(GSM_NL "NO ANSWER" GSM_NL));
+
+    return rsp == 1 && rsp2 == 0;
   }
 
-  bool callHangup(const String& number) {
-    sendAT(GF("H"), number);
+  //bool callRedial() {
+  //  sendAT(GF("DLST"));
+  //  return waitResponse() == 1;
+  //}
+
+  bool callHangup() {
+    sendAT(GF("H"));
     return waitResponse() == 1;
   }
 
   /*
    * Messaging functions
    */
+
+  String sendUSSD(const String& code) {
+    sendAT(GF("+CMGF=1"));
+    waitResponse();
+    sendAT(GF("+CSCS=\"HEX\""));
+    waitResponse();
+    sendAT(GF("+CUSD=1,\""), code, GF("\",15"));
+    if (waitResponse(10000L) != 1) {
+      return "";
+    }
+    if (waitResponse(GF(GSM_NL "+CUSD:")) != 1) {
+      return "";
+    }
+    stream.readStringUntil('"');
+    String hex = stream.readStringUntil('"');
+    stream.readStringUntil(',');
+    int dcs = stream.readStringUntil('\n').toInt();
+
+    if (dcs == 15) {
+      return decodeHex7bit(hex);
+    } else if (dcs == 72) {
+      return decodeHex16bit(hex);
+    } else {
+      return hex;
+    }
+  }
 
   bool sendSMS(const String& number, const String& text) {
     sendAT(GF("+CMGF=1"));
@@ -405,24 +489,41 @@ public:
     }
     stream.print(text);
     stream.write((char)0x1A);
+    stream.flush();
     return waitResponse(60000L) == 1;
   }
+
 
   /*
    * Location functions
    */
 
+  String getGsmLocation() TINY_GSM_ATTR_NOT_AVAILABLE;
 
   /*
    * Battery functions
    */
 
+  uint16_t getBattVoltage() TINY_GSM_ATTR_NOT_AVAILABLE;
+
+  int getBattPercent() {
+    sendAT(GF("+CBC?"));
+    if (waitResponse(GF(GSM_NL "+CBC:")) != 1) {
+      return false;
+    }
+    stream.readStringUntil(',');
+    int res = stream.readStringUntil('\n').toInt();
+    waitResponse();
+    return res;
+  }
+
 private:
-  int modemConnect(const char* host, uint16_t port, uint8_t* mux) {
+
+  bool modemConnect(const char* host, uint16_t port, uint8_t* mux) {
     sendAT(GF("+CIPSTART="),  GF("\"TCP"), GF("\",\""), host, GF("\","), port);
 
     if (waitResponse(75000L, GF(GSM_NL "+CIPNUM:")) != 1) {
-      return -1;
+      return false;
     }
     int newMux = streamReadUntil('\n').toInt();
 
@@ -431,7 +532,7 @@ private:
                            GF("CONNECT FAIL" GSM_NL),
                            GF("ALREADY CONNECT" GSM_NL));
     if (waitResponse() != 1) {
-      return -1;
+      return false;
     }
     *mux = newMux;
 
@@ -440,7 +541,7 @@ private:
 
   int modemSend(const void* buff, size_t len, uint8_t mux) {
     sendAT(GF("+CIPSEND="), mux, ',', len);
-    if (waitResponse(10000L, GF(GSM_NL ">")) != 1) {
+    if (waitResponse(2000L, GF(GSM_NL ">")) != 1) {
       return -1;
     }
     stream.write((uint8_t*)buff, len);
@@ -451,14 +552,61 @@ private:
     return len;
   }
 
-  bool modemGetConnected(uint8_t mux) { //TODO mux?
-    sendAT(GF("+CIPSTATUS"));
+  bool modemGetConnected(uint8_t mux) {
+    sendAT(GF("+CIPSTATUS")); //TODO mux?
     int res = waitResponse(GF(",\"CONNECTED\""), GF(",\"CLOSED\""), GF(",\"CLOSING\""), GF(",\"INITIAL\""));
     waitResponse();
     return 1 == res;
   }
 
-  /* Private Utilities */
+  static String decodeHex7bit(String &instr) {
+    String result;
+    byte reminder = 0;
+    int bitstate = 7;
+    for (unsigned i=0; i<instr.length(); i+=2) {
+      char buf[4] = { 0, };
+      buf[0] = instr[i];
+      buf[1] = instr[i+1];
+      byte b = strtol(buf, NULL, 16);
+
+      byte bb = b << (7 - bitstate);
+      char c = (bb + reminder) & 0x7F;
+      result += c;
+      reminder = b >> bitstate;
+      bitstate--;
+      if (bitstate == 0) {
+        char c = reminder;
+        result += c;
+        reminder = 0;
+        bitstate = 7;
+      }
+    }
+    return result;
+  }
+
+  static String decodeHex16bit(String &instr) {
+    String result;
+    for (unsigned i=0; i<instr.length(); i+=4) {
+      char buf[4] = { 0, };
+      buf[0] = instr[i];
+      buf[1] = instr[i+1];
+      char b = strtol(buf, NULL, 16);
+      if (b) { // If high byte is non-zero, we can't handle it ;(
+        b = '?';
+      } else {
+        buf[0] = instr[i+2];
+        buf[1] = instr[i+3];
+        b = strtol(buf, NULL, 16);
+      }
+      result += b;
+    }
+    return result;
+  }
+
+public:
+
+  /* Utilities */
+
   template<typename T>
   void streamWrite(T last) {
     stream.print(last);
@@ -468,17 +616,6 @@ private:
   void streamWrite(T head, Args... tail) {
     stream.print(head);
     streamWrite(tail...);
-  }
-
-  int streamRead() { return stream.read(); }
-
-  String streamReadUntil(char c) {
-    String return_string = stream.readStringUntil(c);
-    return_string.trim();
-    if (String(c) == GSM_NL || String(c) == "\n"){
-      DBG(return_string, c, "    ");
-    } else DBG(return_string, c);
-    return return_string;
   }
 
   bool streamSkipUntil(char c) {
@@ -520,7 +657,7 @@ private:
     do {
       TINY_GSM_YIELD();
       while (stream.available() > 0) {
-        int a = streamRead();
+        int a = stream.read();
         if (a <= 0) continue; // Skip 0x00 bytes, just in case
         data += (char)a;
         if (r1 && data.endsWith(r1)) {
@@ -539,24 +676,25 @@ private:
           index = 5;
           goto finish;
         } else if (data.endsWith(GF("+CIPRCV:"))) {
-          mux = stream.readStringUntil(',').toInt();
-          data += mux;
-          data += (',');
-          len = stream.readStringUntil(',').toInt();
-          data += len;
-          data += (',');
-          gotData = true;
-          index = 6;
-          goto finish;
+          int mux = stream.readStringUntil(',').toInt();
+          int len = stream.readStringUntil(',').toInt();
+          if (len > sockets[mux]->rx.free()) {
+            DBG("### Buffer overflow: ", len, "->", sockets[mux]->rx.free());
+          } else {
+            DBG("### Got: ", len, "->", sockets[mux]->rx.free());
+          }
+          while (len--) {
+            while (!stream.available()) { TINY_GSM_YIELD(); }
+            sockets[mux]->rx.put(stream.read());
+          }
+          data = "";
         } else if (data.endsWith(GF("+TCPCLOSED:"))) {
-          mux = stream.readStringUntil(',').toInt();
-          data += mux;
-          data += (',');
-          String concl = stream.readStringUntil('\n');
-          data += concl;
-         sockets[mux]->sock_connected = false;
-          index = 7;
-          goto finish;
+          int mux = stream.readStringUntil('\n').toInt();
+          if (mux >= 0 && mux < TINY_GSM_MUX_COUNT) {
+            sockets[mux]->sock_connected = false;
+          }
+          data = "";
+          DBG("### Closed: ", mux);
         }
       }
     } while (millis() - startMillis < timeout);
@@ -611,9 +749,7 @@ private:
 
 private:
   Stream&       stream;
-  GsmClient*    sockets[8];
+  GsmClient*    sockets[TINY_GSM_MUX_COUNT];
 };
-
-typedef TinyGsm::GsmClient TinyGsmClient;
 
 #endif
