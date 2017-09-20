@@ -267,6 +267,7 @@ public:
     }
     String res = stream.readStringUntil('\n');
     waitResponse();
+    res.trim();
     return res;
   }
 
@@ -277,6 +278,7 @@ public:
     }
     String res = stream.readStringUntil('\n');
     waitResponse();
+    res.trim();
     return res;
   }
 
@@ -406,8 +408,19 @@ public:
   }
 
   IPAddress localIP() {
-    IPAddress res;
-    res.fromString(getLocalIP());
+    String strIP = getLocalIP();
+    int Parts[4] = {0,0,0,0};
+    int Part = 0;
+    for ( int i=0; i<strIP.length(); i++ ) {
+      char c = strIP[i];
+      if ( c == '.' ) {
+        Part++;
+        continue;
+      }
+      Parts[Part] *= 10;
+      Parts[Part] += c - '0';
+    }
+    IPAddress res( Parts[0], Parts[1], Parts[2], Parts[3] );
     return res;
   }
 
@@ -629,10 +642,10 @@ public:
 
   template<typename... Args>
   void sendAT(Args... cmd) {
-   streamWrite("AT", cmd..., GSM_NL);
-   stream.flush();
-   TINY_GSM_YIELD();
-   // DBG("### AT:", cmd...);
+    streamWrite("AT", cmd..., GSM_NL);
+    stream.flush();
+    TINY_GSM_YIELD();
+    // DBG("### AT:", cmd...);
   }
 
   // TODO: Optimize this!
@@ -647,9 +660,6 @@ public:
     String r5s(r5); r5s.trim();
     DBG("### ..:", r1s, ",", r2s, ",", r3s, ",", r4s, ",", r5s);*/
     data.reserve(64);
-    bool gotData = false;
-    int mux = -1;
-    int len = 0;
     int index = 0;
     unsigned long startMillis = millis();
     do {

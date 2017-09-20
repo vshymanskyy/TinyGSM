@@ -367,6 +367,36 @@ public:
     return false;  // Doesn't support disconnecting
   }
 
+  String getLocalIP() {
+    commandMode();
+    sendAT(GF("LA"), host);
+    String IPaddr; IPaddr.reserve(16);
+    // wait for the response
+    unsigned long startMillis = millis();
+    while (stream.available() < 8 && millis() - startMillis < 30000) {};
+    IPaddr = streamReadUntil('\r');  // read result
+    return IPaddr;
+  }
+
+  IPAddress localIP() {
+    String strIP = getLocalIP();
+    int Parts[4] = {0,0,0,0};
+    int Part = 0;
+    for ( int i=0; i<strIP.length(); i++ )
+    {
+    	char c = strIP[i];
+    	if ( c == '.' )
+    	{
+    		Part++;
+    		continue;
+    	}
+    	Parts[Part] *= 10;
+    	Parts[Part] += c - '0';
+    }
+    IPAddress res( Parts[0], Parts[1], Parts[2], Parts[3] );
+    return res;
+  }
+
   /*
    * GPRS functions
    */
@@ -412,14 +442,24 @@ public:
 private:
   int modemConnect(const char* host, uint16_t port, uint8_t mux = 1) {
     sendAT(GF("LA"), host);
-    String IPaddr; IPaddr.reserve(16);
+    String strIP; strIP.reserve(16);
     // wait for the response
     unsigned long startMillis = millis();
     while (stream.available() < 8 && millis() - startMillis < 30000) {};
-    IPaddr = streamReadUntil('\r');  // read result
-    IPAddress ip;
-    ip.fromString(IPaddr);
-    return modemConnect(ip, port);
+    strIP = streamReadUntil('\r');  // read result
+    int Parts[4] = {0,0,0,0};
+    int Part = 0;
+    for ( int i=0; i<strIP.length(); i++ ) {
+      char c = strIP[i];
+      if ( c == '.' ) {
+        Part++;
+        continue;
+      }
+      Parts[Part] *= 10;
+      Parts[Part] += c - '0';
+    }
+    IPAddress res( Parts[0], Parts[1], Parts[2], Parts[3] );
+    return modemConnect(res, port);
   }
 
   int modemConnect(IPAddress ip, uint16_t port, uint8_t mux = 1) {

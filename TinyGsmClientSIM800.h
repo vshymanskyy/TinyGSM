@@ -528,8 +528,19 @@ public:
   }
 
   IPAddress localIP() {
-    IPAddress res;
-    res.fromString(getLocalIP());
+    String strIP = getLocalIP();
+    int Parts[4] = {0,0,0,0};
+    int Part = 0;
+    for ( int i=0; i<strIP.length(); i++ ) {
+      char c = strIP[i];
+      if ( c == '.' ) {
+        Part++;
+        continue;
+      }
+      Parts[Part] *= 10;
+      Parts[Part] += c - '0';
+    }
+    IPAddress res( Parts[0], Parts[1], Parts[2], Parts[3] );
     return res;
   }
 
@@ -737,7 +748,6 @@ protected:
       buf[0] = stream.read();
       buf[1] = stream.read();
       char c = strtol(buf, NULL, 16);
-      DBG(c);
 #else
       while (!stream.available()) { TINY_GSM_YIELD(); }
       char c = stream.read();

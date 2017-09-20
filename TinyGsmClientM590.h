@@ -276,6 +276,7 @@ public:
     }
     String res = stream.readStringUntil('\n');
     waitResponse();
+    res.trim();
     return res;
   }
 
@@ -286,6 +287,7 @@ public:
     }
     String res = stream.readStringUntil('\n');
     waitResponse();
+    res.trim();
     return res;
   }
 
@@ -422,8 +424,19 @@ public:
   }
 
   IPAddress localIP() {
-    IPAddress res;
-    res.fromString(getLocalIP());
+    String strIP = getLocalIP();
+    int Parts[4] = {0,0,0,0};
+    int Part = 0;
+    for ( int i=0; i<strIP.length(); i++ ) {
+      char c = strIP[i];
+      if ( c == '.' ) {
+        Part++;
+        continue;
+      }
+      Parts[Part] *= 10;
+      Parts[Part] += c - '0';
+    }
+    IPAddress res( Parts[0], Parts[1], Parts[2], Parts[3] );
     return res;
   }
 
@@ -619,7 +632,7 @@ public:
     streamWrite("AT", cmd..., GSM_NL);
     stream.flush();
     TINY_GSM_YIELD();
-    DBG("### AT:", cmd...);
+    // DBG("### AT:", cmd...);
   }
 
   // TODO: Optimize this!
