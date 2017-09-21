@@ -10,8 +10,8 @@ A small Arduino library for GSM modules, that just works.
 [![GitHub stars](https://img.shields.io/github/stars/vshymanskyy/TinyGSM.svg)](https://github.com/vshymanskyy/TinyGSM/stargazers)
 [![License](https://img.shields.io/badge/license-LGPL3-blue.svg)](https://github.com/vshymanskyy/TinyGSM/blob/master/LICENSE)
 
-If you like **TinyGSM** - give it a star, or fork it and contribute! 
-[![GitHub stars](https://img.shields.io/github/stars/vshymanskyy/TinyGSM.svg?style=social&label=Star)](https://github.com/vshymanskyy/TinyGSM/stargazers) 
+If you like **TinyGSM** - give it a star, or fork it and contribute!
+[![GitHub stars](https://img.shields.io/github/stars/vshymanskyy/TinyGSM.svg?style=social&label=Star)](https://github.com/vshymanskyy/TinyGSM/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/vshymanskyy/TinyGSM.svg?style=social&label=Fork)](https://github.com/vshymanskyy/TinyGSM/network)
 
 You can also join our chat:
@@ -35,29 +35,29 @@ TinyGSM also pulls data gently from the modem (whenever possible), so it can ope
 
 ## Features
 
-Feature \ Modem              | SIM800 | SIM8x8 | A6/A7/A20 | M590 | ESP8266
----                          | ---    | ---    | ---       | ---  | ---
+Feature \ Modem              | SIM800 | SIM8x8 | A6/A7/A20 | M590 | ESP8266 | XBee
+---                          | ---    | ---    | ---       | ---  | ---     |
 **Data connections**
-TCP (HTTP, MQTT, Blynk, ...) | ✔      | ✔      | ✔         | ✔    | ✔
-UDP                          |        |        |           |      | 
-SSL/TLS (HTTPS)              | ✔¹     | ✔¹     | 🅧        | 🅧   | ◌
+TCP (HTTP, MQTT, Blynk, ...) | ✔      | ✔      | ✔         | ✔    | ✔       | ✔
+UDP                          |        |        |           |      |         | ◌
+SSL/TLS (HTTPS)              | ✔¹     | ✔¹     | 🅧        | 🅧   | ◌       |
 **USSD**
-Sending USSD requests        | ✔      | ✔      | ✔         | ✔    | 
-Decoding 7,8,16-bit response | ✔      | ✔      | ✔         | ✔    | 
+Sending USSD requests        | ✔      | ✔      | ✔         | ✔    |         |
+Decoding 7,8,16-bit response | ✔      | ✔      | ✔         | ✔    |         |
 **SMS**
-Sending                      | ✔      | ✔      | ✔         | ✔    | 
-Sending Unicode              | ✔      | ✔      | ◌         | 🅧   | 
-Reading                      |        |        |           |      | 
-Incoming message event       |        |        |           | ?    | 
+Sending                      | ✔      | ✔      | ✔         | ✔    |         | ✔
+Sending Unicode              | ✔      | ✔      | ◌         | 🅧   |         |
+Reading                      |        |        |           |      |         |
+Incoming message event       |        |        |           | ?    |         |
 **Calls**
-Dial, hangup                 | ✔      | ✔      | ✔         | 🅧   | 
-Receiving calls              | ✔      | ✔      | ✔         | 🅧   | 
-Incoming event (RING)        | ◌      | ◌      | ◌         | 🅧   | 
-DTMF sending                 | ◌      | ◌      | ◌         | 🅧   | 
-DTMF decoding                | ◌      | ◌      | 🅧        | 🅧   | 
+Dial, hangup                 | ✔      | ✔      | ✔         | 🅧   |         | 🅧
+Receiving calls              | ✔      | ✔      | ✔         | 🅧   |         | 🅧
+Incoming event (RING)        | ◌      | ◌      | ◌         | 🅧   |         | 🅧
+DTMF sending                 | ◌      | ◌      | ◌         | 🅧   |         | 🅧
+DTMF decoding                | ◌      | ◌      | 🅧        | 🅧   |         | 🅧
 **Location**
-GSM location service         | ✔      | ✔      | 🅧        | 🅧   | 
-GPS/GNSS                     | 🅧     | ✔²     | ◌¹        | 🅧   | 
+GSM location service         | ✔      | ✔      | 🅧        | 🅧   |         | 🅧
+GPS/GNSS                     | 🅧     | ✔²     | ◌¹        | 🅧   |         | 🅧
 
 ✔ - implemented  ◌ - planned  🅧 - not available for this modem  
 ¹ - only some device models or firmware revisions have this feature  
@@ -70,6 +70,7 @@ GPS/GNSS                     | 🅧     | ✔²     | ◌¹        | 🅧   |
 - [x] AI-Thinker A6, A6C, A7
 - [x] Neoway M590
 - [x] ESP8266 (AT commands interface, similar to GSM modems)
+- [x] Digi XBee WiFi and Cellular (using XBee command mode)
 
 ### Supported modules
 - [x] GPRSbee

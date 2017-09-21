@@ -15,6 +15,8 @@
   #define TINY_GSM_RX_BUFFER 256
 #endif
 
+#define TINY_GSM_MUX_COUNT 1  // Multi-plexing isn't supported using command mode
+
 #include <TinyGsmCommon.h>
 
 #define GSM_NL "\r"
@@ -59,11 +61,11 @@ class GsmClient : public Client
 public:
   GsmClient() {}
 
-  GsmClient(TinyGsm& modem, uint8_t mux = 1) {
+  GsmClient(TinyGsm& modem, uint8_t mux = 0) {
     init(&modem, mux);
   }
 
-  bool init(TinyGsm* modem, uint8_t mux = 1) {
+  bool init(TinyGsm* modem, uint8_t mux = 0) {
     this->at = modem;
     this->mux = mux;
     sock_connected = false;
@@ -438,7 +440,7 @@ public:
 
 
 private:
-  int modemConnect(const char* host, uint16_t port, uint8_t mux = 1) {
+  int modemConnect(const char* host, uint16_t port, uint8_t mux = 0) {
     sendAT(GF("LA"), host);
     String strIP; strIP.reserve(16);
     // wait for the response
@@ -460,7 +462,7 @@ private:
     return modemConnect(res, port);
   }
 
-  int modemConnect(IPAddress ip, uint16_t port, uint8_t mux = 1) {
+  int modemConnect(IPAddress ip, uint16_t port, uint8_t mux = 0) {
     String host; host.reserve(16);
     host += ip[0];
     host += ".";
@@ -478,13 +480,13 @@ private:
     return rsp;
   }
 
-  int modemSend(const void* buff, size_t len, uint8_t mux = 1) {
+  int modemSend(const void* buff, size_t len, uint8_t mux = 0) {
     stream.write((uint8_t*)buff, len);
     stream.flush();
     return len;
   }
 
-  bool modemGetConnected(uint8_t mux = 1) {
+  bool modemGetConnected(uint8_t mux = 0) {
     commandMode();
     if (beeType == S6B) sendAT(GF("AI"));
     else sendAT(GF("CI"));
@@ -625,9 +627,7 @@ private:
   int           guardTime;
   XBeeType      beeType;
   Stream&       stream;
-  GsmClient*    sockets[1];
+  GsmClient*    sockets[TINY_GSM_MUX_COUNT];
 };
-
-typedef TinyGsm::GsmClient TinyGsmClient;
 
 #endif
