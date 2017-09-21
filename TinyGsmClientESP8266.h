@@ -282,9 +282,34 @@ public:
     return waitResponse(10000L) == 1;
   }
 
-  String getLocalIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  String getLocalIP() {
+    sendAT(GF("+CIPSTA_CUR??"));
+    int res1 = waitResponse(GF("ERROR"), GF("+CWJAP_CUR:"));
+    if (res1 != 2) {
+      return "";
+    }
+    String res2 = stream.readStringUntil('"');
+    DBG(res2);
+    waitResponse();
+    return res2;
+  }
 
-  IPAddress localIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  IPAddress localIP() {
+    String strIP = getLocalIP();
+    int Parts[4] = {0,0,0,0};
+    int Part = 0;
+    for (uint8_t i=0; i<strIP.length(); i++) {
+      char c = strIP[i];
+      if (c == '.') {
+        Part++;
+        continue;
+      }
+      Parts[Part] *= 10;
+      Parts[Part] += c - '0';
+    }
+    IPAddress res(Parts[0], Parts[1], Parts[2], Parts[3]);
+    return res;
+  }
 
   /*
    * GPRS functions
@@ -425,7 +450,7 @@ public:
       if (data.length()) {
         DBG("### Unhandled:", data);
       }
-    data = "";
+      data = "";
     }
     return index;
   }

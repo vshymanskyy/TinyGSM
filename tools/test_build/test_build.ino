@@ -4,12 +4,6 @@
  *
  **************************************************************/
 
- // #define TINY_GSM_MODEM_SIM800
- #define TINY_GSM_MODEM_A6
- // #define TINY_GSM_MODEM_M590
- // #define TINY_GSM_MODEM_ESP8266
- // #define TINY_GSM_MODEM_XBEE
-
 #include <TinyGsmClient.h>
 
 TinyGsm modem(Serial);

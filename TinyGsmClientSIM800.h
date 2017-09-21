@@ -531,16 +531,16 @@ public:
     String strIP = getLocalIP();
     int Parts[4] = {0,0,0,0};
     int Part = 0;
-    for ( int i=0; i<strIP.length(); i++ ) {
+    for (uint8_t i=0; i<strIP.length(); i++) {
       char c = strIP[i];
-      if ( c == '.' ) {
+      if (c == '.') {
         Part++;
         continue;
       }
       Parts[Part] *= 10;
       Parts[Part] += c - '0';
     }
-    IPAddress res( Parts[0], Parts[1], Parts[2], Parts[3] );
+    IPAddress res(Parts[0], Parts[1], Parts[2], Parts[3]);
     return res;
   }
 
@@ -907,7 +907,7 @@ public:
       if (data.length()) {
         DBG("### Unhandled:", data);
       }
-    data = "";
+      data = "";
     }
     return index;
   }

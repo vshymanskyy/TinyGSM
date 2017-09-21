@@ -369,7 +369,7 @@ public:
 
   String getLocalIP() {
     commandMode();
-    sendAT(GF("LA"), host);
+    sendAT(GF("MY"));
     String IPaddr; IPaddr.reserve(16);
     // wait for the response
     unsigned long startMillis = millis();
@@ -382,18 +382,16 @@ public:
     String strIP = getLocalIP();
     int Parts[4] = {0,0,0,0};
     int Part = 0;
-    for ( int i=0; i<strIP.length(); i++ )
-    {
-    	char c = strIP[i];
-    	if ( c == '.' )
-    	{
-    		Part++;
-    		continue;
-    	}
-    	Parts[Part] *= 10;
-    	Parts[Part] += c - '0';
+    for (uint8_t i=0; i<strIP.length(); i++) {
+      char c = strIP[i];
+      if (c == '.') {
+        Part++;
+        continue;
+      }
+      Parts[Part] *= 10;
+      Parts[Part] += c - '0';
     }
-    IPAddress res( Parts[0], Parts[1], Parts[2], Parts[3] );
+    IPAddress res(Parts[0], Parts[1], Parts[2], Parts[3]);
     return res;
   }
 
@@ -449,16 +447,16 @@ private:
     strIP = streamReadUntil('\r');  // read result
     int Parts[4] = {0,0,0,0};
     int Part = 0;
-    for ( int i=0; i<strIP.length(); i++ ) {
+    for (uint8_t i=0; i<strIP.length(); i++) {
       char c = strIP[i];
-      if ( c == '.' ) {
+      if (c == '.') {
         Part++;
         continue;
       }
       Parts[Part] *= 10;
       Parts[Part] += c - '0';
     }
-    IPAddress res( Parts[0], Parts[1], Parts[2], Parts[3] );
+    IPAddress res(Parts[0], Parts[1], Parts[2], Parts[3]);
     return modemConnect(res, port);
   }
 
