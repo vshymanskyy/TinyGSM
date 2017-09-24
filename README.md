@@ -40,21 +40,24 @@ Feature \ Modem              | SIM800 | SIM8x8 | A6/A7/A20 | M590 | ESP8266
 **Data connections**
 TCP (HTTP, MQTT, Blynk, ...) | ✔      | ✔      | ✔         | ✔    | ✔
 UDP                          |        |        |           |      | 
-SSL/TLS (HTTPS)              | ✔¹     | ✔¹     | 🅧         | 🅧   | ◌
+SSL/TLS (HTTPS)              | ✔¹     | ✔¹     | 🅧        | 🅧   | ◌
 **USSD**
 Sending USSD requests        | ✔      | ✔      | ✔         | ✔    | 
 Decoding 7,8,16-bit response | ✔      | ✔      | ✔         | ✔    | 
 **SMS**
 Sending                      | ✔      | ✔      | ✔         | ✔    | 
 Sending Unicode              | ✔      | ✔      | ◌         | 🅧   | 
-Receiving/Reading            |        |        |           |      | 
+Reading                      |        |        |           |      | 
+Incoming message event       |        |        |           | ?    | 
 **Calls**
 Dial, hangup                 | ✔      | ✔      | ✔         | 🅧   | 
-Receiving calls              | ◌      | ◌      | ◌         | 🅧   | 
-DTMF decoding                |        |        | 🅧        | 🅧   | 
+Receiving calls              | ✔      | ✔      | ✔         | 🅧   | 
+Incoming event (RING)        | ◌      | ◌      | ◌         | 🅧   | 
+DTMF sending                 | ◌      | ◌      | ◌         | 🅧   | 
+DTMF decoding                | ◌      | ◌      | 🅧        | 🅧   | 
 **Location**
 GSM location service         | ✔      | ✔      | 🅧        | 🅧   | 
-GPS/GNSS                     | 🅧     | ✔²      | ◌¹        | 🅧   | 
+GPS/GNSS                     | 🅧     | ✔²     | ◌¹        | 🅧   | 
 
 ✔ - implemented  ◌ - planned  🅧 - not available for this modem  
 ¹ - only some device models or firmware revisions have this feature  
@@ -83,6 +86,19 @@ More modems may be supported later:
 - [ ] ZTE MG2639
 
 Watch this repo for new updates! And of course, contributions are welcome ;)
+
+## Donation
+
+[![Donate BountySource](https://img.shields.io/badge/Donate-BountySource-149E5E.svg)](https://salt.bountysource.com/checkout/amount?team=tinygsm-dev)
+[![Donate Bitcoin](https://img.shields.io/badge/Donate-Bitcoin-orange.svg)](http://tny.im/aen)
+
+If you have found TinyGSM to be useful in your work, research or company, please consider making a donation to the project commensurate with your resources. Any amount helps!  
+**All donations will be used strictly to fund the development of TinyGSM:**
+- Covering cellular network expences
+- Buying new hardware and modems for integration
+- Bounty Budget (to reward other developers for their contributions)
+- Implementing new features
+- Quality Assurance
 
 ## Getting Started
 
