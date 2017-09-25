@@ -524,7 +524,14 @@ public:
     }
     int res = stream.readStringUntil('\n').toInt();
     waitResponse();
-    return res == 1;
+    if (res != 1)
+      return false;
+
+    sendAT(GF("+CIFSR;E0")); // Another option is to use AT+CGPADDR=1
+    if (waitResponse() != 1)
+      return false;
+
+    return true;
   }
 
   String getLocalIP() {
