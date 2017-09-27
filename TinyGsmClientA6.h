@@ -182,7 +182,7 @@ public:
   }
 
   bool init() {
-    if (!autoBaud()) {
+    if (!testAT()) {
       return false;
     }
     sendAT(GF("&FZE0"));  // Factory + Reset + Echo Off
@@ -196,9 +196,13 @@ public:
     return true;
   }
 
-  bool autoBaud(unsigned long timeout = 10000L) {
+  void setBaud(unsigned long baud) {
+    sendAT(GF("+IPR="), baud);
+  }
+
+  bool testAT(unsigned long timeout = 10000L) {
     for (unsigned long start = millis(); millis() - start < timeout; ) {
-      sendAT(GF("E0"));
+      sendAT(GF(""));
       if (waitResponse(200) == 1) {
           delay(100);
           return true;
@@ -238,7 +242,7 @@ public:
    */
 
   bool restart() {
-    if (!autoBaud()) {
+    if (!testAT()) {
       return false;
     }
     sendAT(GF("+RST=1"));
@@ -250,6 +254,10 @@ public:
     sendAT(GF("+CPOF"));
     return waitResponse() == 1;
   }
+
+  bool radioOff() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
+  bool sleepEnable(bool enable = true) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
   /*
    * SIM card functions
@@ -337,13 +345,17 @@ public:
     return res;
   }
 
+  bool isNetworkConnected() {
+    RegStatus s = getRegistrationStatus();
+    return (s == REG_OK_HOME || s == REG_OK_ROAMING);
+  }
+
   bool waitForNetwork(unsigned long timeout = 60000L) {
     for (unsigned long start = millis(); millis() - start < timeout; ) {
-      RegStatus s = getRegistrationStatus();
-      if (s == REG_OK_HOME || s == REG_OK_ROAMING) {
+      if (isNetworkConnected()) {
         return true;
       }
-      delay(1000);
+      delay(500);
     }
     return false;
   }
@@ -383,7 +395,31 @@ public:
 
   bool gprsDisconnect() {
     sendAT(GF("+CIPSHUT"));
-    return waitResponse(60000L) == 1;
+    if (waitResponse(60000L) != 1)
+      return false;
+
+    sendAT(GF("+CGATT=0"));
+    if (waitResponse(60000L) != 1)
+      return false;
+
+    return true;
+  }
+
+  bool isGprsConnected() {
+    sendAT(GF("+CGATT?"));
+    if (waitResponse(GF(GSM_NL "+CGATT:")) != 1) {
+      return false;
+    }
+    int res = stream.readStringUntil('\n').toInt();
+    waitResponse();
+    if (res != 1)
+      return false;
+
+    sendAT(GF("+CIFSR")); // TODO: check this
+    if (waitResponse() != 1)
+      return false;
+
+    return true;
   }
 
   String getLocalIP() {
@@ -461,9 +497,9 @@ public:
     int dcs = stream.readStringUntil('\n').toInt();
 
     if (dcs == 15) {
-      return decodeHex7bit(hex);
+      return TinyGsmDecodeHex7bit(hex);
     } else if (dcs == 72) {
-      return decodeHex16bit(hex);
+      return TinyGsmDecodeHex16bit(hex);
     } else {
       return hex;
     }
@@ -506,7 +542,7 @@ public:
     return res;
   }
 
-private:
+protected:
 
   bool modemConnect(const char* host, uint16_t port, uint8_t* mux) {
     sendAT(GF("+CIPSTART="),  GF("\"TCP"), GF("\",\""), host, GF("\","), port);
@@ -546,50 +582,6 @@ private:
     int res = waitResponse(GF(",\"CONNECTED\""), GF(",\"CLOSED\""), GF(",\"CLOSING\""), GF(",\"INITIAL\""));
     waitResponse();
     return 1 == res;
-  }
-
-  static String decodeHex7bit(String &instr) {
-    String result;
-    byte reminder = 0;
-    int bitstate = 7;
-    for (unsigned i=0; i<instr.length(); i+=2) {
-      char buf[4] = { 0, };
-      buf[0] = instr[i];
-      buf[1] = instr[i+1];
-      byte b = strtol(buf, NULL, 16);
-
-      byte bb = b << (7 - bitstate);
-      char c = (bb + reminder) & 0x7F;
-      result += c;
-      reminder = b >> bitstate;
-      bitstate--;
-      if (bitstate == 0) {
-        char c = reminder;
-        result += c;
-        reminder = 0;
-        bitstate = 7;
-      }
-    }
-    return result;
-  }
-
-  static String decodeHex16bit(String &instr) {
-    String result;
-    for (unsigned i=0; i<instr.length(); i+=4) {
-      char buf[4] = { 0, };
-      buf[0] = instr[i];
-      buf[1] = instr[i+1];
-      char b = strtol(buf, NULL, 16);
-      if (b) { // If high byte is non-zero, we can't handle it ;(
-        b = '?';
-      } else {
-        buf[0] = instr[i+2];
-        buf[1] = instr[i+3];
-        b = strtol(buf, NULL, 16);
-      }
-      result += b;
-    }
-    return result;
   }
 
 public:
@@ -711,7 +703,7 @@ finish:
     return waitResponse(1000, r1, r2, r3, r4, r5);
   }
 
-private:
+protected:
   Stream&       stream;
   GsmClient*    sockets[TINY_GSM_MUX_COUNT];
 };
