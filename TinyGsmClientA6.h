@@ -321,6 +321,9 @@ public:
   }
 
   String getOperator() {
+    sendAT(GF("+COPS=3,0")); // Set format
+    waitResponse();
+
     sendAT(GF("+COPS?"));
     if (waitResponse(GF(GSM_NL "+COPS:")) != 1) {
       return "";
