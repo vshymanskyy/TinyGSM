@@ -474,6 +474,37 @@ public:
     return waitResponse() == 1;
   }
 
+  // 0-9,*,#,A,B,C,D
+  bool dtmfSend(char cmd) {
+    sendAT(GF("+VTS="), cmd);
+    return waitResponse() == 1;
+  }
+
+  // Duration in milliseconds
+  bool dtmfSetDuration(unsigned ms) {
+    sendAT(GF("+VTD="), ms / 100); // VTD accepts in 1/10 of a second
+    return waitResponse() == 1;
+  }
+
+  /*
+   * Audio functions
+   */
+
+  bool audioSetHeadphones() {
+    sendAT(GF("+SNFS=0"));
+    return waitResponse() == 1;
+  }
+
+  bool audioSetSpeaker() {
+    sendAT(GF("+SNFS=1"));
+    return waitResponse() == 1;
+  }
+
+  bool audioMuteMic(bool mute) {
+    sendAT(GF("+CMUT="), mute);
+    return waitResponse() == 1;
+  }
+
   /*
    * Messaging functions
    */
