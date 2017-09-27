@@ -29,6 +29,11 @@
   #include <TinyGsmClientM590.h>
   typedef TinyGsm::GsmClient TinyGsmClient;
 
+#elif defined(TINY_GSM_MODEM_U201)
+  #include <TinyGsmClientU201.h>
+  typedef TinyGsmU201 TinyGsm;
+  typedef TinyGsmU201::GsmClient TinyGsmClient;
+
 #elif defined(TINY_GSM_MODEM_ESP8266)
   #include <TinyGsmClientESP8266.h>
   typedef TinyGsm::GsmClient TinyGsmClient;
