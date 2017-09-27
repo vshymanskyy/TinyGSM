@@ -80,11 +80,12 @@ GPS/GNSS                     | 🅧     | ✔²     | ◌¹        | 🅧   |   
 - [x] ... other modules based on supported modems
 
 More modems may be supported later:
-- [ ] Hi-Link HLK-RM04
+- [ ] U-blox SARA‑U201
 - [ ] Quectel M10, M95, UG95
 - [ ] SIMCom SIM5320, SIM5216
 - [ ] Telit GL865
 - [ ] ZTE MG2639
+- [ ] Hi-Link HLK-RM04
 
 Watch this repo for new updates! And of course, contributions are welcome ;)
 
