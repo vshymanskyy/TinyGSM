@@ -9,7 +9,7 @@
 #ifndef TinyGsmClient_h
 #define TinyGsmClient_h
 
-#if   defined(TINY_GSM_MODEM_SIM800) || defined(TINY_GSM_MODEM_SIM900)
+#if defined(TINY_GSM_MODEM_SIM800) || defined(TINY_GSM_MODEM_SIM900)
   #include <TinyGsmClientSIM800.h>
   typedef TinyGsmSim800 TinyGsm;
   typedef TinyGsmSim800::GsmClient TinyGsmClient;
@@ -31,6 +31,10 @@
 
 #elif defined(TINY_GSM_MODEM_ESP8266)
   #include <TinyGsmClientESP8266.h>
+  typedef TinyGsm::GsmClient TinyGsmClient;
+
+#elif defined(TINY_GSM_MODEM_XBEE)
+  #include <TinyGsmClientXBee.h>
   typedef TinyGsm::GsmClient TinyGsmClient;
 
 #else

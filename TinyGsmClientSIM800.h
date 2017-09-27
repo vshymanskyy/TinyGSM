@@ -9,8 +9,8 @@
 #ifndef TinyGsmClientSIM800_h
 #define TinyGsmClientSIM800_h
 
-//#define TINY_GSM_DEBUG Serial
-//#define TINY_GSM_USE_HEX
+// #define TINY_GSM_DEBUG Serial
+// #define TINY_GSM_USE_HEX
 
 #if !defined(TINY_GSM_RX_BUFFER)
   #define TINY_GSM_RX_BUFFER 64
@@ -427,6 +427,17 @@ public:
   }
 
   /*
+   * WiFi functions
+   */
+  bool networkConnect(const char* ssid, const char* pwd) {
+    return false;
+  }
+
+  bool networkDisconnect() {
+    return false;
+  }
+
+  /*
    * GPRS functions
    */
   bool gprsConnect(const char* apn, const char* user, const char* pwd) {
@@ -545,8 +556,19 @@ public:
   }
 
   IPAddress localIP() {
-    IPAddress res;
-    res.fromString(getLocalIP());
+    String strIP = getLocalIP();
+    int Parts[4] = {0,0,0,0};
+    int Part = 0;
+    for (uint8_t i=0; i<strIP.length(); i++) {
+      char c = strIP[i];
+      if (c == '.') {
+        Part++;
+        continue;
+      }
+      Parts[Part] *= 10;
+      Parts[Part] += c - '0';
+    }
+    IPAddress res(Parts[0], Parts[1], Parts[2], Parts[3]);
     return res;
   }
 
@@ -846,7 +868,7 @@ public:
     streamWrite("AT", cmd..., GSM_NL);
     stream.flush();
     TINY_GSM_YIELD();
-    //DBG("### AT:", cmd...);
+    DBG("### AT:", cmd...);
   }
 
   // TODO: Optimize this!
@@ -907,7 +929,7 @@ public:
         }
       }
     } while (millis() - startMillis < timeout);
-finish:
+  finish:
     if (!index) {
       data.trim();
       if (data.length()) {

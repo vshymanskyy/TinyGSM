@@ -358,6 +358,17 @@ public:
   }
 
   /*
+   * WiFi functions
+   */
+  bool networkConnect(const char* ssid, const char* pwd) {
+    return false;
+  }
+
+  bool networkDisconnect() {
+    return false;
+  }
+
+  /*
    * GPRS functions
    */
   bool gprsConnect(const char* apn, const char* user, const char* pwd) {
@@ -413,8 +424,19 @@ public:
   }
 
   IPAddress localIP() {
-    IPAddress res;
-    res.fromString(getLocalIP());
+    String strIP = getLocalIP();
+    int Parts[4] = {0,0,0,0};
+    int Part = 0;
+    for (uint8_t i=0; i<strIP.length(); i++) {
+      char c = strIP[i];
+      if (c == '.') {
+        Part++;
+        continue;
+      }
+      Parts[Part] *= 10;
+      Parts[Part] += c - '0';
+    }
+    IPAddress res(Parts[0], Parts[1], Parts[2], Parts[3]);
     return res;
   }
 
@@ -610,7 +632,7 @@ public:
     streamWrite("AT", cmd..., GSM_NL);
     stream.flush();
     TINY_GSM_YIELD();
-    //DBG("### AT:", cmd...);
+    // DBG("### AT:", cmd...);
   }
 
   // TODO: Optimize this!
@@ -651,6 +673,7 @@ public:
         } else if (data.endsWith(GF("+TCPRECV:"))) {
           int mux = stream.readStringUntil(',').toInt();
           int len = stream.readStringUntil(',').toInt();
+          int len_orig = len;
           if (len > sockets[mux]->rx.free()) {
             DBG("### Buffer overflow: ", len, "->", sockets[mux]->rx.free());
           } else {
@@ -659,6 +682,9 @@ public:
           while (len--) {
             while (!stream.available()) { TINY_GSM_YIELD(); }
             sockets[mux]->rx.put(stream.read());
+          }
+          if (len_orig > sockets[mux]->available()) {
+            DBG(GSM_NL, "### Fewer characters received than expected: ", sockets[mux]->available(), " vs ", len_orig);
           }
           data = "";
         } else if (data.endsWith(GF("+TCPCLOSE:"))) {
@@ -672,7 +698,7 @@ public:
         }
       }
     } while (millis() - startMillis < timeout);
-finish:
+  finish:
     if (!index) {
       data.trim();
       if (data.length()) {

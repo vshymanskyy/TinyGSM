@@ -212,8 +212,46 @@ public:
     return autoBaud();
   }
 
+  /*
+   * SIM card functions
+   */
+
+  /*
+   * Generic network functions
+   */
+
+  int getSignalQuality() {
+    sendAT(GF("+CWJAP_CUR?"));
+    int res1 = waitResponse(GF("No AP"), GF("+CWJAP_CUR:"));
+    if (res1 != 2) {
+      waitResponse();
+      return 0;
+    }
+    streamSkipUntil(',');  // Skip SSID
+    streamSkipUntil(',');  // Skip BSSID/MAC address
+    streamSkipUntil(',');  // Skip Chanel number
+    int res2 = stream.parseInt();  // Read RSSI
+    DBG(res2);
+    waitResponse();
+    return res2;
+  }
+
   bool waitForNetwork(unsigned long timeout = 60000L) {
-    return true;
+    for (unsigned long start = millis(); millis() - start < timeout; ) {
+      sendAT(GF("+CIPSTATUS"));
+      int res1 = waitResponse(3000, GF("busy p..."), GF("STATUS:"));
+      if (res1 == 2) {
+        int res2 = waitResponse(GFP(GSM_ERROR), GF("2"), GF("3"), GF("4"), GF("5"));
+        if (res2 == 2 || res2 == 3 || res2 == 4) return true;
+      }
+      // <stat> status of ESP8266 station interface
+      // 2 : ESP8266 station connected to an AP and has obtained IP
+      // 3 : ESP8266 station created a TCP or UDP transmission
+      // 4 : the TCP or UDP transmission of ESP8266 station disconnected (but AP is connected)
+      // 5 : ESP8266 station did NOT connect to an AP
+      delay(1000);
+    }
+    return false;
   }
 
   /*
@@ -244,9 +282,45 @@ public:
     return waitResponse(10000L) == 1;
   }
 
-  String getLocalIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  String getLocalIP() {
+    sendAT(GF("+CIPSTA_CUR??"));
+    int res1 = waitResponse(GF("ERROR"), GF("+CWJAP_CUR:"));
+    if (res1 != 2) {
+      return "";
+    }
+    String res2 = stream.readStringUntil('"');
+    DBG(res2);
+    waitResponse();
+    return res2;
+  }
 
-  IPAddress localIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  IPAddress localIP() {
+    String strIP = getLocalIP();
+    int Parts[4] = {0,0,0,0};
+    int Part = 0;
+    for (uint8_t i=0; i<strIP.length(); i++) {
+      char c = strIP[i];
+      if (c == '.') {
+        Part++;
+        continue;
+      }
+      Parts[Part] *= 10;
+      Parts[Part] += c - '0';
+    }
+    IPAddress res(Parts[0], Parts[1], Parts[2], Parts[3]);
+    return res;
+  }
+
+  /*
+   * GPRS functions
+   */
+  bool gprsConnect(const char* apn, const char* user, const char* pwd) {
+    return false;
+  }
+
+  bool gprsDisconnect() {
+    return false;
+  }
 
 private:
 
@@ -256,6 +330,7 @@ private:
                            GFP(GSM_OK),
                            GFP(GSM_ERROR),
                            GF(GSM_NL "ALREADY CONNECT" GSM_NL));
+    waitResponse(100, GF("1,CONNECT"));
     return (1 == rsp);
   }
 
@@ -308,7 +383,7 @@ public:
     streamWrite("AT", cmd..., GSM_NL);
     stream.flush();
     TINY_GSM_YIELD();
-    //DBG("### AT:", cmd...);
+    // DBG("### AT:", cmd...);
   }
 
   // TODO: Optimize this!
@@ -349,6 +424,7 @@ public:
         } else if (data.endsWith(GF(GSM_NL "+IPD,"))) {
           int mux = stream.readStringUntil(',').toInt();
           int len = stream.readStringUntil(':').toInt();
+          int len_orig = len;
           if (len > sockets[mux]->rx.free()) {
             DBG("### Buffer overflow: ", len, "->", sockets[mux]->rx.free());
           } else {
@@ -358,15 +434,17 @@ public:
             while (!stream.available()) { TINY_GSM_YIELD(); }
             sockets[mux]->rx.put(stream.read());
           }
+          if (len_orig > sockets[mux]->available()) {
+            DBG(GSM_NL, "### Fewer characters received than expected: ", sockets[mux]->available(), " vs ", len_orig);
+          }
           data = "";
           return index;
         } else if (data.endsWith(GF(GSM_NL "1,CLOSED" GSM_NL))) { //TODO: use mux
           sockets[1]->sock_connected = false;
-          data = "";
         }
       }
     } while (millis() - startMillis < timeout);
-finish:
+  finish:
     if (!index) {
       data.trim();
       if (data.length()) {
