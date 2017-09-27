@@ -157,13 +157,18 @@ String TinyGsmDecodeHex16bit(String &instr) {
     buf[1] = instr[i+1];
     char b = strtol(buf, NULL, 16);
     if (b) { // If high byte is non-zero, we can't handle it ;(
-      b = '?';
+#if defined(TINY_GSM_UNICODE_TO_HEX)
+      result += "\\x";
+      result += instr.substring(i, i+4);
+#else
+      result += "?";
+#endif
     } else {
       buf[0] = instr[i+2];
       buf[1] = instr[i+3];
       b = strtol(buf, NULL, 16);
+      result += b;
     }
-    result += b;
   }
   return result;
 }
