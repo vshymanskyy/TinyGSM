@@ -190,7 +190,7 @@ public:
     return true;
   }
 
-  bool autoBaud(unsigned long timeout = 10000L) {  // not supported
+  bool testAT(unsigned long timeout = 10000L) {  // not supported
     return false;
   }
 
