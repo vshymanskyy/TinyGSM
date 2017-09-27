@@ -212,9 +212,6 @@ public:
     return autoBaud();
   }
 
-  /*
-   * SIM card functions
-   */
 
   /*
    * Generic network functions
@@ -311,17 +308,6 @@ public:
     return res;
   }
 
-  /*
-   * GPRS functions
-   */
-  bool gprsConnect(const char* apn, const char* user, const char* pwd) {
-    return false;
-  }
-
-  bool gprsDisconnect() {
-    return false;
-  }
-
 private:
 
   int modemConnect(const char* host, uint16_t port, uint8_t mux) {
@@ -330,7 +316,7 @@ private:
                            GFP(GSM_OK),
                            GFP(GSM_ERROR),
                            GF(GSM_NL "ALREADY CONNECT" GSM_NL));
-    waitResponse(100, GF("1,CONNECT"));
+    waitResponse(100, GF("1,CONNECT")); // TODO
     return (1 == rsp);
   }
 
@@ -383,7 +369,7 @@ public:
     streamWrite("AT", cmd..., GSM_NL);
     stream.flush();
     TINY_GSM_YIELD();
-    // DBG("### AT:", cmd...);
+    //DBG("### AT:", cmd...);
   }
 
   // TODO: Optimize this!
@@ -444,7 +430,7 @@ public:
         }
       }
     } while (millis() - startMillis < timeout);
-  finish:
+finish:
     if (!index) {
       data.trim();
       if (data.length()) {

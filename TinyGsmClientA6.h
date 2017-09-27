@@ -349,17 +349,6 @@ public:
   }
 
   /*
-   * WiFi functions
-   */
-  bool networkConnect(const char* ssid, const char* pwd) {
-    return false;
-  }
-
-  bool networkDisconnect() {
-    return false;
-  }
-
-  /*
    * GPRS functions
    */
   bool gprsConnect(const char* apn, const char* user, const char* pwd) {
@@ -645,7 +634,7 @@ public:
     streamWrite("AT", cmd..., GSM_NL);
     stream.flush();
     TINY_GSM_YIELD();
-    // DBG("### AT:", cmd...);
+    //DBG("### AT:", cmd...);
   }
 
   // TODO: Optimize this!
@@ -710,7 +699,7 @@ public:
         }
       }
     } while (millis() - startMillis < timeout);
-  finish:
+finish:
     if (!index) {
       data.trim();
       if (data.length()) {

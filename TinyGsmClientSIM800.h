@@ -9,8 +9,8 @@
 #ifndef TinyGsmClientSIM800_h
 #define TinyGsmClientSIM800_h
 
-// #define TINY_GSM_DEBUG Serial
-// #define TINY_GSM_USE_HEX
+//#define TINY_GSM_DEBUG Serial
+//#define TINY_GSM_USE_HEX
 
 #if !defined(TINY_GSM_RX_BUFFER)
   #define TINY_GSM_RX_BUFFER 64
@@ -427,17 +427,6 @@ public:
   }
 
   /*
-   * WiFi functions
-   */
-  bool networkConnect(const char* ssid, const char* pwd) {
-    return false;
-  }
-
-  bool networkDisconnect() {
-    return false;
-  }
-
-  /*
    * GPRS functions
    */
   bool gprsConnect(const char* apn, const char* user, const char* pwd) {
@@ -449,11 +438,11 @@ public:
     sendAT(GF("+SAPBR=3,1,\"APN\",\""), apn, '"');
     waitResponse();
 
-    if (user) {
+    if (user && strlen(user) > 0) {
       sendAT(GF("+SAPBR=3,1,\"USER\",\""), user, '"');
       waitResponse();
     }
-    if (pwd) {
+    if (pwd && strlen(pwd) > 0) {
       sendAT(GF("+SAPBR=3,1,\"PWD\",\""), pwd, '"');
       waitResponse();
     }
@@ -868,7 +857,7 @@ public:
     streamWrite("AT", cmd..., GSM_NL);
     stream.flush();
     TINY_GSM_YIELD();
-    DBG("### AT:", cmd...);
+    //DBG("### AT:", cmd...);
   }
 
   // TODO: Optimize this!
@@ -910,7 +899,7 @@ public:
           String mode = stream.readStringUntil(',');
           if (mode.toInt() == 1) {
             int mux = stream.readStringUntil('\n').toInt();
-            if (mux >= 0 && mux < TINY_GSM_MUX_COUNT) {
+            if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
               sockets[mux]->got_data = true;
             }
             data = "";
@@ -921,7 +910,7 @@ public:
           int nl = data.lastIndexOf(GSM_NL, data.length()-8);
           int coma = data.indexOf(',', nl+2);
           int mux = data.substring(nl+2, coma).toInt();
-          if (mux >= 0 && mux < TINY_GSM_MUX_COUNT) {
+          if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
             sockets[mux]->sock_connected = false;
           }
           data = "";
@@ -929,7 +918,7 @@ public:
         }
       }
     } while (millis() - startMillis < timeout);
-  finish:
+finish:
     if (!index) {
       data.trim();
       if (data.length()) {

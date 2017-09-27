@@ -1,5 +1,5 @@
 /**
- * @file       TinyWiFiClientESP8266.h
+ * @file       TinyGsmClientXBee.h
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
@@ -46,11 +46,6 @@ enum RegStatus {
 
 class TinyGsm
 {
-
-public:
-  TinyGsm(Stream& stream)
-    : stream(stream)
-  {}
 
 public:
 
@@ -114,6 +109,8 @@ public:
   }
 
   virtual size_t write(const uint8_t *buf, size_t size) {
+    TINY_GSM_YIELD();
+    //at->maintain();
     return at->modemSend(buf, size, mux);
   }
 
@@ -122,6 +119,7 @@ public:
   }
 
   virtual int available() {
+    TINY_GSM_YIELD();
     return at->stream.available();
   }
 
@@ -144,6 +142,13 @@ public:
     return sock_connected;
   }
   virtual operator bool() { return connected(); }
+
+  /*
+   * Extended API
+   */
+
+  String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
 private:
   TinyGsm*      at;
   uint8_t       mux;
@@ -151,6 +156,12 @@ private:
 };
 
 public:
+
+  TinyGsm(Stream& stream)
+    : stream(stream)
+  {
+    memset(sockets, 0, sizeof(sockets));
+  }
 
   /*
    * Basic functions
@@ -360,9 +371,9 @@ public:
 
     return true;
 
-    fail:
-      exitCommand();
-      return false;
+fail:
+    exitCommand();
+    return false;
   }
 
   bool networkDisconnect() {
@@ -440,6 +451,7 @@ public:
 
 
 private:
+
   int modemConnect(const char* host, uint16_t port, uint8_t mux = 0) {
     sendAT(GF("LA"), host);
     String strIP; strIP.reserve(16);
@@ -495,7 +507,10 @@ private:
     return 1 == res;
   }
 
-  /* Private Utilities */
+public:
+
+  /* Utilities */
+
   template<typename T>
   void streamWrite(T last) {
     stream.print(last);
@@ -520,8 +535,7 @@ private:
   }
 
   void streamClear(void) {
-    while (stream.available())
-    {streamRead();}
+    while (stream.available()) { streamRead(); }
   }
 
   bool commandMode(void) {
@@ -548,7 +562,7 @@ private:
     streamWrite("AT", cmd..., GSM_NL);
     stream.flush();
     TINY_GSM_YIELD();
-    DBG(">>> AT ", cmd..., "\r\n");
+    //DBG("### AT:", cmd...);
   }
 
   // TODO: Optimize this!
@@ -589,16 +603,17 @@ private:
         }
       }
     } while (millis() - startMillis < timeout);
-  finish:
+finish:
     if (!index) {
       data.trim();
       data.replace(GSM_NL GSM_NL, GSM_NL);
       data.replace(GSM_NL, "\r\n" "    ");
       if (data.length()) {
         DBG("### Unhandled:", data, "\r\n");
-    } else DBG("### NO RESPONSE!\r\n");
-    }
-    else {
+      } else {
+        DBG("### NO RESPONSE!\r\n");
+      }
+    } else {
       data.trim();
       data.replace(GSM_NL GSM_NL, GSM_NL);
       data.replace(GSM_NL, "\r\n    ");

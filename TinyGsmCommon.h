@@ -46,7 +46,6 @@ namespace {
   template<typename T>
   static void DBG(T last) {
     TINY_GSM_DEBUG.println(last);
-    // TINY_GSM_DEBUG.print(last);
   }
 
   template<typename T, typename... Args>
