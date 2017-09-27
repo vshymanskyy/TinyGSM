@@ -179,7 +179,7 @@ public:
   }
 
   bool init() {
-    if (!autoBaud()) {
+    if (!testAT()) {
       return false;
     }
     sendAT(GF("&FZE0"));  // Factory + Reset + Echo Off
@@ -195,9 +195,13 @@ public:
     return true;
   }
 
-  bool autoBaud(unsigned long timeout = 10000L) {
+  void setBaud(unsigned long baud) {
+    sendAT(GF("+IPR="), baud);
+  }
+
+  bool testAT(unsigned long timeout = 10000L) {
     for (unsigned long start = millis(); millis() - start < timeout; ) {
-      sendAT(GF("E0"));
+      sendAT(GF(""));
       if (waitResponse(200) == 1) {
           delay(100);
           return true;
@@ -218,7 +222,7 @@ public:
     waitResponse();
     sendAT(GF("+ICF=3,1")); // 8 data 0 parity 1 stop
     waitResponse();
-    sendAT(GF("+enpwrsave=0")); // Disable PWR save
+    sendAT(GF("+ENPWRSAVE=0")); // Disable PWR save
     waitResponse();
     sendAT(GF("+XISP=0"));  // Use internal stack
     waitResponse();
@@ -243,7 +247,7 @@ public:
    */
 
   bool restart() {
-    if (!autoBaud()) {
+    if (!testAT()) {
       return false;
     }
     sendAT(GF("+CFUN=15"));
@@ -258,6 +262,13 @@ public:
   bool poweroff() {
     sendAT(GF("+CPWROFF"));
     return waitResponse(3000L) == 1;
+  }
+
+  bool radioOff() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
+  bool sleepEnable(bool enable = true) {
+    sendAT(GF("+ENPWRSAVE="), enable);
+    return waitResponse() == 1;
   }
 
   /*
@@ -346,13 +357,17 @@ public:
     return res;
   }
 
+  bool isNetworkConnected() {
+    RegStatus s = getRegistrationStatus();
+    return (s == REG_OK_HOME || s == REG_OK_ROAMING);
+  }
+
   bool waitForNetwork(unsigned long timeout = 60000L) {
     for (unsigned long start = millis(); millis() - start < timeout; ) {
-      RegStatus s = getRegistrationStatus();
-      if (s == REG_OK_HOME || s == REG_OK_ROAMING) {
+      if (isNetworkConnected()) {
         return true;
       }
-      delay(1000);
+      delay(500);
     }
     return false;
   }
@@ -396,8 +411,19 @@ public:
   }
 
   bool gprsDisconnect() {
-    sendAT(GF("+XIIC=0"));
-    return waitResponse(60000L) == 1;
+    // TODO: There is no command in AT command set
+    // XIIC=0 does not work
+    return true;
+  }
+
+  bool isGprsConnected() {
+    sendAT(GF("+XIIC?"));
+    if (waitResponse(GF(GSM_NL "+XIIC:")) != 1) {
+      return false;
+    }
+    int res = stream.readStringUntil(',').toInt();
+    waitResponse();
+    return res == 1;
   }
 
   String getLocalIP() {
@@ -453,9 +479,9 @@ public:
     }
 
     if (dcs == 15) {
-      return decodeHex8bit(hex);
+      return TinyGsmDecodeHex8bit(hex);
     } else if (dcs == 72) {
-      return decodeHex16bit(hex);
+      return TinyGsmDecodeHex16bit(hex);
     } else {
       return hex;
     }
@@ -493,7 +519,7 @@ public:
 
   int getBattPercent() TINY_GSM_ATTR_NOT_AVAILABLE;
 
-private:
+protected:
 
   bool modemConnect(const char* host, uint16_t port, uint8_t mux) {
     for (int i=0; i<3; i++) { // TODO: no need for loop?
@@ -546,37 +572,6 @@ private:
     waitResponse(GF("+DNS:OK" GSM_NL));
     res.trim();
     return res;
-  }
-
-  static String decodeHex8bit(String &instr) {
-    String result;
-    for (unsigned i=0; i<instr.length(); i+=2) {
-      char buf[4] = { 0, };
-      buf[0] = instr[i];
-      buf[1] = instr[i+1];
-      char b = strtol(buf, NULL, 16);
-      result += b;
-    }
-    return result;
-  }
-
-  static String decodeHex16bit(String &instr) {
-    String result;
-    for (unsigned i=0; i<instr.length(); i+=4) {
-      char buf[4] = { 0, };
-      buf[0] = instr[i];
-      buf[1] = instr[i+1];
-      char b = strtol(buf, NULL, 16);
-      if (b) { // If high byte is non-zero, we can't handle it ;(
-        b = '?';
-      } else {
-        buf[0] = instr[i+2];
-        buf[1] = instr[i+3];
-        b = strtol(buf, NULL, 16);
-      }
-      result += b;
-    }
-    return result;
   }
 
 public:
@@ -659,7 +654,7 @@ public:
             while (!stream.available()) { TINY_GSM_YIELD(); }
             sockets[mux]->rx.put(stream.read());
           }
-          if (len_orig > sockets[mux]->available()) {
+          if (len_orig > sockets[mux]->available()) { // TODO
             DBG(GSM_NL, "### Fewer characters received than expected: ", sockets[mux]->available(), " vs ", len_orig);
           }
           data = "";
@@ -699,7 +694,7 @@ finish:
     return waitResponse(1000, r1, r2, r3, r4, r5);
   }
 
-private:
+protected:
   Stream&       stream;
   GsmClient*    sockets[TINY_GSM_MUX_COUNT];
 };
