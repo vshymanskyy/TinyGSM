@@ -164,15 +164,23 @@ public:
   }
 
   bool init() {
-    if (!autoBaud()) {
+    if (!testAT()) {
+      return false;
+    }
+    sendAT(GF("E0"));
+    if (waitResponse() != 1) {
       return false;
     }
     return true;
   }
 
-  bool autoBaud(unsigned long timeout = 10000L) {
+  void setBaud(unsigned long baud) {
+    sendAT(GF("+IPR="), baud);
+  }
+
+  bool testAT(unsigned long timeout = 10000L) {
     for (unsigned long start = millis(); millis() - start < timeout; ) {
-      sendAT(GF("E0"));
+      sendAT(GF(""));
       if (waitResponse(200) == 1) {
           delay(100);
           return true;
@@ -198,7 +206,7 @@ public:
    */
 
   bool restart() {
-    if (!autoBaud()) {
+    if (!testAT()) {
       return false;
     }
     sendAT(GF("+RST"));
@@ -209,7 +217,7 @@ public:
       return false;
     }
     delay(500);
-    return autoBaud();
+    return init();
   }
 
 
@@ -407,7 +415,7 @@ public:
             while (!stream.available()) { TINY_GSM_YIELD(); }
             sockets[mux]->rx.put(stream.read());
           }
-          if (len_orig > sockets[mux]->available()) {
+          if (len_orig > sockets[mux]->available()) { // TODO
             DBG(GSM_NL, "### Fewer characters received than expected: ", sockets[mux]->available(), " vs ", len_orig);
           }
           data = "";
