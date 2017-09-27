@@ -27,7 +27,7 @@ void loop() {
   modem.factoryDefault();
 
   // Test the SIM card functions
-  #if defined(TINY_GSM_MODEM_SIM800) || defined(TINY_GSM_MODEM_A6) || defined(TINY_GSM_MODEM_M590) || defined(TINY_GSM_MODEM_XBEE)
+  #if defined(TINY_GSM_MODEM_HAS_GPRS)
   modem.getSimCCID();
   modem.getIMEI();
   modem.getSimStatus();
@@ -40,10 +40,11 @@ void loop() {
   modem.getSignalQuality();
 
 
-  #if defined(TINY_GSM_MODEM_SIM800) || defined(TINY_GSM_MODEM_A6) || defined(TINY_GSM_MODEM_M590)
-  modem.waitForNetwork();
-  modem.gprsConnect("YourAPN", "", "");
-  #else
+  #if defined(TINY_GSM_MODEM_HAS_GPRS)
+    modem.waitForNetwork();
+    modem.gprsConnect("YourAPN", "", "");
+  #endif
+  #if defined(TINY_GSM_MODEM_HAS_WIFI)
     modem.networkConnect("YourSSID", "YourPWD");
     modem.waitForNetwork();
   #endif
@@ -65,10 +66,11 @@ void loop() {
 
   client.stop();
 
-  #if defined(TINY_GSM_MODEM_SIM800) || defined(TINY_GSM_MODEM_A6) || defined(TINY_GSM_MODEM_M590)
-  modem.gprsDisconnect();
-  #else
-  modem.networkDisconnect();
+  #if defined(TINY_GSM_MODEM_HAS_GPRS)
+    modem.gprsDisconnect();
+  #endif
+  #if defined(TINY_GSM_MODEM_HAS_WIFI)
+    modem.networkDisconnect();
   #endif
 }
 

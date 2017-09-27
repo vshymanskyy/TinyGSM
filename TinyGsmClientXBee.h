@@ -446,7 +446,7 @@ private:
     unsigned long startMillis = millis();
     while (stream.available() < 8 && millis() - startMillis < 30000) {};
     strIP = streamReadUntil('\r');  // read result
-    IPAddress ip = TinyGsmIpFromString(IPaddr);
+    IPAddress ip = TinyGsmIpFromString(strIP);
     return modemConnect(ip, port);
   }
 
