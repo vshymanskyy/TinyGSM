@@ -35,44 +35,45 @@ TinyGSM also pulls data gently from the modem (whenever possible), so it can ope
 
 ## Features
 
-Feature \ Modem              | SIM800 | SIM8x8 | A6/A7/A20 | M590 | ESP8266 | XBee
----                          | ---    | ---    | ---       | ---  | ---     |
+Feature \ Modem              | SIM8xx | U201   | A6/A7/A20 | M590 | ESP8266 | XBee 
+---                          | ---    | ---    | ---       | ---  | ---     | ---
 **Data connections**
 TCP (HTTP, MQTT, Blynk, ...) | ✔      | ✔      | ✔         | ✔    | ✔       | ✔
-UDP                          |        |        |           |      |         | ◌
-SSL/TLS (HTTPS)              | ✔¹     | ✔¹     | 🅧        | 🅧   | ◌       |
+UDP                          | ◌      | ◌      |           |      |         | ◌
+SSL/TLS (HTTPS)              | ✔¹     | ✔      | 🅧        | 🅧    | ◌       | 
 **USSD**
-Sending USSD requests        | ✔      | ✔      | ✔         | ✔    |         |
-Decoding 7,8,16-bit response | ✔      | ✔      | ✔         | ✔    |         |
+Sending USSD requests        | ✔      | ◌      | ✔         | ✔    |         | 
+Decoding 7,8,16-bit response | ✔      | ◌      | ✔         | ✔    |         | 
 **SMS**
-Sending                      | ✔      | ✔      | ✔         | ✔    |         | ✔
-Sending Unicode              | ✔      | ✔      | ◌         | 🅧   |         |
-Reading                      |        |        |           |      |         |
-Incoming message event       |        |        |           | ?    |         |
+Sending                      | ✔      | ?      | ✔         | ✔    |         | ✔
+Sending Unicode              | ✔      | ?      | ◌         | 🅧   |         | 
+Reading                      |        | ?      |           |      |         | 
+Incoming message event       |        | ?      |           | ?    |         | 
 **Calls**
-Dial, hangup                 | ✔      | ✔      | ✔         | 🅧   |         | 🅧
-Receiving calls              | ✔      | ✔      | ✔         | 🅧   |         | 🅧
-Incoming event (RING)        | ◌      | ◌      | ◌         | 🅧   |         | 🅧
-DTMF sending                 | ◌      | ◌      | ◌         | 🅧   |         | 🅧
-DTMF decoding                | ◌      | ◌      | 🅧        | 🅧   |         | 🅧
+Dial, hangup                 | ✔      | ?      | ✔         | 🅧   |         | 🅧
+Receiving calls              | ✔      | ?      | ✔         | 🅧   |         | 🅧
+Incoming event (RING)        | ◌      | ?      | ◌         | 🅧   |         | 🅧
+DTMF sending                 | ◌      | ?      | ◌         | 🅧   |         | 🅧
+DTMF decoding                | ◌      | ?      | 🅧        | 🅧   |         | 🅧
 **Location**
-GSM location service         | ✔      | ✔      | 🅧        | 🅧   |         | 🅧
-GPS/GNSS                     | 🅧     | ✔²     | ◌¹        | 🅧   |         | 🅧
+GSM location service         | ✔      | ✔      | 🅧        | 🅧   |         | ✔
+GPS/GNSS                     | ✔¹     | 🅧     | ◌¹        | 🅧   | 🅧      | 🅧
 
 ✔ - implemented  ◌ - planned  🅧 - not available for this modem  
-¹ - only some device models or firmware revisions have this feature  
-² - current implementation only supports SIM808 V2 GPS
+¹ - only some device models or firmware revisions have this feature (SIM8xx R14.18, A7, etc.)  
 
 ## Supported modems
 
 - [x] SIMCom SIM800 series (SIM800A, SIM800C, SIM800L, SIM800H, SIM808, SIM868)
 - [x] SIMCom SIM900 series (SIM900A, SIM900D, SIM908, SIM968)
-- [x] AI-Thinker A6, A6C, A7
-- [x] Neoway M590
+- [x] AI-Thinker A6, A6C, A7, A20
+- [x] U-blox SARA U201 (*alpha*)
 - [x] ESP8266 (AT commands interface, similar to GSM modems)
 - [x] Digi XBee WiFi and Cellular (using XBee command mode)
+- [x] Neoway M590
 
-### Supported modules
+### Supported boards/modules
+- [x] Arduino MKR GSM 1400 (*alpha*)
 - [x] GPRSbee
 - [x] Microduino GSM
 - [x] Adafruit FONA (Mini Cellular GSM Breakout)
@@ -80,7 +81,6 @@ GPS/GNSS                     | 🅧     | ✔²     | ◌¹        | 🅧   |   
 - [x] ... other modules based on supported modems
 
 More modems may be supported later:
-- [ ] U-blox SARA‑U201
 - [ ] Quectel M10, M95, UG95
 - [ ] SIMCom SIM5320, SIM5216
 - [ ] Telit GL865
