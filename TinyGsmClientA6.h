@@ -398,14 +398,15 @@ public:
 
   bool gprsDisconnect() {
     sendAT(GF("+CIPSHUT"));
-    if (waitResponse(60000L) != 1)
-      return false;
+    waitResponse(5000L);
 
-    sendAT(GF("+CGATT=0"));
-    if (waitResponse(60000L) != 1)
-      return false;
+    for (int i = 0; i<3; i++) {
+      sendAT(GF("+CGATT=0"));
+      if (waitResponse(5000L) == 1)
+        return true;
+    }
 
-    return true;
+    return false;
   }
 
   bool isGprsConnected() {
@@ -415,14 +416,7 @@ public:
     }
     int res = stream.readStringUntil('\n').toInt();
     waitResponse();
-    if (res != 1)
-      return false;
-
-    sendAT(GF("+CIFSR")); // TODO: check this
-    if (waitResponse() != 1)
-      return false;
-
-    return true;
+    return (res == 1);
   }
 
   String getLocalIP() {
