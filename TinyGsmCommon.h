@@ -97,16 +97,22 @@ uint32_t TinyGsmAutoBaud(T& SerialAT, uint32_t minimum = 9600, uint32_t maximum 
 
 static inline
 IPAddress TinyGsmIpFromString(const String& strIP) {
-  int Parts[4] = {0,0,0,0};
+  int Parts[4] = {0, };
   int Part = 0;
   for (uint8_t i=0; i<strIP.length(); i++) {
     char c = strIP[i];
     if (c == '.') {
       Part++;
+      if (Part > 3) {
+        return IPAddress(0,0,0,0);
+      }
       continue;
+    } else if (c >= '0' && c <= '9') {
+      Parts[Part] *= 10;
+      Parts[Part] += c - '0';
+    } else {
+      if (Part == 3) break;
     }
-    Parts[Part] *= 10;
-    Parts[Part] += c - '0';
   }
   return IPAddress(Parts[0], Parts[1], Parts[2], Parts[3]);
 }
