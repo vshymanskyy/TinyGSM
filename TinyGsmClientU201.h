@@ -208,7 +208,7 @@ public:
   }
 
   bool init(const char* pin = NULL) {
-    if (!autoBaud()) {
+    if (!testAT()) {
       return false;
     }
     sendAT(GF("E0"));   // Echo Off
@@ -226,7 +226,7 @@ public:
     sendAT(GF("+IPR="), baud);
   }
 
-  bool autoBaud(unsigned long timeout = 10000L) {
+  bool testAT(unsigned long timeout = 10000L) {
     for (unsigned long start = millis(); millis() - start < timeout; ) {
       sendAT(GF(""));
       if (waitResponse(200) == 1) {
@@ -263,7 +263,7 @@ public:
    */
 
   bool restart() {
-    if (!autoBaud()) {
+    if (!testAT()) {
       return false;
     }
     sendAT(GF("+CFUN=16"));
