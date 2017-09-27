@@ -15,7 +15,7 @@
 // Select your modem
 // SSL/TLS is currently supported only with SIM8xx series
 #define TINY_GSM_MODEM_SIM800
-#define TINY_GSM_MODEM_SIM808
+//#define TINY_GSM_MODEM_SIM808
 
 // Increase RX buffer
 #define TINY_GSM_RX_BUFFER 64

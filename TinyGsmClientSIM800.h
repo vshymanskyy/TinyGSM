@@ -171,7 +171,7 @@ public:
   String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
 private:
-  TinyGsmSim800*      at;
+  TinyGsmSim800* at;
   uint8_t       mux;
   uint16_t      sock_available;
   uint32_t      prev_check;
@@ -411,13 +411,17 @@ public:
     return res;
   }
 
+  bool isNetworkConnected() {
+    RegStatus s = getRegistrationStatus();
+    return (s == REG_OK_HOME || s == REG_OK_ROAMING);
+  }
+
   bool waitForNetwork(unsigned long timeout = 60000L) {
     for (unsigned long start = millis(); millis() - start < timeout; ) {
-      RegStatus s = getRegistrationStatus();
-      if (s == REG_OK_HOME || s == REG_OK_ROAMING) {
+      if (isNetworkConnected()) {
         return true;
       }
-      delay(1000);
+      delay(500);
     }
     return false;
   }
@@ -514,7 +518,31 @@ public:
 
   bool gprsDisconnect() {
     sendAT(GF("+CIPSHUT"));
-    return waitResponse(60000L) == 1;
+    if (waitResponse(60000L) != 1)
+      return false;
+
+    sendAT(GF("+CGATT=0"));
+    if (waitResponse(60000L) != 1)
+      return false;
+
+    return true;
+  }
+
+  bool isGprsConnected() {
+    sendAT(GF("+CGATT?"));
+    if (waitResponse(GF(GSM_NL "+CGATT:")) != 1) {
+      return false;
+    }
+    int res = stream.readStringUntil('\n').toInt();
+    waitResponse();
+    if (res != 1)
+      return false;
+
+    sendAT(GF("+CIFSR;E0")); // Another option is to use AT+CGPADDR=1
+    if (waitResponse() != 1)
+      return false;
+
+    return true;
   }
 
   String getLocalIP() {
