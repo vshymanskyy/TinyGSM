@@ -13,6 +13,10 @@
   #define TINY_GSM_MODEM_HAS_SSL
 #endif
 
+#if defined(TINY_GSM_MODEM_SIM808) || defined(TINY_GSM_MODEM_SIM868) || defined(TINY_GSM_MODEM_A7)
+  #define TINY_GSM_MODEM_HAS_GPS
+#endif
+
 #if   defined(TINY_GSM_MODEM_SIM800) || defined(TINY_GSM_MODEM_SIM900)
   #define TINY_GSM_MODEM_HAS_GPRS
   #include <TinyGsmClientSIM800.h>
