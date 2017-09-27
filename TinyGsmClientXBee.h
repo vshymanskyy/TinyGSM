@@ -392,20 +392,7 @@ fail:
   }
 
   IPAddress localIP() {
-    String strIP = getLocalIP();
-    int Parts[4] = {0,0,0,0};
-    int Part = 0;
-    for (uint8_t i=0; i<strIP.length(); i++) {
-      char c = strIP[i];
-      if (c == '.') {
-        Part++;
-        continue;
-      }
-      Parts[Part] *= 10;
-      Parts[Part] += c - '0';
-    }
-    IPAddress res(Parts[0], Parts[1], Parts[2], Parts[3]);
-    return res;
+    return TinyGsmIpFromString(getLocalIP());
   }
 
   /*
@@ -459,19 +446,8 @@ private:
     unsigned long startMillis = millis();
     while (stream.available() < 8 && millis() - startMillis < 30000) {};
     strIP = streamReadUntil('\r');  // read result
-    int Parts[4] = {0,0,0,0};
-    int Part = 0;
-    for (uint8_t i=0; i<strIP.length(); i++) {
-      char c = strIP[i];
-      if (c == '.') {
-        Part++;
-        continue;
-      }
-      Parts[Part] *= 10;
-      Parts[Part] += c - '0';
-    }
-    IPAddress res(Parts[0], Parts[1], Parts[2], Parts[3]);
-    return modemConnect(res, port);
+    IPAddress ip = TinyGsmIpFromString(IPaddr);
+    return modemConnect(ip, port);
   }
 
   int modemConnect(IPAddress ip, uint16_t port, uint8_t mux = 0) {

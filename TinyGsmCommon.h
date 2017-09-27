@@ -93,4 +93,19 @@ uint32_t TinyGsmAutoBaud(T& SerialAT)
   return 0;
 }
 
+IPAddress TinyGsmIpFromString(const String& strIP) {
+  int Parts[4] = {0,0,0,0};
+  int Part = 0;
+  for (uint8_t i=0; i<strIP.length(); i++) {
+    char c = strIP[i];
+    if (c == '.') {
+      Part++;
+      continue;
+    }
+    Parts[Part] *= 10;
+    Parts[Part] += c - '0';
+  }
+  return IPAddress(Parts[0], Parts[1], Parts[2], Parts[3]);
+}
+
 #endif
