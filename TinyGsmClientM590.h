@@ -392,22 +392,22 @@ public:
     sendAT(GF("+XIIC=1"));
     waitResponse();
 
-    delay(10000L); // TODO
-
-    sendAT(GF("+XIIC?"));
-    waitResponse();
+    for (unsigned long start = millis(); millis() - start < timeout; ) {
+      if (isGprsConnected()) {
+        return true;
+      }
+      delay(500);
+    }
 
     /*
     sendAT(GF("+DNSSERVER=1,8.8.8.8"));
     waitResponse();
 
     sendAT(GF("+DNSSERVER=2,8.8.4.4"));
-    if (waitResponse() != 1) {
-      return false;
-    }
+    waitResponse();
     */
 
-    return true;
+    return false;
   }
 
   bool gprsDisconnect() {
