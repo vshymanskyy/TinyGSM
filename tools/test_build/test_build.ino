@@ -9,6 +9,10 @@
 TinyGsm modem(Serial);
 TinyGsmClient client(modem);
 
+#if defined(TINY_GSM_MODEM_HAS_SSL)
+  TinyGsmClientSecure client(modem);
+#endif
+
 char server[] = "somewhere";
 char resource[] = "something";
 
@@ -23,7 +27,7 @@ void loop() {
   // Test the start/restart functions
   modem.restart();
   modem.begin();
-  modem.autoBaud();
+  modem.testAT();
   modem.factoryDefault();
 
   // Test the SIM card functions
