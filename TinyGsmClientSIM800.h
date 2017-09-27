@@ -214,7 +214,7 @@ public:
   }
 
   bool init() {
-    if (!autoBaud()) {
+    if (!testAT()) {
       return false;
     }
     sendAT(GF("&FZ"));  // Factory + Reset
@@ -227,7 +227,11 @@ public:
     return true;
   }
 
-  bool autoBaud(unsigned long timeout = 10000L) {
+  void setBaud(unsigned long baud) {
+    sendAT(GF("+IPR="), baud);
+  }
+
+  bool testAT(unsigned long timeout = 10000L) {
     //streamWrite(GF("AAAAA" GSM_NL));  // TODO: extra A's to help detect the baud rate
     for (unsigned long start = millis(); millis() - start < timeout; ) {
       sendAT(GF(""));
@@ -293,7 +297,7 @@ public:
    */
 
   bool restart() {
-    if (!autoBaud()) {
+    if (!testAT()) {
       return false;
     }
     sendAT(GF("+CFUN=0"));
@@ -314,15 +318,22 @@ public:
   }
 
   bool radioOff() {
-    if (!autoBaud()) {
-      return false;
-    }
     sendAT(GF("+CFUN=0"));
     if (waitResponse(10000L) != 1) {
       return false;
     }
     delay(3000);
     return true;
+  }
+
+  /*
+    During sleep, the SIM800 module has its serial communication disabled. In order to reestablish communication
+    pull the DRT-pin of the SIM800 module LOW for at least 50ms. Then use this function to disable sleep mode.
+    The DTR-pin can then be released again.
+  */
+  bool sleepEnable(bool enable = true) {
+    sendAT(GF("+CSCLK="), enable);
+    return waitResponse() == 1;
   }
 
   /*
@@ -606,9 +617,9 @@ public:
     int dcs = stream.readStringUntil('\n').toInt();
 
     if (dcs == 15) {
-      return decodeHex8bit(hex);
+      return TinyGsmDecodeHex8bit(hex);
     } else if (dcs == 72) {
-      return decodeHex16bit(hex);
+      return TinyGsmDecodeHex16bit(hex);
     } else {
       return hex;
     }
@@ -782,37 +793,6 @@ protected:
     int res = waitResponse(GF(",\"CONNECTED\""), GF(",\"CLOSED\""), GF(",\"CLOSING\""), GF(",\"INITIAL\""));
     waitResponse();
     return 1 == res;
-  }
-
-  static String decodeHex8bit(String &instr) {
-    String result;
-    for (unsigned i=0; i<instr.length(); i+=2) {
-      char buf[4] = { 0, };
-      buf[0] = instr[i];
-      buf[1] = instr[i+1];
-      char b = strtol(buf, NULL, 16);
-      result += b;
-    }
-    return result;
-  }
-
-  static String decodeHex16bit(String &instr) {
-    String result;
-    for (unsigned i=0; i<instr.length(); i+=4) {
-      char buf[4] = { 0, };
-      buf[0] = instr[i];
-      buf[1] = instr[i+1];
-      char b = strtol(buf, NULL, 16);
-      if (b) { // If high byte is non-zero, we can't handle it ;(
-        b = '?';
-      } else {
-        buf[0] = instr[i+2];
-        buf[1] = instr[i+3];
-        b = strtol(buf, NULL, 16);
-      }
-      result += b;
-    }
-    return result;
   }
 
 public:
