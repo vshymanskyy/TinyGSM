@@ -93,6 +93,7 @@ uint32_t TinyGsmAutoBaud(T& SerialAT)
   return 0;
 }
 
+static inline
 IPAddress TinyGsmIpFromString(const String& strIP) {
   int Parts[4] = {0,0,0,0};
   int Part = 0;
@@ -106,6 +107,65 @@ IPAddress TinyGsmIpFromString(const String& strIP) {
     Parts[Part] += c - '0';
   }
   return IPAddress(Parts[0], Parts[1], Parts[2], Parts[3]);
+}
+
+static inline
+String TinyGsmDecodeHex7bit(String &instr) {
+  String result;
+  byte reminder = 0;
+  int bitstate = 7;
+  for (unsigned i=0; i<instr.length(); i+=2) {
+    char buf[4] = { 0, };
+    buf[0] = instr[i];
+    buf[1] = instr[i+1];
+    byte b = strtol(buf, NULL, 16);
+
+    byte bb = b << (7 - bitstate);
+    char c = (bb + reminder) & 0x7F;
+    result += c;
+    reminder = b >> bitstate;
+    bitstate--;
+    if (bitstate == 0) {
+      char c = reminder;
+      result += c;
+      reminder = 0;
+      bitstate = 7;
+    }
+  }
+  return result;
+}
+
+static inline
+String TinyGsmDecodeHex8bit(String &instr) {
+  String result;
+  for (unsigned i=0; i<instr.length(); i+=2) {
+    char buf[4] = { 0, };
+    buf[0] = instr[i];
+    buf[1] = instr[i+1];
+    char b = strtol(buf, NULL, 16);
+    result += b;
+  }
+  return result;
+}
+
+static inline
+String TinyGsmDecodeHex16bit(String &instr) {
+  String result;
+  for (unsigned i=0; i<instr.length(); i+=4) {
+    char buf[4] = { 0, };
+    buf[0] = instr[i];
+    buf[1] = instr[i+1];
+    char b = strtol(buf, NULL, 16);
+    if (b) { // If high byte is non-zero, we can't handle it ;(
+      b = '?';
+    } else {
+      buf[0] = instr[i+2];
+      buf[1] = instr[i+3];
+      b = strtol(buf, NULL, 16);
+    }
+    result += b;
+  }
+  return result;
 }
 
 #endif
