@@ -22,7 +22,7 @@
 // #define TINY_GSM_MODEM_ESP8266
 
 // Increase RX buffer
-#define TINY_GSM_RX_BUFFER 512
+#define TINY_GSM_RX_BUFFER 600
 
 // Use Hardware Serial on Mega, Leonardo, Micro
 #define SerialAT Serial1
@@ -43,7 +43,7 @@ const char pass[] = "";
 
 // Name of the server we want to connect to
 const char server[] = "cdn.rawgit.com";
-const int  port     = 443;
+const int  port     = 80;
 // Path to download (this is the bit after the hostname in the URL)
 const char resource[] = "/vshymanskyy/tinygsm/master/extras/logo.txt";
 
