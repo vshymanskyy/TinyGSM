@@ -434,7 +434,7 @@ public:
     if (res != 1)
       return false;
 
-    sendAT(GF("+CIFSR;E0")); // Another option is to use AT+CGPADDR=1
+    sendAT(GF("+CIFSR"));
     if (waitResponse() != 1)
       return false;
 
@@ -459,23 +459,11 @@ public:
    * Phone Call functions
    */
 
-  bool setGsmBusy(bool busy = true) {
-    sendAT(GF("+GSMBUSY="), busy ? 1 : 0);
-    return waitResponse() == 1;
-  }
+  bool setGsmBusy(bool busy = true) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
-  bool callAnswer() {
-    sendAT(GF("A"));
-    return waitResponse() == 1;
-  }
+  bool callAnswer() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
-  // Returns true on pick-up, false on error/busy
   bool callNumber(const String& number) TINY_GSM_ATTR_NOT_IMPLEMENTED;
-
-  //bool callRedial() {
-  //  sendAT(GF("DL"));
-  //  return waitResponse() == 1;
-  //}
 
   bool callHangup() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
