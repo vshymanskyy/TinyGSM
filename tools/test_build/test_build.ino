@@ -10,7 +10,7 @@ TinyGsm modem(Serial);
 TinyGsmClient client(modem);
 
 #if defined(TINY_GSM_MODEM_HAS_SSL)
-  TinyGsmClientSecure client(modem);
+  TinyGsmClientSecure client_secure(modem);
 #endif
 
 char server[] = "somewhere";
