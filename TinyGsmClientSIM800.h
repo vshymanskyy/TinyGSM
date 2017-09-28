@@ -551,6 +551,8 @@ public:
     if (waitResponse(10000L, res) != 1) {
       return "";
     }
+    res.replace(GSM_NL "OK" GSM_NL, "");
+    res.replace(GSM_NL, "");
     res.trim();
     return res;
   }
@@ -575,8 +577,16 @@ public:
 
   // Returns true on pick-up, false on error/busy
   bool callNumber(const String& number) {
-    sendAT(GF("D"), number, ";");
-    int status = waitResponse(60000L, GF("OK"), GF("BUSY"), GF("NO ANSWER"), GF("NO CARRIER"));
+    if (number == GF("last")) {
+      sendAT(GF("DL"));
+    } else {
+      sendAT(GF("D"), number, ";");
+    }
+    int status = waitResponse(60000L,
+                              GFP(GSM_OK),
+                              GF("BUSY" GSM_NL),
+                              GF("NO ANSWER" GSM_NL),
+                              GF("NO CARRIER" GSM_NL));
     switch (status) {
     case 1:  return true;
     case 2:
@@ -585,14 +595,20 @@ public:
     }
   }
 
-  //bool callRedial() {
-  //  sendAT(GF("DL"));
-  //  return waitResponse() == 1;
-  //}
-
   bool callHangup() {
     sendAT(GF("H"));
     return waitResponse() == 1;
+  }
+
+  // 0-9,*,#,A,B,C,D
+  bool dtmfSend(char cmd, int duration_ms = 100) {
+    duration_ms = constrain(duration_ms, 100, 1000);
+
+    sendAT(GF("+VTD="), duration_ms / 100); // VTD accepts in 1/10 of a second
+    waitResponse();
+
+    sendAT(GF("+VTS="), cmd);
+    return waitResponse(10000L) == 1;
   }
 
   /*

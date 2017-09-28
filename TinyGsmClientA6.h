@@ -192,6 +192,9 @@ public:
     sendAT(GF("+CMEE=0"));
     waitResponse();
 
+    sendAT(GF("+CMER=3,0,0,2"));
+    waitResponse();
+
     getSimStatus();
     return true;
   }
@@ -448,26 +451,32 @@ public:
 
   // Returns true on pick-up, false on error/busy
   bool callNumber(const String& number) {
-    sendAT(GF("D\""), number, "\";");
-    if (waitResponse() != 1) {
+    if (number == GF("last")) {
+      sendAT(GF("DLST"));
+    } else {
+      sendAT(GF("D\""), number, "\";");
+    }
+
+    if (waitResponse(5000L) != 1) {
       return false;
     }
 
-    if (waitResponse(60000L, GF(GSM_NL "+CIEV: \"CALL\",1"), GF(GSM_NL "+CIEV: \"CALL\",0")) != 1) {
+    if (waitResponse(60000L,
+        GF(GSM_NL "+CIEV: \"CALL\",1"),
+        GF(GSM_NL "+CIEV: \"CALL\",0"),
+        GFP(GSM_ERROR)) != 1)
+    {
       return false;
     }
 
-    int rsp = waitResponse(60000L, GF(GSM_NL "+CIEV: \"SOUNDER\",0"), GF(GSM_NL "+CIEV: \"CALL\",0"));
+    int rsp = waitResponse(60000L,
+              GF(GSM_NL "+CIEV: \"SOUNDER\",0"),
+              GF(GSM_NL "+CIEV: \"CALL\",0"));
 
     int rsp2 = waitResponse(300L, GF(GSM_NL "BUSY" GSM_NL), GF(GSM_NL "NO ANSWER" GSM_NL));
 
     return rsp == 1 && rsp2 == 0;
   }
-
-  //bool callRedial() {
-  //  sendAT(GF("DLST"));
-  //  return waitResponse() == 1;
-  //}
 
   bool callHangup() {
     sendAT(GF("H"));
@@ -475,15 +484,21 @@ public:
   }
 
   // 0-9,*,#,A,B,C,D
-  bool dtmfSend(char cmd) {
-    sendAT(GF("+VTS="), cmd);
-    return waitResponse() == 1;
-  }
+  bool dtmfSend(char cmd, unsigned duration_ms = 100) {
+    duration_ms = constrain(duration_ms, 100, 1000);
 
-  // Duration in milliseconds
-  bool dtmfSetDuration(unsigned ms) {
-    sendAT(GF("+VTD="), ms / 100); // VTD accepts in 1/10 of a second
-    return waitResponse() == 1;
+    // The duration parameter is not working, so we simulate it using delay..
+    // TODO: Maybe there's another way...
+
+    //sendAT(GF("+VTD="), duration_ms / 100);
+    //waitResponse();
+
+    sendAT(GF("+VTS="), cmd);
+    if (waitResponse(10000L) == 1) {
+      delay(duration_ms);
+      return true;
+    }
+    return false;
   }
 
   /*
