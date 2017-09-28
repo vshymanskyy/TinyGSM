@@ -40,26 +40,26 @@ Feature \ Modem              | SIM8xx | U201   | A6/A7/A20 | M590 | ESP8266 | XB
 **Data connections**
 TCP (HTTP, MQTT, Blynk, ...) | ✔      | ✔      | ✔         | ✔    | ✔       | ✔
 UDP                          | ◌      | ◌      |           |      |         | ◌
-SSL/TLS (HTTPS)              | ✔¹     | ✔      | 🅧        | 🅧    | ◌       | 
+SSL/TLS (HTTPS)              | ✔¹     | ✔      | 🅧        | 🅧    | ✔¹      | 
 **USSD**
-Sending USSD requests        | ✔      | ◌      | ✔         | ✔    |         | 
-Decoding 7,8,16-bit response | ✔      | ◌      | ✔         | ✔    |         | 
+Sending USSD requests        | ✔      |        | ✔         | ✔    | 🅧       | 
+Decoding 7,8,16-bit response | ✔      |        | ✔         | ✔    | 🅧      | 
 **SMS**
-Sending                      | ✔      | ?      | ✔         | ✔    |         | ✔
-Sending Unicode              | ✔      | ?      | ◌         | 🅧   |         | 
-Reading                      |        | ?      |           |      |         | 
-Incoming message event       |        | ?      |           | ?    |         | 
+Sending                      | ✔      |        | ✔         | ✔    | 🅧      | ✔
+Sending Unicode              | ✔      |        | ◌         | 🅧   | 🅧      | 
+Reading                      |        |        |           |      | 🅧      | 
+Incoming message event       |        |        |           | ?    | 🅧      | 
 **Calls**
-Dial, hangup                 | ✔      | ?      | ✔         | 🅧   |         | 🅧
-Receiving calls              | ✔      | ?      | ✔         | 🅧   |         | 🅧
-Incoming event (RING)        | ◌      | ?      | ◌         | 🅧   |         | 🅧
-DTMF sending                 | ◌      | ?      | ◌         | 🅧   |         | 🅧
-DTMF decoding                | ◌      | ?      | 🅧        | 🅧   |         | 🅧
+Dial, hangup                 | ✔      |        | ✔         | 🅧   | 🅧      | 🅧
+Receiving calls              | ✔      |        | ✔         | 🅧   | 🅧      | 🅧
+Incoming event (RING)        | ◌      |        | ◌         | 🅧   | 🅧      | 🅧
+DTMF sending                 | ✔      |        | ✔         | 🅧   | 🅧      | 🅧
+DTMF decoding                | ◌      |        | 🅧        | 🅧   | 🅧      | 🅧
 **Location**
-GSM location service         | ✔      | ✔      | 🅧        | 🅧   |         | ✔
+GSM location service         | ✔      | ✔      | 🅧        | 🅧   | 🅧      | ✔
 GPS/GNSS                     | ✔¹     | 🅧     | ◌¹        | 🅧   | 🅧      | 🅧
 
-✔ - implemented  ◌ - planned  🅧 - not available for this modem  
+✔ - implemented  ◌ - planned  🅧 - not available on this modem  
 ¹ - only some device models or firmware revisions have this feature (SIM8xx R14.18, A7, etc.)  
 
 ## Supported modems
