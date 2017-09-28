@@ -57,9 +57,12 @@ void setup() {
   SerialMon.begin(115200);
   delay(10);
 
+  // Set your reset, enable, power pins here
+
+  delay(3000);
+
   // Set GSM module baud rate
   TinyGsmAutoBaud(SerialAT);
-  delay(3000);
 }
 
 void loop() {
@@ -82,6 +85,10 @@ void loop() {
   if (!modem.waitForNetwork()) {
     delay(10000);
     return;
+  }
+
+  if (modem.isNetworkConnected()) {
+    DBG("Network connected");
   }
 
   DBG("Connecting to", apn);
@@ -149,15 +156,29 @@ void loop() {
   DBG("Call:", res ? "OK" : "fail");
 
   if (res) {
-    delay(5000L);
-  
+    delay(1000L);
+
+    // Play DTMF A, duration 1000ms
+    modem.dtmfSend('A', 1000);
+
+    // Play DTMF 0..4, default duration (100ms)
+    for (char tone='0'; tone<='4'; tone++) {
+      modem.dtmfSend(tone);
+    }
+
+    delay(5000);
+
     res = modem.callHangup();
     DBG("Hang up:", res ? "OK" : "fail");
   }
 #endif
 
   modem.gprsDisconnect();
-  DBG("GPRS disconnected");
+  if (!modem.isGprsConnected()) {
+    DBG("GPRS disconnected");
+  } else {
+    DBG("GPRS disconnect: Failed.");
+  }
 
   // Try to power-off (modem may decide to restart automatically)
   // To turn off modem completely, please use Reset/Enable pins
