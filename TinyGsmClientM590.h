@@ -454,8 +454,6 @@ set_dns:
 
   bool callNumber(const String& number) TINY_GSM_ATTR_NOT_AVAILABLE;
 
-  bool callRedial() TINY_GSM_ATTR_NOT_AVAILABLE;
-
   bool callHangup() TINY_GSM_ATTR_NOT_AVAILABLE;
 
   /*
