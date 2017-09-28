@@ -148,6 +148,24 @@ private:
   RxFifo        rx;
 };
 
+class GsmClientSecure : public GsmClient
+{
+public:
+  GsmClientSecure() {}
+
+  GsmClientSecure(TinyGsm& modem, uint8_t mux = 1)
+    : GsmClient(modem, mux)
+  {}
+
+public:
+  virtual int connect(const char *host, uint16_t port) {
+    TINY_GSM_YIELD();
+    rx.clear();
+    sock_connected = at->modemConnect(host, port, mux, true);
+    return sock_connected;
+  }
+};
+
 public:
 
   TinyGsm(Stream& stream)
@@ -201,6 +219,22 @@ public:
     return waitResponse() == 1;
   }
 
+  String getModemInfo() {
+    sendAT(GF("+GMR"));
+    String res;
+    if (waitResponse(1000L, res) != 1) {
+      return "";
+    }
+    res.replace(GSM_NL "OK" GSM_NL, "");
+    res.replace(GSM_NL, " ");
+    res.trim();
+    return res;
+  }
+
+  bool hasSSL() {
+    return true;
+  }
+
   /*
    * Power functions
    */
@@ -239,6 +273,10 @@ public:
     DBG(res2);
     waitResponse();
     return res2;
+  }
+
+  bool isNetworkConnected() {
+    return true; // TODO
   }
 
   bool waitForNetwork(unsigned long timeout = 60000L) {
@@ -303,10 +341,14 @@ public:
     return TinyGsmIpFromString(getLocalIP());
   }
 
-private:
+protected:
 
-  int modemConnect(const char* host, uint16_t port, uint8_t mux) {
-    sendAT(GF("+CIPSTART="), mux, ',', GF("\"TCP"), GF("\",\""), host, GF("\","), port, GF(","), TINY_GSM_TCP_KEEP_ALIVE);
+  bool modemConnect(const char* host, uint16_t port, uint8_t mux, bool ssl = false) {
+    if (ssl) {
+      sendAT(GF("+CIPSSLSIZE=4096"));
+      waitResponse();
+    }
+    sendAT(GF("+CIPSTART="), mux, ',', ssl ? GF("\"SSL") : GF("\"TCP"), GF("\",\""), host, GF("\","), port, GF(","), TINY_GSM_TCP_KEEP_ALIVE);
     int rsp = waitResponse(75000L,
                            GFP(GSM_OK),
                            GFP(GSM_ERROR),
@@ -450,7 +492,7 @@ finish:
     return waitResponse(1000, r1, r2, r3, r4, r5);
   }
 
-private:
+protected:
   Stream&       stream;
   GsmClient*    sockets[TINY_GSM_MUX_COUNT];
 };

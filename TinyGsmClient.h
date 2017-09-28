@@ -9,7 +9,7 @@
 #ifndef TinyGsmClient_h
 #define TinyGsmClient_h
 
-#if defined(TINY_GSM_MODEM_SIM800) || defined(TINY_GSM_MODEM_SIM868) || defined(TINY_GSM_MODEM_U201)
+#if defined(TINY_GSM_MODEM_SIM800) || defined(TINY_GSM_MODEM_SIM868) || defined(TINY_GSM_MODEM_U201) || defined(TINY_GSM_MODEM_ESP8266)
   #define TINY_GSM_MODEM_HAS_SSL
 #endif
 
@@ -52,6 +52,7 @@
   #define TINY_GSM_MODEM_HAS_WIFI
   #include <TinyGsmClientESP8266.h>
   typedef TinyGsm::GsmClient TinyGsmClient;
+  typedef TinyGsm::GsmClientSecure TinyGsmClientSecure;
 
 #elif defined(TINY_GSM_MODEM_XBEE)
   #define TINY_GSM_MODEM_HAS_GPRS
