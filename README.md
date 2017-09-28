@@ -64,21 +64,21 @@ GPS/GNSS                     | ✔¹     | 🅧     | ◌¹        | 🅧   | �
 
 ## Supported modems
 
-- [x] SIMCom SIM800 series (SIM800A, SIM800C, SIM800L, SIM800H, SIM808, SIM868)
-- [x] SIMCom SIM900 series (SIM900A, SIM900D, SIM908, SIM968)
-- [x] AI-Thinker A6, A6C, A7, A20
-- [x] U-blox SARA U201 (*alpha*)
-- [x] ESP8266 (AT commands interface, similar to GSM modems)
-- [x] Digi XBee WiFi and Cellular (using XBee command mode)
-- [x] Neoway M590
+- SIMCom SIM800 series (SIM800A, SIM800C, SIM800L, SIM800H, SIM808, SIM868)
+- SIMCom SIM900 series (SIM900A, SIM900D, SIM908, SIM968)
+- AI-Thinker A6, A6C, A7, A20
+- U-blox SARA U201 (*alpha*)
+- ESP8266 (AT commands interface, similar to GSM modems)
+- Digi XBee WiFi and Cellular (using XBee command mode)
+- Neoway M590
 
 ### Supported boards/modules
-- [x] Arduino MKR GSM 1400 (*alpha*)
-- [x] GPRSbee
-- [x] Microduino GSM
-- [x] Adafruit FONA (Mini Cellular GSM Breakout)
-- [x] Adafruit FONA 800/808 Shield
-- [x] ... other modules based on supported modems
+- Arduino MKR GSM 1400 (*alpha*)
+- GPRSbee
+- Microduino GSM
+- Adafruit FONA (Mini Cellular GSM Breakout)
+- Adafruit FONA 800/808 Shield
+- ... other modules, based on supported modems
 
 More modems may be supported later:
 - [ ] Quectel M10, M95, UG95
