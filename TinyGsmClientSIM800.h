@@ -223,6 +223,11 @@ public:
     if (waitResponse() != 1) {
       return false;
     }
+
+    // PREFERRED SMS STORAGE
+    sendAT(GF("+CPMS="), GF("\"SM\""), GF(","), GF("\"SM\""), GF(","), GF("\"SM\""));
+    waitResponse();
+
     getSimStatus();
     return true;
   }
@@ -639,6 +644,68 @@ public:
     } else {
       return hex;
     }
+  }
+
+  int8_t getSMSInterrupt(void){
+    sendAT(GF("+CFGRI?"));
+    if(waitResponse(GF(GSM_NL "+CFGRI:")) != 1) return -1;
+    return stream.readStringUntil('\n').toInt();
+  }
+
+  bool setSMSInterrupt(uint8_t status){
+    sendAT(GF("+CFGRI="), status);
+    if(waitResponse() != 1) return false;
+    return true;
+  }
+
+  int8_t countSMS(void){
+    sendAT(GF("+CMGF=1"));
+    if(waitResponse() != 1) return -1;
+
+    sendAT(GF("+CPMS?"));
+    if(waitResponse(GF(GSM_NL "+CPMS:")) != 1) return -1;
+
+    streamSkipUntil(',');
+    uint8_t count = stream.readStringUntil(',').toInt();
+    waitResponse();
+
+    return count;
+  }
+
+  bool deleteSMS(){
+    sendAT(GF("+CMGF=1"));
+    if(waitResponse() != 1) return false;
+
+    sendAT(GF("+CMGDA=\"DEL ALL\""));
+    if(waitResponse() != 1) return false;
+
+    return true;
+  }
+
+  bool deleteSMS(uint8_t i){
+    sendAT(GF("+CMGF=1"));
+    if(waitResponse() != 1) return false;
+
+    sendAT(GF("CMGD="), i);
+    if(waitResponse() != 1) return false;
+
+    return true;
+  }
+
+  bool readSMS(uint8_t i, String& msg){
+    sendAT(GF("+CMGF=1"));
+    if(waitResponse() != 1) return false;
+    sendAT(GF("+CSDH=1"));
+    if(waitResponse() != 1) return false;
+
+    sendAT(GF("+CMGR="), i);
+    if(waitResponse(GF(GSM_NL "+CMGR:"))) {
+      streamSkipUntil('\n');
+      msg = stream.readStringUntil('\n');
+      return true;
+    }
+
+    return false;
   }
 
   bool sendSMS(const String& number, const String& text) {
