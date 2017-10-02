@@ -31,7 +31,7 @@ enum SimStatus {
 
 enum XBeeType {
   S6B    = 0,
-  LTEC1 = 1,
+  LTEC1  = 1,
 };
 
 enum RegStatus {
@@ -272,8 +272,7 @@ public:
 
   RegStatus getRegistrationStatus() {
     commandMode();
-    if (beeType == S6B) sendAT(GF("AI"));
-    else sendAT(GF("CI"));
+    sendAT(GF("AI"));
     // wait for the response
     unsigned long startMillis = millis();
     while (!stream.available() && millis() - startMillis < 1000) {};
@@ -290,7 +289,7 @@ public:
             res == GF("40") || res == GF("41") || res == GF("42"))
       return REG_SEARCHING;
 
-    else if(res == GF("24"))
+    else if(res == GF("24") || res == GF("25") || res == GF("27"))
       return REG_DENIED;
 
     else return REG_UNKNOWN;
@@ -331,8 +330,7 @@ public:
   bool waitForNetwork(unsigned long timeout = 60000L) {
     for (unsigned long start = millis(); millis() - start < timeout; ) {
       commandMode();
-      if (beeType == S6B) sendAT(GF("AI"));
-      else sendAT(GF("CI"));
+      sendAT(GF("AI"));
       // wait for the response
       unsigned long startMillis = millis();
       while (!stream.available() && millis() - startMillis < 1000) {};
@@ -476,8 +474,7 @@ private:
 
   bool modemGetConnected(uint8_t mux = 0) {
     commandMode();
-    if (beeType == S6B) sendAT(GF("AI"));
-    else sendAT(GF("CI"));
+    sendAT(GF("AI"));
     int res = waitResponse(GF("0"));
     exitCommand();
     return 1 == res;
