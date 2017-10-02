@@ -230,8 +230,10 @@ public:
     commandMode();
     sendAT(GF("SM"),1);
     waitResponse();
-    sendAT(GF("SO"),200);
-    waitResponse();
+    if (beeType != S6B) {
+        sendAT(GF("SO"),200);
+        waitResponse();
+    }
     writeChanges();
     exitCommand();
   }
