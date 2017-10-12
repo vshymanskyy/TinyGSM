@@ -341,7 +341,7 @@ public:
       if (res == GF("0")) {
         return true;
       }
-      delay(1000);
+      delay(250);
     }
     return false;
   }

@@ -185,7 +185,7 @@ public:
     if (!testAT()) {
       return false;
     }
-    sendAT(GF("E0"));
+    sendAT(GF("E0"));   // Echo Off
     if (waitResponse() != 1) {
       return false;
     }
@@ -209,9 +209,7 @@ public:
   }
 
   void maintain() {
-    //while (stream.available()) {
       waitResponse(10, NULL, NULL);
-    //}
   }
 
   bool factoryDefault() {
@@ -270,13 +268,22 @@ public:
     streamSkipUntil(',');  // Skip BSSID/MAC address
     streamSkipUntil(',');  // Skip Chanel number
     int res2 = stream.parseInt();  // Read RSSI
-    DBG(res2);
     waitResponse();
     return res2;
   }
 
   bool isNetworkConnected() {
-    return true; // TODO
+    sendAT(GF("+CIPSTATUS"));
+    int res1 = waitResponse(3000, GF("STATUS:"));
+    if (res1 == 1) {
+      int res2 = waitResponse(GFP(GSM_ERROR), GF("2"), GF("3"), GF("4"), GF("5"));
+      if (res2 == 2 || res2 == 3 || res2 == 4) return true;
+    }
+    // <stat> status of ESP8266 station interface
+    // 2 : ESP8266 station connected to an AP and has obtained IP
+    // 3 : ESP8266 station created a TCP or UDP transmission
+    // 4 : the TCP or UDP transmission of ESP8266 station disconnected (but AP is connected)
+    // 5 : ESP8266 station did NOT connect to an AP
   }
 
   bool waitForNetwork(unsigned long timeout = 60000L) {
@@ -287,12 +294,7 @@ public:
         int res2 = waitResponse(GFP(GSM_ERROR), GF("2"), GF("3"), GF("4"), GF("5"));
         if (res2 == 2 || res2 == 3 || res2 == 4) return true;
       }
-      // <stat> status of ESP8266 station interface
-      // 2 : ESP8266 station connected to an AP and has obtained IP
-      // 3 : ESP8266 station created a TCP or UDP transmission
-      // 4 : the TCP or UDP transmission of ESP8266 station disconnected (but AP is connected)
-      // 5 : ESP8266 station did NOT connect to an AP
-      delay(1000);
+      delay(250);
     }
     return false;
   }
@@ -332,7 +334,6 @@ public:
       return "";
     }
     String res2 = stream.readStringUntil('"');
-    DBG(res2);
     waitResponse();
     return res2;
   }

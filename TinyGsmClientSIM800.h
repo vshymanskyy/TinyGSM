@@ -432,7 +432,7 @@ public:
       if (isNetworkConnected()) {
         return true;
       }
-      delay(500);
+      delay(250);
     }
     return false;
   }
