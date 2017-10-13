@@ -62,7 +62,6 @@ public:
     sock_available = 0;
     sock_connected = false;
     got_data = false;
-
     return true;
   }
 
@@ -212,6 +211,7 @@ public:
       return false;
     }
     sendAT(GF("E0"));   // Echo Off
+    sendAT(GF("+CMEE=2"));
     if (waitResponse() != 1) {
       return false;
     }
@@ -219,7 +219,7 @@ public:
     if (ret != SIM_READY && pin != NULL && strlen(pin) > 0) {
       simUnlock(pin);
     }
-    return (getSimStatus() == SIM_READY);
+    return (getSimStatus() /*== SIM_READY*/);
   }
 
   void setBaud(unsigned long baud) {
@@ -230,9 +230,11 @@ public:
     for (unsigned long start = millis(); millis() - start < timeout; ) {
       sendAT(GF(""));
       if (waitResponse(200) == 1) {
+          //nilThdSleepMilliseconds(100); --> add ifdef balise
           delay(100);
           return true;
       }
+      //nilThdSleepMilliseconds(50); --> add ifdef balise
       delay(100);
     }
     return false;
@@ -270,6 +272,7 @@ public:
     if (waitResponse(10000L) != 1) {
       return false;
     }
+    //nilThdSleepMilliseconds(3000); --> add ifdef balise
     delay(3000);
     return init();
   }
@@ -311,6 +314,7 @@ public:
     for (unsigned long start = millis(); millis() - start < timeout; ) {
       sendAT(GF("+CPIN?"));
       if (waitResponse(GF(GSM_NL "+CPIN:")) != 1) {
+        //nilThdSleepMilliseconds(1000); --> add ifdef balise
         delay(1000);
         continue;
       }
@@ -372,6 +376,7 @@ public:
       if (isNetworkConnected()) {
         return true;
       }
+      //nilThdSleepMilliseconds(500); --> add ifdef balise
       delay(500);
     }
     return false;
@@ -473,7 +478,20 @@ public:
 
   String sendUSSD(const String& code) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
-  bool sendSMS(const String& number, const String& text) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool sendSMS(const String& number, const String& text) {
+    sendAT(GF("+CSCS=\"GSM\""));
+    waitResponse();
+    sendAT(GF("+CMGF=1"));
+    waitResponse();
+    sendAT(GF("+CMGS=\""), number, GF("\""));
+    if (waitResponse(GF(">")) != 1) {
+      return false;
+    }
+    stream.print(text);
+    stream.write((char)0x1A);
+    stream.flush();
+    return waitResponse(60000L) == 1;
+  }
 
   bool sendSMS_UTF16(const String& number, const void* text, size_t len) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
@@ -536,6 +554,7 @@ protected:
       return -1;
     }
     // 50ms delay, see AT manual section 25.10.4
+    //nilThdSleepMilliseconds(50); --> add ifdef balise
     delay(50);
     stream.write((uint8_t*)buff, len);
     stream.flush();
@@ -628,7 +647,8 @@ public:
                        GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),
                        GsmConstStr r3=NULL, GsmConstStr r4=NULL, GsmConstStr r5=NULL)
   {
-    /*String r1s(r1); r1s.trim();
+    /*
+    String r1s(r1); r1s.trim();
     String r2s(r2); r2s.trim();
     String r3s(r3); r3s.trim();
     String r4s(r4); r4s.trim();
