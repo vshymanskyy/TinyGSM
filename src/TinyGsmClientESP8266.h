@@ -12,7 +12,7 @@
 //#define TINY_GSM_DEBUG Serial
 
 #if !defined(TINY_GSM_RX_BUFFER)
-  #define TINY_GSM_RX_BUFFER 256
+  #define TINY_GSM_RX_BUFFER 512
 #endif
 
 #define TINY_GSM_MUX_COUNT 5
@@ -295,8 +295,11 @@ public:
       int res1 = waitResponse(3000, GF("busy p..."), GF("STATUS:"));
       if (res1 == 2) {
         int res2 = waitResponse(GFP(GSM_ERROR), GF("2"), GF("3"), GF("4"), GF("5"));
-        if (res2 == 2 || res2 == 3 || res2 == 4) return true;
-      }
+        if (res2 == 2 || res2 == 3 || res2 == 4) {
+            waitResponse();
+            return true;
+         }
+        }
       delay(250);
     }
     return false;
@@ -472,7 +475,7 @@ public:
             sockets[mux]->rx.put(stream.read());
           }
           if (len_orig > sockets[mux]->available()) { // TODO
-            DBG(GSM_NL, "### Fewer characters received than expected: ", sockets[mux]->available(), " vs ", len_orig);
+            DBG("### Fewer characters received than expected: ", sockets[mux]->available(), " vs ", len_orig);
           }
           data = "";
           return index;
