@@ -268,22 +268,25 @@ public:
     streamSkipUntil(',');  // Skip BSSID/MAC address
     streamSkipUntil(',');  // Skip Chanel number
     int res2 = stream.parseInt();  // Read RSSI
-    waitResponse();
+    waitResponse();  // Returns an OK after the value
     return res2;
   }
 
   bool isNetworkConnected() {
     sendAT(GF("+CIPSTATUS"));
     int res1 = waitResponse(3000, GF("STATUS:"));
+    int res2;
     if (res1 == 1) {
-      int res2 = waitResponse(GFP(GSM_ERROR), GF("2"), GF("3"), GF("4"), GF("5"));
-      if (res2 == 2 || res2 == 3 || res2 == 4) return true;
+      res2 = waitResponse(GFP(GSM_ERROR), GF("2"), GF("3"), GF("4"), GF("5"));
     }
     // <stat> status of ESP8266 station interface
     // 2 : ESP8266 station connected to an AP and has obtained IP
     // 3 : ESP8266 station created a TCP or UDP transmission
     // 4 : the TCP or UDP transmission of ESP8266 station disconnected (but AP is connected)
     // 5 : ESP8266 station did NOT connect to an AP
+    waitResponse();  // Returns an OK after the status
+    if (res2 == 2 || res2 == 3 || res2 == 4) return true;
+    else return false;
   }
 
   bool waitForNetwork(unsigned long timeout = 60000L) {
@@ -373,9 +376,19 @@ protected:
 
   bool modemGetConnected(uint8_t mux) {
     sendAT(GF("+CIPSTATUS="), mux);
-    int res = waitResponse(GF(",\"CONNECTED\""), GF(",\"CLOSED\""), GF(",\"CLOSING\""), GF(",\"INITIAL\""));
-    waitResponse();
-    return 1 == res;
+    int res1 = waitResponse(3000, GF("STATUS:"));
+    int res2;
+    if (res1 == 1) {
+      res2 = waitResponse(GFP(GSM_ERROR), GF("2"), GF("3"), GF("4"), GF("5"));
+    }
+    // <stat> status of ESP8266 station interface
+    // 2 : ESP8266 station connected to an AP and has obtained IP
+    // 3 : ESP8266 station created a TCP or UDP transmission
+    // 4 : the TCP or UDP transmission of ESP8266 station disconnected (but AP is connected)
+    // 5 : ESP8266 station did NOT connect to an AP
+    waitResponse();  // Returns an OK after the status
+    if (res2 == 2 || res2 == 3 || res2 == 4) return true;
+    else return false;
   }
 
 public:
