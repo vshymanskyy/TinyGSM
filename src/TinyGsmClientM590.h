@@ -123,7 +123,7 @@ public:
         continue;
       }
       // TODO: Read directly into user buffer?
-      if (!rx.size()) {
+      if (!rx.size() && sock_connected) {
         at->maintain();
         //break;
       }
