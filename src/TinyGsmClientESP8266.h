@@ -371,7 +371,7 @@ protected:
     }
     stream.write((uint8_t*)buff, len);
     stream.flush();
-    if (waitResponse(GF(GSM_NL "SEND OK" GSM_NL)) != 1) {
+    if (waitResponse(10000L, GF(GSM_NL "SEND OK" GSM_NL)) != 1) {
       return -1;
     }
     return len;
