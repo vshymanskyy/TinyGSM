@@ -337,7 +337,7 @@ public:
     char buf[2] = {0};  // Set up buffer for response
     buf[0] = streamRead();
     buf[1] = streamRead();
-    DBG(buf[0], buf[1], "\n");
+    // DBG(buf[0], buf[1], "\n");
     exitCommand();
     int intr = strtol(buf, 0, 16);
     if (beeType == S6B) return -93 + intr;  // the maximum sensitivity is -93dBm
@@ -518,9 +518,7 @@ public:
     TINY_GSM_YIELD();
     String return_string = stream.readStringUntil(c);
     return_string.trim();
-    if (String(c) == GSM_NL) {
-      DBG(return_string, "\r\n");
-    } else DBG(return_string, c);
+    // DBG(return_string, c);
     return return_string;
   }
 
@@ -531,7 +529,7 @@ public:
   bool commandMode(void) {
     delay(guardTime);  // cannot send anything for 1 second before entering command mode
     streamWrite(GF("+++"));  // enter command mode
-    DBG("\r\n+++\r\n");
+    // DBG("\r\n+++\r\n");
     return 1 == waitResponse(guardTime*2);
   }
 
