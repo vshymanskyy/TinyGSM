@@ -190,7 +190,18 @@ public:
     return true;
   }
 
-  bool testAT(unsigned long timeout = 10000L) {  // not supported
+  bool testAT(unsigned long timeout = 10000L) {
+    for (unsigned long start = millis(); millis() - start < timeout; ) {
+      if (commandMode())
+      {
+          sendAT();
+          if (waitResponse(200) == 1) {
+              return true;
+          }
+          exitCommand();
+      }
+      delay(100);
+    }
     return false;
   }
 
@@ -203,6 +214,10 @@ public:
     writeChanges();
     exitCommand();
     return ret_val;
+  }
+
+  bool hasSSL() {
+    return true;
   }
 
   /*
