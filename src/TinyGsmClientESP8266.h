@@ -362,7 +362,7 @@ protected:
                            GFP(GSM_OK),
                            GFP(GSM_ERROR),
                            GF(GSM_NL "ALREADY CONNECT" GSM_NL));
-    waitResponse(100, GF("1,CONNECT")); // TODO: use mux
+    waitResponse(100, GF("CONNECT")); // TODO: use mux
     return (1 == rsp);
   }
 
@@ -480,12 +480,15 @@ public:
             DBG("### Fewer characters received than expected: ", sockets[mux]->available(), " vs ", len_orig);
           }
           data = "";
-          return index;
-        } else if (data.endsWith(GF("1,CLOSED"))) { //TODO: use mux
-          DBG("### Socket has been closed.");
-          sockets[1]->sock_connected = false;
+        } else if (data.endsWith(GF("CLOSED"))) {
+          int nl = data.lastIndexOf(GSM_NL, data.length()-8);
+          int coma = data.indexOf(',', nl+2);
+          int mux = data.substring(nl+2, coma).toInt();
+          if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+            sockets[mux]->sock_connected = false;
+          }
           data = "";
-          return index;
+          DBG("### Closed: ", mux);
         }
       }
     } while (millis() - startMillis < timeout);
