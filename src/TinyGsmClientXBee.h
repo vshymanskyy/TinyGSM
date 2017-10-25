@@ -608,7 +608,7 @@ finish:
       data.replace(GSM_NL GSM_NL, GSM_NL);
       data.replace(GSM_NL, "\r\n    ");
       if (data.length()) {
-        DBG("<<< ", data, "\r\n");
+        // DBG("<<< ", data);
       }
     }
     return index;

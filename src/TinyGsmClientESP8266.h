@@ -330,7 +330,9 @@ public:
 
   bool networkDisconnect() {
     sendAT(GF("+CWQAP"));
-    return waitResponse(10000L) == 1;
+    bool retVal = waitResponse(10000L) == 1;
+    waitResponse(GF("WIFI DISCONNECT"));
+    return retVal;
   }
 
   String getLocalIP() {
