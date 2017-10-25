@@ -362,7 +362,7 @@ protected:
                            GFP(GSM_OK),
                            GFP(GSM_ERROR),
                            GF(GSM_NL "ALREADY CONNECT" GSM_NL));
-    waitResponse(100, GF("1,CONNECT")); // TODO
+    waitResponse(100, GF("1,CONNECT")); // TODO: use mux
     return (1 == rsp);
   }
 
@@ -482,6 +482,7 @@ public:
           data = "";
           return index;
         } else if (data.endsWith(GF(GSM_NL "1,CLOSED" GSM_NL))) { //TODO: use mux
+          DBG("### Socket has been closed.");
           sockets[1]->sock_connected = false;
         }
       }
