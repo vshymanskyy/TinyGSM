@@ -481,9 +481,11 @@ public:
           }
           data = "";
           return index;
-        } else if (data.endsWith(GF(GSM_NL "1,CLOSED" GSM_NL))) { //TODO: use mux
+        } else if (data.endsWith(GF("1,CLOSED"))) { //TODO: use mux
           DBG("### Socket has been closed.");
           sockets[1]->sock_connected = false;
+          data = "";
+          return index;
         }
       }
     } while (millis() - startMillis < timeout);
