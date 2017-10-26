@@ -362,7 +362,8 @@ protected:
     int rsp = waitResponse(75000L,
                            GFP(GSM_OK),
                            GFP(GSM_ERROR),
-                           GF(GSM_NL "ALREADY CONNECT" GSM_NL));
+                           GF("ALREADY CONNECT"));
+    // if (rsp == 3) waitResponse();  // May return "ERROR" after the "ALREADY CONNECT"
     return (1 == rsp);
   }
 
