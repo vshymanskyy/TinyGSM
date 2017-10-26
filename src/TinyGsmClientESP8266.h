@@ -481,9 +481,9 @@ public:
           }
           data = "";
         } else if (data.endsWith(GF("CLOSED"))) {
-          int nl = data.lastIndexOf(GSM_NL, data.length()-8);
-          int coma = data.indexOf(',', nl+2);
-          int mux = data.substring(nl+2, coma).toInt();
+          int muxStart = max(0,data.lastIndexOf(GSM_NL, data.length()-8));
+          int coma = data.indexOf(',', muxStart);
+          int mux = data.substring(muxStart, coma).toInt();
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
             sockets[mux]->sock_connected = false;
           }
