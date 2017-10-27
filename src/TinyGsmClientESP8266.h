@@ -275,7 +275,7 @@ public:
   bool isNetworkConnected() {
     sendAT(GF("+CIPSTATUS"));
     int res1 = waitResponse(3000, GF("STATUS:"));
-    int res2;
+    int res2 = 0;
     if (res1 == 1) {
       res2 = waitResponse(GFP(GSM_ERROR), GF("2"), GF("3"), GF("4"), GF("5"));
     }
