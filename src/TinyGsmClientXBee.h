@@ -74,7 +74,7 @@ public:
   virtual int connect(const char *host, uint16_t port) {
     at->streamClear();  // Empty anything remaining in the buffer;
     at->commandMode();
-    sock_connected = at->modemConnect(host, port, mux);
+    sock_connected = at->modemConnect(host, port, mux, false);
     at->writeChanges();
     at->exitCommand();
     return sock_connected;
@@ -83,7 +83,7 @@ public:
   virtual int connect(IPAddress ip, uint16_t port) {
     at->streamClear();  // Empty anything remaining in the buffer;
     at->commandMode();
-    sock_connected = at->modemConnect(ip, port, mux);
+    sock_connected = at->modemConnect(ip, port, mux, false);
     at->writeChanges();
     at->exitCommand();
     return sock_connected;
@@ -155,6 +155,35 @@ private:
   bool          sock_connected;
 };
 
+class GsmClientSecure : public GsmClient
+{
+public:
+  GsmClientSecure() {}
+
+  GsmClientSecure(TinyGsm& modem, uint8_t mux = 1)
+    : GsmClient(modem, mux)
+  {}
+
+public:
+  virtual int connect(const char *host, uint16_t port) {
+    at->streamClear();  // Empty anything remaining in the buffer;
+    at->commandMode();
+    sock_connected = at->modemConnect(host, port, mux, true);
+    at->writeChanges();
+    at->exitCommand();
+    return sock_connected;
+  }
+
+  virtual int connect(IPAddress ip, uint16_t port) {
+    at->streamClear();  // Empty anything remaining in the buffer;
+    at->commandMode();
+    sock_connected = at->modemConnect(ip, port, mux, true);
+    at->writeChanges();
+    at->exitCommand();
+    return sock_connected;
+  }
+};
+
 public:
 
   TinyGsm(Stream& stream)
@@ -217,7 +246,8 @@ public:
   }
 
   bool hasSSL() {
-    return true;
+    if (beeType == S6B) return false;
+    else return true;
   }
 
   /*
@@ -330,7 +360,7 @@ public:
   int getSignalQuality() {
     commandMode();
     if (beeType == S6B) sendAT(GF("LM"));  // ask for the "link margin" - the dB above sensitivity
-    else sendAT(GF("DB"));  // ask for the cell strenght in dBm
+    else sendAT(GF("DB"));  // ask for the cell strength in dBm
     // wait for the response
     unsigned long startMillis = millis();
     while (!stream.available() && millis() - startMillis < 1000) {};
@@ -344,16 +374,14 @@ public:
     else return -1*intr; // need to convert to negative number
   }
 
+  bool isNetworkConnected() {
+    RegStatus s = getRegistrationStatus();
+    return (s == REG_OK_HOME || s == REG_OK_ROAMING);
+  }
+
   bool waitForNetwork(unsigned long timeout = 60000L) {
     for (unsigned long start = millis(); millis() - start < timeout; ) {
-      commandMode();
-      sendAT(GF("AI"));
-      // wait for the response
-      unsigned long startMillis = millis();
-      while (!stream.available() && millis() - startMillis < 1000) {};
-      String res = streamReadUntil('\r');  // Does not send an OK, just the result
-      exitCommand();
-      if (res == GF("0")) {
+      if (isNetworkConnected()) {
         return true;
       }
       delay(250);
@@ -454,7 +482,7 @@ fail:
 
 private:
 
-  int modemConnect(const char* host, uint16_t port, uint8_t mux = 0) {
+  int modemConnect(const char* host, uint16_t port, uint8_t mux = 0, bool ssl = false) {
     sendAT(GF("LA"), host);
     String strIP; strIP.reserve(16);
     // wait for the response
@@ -462,10 +490,10 @@ private:
     while (stream.available() < 8 && millis() - startMillis < 30000) {};
     strIP = streamReadUntil('\r');  // read result
     IPAddress ip = TinyGsmIpFromString(strIP);
-    return modemConnect(ip, port);
+    return modemConnect(ip, port, mux, ssl);
   }
 
-  int modemConnect(IPAddress ip, uint16_t port, uint8_t mux = 0) {
+  int modemConnect(IPAddress ip, uint16_t port, uint8_t mux = 0, bool ssl = false) {
     String host; host.reserve(16);
     host += ip[0];
     host += ".";
@@ -474,8 +502,13 @@ private:
     host += ip[2];
     host += ".";
     host += ip[3];
-    sendAT(GF("IP"), 1);  // Put in TCP mode
-    waitResponse();
+    if (ssl) {
+      sendAT(GF("IP"), 4);  // Put in TCP mode
+      waitResponse();
+    } else {
+      sendAT(GF("IP"), 1);  // Put in TCP mode
+      waitResponse();
+    }
     sendAT(GF("DL"), host);  // Set the "Destination Address Low"
     waitResponse();
     sendAT(GF("DE"), String(port, HEX));  // Set the destination port
