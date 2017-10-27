@@ -275,7 +275,7 @@ public:
     commandMode();
     sendAT(GF("SM"),1);
     waitResponse();
-    if (beeType != S6B) {
+    if (beeType == S6B) {
         sendAT(GF("SO"),200);
         waitResponse();
     }
