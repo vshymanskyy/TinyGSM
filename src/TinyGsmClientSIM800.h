@@ -126,7 +126,7 @@ public:
     TINY_GSM_YIELD();
     at->maintain();
     size_t cnt = 0;
-    while (cnt < size) {
+    while (cnt < size && sock_connected) {
       size_t chunk = TinyGsmMin(size-cnt, rx.size());
       if (chunk > 0) {
         rx.get(buf, chunk);
@@ -443,71 +443,82 @@ public:
   bool gprsConnect(const char* apn, const char* user, const char* pwd) {
     gprsDisconnect();
 
-    sendAT(GF("+SAPBR=3,1,\"Contype\",\"GPRS\""));
+    // Set the Bearer for the IP
+    sendAT(GF("+SAPBR=3,1,\"Contype\",\"GPRS\""));  // Set the connection type to GPRS
     waitResponse();
 
-    sendAT(GF("+SAPBR=3,1,\"APN\",\""), apn, '"');
+    sendAT(GF("+SAPBR=3,1,\"APN\",\""), apn, '"');  // Set the APN
     waitResponse();
 
     if (user && strlen(user) > 0) {
-      sendAT(GF("+SAPBR=3,1,\"USER\",\""), user, '"');
+      sendAT(GF("+SAPBR=3,1,\"USER\",\""), user, '"');  // Set the user name
       waitResponse();
     }
     if (pwd && strlen(pwd) > 0) {
-      sendAT(GF("+SAPBR=3,1,\"PWD\",\""), pwd, '"');
+      sendAT(GF("+SAPBR=3,1,\"PWD\",\""), pwd, '"');  // Set the password
       waitResponse();
     }
 
+    // Define the PDP context
     sendAT(GF("+CGDCONT=1,\"IP\",\""), apn, '"');
     waitResponse();
 
+    // Activate the PDP context
     sendAT(GF("+CGACT=1,1"));
     waitResponse(60000L);
 
-    // Open a GPRS context
+    // Open a the definied bearer context
     sendAT(GF("+SAPBR=1,1"));
     waitResponse(85000L);
-    // Query the GPRS context
+    // Query the GPRS bearer context status
     sendAT(GF("+SAPBR=2,1"));
     if (waitResponse(30000L) != 1)
       return false;
 
+    // Attach to GPRS
     sendAT(GF("+CGATT=1"));
     if (waitResponse(60000L) != 1)
       return false;
 
     // TODO: wait AT+CGATT?
 
+    // Set to multi-IP
     sendAT(GF("+CIPMUX=1"));
     if (waitResponse() != 1) {
       return false;
     }
 
+    // Put in "quick send" mode (thus no extra "Send OK")
     sendAT(GF("+CIPQSEND=1"));
     if (waitResponse() != 1) {
       return false;
     }
 
+    // Set to get data manually
     sendAT(GF("+CIPRXGET=1"));
     if (waitResponse() != 1) {
       return false;
     }
 
+    // Start Task and Set APN, USER NAME, PASSWORD
     sendAT(GF("+CSTT=\""), apn, GF("\",\""), user, GF("\",\""), pwd, GF("\""));
     if (waitResponse(60000L) != 1) {
       return false;
     }
 
+    // Bring Up Wireless Connection with GPRS or CSD
     sendAT(GF("+CIICR"));
     if (waitResponse(60000L) != 1) {
       return false;
     }
 
+    // Get Local IP Address, only assigned after connection
     sendAT(GF("+CIFSR;E0"));
     if (waitResponse(10000L) != 1) {
       return false;
     }
 
+    // Configure Domain Name Server (DNS)
     sendAT(GF("+CDNSCFG=\"8.8.8.8\",\"8.8.4.4\""));
     if (waitResponse() != 1) {
       return false;
@@ -517,11 +528,11 @@ public:
   }
 
   bool gprsDisconnect() {
-    sendAT(GF("+CIPSHUT"));
+    sendAT(GF("+CIPSHUT"));  // Shut the TCP/IP connection
     if (waitResponse(60000L) != 1)
       return false;
 
-    sendAT(GF("+CGATT=0"));
+    sendAT(GF("+CGATT=0"));  // Deactivate the bearer context
     if (waitResponse(60000L) != 1)
       return false;
 
