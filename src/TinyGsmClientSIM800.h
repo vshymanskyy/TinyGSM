@@ -253,7 +253,7 @@ public:
       }
     }
     while (stream.available()) {
-      waitResponse(50, NULL, NULL);
+      waitResponse(10, NULL, NULL);
     }
   }
 
@@ -467,7 +467,7 @@ public:
     sendAT(GF("+CGACT=1,1"));
     waitResponse(60000L);
 
-    // Open a the definied bearer context
+    // Open the definied GPRS bearer context
     sendAT(GF("+SAPBR=1,1"));
     waitResponse(85000L);
     // Query the GPRS bearer context status

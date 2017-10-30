@@ -247,7 +247,7 @@ public:
       }
     }
     while (stream.available()) {
-      waitResponse(50, NULL, NULL);
+      waitResponse(10, NULL, NULL);
     }
   }
 
