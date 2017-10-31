@@ -92,13 +92,13 @@ public:
   // This is a hack to shut the socket by setting the timeout to zero and
   //  then sending an empty line to the server.
   virtual void stop() {
+    at->streamClear();  // Empty anything remaining in the buffer;
     at->commandMode();
     at->sendAT(GF("TM0"));  // Set socket timeout to 0;
     at->waitResponse();
     at->writeChanges();
     at->exitCommand();
     at->modemSend("", 1, mux);
-    at->streamClear();  // Empty anything remaining in the buffer;
     at->commandMode();
     at->sendAT(GF("TM64"));  // Set socket timeout back to 10seconds;
     at->waitResponse();
@@ -124,7 +124,8 @@ public:
   }
 
   virtual int read(uint8_t *buf, size_t size) {
-    return available();
+    TINY_GSM_YIELD();
+    return at->stream.readBytes(buf, size);
   }
 
   virtual int read() {
