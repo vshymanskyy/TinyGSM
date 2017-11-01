@@ -16,7 +16,7 @@
   },
   "homepage": "https://github.com/vshymanskyy/TinyGSM",
   "export": {
-    "exclude": [ "extras", "tools" ]
+    "exclude": [ "extras/*", "tools/*" ]
   },
   "frameworks": [ "arduino", "energia", "wiringpi" ],
   "platforms": "*",
