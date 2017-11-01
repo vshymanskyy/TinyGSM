@@ -40,7 +40,7 @@ Feature \ Modem              | SIM8xx | U201   | A6/A7/A20 | M590 | ESP8266 | XB
 **Data connections**
 TCP (HTTP, MQTT, Blynk, ...) | ✔      | ✔      | ✔         | ✔    | ✔       | ✔
 UDP                          | ◌      | ◌      |           |      |         | ◌
-SSL/TLS (HTTPS)              | ✔¹     | ✔      | 🅧        | 🅧    | ✔¹      | 
+SSL/TLS (HTTPS)              | ✔¹     | ✔      | 🅧        | 🅧    | ✔¹      | ✔¹
 **USSD**
 Sending USSD requests        | ✔      |        | ✔         | ✔    | 🅧       | 
 Decoding 7,8,16-bit response | ✔      |        | ✔         | ✔    | 🅧      | 
