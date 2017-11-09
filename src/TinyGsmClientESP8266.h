@@ -283,10 +283,10 @@ public:
     // <stat> status of ESP8266 station interface
     // 2 : ESP8266 station connected to an AP and has obtained IP
     // 3 : ESP8266 station created a TCP or UDP transmission
-    // 4 : the TCP or UDP transmission of ESP8266 station disconnected (but AP is connected)
+    // 4 : the TCP or UDP transmission of ESP8266 station disconnected
     // 5 : ESP8266 station did NOT connect to an AP
     waitResponse();  // Returns an OK after the status
-    if (res2 == 2 || res2 == 3 || res2 == 4) return true;
+    if (res2 == 2 || res2 == 3) return true;
     else return false;
   }
 
@@ -296,7 +296,7 @@ public:
       int res1 = waitResponse(3000, GF("busy p..."), GF("STATUS:"));
       if (res1 == 2) {
         int res2 = waitResponse(GFP(GSM_ERROR), GF("2"), GF("3"), GF("4"), GF("5"));
-        if (res2 == 2 || res2 == 3 || res2 == 4) {
+        if (res2 == 2 || res2 == 3) {
             waitResponse();
             return true;
          }
@@ -391,10 +391,10 @@ protected:
     // <stat> status of ESP8266 station interface
     // 2 : ESP8266 station connected to an AP and has obtained IP
     // 3 : ESP8266 station created a TCP or UDP transmission
-    // 4 : the TCP or UDP transmission of ESP8266 station disconnected (but AP is connected)
+    // 4 : the TCP or UDP transmission of ESP8266 station disconnected
     // 5 : ESP8266 station did NOT connect to an AP
     waitResponse();  // Returns an OK after the status
-    if (res2 == 2 || res2 == 3 || res2 == 4) return true;
+    if (res2 == 2 || res2 == 3) return true;
     else return false;
   }
 
