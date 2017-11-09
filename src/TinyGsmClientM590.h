@@ -214,7 +214,7 @@ public:
 
   void maintain() {
     //while (stream.available()) {
-      waitResponse(10, NULL, NULL);
+      waitResponse(50, NULL, NULL);
     //}
   }
 
