@@ -331,6 +331,28 @@ public:
     return true;
   }
 
+  bool enableBluetooth() {
+    uint16_t state;
+
+    sendAT(GF("+BTPOWER=1"));
+    if (waitResponse() != 1) {
+      return false;
+    }
+
+    return true;
+  }
+
+  bool disableBluetooth() {
+    uint16_t state;
+
+    sendAT(GF("+BTPOWER=0"));
+    if (waitResponse() != 1) {
+      return false;
+    }
+
+    return true;
+  }
+
   /*
     During sleep, the SIM800 module has its serial communication disabled. In order to reestablish communication
     pull the DRT-pin of the SIM800 module LOW for at least 50ms. Then use this function to disable sleep mode.
