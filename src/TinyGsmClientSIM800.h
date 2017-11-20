@@ -847,11 +847,29 @@ public:
     }
     streamSkipUntil(','); // skip method
     int status = stream.readStringUntil(',').toInt();
-    int len = stream.readStringUntil('\n').toInt();
+    //int len = stream.readStringUntil('\n').toInt();
 
-    DBG("Staus ",status);
-    DBG("Len ", len);
     return status;
+  }
+  String httpResponse(int start_addres,int byte_size,unsigned long timeout = 2000){
+    //Read http response
+    String rcv = "";
+    char c;
+    unsigned long start_time = millis();
+    sendAT(GF("+HTTPREAD="),start_addres,',',byte_size);
+    TINY_GSM_YIELD();
+    waitResponse(GF("+HTTPREAD:"));
+    int index= 0,len = stream.readStringUntil('\n').toInt();
+    len -=4;
+    while(millis() - start_time < timeout && index <= len){
+      if(stream.available()){
+        c = stream.read();
+        index++;
+        rcv += c;
+      }
+      TINY_GSM_YIELD();
+    }
+    return rcv;
   }
   String httpResponse(unsigned long timeout = 2000){
     //Read http response
@@ -861,11 +879,12 @@ public:
     sendAT(GF("+HTTPREAD"));
     TINY_GSM_YIELD();
     waitResponse(GF("+HTTPREAD:"));
-    int len = stream.readStringUntil('\n').toInt();
-    len -=4;
-    while(millis() - start_time < timeout && rcv.length() <= len){
+    int index = 0,len = stream.readStringUntil('\n').toInt();
+    len -=6;    
+    while(millis() - start_time < timeout && index <= len){
       if(stream.available()){
         c = stream.read();
+        index++;
         rcv += c;
       }
       TINY_GSM_YIELD();

@@ -28,8 +28,8 @@ const char pass[] = "";
 // Use Hardware Serial on Mega, Leonardo, Micro
 //#define SerialAT Serial1
 
-#define DUMP_AT_COMMANDS
-#define TINY_GSM_DEBUG Serial
+//#define DUMP_AT_COMMANDS
+//#define TINY_GSM_DEBUG Serial
 
 // or Software Serial on Uno, Nano
 #include <SoftwareSerial.h>
@@ -43,8 +43,8 @@ SoftwareSerial SerialAT(4, 3); // RX, TX
   TinyGsm modem(SerialAT);
 #endif
 
-const char server[] = "64.151.103.133";
-const char resource[] = "/MSPIoT/SendInfo.aspx?valor=ICV10358677|10|1|36.6|2|861445039826867|0";
+const char server[] = "cdn.rawgit.com";
+const char resource[] = "/vshymanskyy/tinygsm/master/extras/logo.txt";
 
 const int port = 80;
 
