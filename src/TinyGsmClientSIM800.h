@@ -58,6 +58,7 @@ enum httpMethod{
   HEAD    = 2,
 };
 enum httpStatus{
+  NO_STATUS                       = 0,
   CONTINUE                        = 100,
   SWITCHING_PROTOCOLS             = 101,
   OK                              = 200,
@@ -804,24 +805,90 @@ public:
   public:
   ///HTTP SUPORT
   bool httpInit(){
-    sendAT();
+    sendAT(GF("+HTTPINIT"));
+    if (waitResponse() != 1) {
+      return false;
+    }
+    return true;
   }
   bool httpUinit(){
+    sendAT(GF("+HTTPTERM"));
+    if (waitResponse() != 1) {
+      return false;
+    }
+    return true;
 
   }
-  void httpRequest(httpTag tag,char *value){
-
+  bool httpRequest(httpTag tag,const char *value){
+    sendAT(GF("+HTTPPARA="),GF("\""),httpTagToString(tag)->c_str(),GF("\""),',',GF("\""),value,GF("\""));
+    if (waitResponse() != 1) {
+      return false;
+    }
+    return true;
   }
-  void httpData(char *data,unsigned long timeout){
-
+  int httpData(char *data,const int len,uint32_t timeout){
+    sendAT(GF("+HTTPDATA="),len,',',timeout);
+    if (waitResponse(GF("DOWNLOAD")) != 1) {
+      return -1;
+    }
+    stream.write(data, len);
+    stream.flush();
+    if (waitResponse(GF(GSM_NL "OK")) != 1) {
+      return -1;
+    }    
   }
-  httpStatus httpMethod(httpMethod method,unsigned long timeout=60000L){
+  httpStatus httpMethod(httpMethod method,uint32_t timeout=120000L){
+    uint32_t start_time = millis();
+    sendAT(GF("+HTTPACTION="),method);
+    if(waitResponse() != 1) { return NO_STATUS;}    
+    TINY_GSM_YIELD();
+    if(waitResponse(timeout, GF(GSM_NL "+HTTPACTION:")) != 1){
+      return NO_STATUS;
+    }
+    streamSkipUntil(','); // skip method
+    int status = stream.readStringUntil(',').toInt();
+    int len = stream.readStringUntil('\n').toInt();
 
+    DBG("Staus ",status);
+    DBG("Len ", len);
+    return status;
   }
-  String httpRead(){
-
-  }  
-
+  String httpResponse(unsigned long timeout = 2000){
+    //Read http response
+    String rcv = "";
+    char c;
+    unsigned long start_time = millis();
+    sendAT(GF("+HTTPREAD"));
+    TINY_GSM_YIELD();
+    waitResponse(GF("+HTTPREAD:"));
+    int len = stream.readStringUntil('\n').toInt();
+    len -=4;
+    while(millis() - start_time < timeout && rcv.length() <= len){
+      if(stream.available()){
+        c = stream.read();
+        rcv += c;
+      }
+      TINY_GSM_YIELD();
+    }
+    return rcv;
+  }
+  ///Http Utilities
+  String *httpTagToString(httpTag tag){
+    switch(tag){
+      case   CID      : return (new String("CID"));
+      case   URL      : return (new String("URL"));
+      case   UA       : return (new String("UA"));
+      case   PROIP    : return (new String("PROIP"));
+      case   PROPORT  : return (new String("PROPORT"));
+      case   REDIR    : return (new String("REDIR"));
+      case   BREAK    : return (new String("BREAK")); 
+      case   BREAKEND : return (new String("BREAKEND"));
+      case   TIMEOUT  : return (new String("TIMEOUT"));
+      case   CONTENT  : return (new String("CONTENT"));
+      case   USERDATA : return (new String("USERDATA"));
+      default: return NULL;
+    }
+  }
 protected:
 
   bool modemConnect(const char* host, uint16_t port, uint8_t mux, bool ssl = false) {
@@ -923,8 +990,9 @@ public:
     streamWrite(tail...);
   }
 
-  bool streamSkipUntil(char c) { //TODO: timeout
-    while (true) {
+  bool streamSkipUntil(char c,unsigned long timeout=10000L) { //TODO: timeout
+    unsigned long start_time = millis();
+    while (millis() - start_time < timeout) {
       while (!stream.available()) { TINY_GSM_YIELD(); }
       if (stream.read() == c)
         return true;
