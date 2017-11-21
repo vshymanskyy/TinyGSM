@@ -880,7 +880,7 @@ public:
     TINY_GSM_YIELD();
     waitResponse(GF("+HTTPREAD:"));
     int index = 0,len = stream.readStringUntil('\n').toInt();
-    len -=6;    
+    len -=5;    
     while(millis() - start_time < timeout && index <= len){
       if(stream.available()){
         c = stream.read();
