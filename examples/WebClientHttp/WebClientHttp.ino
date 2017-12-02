@@ -95,8 +95,8 @@ void loop() {
     return;
   }
   
-  String url = String(server) + String(resource);
-  if(!modem.httpRequest(URL,url.c_str())){
+  String url = String(server) + resource;
+  if(!modem.httpRequest("URL",url.c_str())){
     Serial.println(" fail ");
     delay(5000);
     return;

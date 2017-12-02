@@ -39,19 +39,6 @@ enum RegStatus {
   REG_UNKNOWN      = 4,
 };
 
-enum httpTag{
-  CID       = 0,
-  URL       = 1,
-  UA        = 2,
-  PROIP     = 3,
-  PROPORT   = 4,
-  REDIR     = 5,
-  BREAK     = 6,
-  BREAKEND  = 7,
-  TIMEOUT   = 8,
-  CONTENT   = 9,
-  USERDATA  = 10,
-};
 enum httpMethod{
   GET     = 0,
   POST    = 1,
@@ -819,8 +806,8 @@ public:
     return true;
 
   }
-  bool httpRequest(httpTag tag,const char *value){
-    sendAT(GF("+HTTPPARA="),GF("\""),httpTagToString(tag)->c_str(),GF("\""),',',GF("\""),value,GF("\""));
+  bool httpRequest(const char *tag,const char *value){
+    sendAT(GF("+HTTPPARA="),GF("\""),tag,GF("\""),',',GF("\""),value,GF("\""));
     if (waitResponse() != 1) {
       return false;
     }
@@ -849,7 +836,7 @@ public:
     int status = stream.readStringUntil(',').toInt();
     //int len = stream.readStringUntil('\n').toInt();
 
-    return status;
+    return (httpStatus)status;
   }
   String httpResponse(int start_addres,int byte_size,unsigned long timeout = 2000){
     //Read http response
@@ -890,23 +877,6 @@ public:
       TINY_GSM_YIELD();
     }
     return rcv;
-  }
-  ///Http Utilities
-  String *httpTagToString(httpTag tag){
-    switch(tag){
-      case   CID      : return (new String("CID"));
-      case   URL      : return (new String("URL"));
-      case   UA       : return (new String("UA"));
-      case   PROIP    : return (new String("PROIP"));
-      case   PROPORT  : return (new String("PROPORT"));
-      case   REDIR    : return (new String("REDIR"));
-      case   BREAK    : return (new String("BREAK")); 
-      case   BREAKEND : return (new String("BREAKEND"));
-      case   TIMEOUT  : return (new String("TIMEOUT"));
-      case   CONTENT  : return (new String("CONTENT"));
-      case   USERDATA : return (new String("USERDATA"));
-      default: return NULL;
-    }
   }
 protected:
 
