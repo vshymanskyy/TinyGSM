@@ -982,9 +982,11 @@ public:
   bool streamSkipUntil(char c,unsigned long timeout=10000L) { //TODO: timeout
     unsigned long start_time = millis();
     while (millis() - start_time < timeout) {
-      while (!stream.available()) { TINY_GSM_YIELD(); }
-      if (stream.read() == c)
-        return true;
+      if(stream.available()){
+      	if (stream.read() == c)
+        	return true;      	
+      }
+      TINY_GSM_YIELD();
     }
     return false;
   }
