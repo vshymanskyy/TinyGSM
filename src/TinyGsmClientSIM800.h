@@ -791,8 +791,10 @@ protected:
       buf[1] = stream.read();
       char c = strtol(buf, NULL, 16);
 #else
-      while (!stream.available()) { TINY_GSM_YIELD(); }
-      char c = stream.read();
+      //while (!stream.available()) { TINY_GSM_YIELD(); }
+      int8_t c = stream.read();
+	  if (c == -1)
+		  return;
 #endif
       sockets[mux]->rx.put(c);
     }
