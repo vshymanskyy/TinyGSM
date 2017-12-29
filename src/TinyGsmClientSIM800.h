@@ -794,7 +794,7 @@ protected:
       //while (!stream.available()) { TINY_GSM_YIELD(); }
       int8_t c = stream.read();
 	  if (c == -1)
-		  return;
+		  return i;
 #endif
       sockets[mux]->rx.put(c);
     }
