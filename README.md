@@ -133,6 +133,11 @@ Try selecting **57600**, **38400**, or even lower - the one that works best for 
 Be sure to set correct TX/RX pins in the sketch. Please note that not every Arduino pin can serve as TX or RX pin.  
 **Read more about SoftSerial options and configuration [here](https://www.pjrc.com/teensy/td_libs_AltSoftSerial.html) and [here](https://www.arduino.cc/en/Reference/SoftwareSerial).**
 
+### ESP32 HardwareSerial
+
+When using ESP32 `HardwareSerial`, you may need to specify additional parameters to the `.begin()` call.
+Please [refer to this comment](https://github.com/vshymanskyy/TinyGSM/issues/91#issuecomment-356024747).
+
 ### Diagnostics sketch
 
 Use this sketch to diagnose your SIM card and GPRS connection:  
