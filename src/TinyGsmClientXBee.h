@@ -73,19 +73,25 @@ public:
 public:
   virtual int connect(const char *host, uint16_t port) {
     at->streamClear();  // Empty anything remaining in the buffer;
-    at->commandMode();
-    sock_connected = at->modemConnect(host, port, mux, false);
-    at->writeChanges();
-    at->exitCommand();
+    bool sock_connected = false;
+    if (at->commandMode())  {  // Don't try if we didn't successfully get into command mode
+      sock_connected = at->modemConnect(host, port, mux, false);
+      at->writeChanges();
+      at->exitCommand();
+    }
+    at->streamClear();  // Empty anything remaining in the buffer;
     return sock_connected;
   }
 
   virtual int connect(IPAddress ip, uint16_t port) {
     at->streamClear();  // Empty anything remaining in the buffer;
-    at->commandMode();
-    sock_connected = at->modemConnect(ip, port, mux, false);
-    at->writeChanges();
-    at->exitCommand();
+    bool sock_connected = false;
+    if (at->commandMode())  {  // Don't try if we didn't successfully get into command mode
+      sock_connected = at->modemConnect(ip, port, mux, false);
+      at->writeChanges();
+      at->exitCommand();
+    }
+    at->streamClear();  // Empty anything remaining in the buffer;
     return sock_connected;
   }
 
@@ -168,19 +174,25 @@ public:
 public:
   virtual int connect(const char *host, uint16_t port) {
     at->streamClear();  // Empty anything remaining in the buffer;
-    at->commandMode();
-    sock_connected = at->modemConnect(host, port, mux, true);
-    at->writeChanges();
-    at->exitCommand();
+    bool sock_connected = false;
+    if (at->commandMode())  {  // Don't try if we didn't successfully get into command mode
+      sock_connected = at->modemConnect(host, port, mux, true);
+      at->writeChanges();
+      at->exitCommand();
+    }
+    at->streamClear();  // Empty anything remaining in the buffer;
     return sock_connected;
   }
 
   virtual int connect(IPAddress ip, uint16_t port) {
     at->streamClear();  // Empty anything remaining in the buffer;
-    at->commandMode();
-    sock_connected = at->modemConnect(ip, port, mux, true);
-    at->writeChanges();
-    at->exitCommand();
+    bool sock_connected = false;
+    if (at->commandMode())  {  // Don't try if we didn't successfully get into command mode
+      sock_connected = at->modemConnect(ip, port, mux, true);
+      at->writeChanges();
+      at->exitCommand();
+    }
+    at->streamClear();  // Empty anything remaining in the buffer;
     return sock_connected;
   }
 };
@@ -484,12 +496,17 @@ fail:
 private:
 
   int modemConnect(const char* host, uint16_t port, uint8_t mux = 0, bool ssl = false) {
-    sendAT(GF("LA"), host);
     String strIP; strIP.reserve(16);
-    // wait for the response
     unsigned long startMillis = millis();
-    while (stream.available() < 8 && millis() - startMillis < 30000) {};
-    strIP = streamReadUntil('\r');  // read result
+    bool gotIP = false;
+    while (!gotIP && millis() - startMillis < 30000)
+    {
+      sendAT(GF("LA"), host);
+      while (stream.available() < 4) {};// wait for the response
+      strIP = streamReadUntil('\r');  // read result
+      if (!strIP.endsWith(GF("ERROR"))) gotIP = true;
+      delay(100);  // short wait before trying again
+    }
     IPAddress ip = TinyGsmIpFromString(strIP);
     return modemConnect(ip, port, mux, ssl);
   }
@@ -563,7 +580,7 @@ public:
   bool commandMode(void) {
     delay(guardTime);  // cannot send anything for 1 second before entering command mode
     streamWrite(GF("+++"));  // enter command mode
-    // DBG("\r\n+++\r\n");
+    // DBG("\r\n+++");
     return 1 == waitResponse(guardTime*2);
   }
 
@@ -584,7 +601,7 @@ public:
     streamWrite("AT", cmd..., GSM_NL);
     stream.flush();
     TINY_GSM_YIELD();
-    //DBG("### AT:", cmd...);
+    // DBG("### AT:", cmd...);
   }
 
   // TODO: Optimize this!
@@ -657,7 +674,7 @@ finish:
   uint8_t waitResponse(GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),
                        GsmConstStr r3=NULL, GsmConstStr r4=NULL, GsmConstStr r5=NULL)
   {
-    return waitResponse(1000, r1, r2, r3, r4, r5);
+    return waitResponse(5000, r1, r2, r3, r4, r5);
   }
 
 private:

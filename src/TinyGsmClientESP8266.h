@@ -210,7 +210,7 @@ public:
   }
 
   void maintain() {
-      waitResponse(50, NULL, NULL);
+      waitResponse(10, NULL, NULL);
   }
 
   bool factoryDefault() {
