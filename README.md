@@ -40,7 +40,7 @@ Feature \ Modem              | SIM8xx | U201   | A6/A7/A20 | M590 | ESP8266 | XB
 **Data connections**
 TCP (HTTP, MQTT, Blynk, ...) | ✔      | ✔      | ✔         | ✔    | ✔       | ✔
 UDP                          | ◌      | ◌      |           |      |         | ◌
-SSL/TLS (HTTPS)              | ✔¹     | ✔      | 🅧        | 🅧    | ✔¹      | 
+SSL/TLS (HTTPS)              | ✔¹     | ✔      | 🅧        | 🅧    | ✔¹      | ✔¹
 **USSD**
 Sending USSD requests        | ✔      |        | ✔         | ✔    | 🅧       | 
 Decoding 7,8,16-bit response | ✔      |        | ✔         | ✔    | 🅧      | 
@@ -82,7 +82,7 @@ GPS/GNSS                     | ✔¹     | 🅧     | ◌¹        | 🅧   | �
 
 More modems may be supported later:
 - [ ] Quectel M10, M95, UG95
-- [ ] SIMCom SIM5320, SIM5216
+- [ ] SIMCom SIM5320, SIM5360, SIM5216, SIM7xxx
 - [ ] Telit GL865
 - [ ] ZTE MG2639
 - [ ] Hi-Link HLK-RM04
@@ -126,17 +126,27 @@ For additional functions, please refer to [this example sketch](examples/AllFunc
 
 ## Troubleshooting
 
+### Diagnostics sketch
+
+Use this sketch to diagnose your SIM card and GPRS connection:  
+  File -> Examples -> TynyGSM -> tools -> [Diagnostics](https://github.com/vshymanskyy/TinyGSM/blob/master/tools/Diagnostics/Diagnostics.ino)
+
 ### SoftwareSerial problems
 
 When using ```SoftwareSerial``` (on Uno, Nano, etc), the speed **115200** may not work.  
 Try selecting **57600**, **38400**, or even lower - the one that works best for you.  
 Be sure to set correct TX/RX pins in the sketch. Please note that not every Arduino pin can serve as TX or RX pin.  
 **Read more about SoftSerial options and configuration [here](https://www.pjrc.com/teensy/td_libs_AltSoftSerial.html) and [here](https://www.arduino.cc/en/Reference/SoftwareSerial).**
+  
+### ESP32 HardwareSerial
 
-### Diagnostics sketch
+When using ESP32 `HardwareSerial`, you may need to specify additional parameters to the `.begin()` call.
+Please [refer to this comment](https://github.com/vshymanskyy/TinyGSM/issues/91#issuecomment-356024747).
 
-Use this sketch to diagnose your SIM card and GPRS connection:  
-  File -> Examples -> TynyGSM -> tools -> [Diagnostics](https://github.com/vshymanskyy/TinyGSM/blob/master/tools/Diagnostics/Diagnostics.ino)
+### SAMD21
+
+When using SAMD21-based boards, you may need to use a sercom uart port instead of `Serial1`.
+Please [refer to this comment](https://github.com/vshymanskyy/TinyGSM/issues/102#issuecomment-345548941).
 
 ### Broken initial configuration
 
