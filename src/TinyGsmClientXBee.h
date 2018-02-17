@@ -30,8 +30,8 @@ enum SimStatus {
 };
 
 enum XBeeType {
-  S6B    = 0,
-  LTEC1  = 1,
+  CELL  = 0,
+  WIFI  = 1,
 };
 
 enum RegStatus {
@@ -106,7 +106,7 @@ public:
     at->exitCommand();
     at->modemSend("", 1, mux);
     at->commandMode();
-    at->sendAT(GF("TM64"));  // Set socket timeout back to 10seconds;
+    at->sendAT(GF("TM64"));  // Set socket timeout back to 10 seconds;
     at->waitResponse();
     at->writeChanges();
     at->exitCommand();
@@ -213,22 +213,23 @@ public:
   }
 
   bool init() {
-    guardTime = 1100;
-    commandMode();
+    guardTime = 1100;  // Start with a default guard time of 1 second
+
+    if (!commandMode()) return false;
+
     sendAT(GF("AP0"));  // Put in transparent mode
     waitResponse();
-    sendAT(GF("GT64")); // shorten the guard time to 100ms
-    waitResponse();
     writeChanges();
+
+    sendAT(GF("GT64")); // shorten the guard time to 100ms
+    if (1 == waitResponse() && writeChanges()) guardTime = 125;
+
     sendAT(GF("HS"));  // Get the "Hardware Series"; 0x601 for S6B (Wifi)
-    // wait for the response
-    unsigned long startMillis = millis();
-    while (!stream.available() && millis() - startMillis < 1000) {};
-    String res = streamReadUntil('\r');  // Does not send an OK, just the result
+    int res = waitResponse(GF("601"));
+    if (res == 1) beeType = WIFI;
+    else beeType = CELL;
+
     exitCommand();
-    if (res == "601") beeType = S6B;
-    else beeType = LTEC1;
-    guardTime = 125;
     return true;
   }
 
@@ -250,7 +251,7 @@ public:
   void maintain() {}
 
   bool factoryDefault() {
-    commandMode();
+    if (!commandMode()) return false;  // Return immediately
     sendAT(GF("RE"));
     bool ret_val = waitResponse() == 1;
     writeChanges();
@@ -259,7 +260,7 @@ public:
   }
 
   bool hasSSL() {
-    if (beeType == S6B) return false;
+    if (beeType == WIFI) return false;
     else return true;
   }
 
@@ -268,28 +269,37 @@ public:
    */
 
   bool restart() {
-    commandMode();
+    if (!commandMode()) return false;  // Return immediately
     sendAT(GF("FR"));
-    if (waitResponse() != 1) {
-      return false;
-    }
+    if (waitResponse() != 1) goto fail;
+
     delay (2000);  // Actually resets about 2 seconds later
+
+    // Wait until reboot complete and responds to command mode call again
     for (unsigned long start = millis(); millis() - start < 60000L; ) {
-      if (commandMode()) {
+      if (commandMode(1)) {
         exitCommand();
-        return true;
+        delay(250);  // wait a litle before trying again
       }
     }
-    exitCommand();
-    return false;;
+    return true;
+
+
+    fail:
+      exitCommand();
+      return false;
   }
 
-  void setupPinSleep() {
-    commandMode();
-    sendAT(GF("SM"),1);
+  void setupPinSleep(bool maintainAssociation = false) {
+    if (!commandMode()) return;  // Return immediately
+    sendAT(GF("SM"),1);  // Pin sleep
     waitResponse();
-    if (beeType == S6B) {
-        sendAT(GF("SO"),200);
+    if (beeType == WIFI && !maintainAssociation) {
+        sendAT(GF("SO"),200);  // For lowest power, dissassociated deep sleep
+        waitResponse();
+    }
+    else if (!maintainAssociation){
+        sendAT(GF("SO"),1);  // For lowest power, dissassociated deep sleep
         waitResponse();
     }
     writeChanges();
@@ -305,23 +315,17 @@ public:
   }
 
   String getSimCCID() {
-    commandMode();
+    if (!commandMode()) return "";  // Return immediately
     sendAT(GF("S#"));
-    // wait for the response
-    unsigned long startMillis = millis();
-    while (!stream.available() && millis() - startMillis < 1000) {};
-    String res = streamReadUntil('\r');  // Does not send an OK, just the result
+    String res = readResponse();
     exitCommand();
     return res;
   }
 
   String getIMEI() {
-    commandMode();
+    if (!commandMode()) return "";  // Return immediately
     sendAT(GF("IM"));
-    // wait for the response
-    unsigned long startMillis = millis();
-    while (!stream.available() && millis() - startMillis < 1000) {};
-    String res = streamReadUntil('\r');  // Does not send an OK, just the result
+    String res = readResponse();
     exitCommand();
     return res;
   }
@@ -331,12 +335,10 @@ public:
   }
 
   RegStatus getRegistrationStatus() {
-    commandMode();
+    if (!commandMode()) return REG_UNREGISTERED;  // Return immediately
+
     sendAT(GF("AI"));
-    // wait for the response
-    unsigned long startMillis = millis();
-    while (!stream.available() && millis() - startMillis < 1000) {};
-    String res = streamReadUntil('\r');  // Does not send an OK, just the result
+    String res = readResponse();
     exitCommand();
 
     if(res == GF("0"))
@@ -356,12 +358,9 @@ public:
   }
 
   String getOperator() {
-    commandMode();
+    if (!commandMode()) return "";  // Return immediately
     sendAT(GF("MN"));
-    // wait for the response
-    unsigned long startMillis = millis();
-    while (!stream.available() && millis() - startMillis < 1000) {};
-    String res = streamReadUntil('\r');  // Does not send an OK, just the result
+    String res = readResponse();
     exitCommand();
     return res;
   }
@@ -371,8 +370,8 @@ public:
   */
 
   int getSignalQuality() {
-    commandMode();
-    if (beeType == S6B) sendAT(GF("LM"));  // ask for the "link margin" - the dB above sensitivity
+    if (!commandMode()) return 0;  // Return immediately
+    if (beeType == WIFI) sendAT(GF("LM"));  // ask for the "link margin" - the dB above sensitivity
     else sendAT(GF("DB"));  // ask for the cell strength in dBm
     // wait for the response
     unsigned long startMillis = millis();
@@ -383,7 +382,7 @@ public:
     // DBG(buf[0], buf[1], "\n");
     exitCommand();
     int intr = strtol(buf, 0, 16);
-    if (beeType == S6B) return -93 + intr;  // the maximum sensitivity is -93dBm
+    if (beeType == WIFI) return -93 + intr;  // the maximum sensitivity is -93dBm
     else return -1*intr; // need to convert to negative number
   }
 
@@ -407,20 +406,16 @@ public:
    */
   bool networkConnect(const char* ssid, const char* pwd) {
 
-    commandMode();
+    if (!commandMode()) return false;  // return immediately
 
     sendAT(GF("EE"), 2);  // Set security to WPA2
-    waitResponse();
+    if (waitResponse() != 1) goto fail;
 
     sendAT(GF("ID"), ssid);
-    if (waitResponse() != 1) {
-      goto fail;
-    }
+    if (waitResponse() != 1) goto fail;
 
     sendAT(GF("PK"), pwd);
-    if (waitResponse() != 1) {
-      goto fail;
-    }
+    if (waitResponse() != 1) goto fail;
 
     writeChanges();
     exitCommand();
@@ -437,13 +432,12 @@ fail:
   }
 
   String getLocalIP() {
-    commandMode();
+    if (!commandMode()) return "";  // Return immediately
     sendAT(GF("MY"));
     String IPaddr; IPaddr.reserve(16);
-    // wait for the response
-    unsigned long startMillis = millis();
-    while (stream.available() < 8 && millis() - startMillis < 30000) {};
-    IPaddr = streamReadUntil('\r');  // read result
+    // wait for the response - this response can be very slow
+    IPaddr = readResponse(30000);
+    exitCommand();
     return IPaddr;
   }
 
@@ -455,7 +449,7 @@ fail:
    * GPRS functions
    */
   bool gprsConnect(const char* apn, const char* user = "", const char* pw = "") {
-    commandMode();
+    if (!commandMode()) return false;  // Return immediately
     sendAT(GF("AN"), apn);  // Set the APN
     waitResponse();
     writeChanges();
@@ -478,18 +472,24 @@ fail:
   }
 
   bool sendSMS(const String& number, const String& text) {
-    commandMode();
+    if (!commandMode()) return false;  // Return immediately
+
     sendAT(GF("IP"), 2);  // Put in text messaging mode
-    waitResponse();
+    if (waitResponse() !=1) goto fail;
     sendAT(GF("PH"), number);  // Set the phone number
-    waitResponse();
-    sendAT(GF("TDD"));  // Set the text delimiter to the standard 0x0D (carriabe return)
-    waitResponse();
-    writeChanges();
+    if (waitResponse() !=1) goto fail;
+    sendAT(GF("TDD"));  // Set the text delimiter to the standard 0x0D (carriage return)
+    if (waitResponse() !=1) goto fail;
+    if (!writeChanges()) goto fail;
+
     exitCommand();
     stream.print(text);
     stream.write((char)0x0D);  // close off with the carriage return
     return true;
+
+    fail:
+      exitCommand();
+      return false;
   }
 
 
@@ -499,7 +499,7 @@ private:
     String strIP; strIP.reserve(16);
     unsigned long startMillis = millis();
     bool gotIP = false;
-    while (!gotIP && millis() - startMillis < 30000)
+    while (!gotIP && millis() - startMillis < 30000)  // the lookup can take a while
     {
       sendAT(GF("LA"), host);
       while (stream.available() < 4) {};// wait for the response
@@ -507,8 +507,11 @@ private:
       if (!strIP.endsWith(GF("ERROR"))) gotIP = true;
       delay(100);  // short wait before trying again
     }
-    IPAddress ip = TinyGsmIpFromString(strIP);
-    return modemConnect(ip, port, mux, ssl);
+    if (gotIP) {  // No reason to continue if we don't know the IP address
+      IPAddress ip = TinyGsmIpFromString(strIP);
+      return modemConnect(ip, port, mux, ssl);
+    }
+    else return false;
   }
 
   int modemConnect(IPAddress ip, uint16_t port, uint8_t mux = 0, bool ssl = false) {
@@ -541,7 +544,7 @@ private:
   }
 
   bool modemGetConnected(uint8_t mux = 0) {
-    commandMode();
+    if (!commandMode()) return false;
     sendAT(GF("AI"));
     int res = waitResponse(GF("0"));
     exitCommand();
@@ -577,23 +580,38 @@ public:
     while (stream.available()) { streamRead(); }
   }
 
-  bool commandMode(void) {
-    delay(guardTime);  // cannot send anything for 1 second before entering command mode
-    streamWrite(GF("+++"));  // enter command mode
-    // DBG("\r\n+++");
-    return 1 == waitResponse(guardTime*2);
+  bool commandMode(int retries = 2) {
+    int triesMade = 0;
+    bool success = false;
+    while (!success and triesMade < retries) {
+      // Cannot send anything for 1 "guard time" before entering command mode
+      // Default guard time is 1s, but the init fxn decreases it to 250 ms
+      delay(guardTime);
+      streamWrite(GF("+++"));  // enter command mode
+      // DBG("\r\n+++");
+      success = (1 == waitResponse(guardTime*2));
+      triesMade ++;
+    }
+    return success;
   }
 
-  void writeChanges(void) {
+  bool writeChanges(void) {
     sendAT(GF("WR"));  // Write changes to flash
-    waitResponse();
+    if (1 != waitResponse()) return false;
     sendAT(GF("AC"));  // Apply changes
-    waitResponse();
+    if (1 != waitResponse()) return false;
   }
 
   void exitCommand(void) {
     sendAT(GF("CN"));  // Exit command mode
     waitResponse();
+  }
+
+  String readResponse(uint32_t timeout = 1000) {
+    unsigned long startMillis = millis();
+    while (!stream.available() && millis() - startMillis < timeout) {};
+    String res = streamReadUntil('\r');  // lines end with carriage returns
+    return res;
   }
 
   template<typename... Args>
@@ -615,7 +633,7 @@ public:
     String r4s(r4); r4s.trim();
     String r5s(r5); r5s.trim();
     DBG("### ..:", r1s, ",", r2s, ",", r3s, ",", r4s, ",", r5s);*/
-    data.reserve(64);
+    data.reserve(16);  // Should never be getting much here for the XBee
     int index = 0;
     unsigned long startMillis = millis();
     do {
@@ -674,7 +692,7 @@ finish:
   uint8_t waitResponse(GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),
                        GsmConstStr r3=NULL, GsmConstStr r4=NULL, GsmConstStr r5=NULL)
   {
-    return waitResponse(5000, r1, r2, r3, r4, r5);
+    return waitResponse(1000, r1, r2, r3, r4, r5);
   }
 
 private:
