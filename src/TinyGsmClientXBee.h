@@ -600,6 +600,7 @@ public:
     if (1 != waitResponse()) return false;
     sendAT(GF("AC"));  // Apply changes
     if (1 != waitResponse()) return false;
+    return true;
   }
 
   void exitCommand(void) {
