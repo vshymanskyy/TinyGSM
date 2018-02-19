@@ -223,6 +223,11 @@ public:
     if (waitResponse() != 1) {
       return false;
     }
+
+    // PREFERRED SMS STORAGE
+    sendAT(GF("+CPMS="), GF("\"SM\""), GF(","), GF("\"SM\""), GF(","), GF("\"SM\""));
+    waitResponse();
+
     getSimStatus();
     return true;
   }
@@ -323,6 +328,28 @@ public:
       return false;
     }
     delay(3000);
+    return true;
+  }
+
+  bool enableBluetooth() {
+    uint16_t state;
+
+    sendAT(GF("+BTPOWER=1"));
+    if (waitResponse() != 1) {
+      return false;
+    }
+
+    return true;
+  }
+
+  bool disableBluetooth() {
+    uint16_t state;
+
+    sendAT(GF("+BTPOWER=0"));
+    if (waitResponse() != 1) {
+      return false;
+    }
+
     return true;
   }
 
@@ -652,8 +679,166 @@ public:
     }
   }
 
+  int8_t getSMSInterrupt(void){
+    sendAT(GF("+CFGRI?"));
+    if(waitResponse(GF(GSM_NL "+CFGRI:")) != 1) return -1;
+    return stream.readStringUntil('\n').toInt();
+  }
+
+  bool setSMSInterrupt(uint8_t status){
+    sendAT(GF("+CFGRI="), status);
+    if(waitResponse() != 1) return false;
+    return true;
+  }
+
+  int8_t countSMS(void){
+    sendAT(GF("+CMGF=1"));
+    if(waitResponse() != 1) return -1;
+
+    sendAT(GF("+CPMS?"));
+    if(waitResponse(GF(GSM_NL "+CPMS:")) != 1) return -1;
+
+    streamSkipUntil(',');
+    uint8_t count = stream.readStringUntil(',').toInt() - 1;
+    waitResponse();
+
+    return count;
+  }
+
+  bool deleteSMS(){
+    sendAT(GF("+CMGF=1"));
+    if(waitResponse() != 1) return false;
+
+    sendAT(GF("+CMGDA=\"DEL ALL\""));
+    if(waitResponse() != 1) return false;
+
+    return true;
+  }
+
+  bool deleteSMS(uint8_t i){
+    sendAT(GF("+CMGF=1"));
+    if(waitResponse() != 1) return false;
+
+    sendAT(GF("+CMGD="), i);
+    if(waitResponse() != 1) return false;
+
+    return true;
+  }
+
+  String deleteSMSOpt() {
+    sendAT(GF("+CMGD=?"));
+      if (waitResponse() != 1) {
+        return "";
+      }
+      if (waitResponse(10000L, GF(GSM_NL "+CMGD::")) != 1) {
+        return "";
+      }
+        stream.readStringUntil('"');
+        String indexes = stream.readStringUntil('"');
+        stream.readStringUntil(',');
+        String options = stream.readStringUntil('\n');
+        return indexes;
+      }
+
+  bool readSMS(uint8_t i, String& msg){
+    // set message format to text mode
+    sendAT(GF("+CMGF=1"));
+    if (waitResponse() != 1) return false;
+    // show sms text mode parameters
+    sendAT(GF("+CSDH=1"));
+    if (waitResponse() != 1) return false;
+    // set GSM charset
+    sendAT(GF("+CSCS=\"GSM\""));
+    if (waitResponse() != 1) return false;
+
+    sendAT(GF("+CMGR="), i);
+    uint8_t cmgrResponse = waitResponse(GF(GSM_NL "+CMGR:"));
+    if ( cmgrResponse == 1 ) {
+      streamSkipUntil('\n');
+      msg = stream.readStringUntil('\n');
+      return true;
+    }
+
+    return false;
+  }
+
+  uint8_t getNewSMSIndex() {
+    if (waitResponse(GF(GSM_NL "+CMTI:")) != 1) {
+      return false;
+    }
+
+    streamSkipUntil(',');
+    int res = stream.readStringUntil('\n').toInt();
+    return res;
+  }
+
+  bool readSMSRaw(uint8_t i, String& msg) {
+    // set message format to text mode
+    sendAT(GF("+CMGF=1"));
+    if (waitResponse() != 1) return false;
+    // show sms text mode parameters
+    sendAT(GF("+CSDH=1"));
+    if (waitResponse() != 1) return false;
+    // set GSM charset
+    sendAT(GF("+CSCS=\"GSM\""));
+    if (waitResponse() != 1) return false;
+
+    // get message by index
+    sendAT(GF("+CMGR="), i);
+    uint8_t cmgrResponse = waitResponse(GF(GSM_NL "+CMGR:"));
+    if ( cmgrResponse != 1 ) {
+      return false;
+    }
+
+    msg = stream.readStringUntil('\n') + '\n'
+        + stream.readStringUntil('\n') + '\n';
+
+    if (waitResponse() != 1) {
+      return false;
+    }
+
+    return true;
+  }
+
+  bool readAllSMSRaw(String& msg) {
+    // set message format to text mode
+    sendAT(GF("+CMGF=1"));
+    if (waitResponse() != 1) return false;
+    // show sms text mode parameters
+    sendAT(GF("+CSDH=1"));
+    if (waitResponse() != 1) return false;
+    // set GSM charset
+    sendAT(GF("+CSCS=\"GSM\""));
+    if (waitResponse() != 1) return false;
+
+    // get all messages
+    sendAT(GF("+CMGL=\"ALL\""));
+
+    const unsigned long timeout = 10000L;
+    unsigned long startMillis = millis();
+    bool isTimeout = false;
+    String line;
+    do {
+      line = stream.readStringUntil('\n');
+      line.trim();
+      if ( line != ""  && line != "OK" ) {
+        msg = msg + line + String("\r\n");
+      }
+      isTimeout = (millis() - startMillis) > timeout;
+      delay(0);
+      if ( isTimeout ) {
+        DBG("timeout");
+        break;
+      }
+    } while (line != "OK");
+
+    return (line == "OK");
+  }
+
   bool sendSMS(const String& number, const String& text) {
     sendAT(GF("+CMGF=1"));
+    waitResponse();
+    sendAT(GF("+CSCS=\"GSM\""));
     waitResponse();
     sendAT(GF("+CMGS=\""), number, GF("\""));
     if (waitResponse(GF(">")) != 1) {
@@ -837,9 +1022,13 @@ public:
     streamWrite(tail...);
   }
 
-  bool streamSkipUntil(char c) { //TODO: timeout
-    while (true) {
-      while (!stream.available()) { TINY_GSM_YIELD(); }
+  bool streamSkipUntil(char c) {
+    const unsigned long timeout = 1000L;
+    unsigned long startMillis = millis();
+    while (millis() - startMillis < timeout) {
+      while (millis() - startMillis < timeout && !stream.available()) {
+        TINY_GSM_YIELD();
+      }
       if (stream.read() == c)
         return true;
     }
