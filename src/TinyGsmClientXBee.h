@@ -12,7 +12,7 @@
 // #define TINY_GSM_DEBUG Serial
 
 #if !defined(TINY_GSM_RX_BUFFER)
-  #define TINY_GSM_RX_BUFFER 256
+  #define TINY_GSM_RX_BUFFER 64
 #endif
 
 #define TINY_GSM_MUX_COUNT 1  // Multi-plexing isn't supported using command mode
@@ -218,11 +218,13 @@ public:
     if (!commandMode()) return false;
 
     sendAT(GF("AP0"));  // Put in transparent mode
-    waitResponse();
-    writeChanges();
+    bool ret_val = waitResponse() == 1;
+    ret_val &= writeChanges();
 
     sendAT(GF("GT64")); // shorten the guard time to 100ms
-    if (1 == waitResponse() && writeChanges()) guardTime = 125;
+    ret_val &= waitResponse();
+    ret_val &= writeChanges();
+    if (ret_val) guardTime = 125;
 
     sendAT(GF("HS"));  // Get the "Hardware Series"; 0x601 for S6B (Wifi)
     int res = waitResponse(GF("601"));
@@ -230,7 +232,32 @@ public:
     else beeType = CELL;
 
     exitCommand();
-    return true;
+    return ret_val;
+  }
+
+  void setBaud(unsigned long baud) {
+    if (!commandMode()) return;
+    switch(baud)
+    {
+      case 2400: sendAT(GF("BD1")); break;
+      case 4800: sendAT(GF("BD2")); break;
+      case 9600: sendAT(GF("BD3")); break;
+      case 19200: sendAT(GF("BD4")); break;
+      case 38400: sendAT(GF("BD5")); break;
+      case 57600: sendAT(GF("BD6")); break;
+      case 115200: sendAT(GF("BD7")); break;
+      case 230400: sendAT(GF("BD8")); break;
+      case 460800: sendAT(GF("BD9")); break;
+      case 921600: sendAT(GF("BDA")); break;
+      default: {
+          DBG(GF("Specified baud rate is unsupported! Setting to 9600 baud."));
+          sendAT(GF("BD3")); // Set to default of 9600
+          break;
+      }
+    }
+    waitResponse();
+    writeChanges();
+    exitCommand();
   }
 
   bool testAT(unsigned long timeout = 10000L) {
@@ -254,7 +281,7 @@ public:
     if (!commandMode()) return false;  // Return immediately
     sendAT(GF("RE"));
     bool ret_val = waitResponse() == 1;
-    writeChanges();
+    ret_val &= writeChanges();
     exitCommand();
     return ret_val;
   }
@@ -270,6 +297,10 @@ public:
 
   bool restart() {
     if (!commandMode()) return false;  // Return immediately
+    sendAT(GF("AM1"));  // Digi suggests putting into airplane mode before restarting
+                       // This allows the sockets and connections to close cleanly
+    writeChanges();
+    if (waitResponse() != 1) goto fail;
     sendAT(GF("FR"));
     if (waitResponse() != 1) goto fail;
 
@@ -278,6 +309,8 @@ public:
     // Wait until reboot complete and responds to command mode call again
     for (unsigned long start = millis(); millis() - start < 60000L; ) {
       if (commandMode(1)) {
+        sendAT(GF("AM0"));  // Turn off airplane mode
+        writeChanges();
         exitCommand();
         delay(250);  // wait a litle before trying again
       }
@@ -300,6 +333,7 @@ public:
     }
     else if (!maintainAssociation){
         sendAT(GF("SO"),1);  // For lowest power, dissassociated deep sleep
+                             // Not supported by all modules, will return "ERROR"
         waitResponse();
     }
     writeChanges();
@@ -310,9 +344,7 @@ public:
    * SIM card functions
    */
 
-  bool simUnlock(const char *pin) {  // Not supported
-    return false;
-  }
+  bool simUnlock(const char *pin) TINY_GSM_ATTR_NOT_AVAILABLE; // Not supported
 
   String getSimCCID() {
     if (!commandMode()) return "";  // Return immediately
@@ -330,9 +362,7 @@ public:
     return res;
   }
 
-  SimStatus getSimStatus(unsigned long timeout = 10000L) {
-    return SIM_READY;  // unsupported
-  }
+  SimStatus getSimStatus(unsigned long timeout) TINY_GSM_ATTR_NOT_AVAILABLE; // Not supported
 
   RegStatus getRegistrationStatus() {
     if (!commandMode()) return REG_UNREGISTERED;  // Return immediately
@@ -495,10 +525,12 @@ fail:
 
 private:
 
-  int modemConnect(const char* host, uint16_t port, uint8_t mux = 0, bool ssl = false) {
+  bool modemConnect(const char* host, uint16_t port, uint8_t mux = 0, bool ssl = false) {
     String strIP; strIP.reserve(16);
     unsigned long startMillis = millis();
     bool gotIP = false;
+    // XBee's require a numeric IP address for connection, but do provide the
+    // functionality to look up the IP address from a fully qualified domain name
     while (!gotIP && millis() - startMillis < 30000)  // the lookup can take a while
     {
       sendAT(GF("LA"), host);
@@ -514,7 +546,8 @@ private:
     else return false;
   }
 
-  int modemConnect(IPAddress ip, uint16_t port, uint8_t mux = 0, bool ssl = false) {
+  bool modemConnect(IPAddress ip, uint16_t port, uint8_t mux = 0, bool ssl = false) {
+    bool success = true;
     String host; host.reserve(16);
     host += ip[0];
     host += ".";
@@ -524,17 +557,17 @@ private:
     host += ".";
     host += ip[3];
     if (ssl) {
-      sendAT(GF("IP"), 4);  // Put in TCP mode
-      waitResponse();
+      sendAT(GF("IP"), 4);  // Put in SSL over TCP communication mode
+      success &= (1 == waitResponse());
     } else {
       sendAT(GF("IP"), 1);  // Put in TCP mode
-      waitResponse();
+      success &= (1 == waitResponse());
     }
     sendAT(GF("DL"), host);  // Set the "Destination Address Low"
-    waitResponse();
+    success &= (1 == waitResponse());
     sendAT(GF("DE"), String(port, HEX));  // Set the destination port
-    int rsp = waitResponse();
-    return rsp;
+    success &= (1 == waitResponse());
+    return success;
   }
 
   int modemSend(const void* buff, size_t len, uint8_t mux = 0) {
@@ -665,7 +698,7 @@ finish:
     if (!index) {
       data.trim();
       data.replace(GSM_NL GSM_NL, GSM_NL);
-      data.replace(GSM_NL, "\r\n" "    ");
+      data.replace(GSM_NL, "\r\n    ");
       if (data.length()) {
         DBG("### Unhandled:", data, "\r\n");
       } else {
