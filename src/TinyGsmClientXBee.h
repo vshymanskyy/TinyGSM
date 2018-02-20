@@ -344,7 +344,9 @@ public:
    * SIM card functions
    */
 
-  bool simUnlock(const char *pin) TINY_GSM_ATTR_NOT_AVAILABLE; // Not supported
+  bool simUnlock(const char *pin) {  // Not supported
+    return false;
+  }
 
   String getSimCCID() {
     if (!commandMode()) return "";  // Return immediately
@@ -362,7 +364,9 @@ public:
     return res;
   }
 
-  SimStatus getSimStatus(unsigned long timeout) TINY_GSM_ATTR_NOT_AVAILABLE; // Not supported
+  SimStatus getSimStatus(unsigned long timeout = 10000L) {
+    return SIM_READY;  // unsupported
+  }
 
   RegStatus getRegistrationStatus() {
     if (!commandMode()) return REG_UNREGISTERED;  // Return immediately
