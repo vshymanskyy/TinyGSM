@@ -24,24 +24,24 @@ static const char GSM_OK[] TINY_GSM_PROGMEM = "OK" GSM_NL;
 static const char GSM_ERROR[] TINY_GSM_PROGMEM = "ERROR" GSM_NL;
 static unsigned TINY_GSM_TCP_KEEP_ALIVE = 120;
 
-class TinyGsm
+class TinyGsmESP8266
 {
 
 public:
 
 class GsmClient : public Client
 {
-  friend class TinyGsm;
+  friend class TinyGsmESP8266;
   typedef TinyGsmFifo<uint8_t, TINY_GSM_RX_BUFFER> RxFifo;
 
 public:
   GsmClient() {}
 
-  GsmClient(TinyGsm& modem, uint8_t mux = 1) {
+  GsmClient(TinyGsmESP8266& modem, uint8_t mux = 1) {
     init(&modem, mux);
   }
 
-  bool init(TinyGsm* modem, uint8_t mux = 1) {
+  bool init(TinyGsmESP8266* modem, uint8_t mux = 1) {
     this->at = modem;
     this->mux = mux;
     sock_connected = false;
@@ -143,7 +143,7 @@ public:
   String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
 private:
-  TinyGsm*      at;
+  TinyGsmESP8266*      at;
   uint8_t       mux;
   bool          sock_connected;
   RxFifo        rx;
@@ -154,7 +154,7 @@ class GsmClientSecure : public GsmClient
 public:
   GsmClientSecure() {}
 
-  GsmClientSecure(TinyGsm& modem, uint8_t mux = 1)
+  GsmClientSecure(TinyGsmESP8266& modem, uint8_t mux = 1)
     : GsmClient(modem, mux)
   {}
 
@@ -169,7 +169,7 @@ public:
 
 public:
 
-  TinyGsm(Stream& stream)
+  TinyGsmESP8266(Stream& stream)
     : stream(stream)
   {
     memset(sockets, 0, sizeof(sockets));

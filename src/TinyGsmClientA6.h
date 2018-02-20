@@ -39,24 +39,24 @@ enum RegStatus {
 };
 
 
-class TinyGsm
+class TinyGsmA6
 {
 
 public:
 
 class GsmClient : public Client
 {
-  friend class TinyGsm;
+  friend class TinyGsmA6;
   typedef TinyGsmFifo<uint8_t, TINY_GSM_RX_BUFFER> RxFifo;
 
 public:
   GsmClient() {}
 
-  GsmClient(TinyGsm& modem) {
+  GsmClient(TinyGsmA6& modem) {
     init(&modem);
   }
 
-  bool init(TinyGsm* modem) {
+  bool init(TinyGsmA6* modem) {
     this->at = modem;
     this->mux = -1;
     sock_connected = false;
@@ -161,7 +161,7 @@ public:
   String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
 private:
-  TinyGsm*      at;
+  TinyGsmA6*      at;
   uint8_t       mux;
   bool          sock_connected;
   RxFifo        rx;
@@ -169,7 +169,7 @@ private:
 
 public:
 
-  TinyGsm(Stream& stream)
+  TinyGsmA6(Stream& stream)
     : stream(stream)
   {
     memset(sockets, 0, sizeof(sockets));

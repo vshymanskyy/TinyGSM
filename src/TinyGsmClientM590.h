@@ -39,24 +39,24 @@ enum RegStatus {
 };
 
 
-class TinyGsm
+class TinyGsmM590
 {
 
 public:
 
 class GsmClient : public Client
 {
-  friend class TinyGsm;
+  friend class TinyGsmM590;
   typedef TinyGsmFifo<uint8_t, TINY_GSM_RX_BUFFER> RxFifo;
 
 public:
   GsmClient() {}
 
-  GsmClient(TinyGsm& modem, uint8_t mux = 1) {
+  GsmClient(TinyGsmM590& modem, uint8_t mux = 1) {
     init(&modem, mux);
   }
 
-  bool init(TinyGsm* modem, uint8_t mux = 1) {
+  bool init(TinyGsmM590* modem, uint8_t mux = 1) {
     this->at = modem;
     this->mux = mux;
     sock_connected = false;
@@ -158,7 +158,7 @@ public:
   String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
 private:
-  TinyGsm*      at;
+  TinyGsmM590*      at;
   uint8_t       mux;
   bool          sock_connected;
   RxFifo        rx;
@@ -166,7 +166,7 @@ private:
 
 public:
 
-  TinyGsm(Stream& stream)
+  TinyGsmM590(Stream& stream)
     : stream(stream)
   {
     memset(sockets, 0, sizeof(sockets));
@@ -403,12 +403,12 @@ public:
     }
     return false;
 
-set_dns:
-    sendAT(GF("+DNSSERVER=1,8.8.8.8"));
-    waitResponse();
-
-    sendAT(GF("+DNSSERVER=2,8.8.4.4"));
-    waitResponse();
+// set_dns:  // TODO
+//     sendAT(GF("+DNSSERVER=1,8.8.8.8"));
+//     waitResponse();
+//
+//     sendAT(GF("+DNSSERVER=2,8.8.4.4"));
+//     waitResponse();
 
     return true;
   }

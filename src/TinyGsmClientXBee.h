@@ -44,23 +44,23 @@ enum RegStatus {
 };
 
 
-class TinyGsm
+class TinyGsmXBee
 {
 
 public:
 
 class GsmClient : public Client
 {
-  friend class TinyGsm;
+  friend class TinyGsmXBee;
 
 public:
   GsmClient() {}
 
-  GsmClient(TinyGsm& modem, uint8_t mux = 0) {
+  GsmClient(TinyGsmXBee& modem, uint8_t mux = 0) {
     init(&modem, mux);
   }
 
-  bool init(TinyGsm* modem, uint8_t mux = 0) {
+  bool init(TinyGsmXBee* modem, uint8_t mux = 0) {
     this->at = modem;
     this->mux = mux;
     sock_connected = false;
@@ -131,7 +131,7 @@ public:
 
   virtual int read(uint8_t *buf, size_t size) {
     TINY_GSM_YIELD();
-    return at->stream.readBytes((uint8_t*)buf, size);
+    return at->stream.readBytes((char*)buf, size);
   }
 
   virtual int read() {
@@ -157,7 +157,7 @@ public:
   String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
 private:
-  TinyGsm*      at;
+  TinyGsmXBee*  at;
   uint8_t       mux;
   bool          sock_connected;
 };
@@ -167,7 +167,7 @@ class GsmClientSecure : public GsmClient
 public:
   GsmClientSecure() {}
 
-  GsmClientSecure(TinyGsm& modem, uint8_t mux = 1)
+  GsmClientSecure(TinyGsmXBee& modem, uint8_t mux = 1)
     : GsmClient(modem, mux)
   {}
 
@@ -199,7 +199,11 @@ public:
 
 public:
 
-  TinyGsm(Stream& stream)
+#ifdef GSM_DEFAULT_STREAM
+  TinyGsmXBee(Stream& stream = GSM_DEFAULT_STREAM)
+#else
+  TinyGsmXBee(Stream& stream)
+#endif
     : stream(stream)
   {
     memset(sockets, 0, sizeof(sockets));
