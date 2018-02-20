@@ -219,7 +219,7 @@ public:
   bool init() {
     guardTime = 1100;  // Start with a default guard time of 1 second
 
-    if (!commandMode()) return false;
+    if (!commandMode(10)) return false;  // Try up to 10 times for the init
 
     sendAT(GF("AP0"));  // Put in transparent mode
     bool ret_val = waitResponse() == 1;
