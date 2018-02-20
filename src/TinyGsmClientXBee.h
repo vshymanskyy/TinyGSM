@@ -131,7 +131,7 @@ public:
 
   virtual int read(uint8_t *buf, size_t size) {
     TINY_GSM_YIELD();
-    return at->stream.readBytes(buf, size);
+    return at->stream.readBytes((uint8_t*)buf, size);
   }
 
   virtual int read() {
