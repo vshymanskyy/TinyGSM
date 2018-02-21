@@ -30,8 +30,8 @@ enum SimStatus {
 };
 
 enum XBeeType {
-  CELL  = 0,
-  WIFI  = 1,
+  XBEE_CELL  = 0,
+  XBEE_WIFI  = 1,
 };
 
 enum RegStatus {
@@ -232,8 +232,8 @@ public:
 
     sendAT(GF("HS"));  // Get the "Hardware Series"; 0x601 for S6B (Wifi)
     int res = waitResponse(GF("601"));
-    if (res == 1) beeType = WIFI;
-    else beeType = CELL;
+    if (res == 1) beeType = XBEE_WIFI;
+    else beeType = XBEE_CELL;
 
     exitCommand();
     return ret_val;
@@ -291,8 +291,13 @@ public:
   }
 
   bool hasSSL() {
-    if (beeType == WIFI) return false;
+    if (beeType == XBEE_WIFI) return false;
     else return true;
+  }
+
+  String getBeeType() {
+    if (beeType == XBEE_WIFI) return "S6B Wifi";
+    else return "Cellular";
   }
 
   /*
@@ -331,7 +336,7 @@ public:
     if (!commandMode()) return;  // Return immediately
     sendAT(GF("SM"),1);  // Pin sleep
     waitResponse();
-    if (beeType == WIFI && !maintainAssociation) {
+    if (beeType == XBEE_WIFI && !maintainAssociation) {
         sendAT(GF("SO"),200);  // For lowest power, dissassociated deep sleep
         waitResponse();
     }
@@ -373,26 +378,72 @@ public:
   }
 
   RegStatus getRegistrationStatus() {
-    if (!commandMode()) return REG_UNREGISTERED;  // Return immediately
+    if (!commandMode()) return REG_UNKNOWN;  // Return immediately
 
     sendAT(GF("AI"));
     String res = readResponse();
+    RegStatus stat;
+
+    switch (beeType){
+      case XBEE_WIFI: {
+        if(res == GF("0"))  // 0x00 Successfully joined an access point, established IP addresses and IP listening sockets
+          stat = REG_OK_HOME;
+        else if(res == GF("1"))  // 0x01 Wi-Fi transceiver initialization in progress.
+          stat = REG_SEARCHING;
+        else if(res == GF("2"))  // 0x02 Wi-Fi transceiver initialized, but not yet scanning for access point.
+          stat = REG_SEARCHING;
+        else if(res == GF("13")) { // 0x13 Disconnecting from access point.
+          sendAT(GF("NR"));  // Do a network reset; the S6B tends to get stuck "disconnecting"
+          writeChanges();
+          stat = REG_UNREGISTERED;
+        }
+        else if(res == GF("23"))  // 0x23 SSID not configured.
+          stat = REG_UNREGISTERED;
+        else if(res == GF("24"))  // 0x24 Encryption key invalid (either NULL or invalid length for WEP).
+          stat = REG_DENIED;
+        else if(res == GF("27"))  // 0x27 SSID was found, but join failed.
+          stat = REG_DENIED;
+        else if(res == GF("40"))  // 0x40 Waiting for WPA or WPA2 Authentication.
+          stat = REG_SEARCHING;
+        else if(res == GF("41"))  // 0x41 Device joined a network and is waiting for IP configuration to complete
+          stat = REG_SEARCHING;
+        else if(res == GF("42"))  // 0x42 Device is joined, IP is configured, and listening sockets are being set up.
+          stat = REG_SEARCHING;
+        else if(res == GF("FF"))  // 0xFF Device is currently scanning for the configured SSID.
+          stat = REG_SEARCHING;
+        else stat = REG_UNKNOWN;
+        break;
+      }
+      case XBEE_CELL: {
+        if(res == GF("0"))  // 0x00 Connected to the Internet.
+          stat = REG_OK_HOME;
+        else if(res == GF("22"))  // 0x22 Registering to cellular network.
+          stat = REG_SEARCHING;
+        else if(res == GF("23"))  // 0x23 Connecting to the Internet.
+          stat = REG_SEARCHING;
+        else if(res == GF("24"))  // 0x24 The cellular component is missing, corrupt, or otherwise in error.
+          stat = REG_UNKNOWN;
+        else if(res == GF("25"))  // 0x25 Cellular network registration denied.
+          stat = REG_DENIED;
+        else if(res == GF("2A")) {  // 0x2A Airplane mode.
+          sendAT(GF("AM0"));  // Turn off airplane mode
+          writeChanges();
+          stat = REG_UNKNOWN;
+        }
+        else if(res == GF("2F")) {  // 0x2F Bypass mode active.
+          sendAT(GF("AP0"));  // Set back to transparent mode
+          writeChanges();
+          stat = REG_UNKNOWN;
+        }
+        else if(res == GF("FF"))  // 0xFF Device is currently scanning for the configured SSID.
+          stat = REG_SEARCHING;
+        else stat = REG_UNKNOWN;
+          break;
+        }
+    }
+
     exitCommand();
-
-    if(res == GF("0"))
-      return REG_OK_HOME;
-
-    else if(res == GF("13") || res == GF("2A"))
-      return REG_UNREGISTERED;
-
-    else if(res == GF("FF") || res == GF("22") || res == GF("23") ||
-            res == GF("40") || res == GF("41") || res == GF("42"))
-      return REG_SEARCHING;
-
-    else if(res == GF("24") || res == GF("25") || res == GF("27"))
-      return REG_DENIED;
-
-    else return REG_UNKNOWN;
+    return stat;
   }
 
   String getOperator() {
@@ -409,7 +460,7 @@ public:
 
   int getSignalQuality() {
     if (!commandMode()) return 0;  // Return immediately
-    if (beeType == WIFI) sendAT(GF("LM"));  // ask for the "link margin" - the dB above sensitivity
+    if (beeType == XBEE_WIFI) sendAT(GF("LM"));  // ask for the "link margin" - the dB above sensitivity
     else sendAT(GF("DB"));  // ask for the cell strength in dBm
     // wait for the response
     unsigned long startMillis = millis();
@@ -420,7 +471,7 @@ public:
     // DBG(buf[0], buf[1], "\n");
     exitCommand();
     int intr = strtol(buf, 0, 16);
-    if (beeType == WIFI) return -93 + intr;  // the maximum sensitivity is -93dBm
+    if (beeType == XBEE_WIFI) return -93 + intr;  // the maximum sensitivity is -93dBm
     else return -1*intr; // need to convert to negative number
   }
 

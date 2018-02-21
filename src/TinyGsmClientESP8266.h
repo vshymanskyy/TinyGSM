@@ -24,6 +24,15 @@ static const char GSM_OK[] TINY_GSM_PROGMEM = "OK" GSM_NL;
 static const char GSM_ERROR[] TINY_GSM_PROGMEM = "ERROR" GSM_NL;
 static unsigned TINY_GSM_TCP_KEEP_ALIVE = 120;
 
+enum RegStatus {
+  REG_UNREGISTERED = 0,
+  REG_SEARCHING    = 2,
+  REG_DENIED       = 3,
+  REG_OK_HOME      = 1,
+  REG_OK_ROAMING   = 5,
+  REG_UNKNOWN      = 4,
+};
+
 class TinyGsmESP8266
 {
 
@@ -234,6 +243,26 @@ public:
     return true;
   }
 
+  RegStatus getRegistrationStatus() {
+    sendAT(GF("+CIPSTATUS"));
+    int res1 = waitResponse(3000, GF("STATUS:"));
+    int res2 = 0;
+    if (res1 == 1) {
+      res2 = waitResponse(GFP(GSM_ERROR), GF("2"), GF("3"), GF("4"), GF("5"));
+    }
+    // <stat> status of ESP8266 station interface
+    // 2 : ESP8266 station connected to an AP and has obtained IP
+    // 3 : ESP8266 station created a TCP or UDP transmission
+    // 4 : the TCP or UDP transmission of ESP8266 station disconnected
+    // 5 : ESP8266 station did NOT connect to an AP
+    waitResponse();  // Returns an OK after the status
+    if (res2 == 2) return REG_OK_HOME;
+    if (res2 == 3) return REG_OK_HOME;
+    if (res2 == 4) return REG_UNREGISTERED;
+    if (res2 == 5) return REG_DENIED;
+    else return REG_UNKNOWN;
+  }
+
   /*
    * Power functions
    */
@@ -273,21 +302,9 @@ public:
     return res2;
   }
 
-  bool isNetworkConnected() {
-    sendAT(GF("+CIPSTATUS"));
-    int res1 = waitResponse(3000, GF("STATUS:"));
-    int res2 = 0;
-    if (res1 == 1) {
-      res2 = waitResponse(GFP(GSM_ERROR), GF("2"), GF("3"), GF("4"), GF("5"));
-    }
-    // <stat> status of ESP8266 station interface
-    // 2 : ESP8266 station connected to an AP and has obtained IP
-    // 3 : ESP8266 station created a TCP or UDP transmission
-    // 4 : the TCP or UDP transmission of ESP8266 station disconnected
-    // 5 : ESP8266 station did NOT connect to an AP
-    waitResponse();  // Returns an OK after the status
-    if (res2 == 2 || res2 == 3) return true;
-    else return false;
+  bool isNetworkConnected()  {
+    RegStatus s = getRegistrationStatus();
+    return (s == REG_OK_HOME || s == REG_OK_ROAMING);
   }
 
   bool waitForNetwork(unsigned long timeout = 60000L) {
@@ -382,20 +399,8 @@ protected:
   }
 
   bool modemGetConnected(uint8_t mux) {
-    sendAT(GF("+CIPSTATUS="), mux);
-    int res1 = waitResponse(3000, GF("STATUS:"));
-    int res2;
-    if (res1 == 1) {
-      res2 = waitResponse(GFP(GSM_ERROR), GF("2"), GF("3"), GF("4"), GF("5"));
-    }
-    // <stat> status of ESP8266 station interface
-    // 2 : ESP8266 station connected to an AP and has obtained IP
-    // 3 : ESP8266 station created a TCP or UDP transmission
-    // 4 : the TCP or UDP transmission of ESP8266 station disconnected
-    // 5 : ESP8266 station did NOT connect to an AP
-    waitResponse();  // Returns an OK after the status
-    if (res2 == 2 || res2 == 3) return true;
-    else return false;
+    RegStatus s = getRegistrationStatus();
+    return (s == REG_OK_HOME || s == REG_OK_ROAMING);
   }
 
 public:
