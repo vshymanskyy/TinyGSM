@@ -462,17 +462,13 @@ public:
     if (!commandMode()) return 0;  // Return immediately
     if (beeType == XBEE_WIFI) sendAT(GF("LM"));  // ask for the "link margin" - the dB above sensitivity
     else sendAT(GF("DB"));  // ask for the cell strength in dBm
-    // wait for the response
-    unsigned long startMillis = millis();
-    while (!stream.available() && millis() - startMillis < 1000) {};
-    char buf[2] = {0};  // Set up buffer for response
-    buf[0] = streamRead();
-    buf[1] = streamRead();
-    // DBG(buf[0], buf[1], "\n");
+    String res = readResponse();  // it works better if we read in as a string
     exitCommand();
-    int intr = strtol(buf, 0, 16);
-    if (beeType == XBEE_WIFI) return -93 + intr;  // the maximum sensitivity is -93dBm
-    else return -1*intr; // need to convert to negative number
+    char buf[3] = {0,};  // Set up buffer for response
+    res.toCharArray(buf, 3);
+    int intRes = strtol(buf, 0, 16);
+    if (beeType == XBEE_WIFI) return -93 + intRes;  // the maximum sensitivity is -93dBm
+    else return -1*intRes; // need to convert to negative number
   }
 
   bool isNetworkConnected() {
@@ -590,11 +586,12 @@ private:
     bool gotIP = false;
     // XBee's require a numeric IP address for connection, but do provide the
     // functionality to look up the IP address from a fully qualified domain name
-    while (!gotIP && millis() - startMillis < 30000)  // the lookup can take a while
+    while (!gotIP && millis() - startMillis < 60000)  // the lookup can take a while
     {
       sendAT(GF("LA"), host);
-      while (stream.available() < 4) {};// wait for the response
+      while (stream.available() < 4) {};  // wait for any response
       strIP = streamReadUntil('\r');  // read result
+      // DBG("<<< ", strIP);
       if (!strIP.endsWith(GF("ERROR"))) gotIP = true;
       delay(100);  // short wait before trying again
     }
@@ -664,11 +661,11 @@ public:
     TINY_GSM_YIELD();
     String return_string = stream.readStringUntil(c);
     return_string.trim();
-    // DBG(return_string, c);
     return return_string;
   }
 
   void streamClear(void) {
+    TINY_GSM_YIELD();
     while (stream.available()) { streamRead(); }
   }
 
@@ -705,6 +702,7 @@ public:
     unsigned long startMillis = millis();
     while (!stream.available() && millis() - startMillis < timeout) {};
     String res = streamReadUntil('\r');  // lines end with carriage returns
+    // DBG("<<< ", res);
     return res;
   }
 
