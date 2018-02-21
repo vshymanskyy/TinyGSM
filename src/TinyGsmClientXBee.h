@@ -675,6 +675,7 @@ public:
   bool commandMode(int retries = 2) {
     int triesMade = 0;
     bool success = false;
+    streamClear();  // Empty everything in the buffer before starting
     while (!success and triesMade < retries) {
       // Cannot send anything for 1 "guard time" before entering command mode
       // Default guard time is 1s, but the init fxn decreases it to 250 ms
