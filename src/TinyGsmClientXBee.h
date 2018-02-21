@@ -586,7 +586,7 @@ private:
     bool gotIP = false;
     // XBee's require a numeric IP address for connection, but do provide the
     // functionality to look up the IP address from a fully qualified domain name
-    while (!gotIP && millis() - startMillis < 60000)  // the lookup can take a while
+    while (!gotIP && millis() - startMillis < 45000L)  // the lookup can take a while
     {
       sendAT(GF("LA"), host);
       while (stream.available() < 4) {};  // wait for any response
