@@ -27,16 +27,21 @@ enum SimStatus {
 };
 
 enum RegStatus {
-  REG_UNREGISTERED = 0,
+  REG_OK           = 0,
+  REG_UNREGISTERED = 1,
   REG_SEARCHING    = 2,
   REG_DENIED       = 3,
-  REG_OK           = 1,
   REG_UNKNOWN      = 4,
 };
 
+// These are responses to the HS command to get "hardware series"
 enum XBeeType {
-  XBEE_CELL  = 0,
-  XBEE_WIFI  = 1,
+  XBEE_S6B_WIFI  = 0x601,  // Digi XBee® Wi-Fi
+  XBEE_LTE1_VZN  = 0xB01,  // Digi XBee® Cellular LTE Cat 1
+  XBEE_3G        = 0xB02,  // Digi XBee® Cellular 3G
+  XBEE3_LTE1_ATT = 1,  // Digi XBee3™ Cellular LTE CAT 1  -- HS unknown to SRGD
+  XBEE3_LTEM_ATT = 2,  // Digi XBee3™ Cellular LTE-M  -- HS unknown to SRGD
+  XBEE3_LTENB    = 3,  // Digi XBee3™ Cellular NB-IoT  -- HS unknown to SRGD
 };
 
 
@@ -250,10 +255,12 @@ public:
     ret_val &= writeChanges();
     if (ret_val) guardTime = 125;
 
-    sendAT(GF("HS"));  // Get the "Hardware Series"; 0x601 for S6B (Wifi)
-    int res = waitResponse(GF("601"));
-    if (res == 1) beeType = XBEE_WIFI;
-    else beeType = XBEE_CELL;
+    sendAT(GF("HS"));  // Get the "Hardware Series";
+    String res = readResponse();
+    char buf[4] = {0,};  // Set up buffer for response
+    res.toCharArray(buf, 4);
+    int intRes = strtol(buf, 0, 16);
+    beeType = (XBeeType)intRes;
 
     exitCommand();
     return ret_val;
@@ -322,13 +329,23 @@ public:
   }
 
   bool hasSSL() {
-    if (beeType == XBEE_WIFI) return false;
+    if (beeType == XBEE_S6B_WIFI) return false;
     else return true;
   }
 
-  String getBeeType() {
-    if (beeType == XBEE_WIFI) return "S6B Wifi";
-    else return "Cellular";
+  XBeeType getBeeType() {
+    return beeType;
+  }
+
+  String getBeeName() {
+    switch (XBeeType){
+      case XBEE_S6B_WIFI: return "Digi XBee® Wi-Fi";
+      case XBEE_LTE1_VZN: return "Digi XBee® Cellular LTE Cat 1";
+      case XBEE_3G: return "Digi XBee® Cellular 3G";
+      case XBEE3_LTE1_ATT: return "Digi XBee3™ Cellular LTE CAT 1";
+      case XBEE3_LTEM_ATT: return "Digi XBee3™ Cellular LTE-M";
+      case XBEE3_LTENB: return "Digi XBee3™ Cellular NB-IoT";
+    }
   }
 
   /*
@@ -367,11 +384,11 @@ public:
     if (!commandMode()) return;  // Return immediately
     sendAT(GF("SM"),1);  // Pin sleep
     waitResponse();
-    if (beeType == XBEE_WIFI && !maintainAssociation) {
+    if (beeType == XBEE_S6B_WIFI && !maintainAssociation) {
         sendAT(GF("SO"),200);  // For lowest power, dissassociated deep sleep
         waitResponse();
     }
-    else if (!maintainAssociation){
+    else if ((!maintainAssociation){
         sendAT(GF("SO"),1);  // For lowest power, dissassociated deep sleep
                              // Not supported by all modules, will return "ERROR"
         waitResponse();
@@ -437,7 +454,7 @@ public:
     RegStatus stat = REG_UNKNOWN;
 
     switch (beeType){
-      case XBEE_WIFI: {
+      case XBEE_S6B_WIFI: {
         if(intRes == 0x00)  // 0x00 Successfully joined an access point, established IP addresses and IP listening sockets
           stat = REG_OK;
         else if(intRes == 0x01)  // 0x01 Wi-Fi transceiver initialization in progress.
@@ -467,7 +484,7 @@ public:
         else stat = REG_UNKNOWN;
         break;
       }
-      case XBEE_CELL: {
+      default: {
         if(intRes == 0x00)  // 0x00 Connected to the Internet.
           stat = REG_OK;
         else if(intRes == 0x22)  // 0x22 Registering to cellular network.
@@ -503,14 +520,14 @@ public:
 
   int getSignalQuality() {
     if (!commandMode()) return 0;  // Return immediately
-    if (beeType == XBEE_WIFI) sendAT(GF("LM"));  // ask for the "link margin" - the dB above sensitivity
+    if (beeType == XBEE_S6B_WIFI) sendAT(GF("LM"));  // ask for the "link margin" - the dB above sensitivity
     else sendAT(GF("DB"));  // ask for the cell strength in dBm
     String res = readResponse();  // it works better if we read in as a string
     exitCommand();
     char buf[3] = {0,};  // Set up buffer for response
     res.toCharArray(buf, 3);
     int intRes = strtol(buf, 0, 16);
-    if (beeType == XBEE_WIFI) return -93 + intRes;  // the maximum sensitivity is -93dBm
+    if (beeType == XBEE_S6B_WIFI) return -93 + intRes;  // the maximum sensitivity is -93dBm
     else return -1*intRes; // need to convert to negative number
   }
 
