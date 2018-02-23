@@ -177,10 +177,10 @@ public:
   String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
 private:
-  TinyGsmA6*      at;
-  uint8_t       mux;
-  bool          sock_connected;
-  RxFifo        rx;
+  TinyGsmA6*  at;
+  uint8_t     mux;
+  bool        sock_connected;
+  RxFifo      rx;
 };
 
 //============================================================================//

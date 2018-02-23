@@ -170,10 +170,10 @@ public:
   String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
 private:
-  TinyGsmESP8266*      at;
-  uint8_t       mux;
-  bool          sock_connected;
-  RxFifo        rx;
+  TinyGsmESP8266*  at;
+  uint8_t          mux;
+  bool             sock_connected;
+  RxFifo           rx;
 };
 
 //============================================================================//
