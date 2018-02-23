@@ -338,7 +338,7 @@ public:
   }
 
   String getBeeName() {
-    switch (XBeeType){
+    switch (beeType){
       case XBEE_S6B_WIFI: return "Digi XBee® Wi-Fi";
       case XBEE_LTE1_VZN: return "Digi XBee® Cellular LTE Cat 1";
       case XBEE_3G: return "Digi XBee® Cellular 3G";
