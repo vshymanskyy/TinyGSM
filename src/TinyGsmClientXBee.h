@@ -635,7 +635,7 @@ fail:
     if (!writeChanges()) goto fail;
 
     exitCommand();
-    stream.print(text);
+    streamWrite(text);
     stream.write((char)0x0D);  // close off with the carriage return
     return true;
 
@@ -727,6 +727,17 @@ public:
 
   /* Utilities */
 
+  template<typename T>
+  void streamWrite(T last) {
+    stream.print(last);
+  }
+
+  template<typename T, typename... Args>
+  void streamWrite(T head, Args... tail) {
+    stream.print(head);
+    streamWrite(tail...);
+  }
+
   void streamClear(void) {
     TINY_GSM_YIELD();
     while (stream.available()) { stream.read(); }
@@ -740,7 +751,7 @@ public:
       // Cannot send anything for 1 "guard time" before entering command mode
       // Default guard time is 1s, but the init fxn decreases it to 250 ms
       delay(guardTime);
-      stream.print(GF("+++"));  // enter command mode
+      streamWrite(GF("+++"));  // enter command mode
       DBG("\r\n+++");
       success = (1 == waitResponse(guardTime*2));
       triesMade ++;
@@ -773,7 +784,7 @@ public:
 
   template<typename... Args>
   void sendAT(Args... cmd) {
-    stream.print("AT", cmd..., GSM_NL);
+    streamWrite("AT", cmd..., GSM_NL);
     stream.flush();
     TINY_GSM_YIELD();
     // DBG("### AT:", cmd...);
