@@ -388,7 +388,7 @@ public:
         sendAT(GF("SO"),200);  // For lowest power, dissassociated deep sleep
         waitResponse();
     }
-    else if ((!maintainAssociation){
+    else if (!maintainAssociation){
         sendAT(GF("SO"),1);  // For lowest power, dissassociated deep sleep
                              // Not supported by all modules, will return "ERROR"
         waitResponse();
