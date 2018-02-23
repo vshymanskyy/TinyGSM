@@ -9,7 +9,7 @@
 #ifndef TinyGsmClientESP8266_h
 #define TinyGsmClientESP8266_h
 
-//#define TINY_GSM_DEBUG Serial
+// #define TINY_GSM_DEBUG Serial
 
 #if !defined(TINY_GSM_RX_BUFFER)
   #define TINY_GSM_RX_BUFFER 512
@@ -24,17 +24,35 @@ static const char GSM_OK[] TINY_GSM_PROGMEM = "OK" GSM_NL;
 static const char GSM_ERROR[] TINY_GSM_PROGMEM = "ERROR" GSM_NL;
 static unsigned TINY_GSM_TCP_KEEP_ALIVE = 120;
 
+// <stat> status of ESP8266 station interface
+// 2 : ESP8266 station connected to an AP and has obtained IP
+// 3 : ESP8266 station created a TCP or UDP transmission
+// 4 : the TCP or UDP transmission of ESP8266 station disconnected
+// 5 : ESP8266 station did NOT connect to an AP
 enum RegStatus {
-  REG_UNREGISTERED = 0,
-  REG_SEARCHING    = 2,
-  REG_DENIED       = 3,
-  REG_OK_HOME      = 1,
-  REG_OK_ROAMING   = 5,
-  REG_UNKNOWN      = 4,
+  REG_OK_IP        = 2,
+  REG_OK_TCP       = 3,
+  REG_UNREGISTERED = 4,
+  REG_DENIED       = 5,
+  REG_UNKNOWN      = 6,
 };
+
+
+//============================================================================//
+//============================================================================//
+//                     Declaration of the TinyGsmESP8266 Class
+//============================================================================//
+//============================================================================//
+
 
 class TinyGsmESP8266
 {
+
+  //============================================================================//
+  //============================================================================//
+  //                          The ESP8266 Client Class
+  //============================================================================//
+  //============================================================================//
 
 public:
 
@@ -158,6 +176,13 @@ private:
   RxFifo        rx;
 };
 
+//============================================================================//
+//============================================================================//
+//                          The Secure ESP8266 Client Class
+//============================================================================//
+//============================================================================//
+
+
 class GsmClientSecure : public GsmClient
 {
 public:
@@ -176,9 +201,20 @@ public:
   }
 };
 
+
+//============================================================================//
+//============================================================================//
+//                          The ESP8266 Modem Functions
+//============================================================================//
+//============================================================================//
+
 public:
 
+#ifdef GSM_DEFAULT_STREAM
+  TinyGsmESP8266(Stream& stream = GSM_DEFAULT_STREAM)
+#else
   TinyGsmESP8266(Stream& stream)
+#endif
     : stream(stream)
   {
     memset(sockets, 0, sizeof(sockets));
@@ -239,29 +275,7 @@ public:
     return res;
   }
 
-  bool hasSSL() {
-    return true;
-  }
-
-  RegStatus getRegistrationStatus() {
-    sendAT(GF("+CIPSTATUS"));
-    int res1 = waitResponse(3000, GF("STATUS:"));
-    int res2 = 0;
-    if (res1 == 1) {
-      res2 = waitResponse(GFP(GSM_ERROR), GF("2"), GF("3"), GF("4"), GF("5"));
-    }
-    // <stat> status of ESP8266 station interface
-    // 2 : ESP8266 station connected to an AP and has obtained IP
-    // 3 : ESP8266 station created a TCP or UDP transmission
-    // 4 : the TCP or UDP transmission of ESP8266 station disconnected
-    // 5 : ESP8266 station did NOT connect to an AP
-    waitResponse();  // Returns an OK after the status
-    if (res2 == 2) return REG_OK_HOME;
-    if (res2 == 3) return REG_OK_HOME;
-    if (res2 == 4) return REG_UNREGISTERED;
-    if (res2 == 5) return REG_DENIED;
-    else return REG_UNKNOWN;
-  }
+  bool hasSSL() { return true; }
 
   /*
    * Power functions
@@ -282,10 +296,29 @@ public:
     return init();
   }
 
+  bool poweroff() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
+  bool radioOff() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
+  bool sleepEnable(bool enable = true) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
+
+  /*
+   * SIM card functions
+   */
+
 
   /*
    * Generic network functions
    */
+
+   RegStatus getRegistrationStatus() {
+     sendAT(GF("+CIPSTATUS"));
+    if (waitResponse(3000, GF("STATUS:")) != 1) return REG_UNKNOWN;
+    int status = waitResponse(GFP(GSM_ERROR), GF("2"), GF("3"), GF("4"), GF("5"));
+     waitResponse();  // Returns an OK after the status
+    return (RegStatus)status;
+   }
 
   int getSignalQuality() {
     sendAT(GF("+CWJAP_CUR?"));
@@ -304,7 +337,7 @@ public:
 
   bool isNetworkConnected()  {
     RegStatus s = getRegistrationStatus();
-    return (s == REG_OK_HOME || s == REG_OK_ROAMING);
+    return (s == REG_OK_IP || s == REG_OK_TCP);
   }
 
   bool waitForNetwork(unsigned long timeout = 60000L) {
@@ -321,6 +354,21 @@ public:
       delay(250);
     }
     return false;
+  }
+
+  String getLocalIP() {
+    sendAT(GF("+CIPSTA_CUR??"));
+    int res1 = waitResponse(GF("ERROR"), GF("+CWJAP_CUR:"));
+    if (res1 != 2) {
+      return "";
+    }
+    String res2 = stream.readStringUntil('"');
+    waitResponse();
+    return res2;
+  }
+
+  IPAddress localIP() {
+    return TinyGsmIpFromString(getLocalIP());
   }
 
   /*
@@ -353,20 +401,27 @@ public:
     return retVal;
   }
 
-  String getLocalIP() {
-    sendAT(GF("+CIPSTA_CUR??"));
-    int res1 = waitResponse(GF("ERROR"), GF("+CWJAP_CUR:"));
-    if (res1 != 2) {
-      return "";
-    }
-    String res2 = stream.readStringUntil('"');
-    waitResponse();
-    return res2;
-  }
+  /*
+   * GPRS functions
+   */
 
-  IPAddress localIP() {
-    return TinyGsmIpFromString(getLocalIP());
-  }
+  /*
+   * Messaging functions
+   */
+
+  /*
+   * Location functions
+   */
+
+  String getGsmLocation() TINY_GSM_ATTR_NOT_AVAILABLE;
+
+  /*
+   * Battery functions
+   */
+
+  uint16_t getBattVoltage() TINY_GSM_ATTR_NOT_AVAILABLE;
+
+  int getBattPercent() TINY_GSM_ATTR_NOT_AVAILABLE;
 
 protected:
 
@@ -400,7 +455,7 @@ protected:
 
   bool modemGetConnected(uint8_t mux) {
     RegStatus s = getRegistrationStatus();
-    return (s == REG_OK_HOME || s == REG_OK_ROAMING);
+    return (s == REG_OK_IP || s == REG_OK_TCP);
   }
 
 public:
@@ -436,7 +491,7 @@ public:
     streamWrite("AT", cmd..., GSM_NL);
     stream.flush();
     TINY_GSM_YIELD();
-    //DBG("### AT:", cmd...);
+    // DBG("### AT:", cmd...);
   }
 
   // TODO: Optimize this!

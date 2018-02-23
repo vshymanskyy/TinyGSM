@@ -9,7 +9,7 @@
 #ifndef TinyGsmClientU201_h
 #define TinyGsmClientU201_h
 
-//#define TINY_GSM_DEBUG Serial
+// #define TINY_GSM_DEBUG Serial
 
 #if !defined(TINY_GSM_RX_BUFFER)
   #define TINY_GSM_RX_BUFFER 64
@@ -39,8 +39,21 @@ enum RegStatus {
 };
 
 
+//============================================================================//
+//============================================================================//
+//                   Declaration of the TinyGsmU201 Class
+//============================================================================//
+//============================================================================//
+
 class TinyGsmU201
 {
+
+//============================================================================//
+//============================================================================//
+//                          The U201 Client Class
+//============================================================================//
+//============================================================================//
+
 
 public:
 
@@ -169,6 +182,13 @@ private:
   RxFifo        rx;
 };
 
+//============================================================================//
+//============================================================================//
+//                          The Secure U201 Client Class
+//============================================================================//
+//============================================================================//
+
+
 class GsmClientSecure : public GsmClient
 {
 public:
@@ -187,6 +207,13 @@ public:
     return sock_connected;
   }
 };
+
+
+//============================================================================//
+//============================================================================//
+//                          The U201 Modem Functions
+//============================================================================//
+//============================================================================//
 
 public:
 
@@ -258,6 +285,10 @@ public:
     return waitResponse() == 1;
   }
 
+  String getModemInfo() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
+  bool hasSSL() { return true; }
+
   /*
    * Power functions
    */
@@ -275,6 +306,10 @@ public:
   }
 
   bool poweroff() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
+  bool radioOff() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
+  bool sleepEnable(bool enable = true) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
   /*
    * SIM card functions
@@ -326,17 +361,6 @@ public:
     return SIM_ERROR;
   }
 
-  RegStatus getRegistrationStatus() {
-    sendAT(GF("+CGREG?"));
-    if (waitResponse(GF(GSM_NL "+CGREG:")) != 1) {
-      return REG_UNKNOWN;
-    }
-    streamSkipUntil(','); // Skip format (0)
-    int status = stream.readStringUntil('\n').toInt();
-    waitResponse();
-    return (RegStatus)status;
-  }
-
   String getOperator() {
     sendAT(GF("+COPS?"));
     if (waitResponse(GF(GSM_NL "+COPS:")) != 1) {
@@ -351,6 +375,17 @@ public:
   /*
    * Generic network functions
    */
+
+   RegStatus getRegistrationStatus() {
+     sendAT(GF("+CGREG?"));
+     if (waitResponse(GF(GSM_NL "+CGREG:")) != 1) {
+       return REG_UNKNOWN;
+     }
+     streamSkipUntil(','); // Skip format (0)
+     int status = stream.readStringUntil('\n').toInt();
+     waitResponse();
+     return (RegStatus)status;
+   }
 
   int getSignalQuality() {
     sendAT(GF("+CSQ"));
@@ -377,10 +412,28 @@ public:
     return false;
   }
 
+  String getLocalIP() {
+    sendAT(GF("+CIFSR;E0"));
+    String res;
+    if (waitResponse(10000L, res) != 1) {
+      return "";
+    }
+    res.trim();
+    return res;
+  }
+
+  IPAddress localIP() {
+    return TinyGsmIpFromString(getLocalIP());
+  }
+
+  /*
+   * WiFi functions
+   */
+
   /*
    * GPRS functions
    */
-  bool gprsConnect(const char* apn, const char* user, const char* pwd) {
+  bool gprsConnect(const char* apn, const char* user = "", const char* pwd = "") {
     gprsDisconnect();
 
     sendAT(GF("+CGATT=1"));
@@ -441,19 +494,6 @@ public:
     return true;
   }
 
-  String getLocalIP() {
-    sendAT(GF("+CIFSR;E0"));
-    String res;
-    if (waitResponse(10000L, res) != 1) {
-      return "";
-    }
-    res.trim();
-    return res;
-  }
-
-  IPAddress localIP() {
-    return TinyGsmIpFromString(getLocalIP());
-  }
   /*
    * Messaging functions
    */
@@ -483,6 +523,7 @@ public:
   /*
    * Battery functions
    */
+
   // Use: float vBatt = modem.getBattVoltage() / 1000.0;
   uint16_t getBattVoltage() {
     sendAT(GF("+CIND"));
@@ -611,7 +652,7 @@ public:
     streamWrite("AT", cmd..., GSM_NL);
     stream.flush();
     TINY_GSM_YIELD();
-    //DBG("### AT:", cmd...);
+    // DBG("### AT:", cmd...);
   }
 
   // TODO: Optimize this!
@@ -632,7 +673,7 @@ public:
       TINY_GSM_YIELD();
       while (stream.available() > 0) {
         int a = stream.read();
-        if (a < 0) continue;
+        if (a <= 0) continue; // Skip 0x00 bytes, just in case
         data += (char)a;
         if (r1 && data.endsWith(r1)) {
           index = 1;

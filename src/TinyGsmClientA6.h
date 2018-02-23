@@ -39,10 +39,26 @@ enum RegStatus {
 };
 
 
+//============================================================================//
+//============================================================================//
+//                       Declaration of the TinyGsmA6 Class
+//============================================================================//
+//============================================================================//
+
+
+
 class TinyGsmA6
 {
 
 public:
+
+
+//============================================================================//
+//============================================================================//
+//                          The A6 Client Class
+//============================================================================//
+//============================================================================//
+
 
 class GsmClient : public Client
 {
@@ -167,9 +183,28 @@ private:
   RxFifo        rx;
 };
 
+//============================================================================//
+//============================================================================//
+//                          The A6 Does not have a secure client!
+//============================================================================//
+//============================================================================//
+
+
+
+//============================================================================//
+//============================================================================//
+//                          The A6 Modem Functions
+//============================================================================//
+//============================================================================//
+
+
 public:
 
+#ifdef GSM_DEFAULT_STREAM
+  TinyGsmA6(Stream& stream = GSM_DEFAULT_STREAM)
+#else
   TinyGsmA6(Stream& stream)
+#endif
     : stream(stream)
   {
     memset(sockets, 0, sizeof(sockets));
@@ -240,6 +275,8 @@ public:
     res.trim();
     return res;
   }
+
+  bool hasSSL() { return false; }
 
   /*
    * Power functions
@@ -313,17 +350,6 @@ public:
     return SIM_ERROR;
   }
 
-  RegStatus getRegistrationStatus() {
-    sendAT(GF("+CREG?"));
-    if (waitResponse(GF(GSM_NL "+CREG:")) != 1) {
-      return REG_UNKNOWN;
-    }
-    streamSkipUntil(','); // Skip format (0)
-    int status = stream.readStringUntil('\n').toInt();
-    waitResponse();
-    return (RegStatus)status;
-  }
-
   String getOperator() {
     sendAT(GF("+COPS=3,0")); // Set format
     waitResponse();
@@ -341,6 +367,17 @@ public:
   /*
    * Generic network functions
    */
+
+   RegStatus getRegistrationStatus() {
+     sendAT(GF("+CREG?"));
+     if (waitResponse(GF(GSM_NL "+CREG:")) != 1) {
+       return REG_UNKNOWN;
+     }
+     streamSkipUntil(','); // Skip format (0)
+     int status = stream.readStringUntil('\n').toInt();
+     waitResponse();
+     return (RegStatus)status;
+   }
 
   int getSignalQuality() {
     sendAT(GF("+CSQ"));
@@ -366,6 +403,26 @@ public:
     }
     return false;
   }
+
+  String getLocalIP() {
+    sendAT(GF("+CIFSR"));
+    String res;
+    if (waitResponse(10000L, res) != 1) {
+      return "";
+    }
+    res.replace(GSM_NL "OK" GSM_NL, "");
+    res.replace(GSM_NL, "");
+    res.trim();
+    return res;
+  }
+
+  IPAddress localIP() {
+    return TinyGsmIpFromString(getLocalIP());
+  }
+
+  /*
+   * WiFi functions
+   */
 
   /*
    * GPRS functions
@@ -421,22 +478,6 @@ public:
     int res = stream.readStringUntil('\n').toInt();
     waitResponse();
     return (res == 1);
-  }
-
-  String getLocalIP() {
-    sendAT(GF("+CIFSR"));
-    String res;
-    if (waitResponse(10000L, res) != 1) {
-      return "";
-    }
-    res.replace(GSM_NL "OK" GSM_NL, "");
-    res.replace(GSM_NL, "");
-    res.trim();
-    return res;
-  }
-
-  IPAddress localIP() {
-    return TinyGsmIpFromString(getLocalIP());
   }
 
   /*

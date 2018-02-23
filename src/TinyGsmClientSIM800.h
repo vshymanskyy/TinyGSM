@@ -9,8 +9,8 @@
 #ifndef TinyGsmClientSIM800_h
 #define TinyGsmClientSIM800_h
 
-//#define TINY_GSM_DEBUG Serial
-//#define TINY_GSM_USE_HEX
+// #define TINY_GSM_DEBUG Serial
+// #define TINY_GSM_USE_HEX
 
 #if !defined(TINY_GSM_RX_BUFFER)
   #define TINY_GSM_RX_BUFFER 64
@@ -40,8 +40,21 @@ enum RegStatus {
 };
 
 
+//============================================================================//
+//============================================================================//
+//                    Declaration of the TinyGsmSim800 Class
+//============================================================================//
+//============================================================================//
+
 class TinyGsmSim800
 {
+
+//============================================================================//
+//============================================================================//
+//                          The Sim800 Client Class
+//============================================================================//
+//============================================================================//
+
 
 public:
 
@@ -180,6 +193,13 @@ private:
   RxFifo        rx;
 };
 
+//============================================================================//
+//============================================================================//
+//                          The SIM800 Secure Client
+//============================================================================//
+//============================================================================//
+
+
 class GsmClientSecure : public GsmClient
 {
 public:
@@ -198,9 +218,19 @@ public:
   }
 };
 
+//============================================================================//
+//============================================================================//
+//                          The SIM800 Modem Functions
+//============================================================================//
+//============================================================================//
+
 public:
 
+#ifdef GSM_DEFAULT_STREAM
+  TinyGsmSim800(Stream& stream = GSM_DEFAULT_STREAM)
+#else
   TinyGsmSim800(Stream& stream)
+#endif
     : stream(stream)
   {
     memset(sockets, 0, sizeof(sockets));
@@ -391,17 +421,6 @@ public:
     return SIM_ERROR;
   }
 
-  RegStatus getRegistrationStatus() {
-    sendAT(GF("+CREG?"));
-    if (waitResponse(GF(GSM_NL "+CREG:")) != 1) {
-      return REG_UNKNOWN;
-    }
-    streamSkipUntil(','); // Skip format (0)
-    int status = stream.readStringUntil('\n').toInt();
-    waitResponse();
-    return (RegStatus)status;
-  }
-
   String getOperator() {
     sendAT(GF("+COPS?"));
     if (waitResponse(GF(GSM_NL "+COPS:")) != 1) {
@@ -416,6 +435,17 @@ public:
   /*
    * Generic network functions
    */
+
+   RegStatus getRegistrationStatus() {
+     sendAT(GF("+CREG?"));
+     if (waitResponse(GF(GSM_NL "+CREG:")) != 1) {
+       return REG_UNKNOWN;
+     }
+     streamSkipUntil(','); // Skip format (0)
+     int status = stream.readStringUntil('\n').toInt();
+     waitResponse();
+     return (RegStatus)status;
+   }
 
   int getSignalQuality() {
     sendAT(GF("+CSQ"));
@@ -442,10 +472,30 @@ public:
     return false;
   }
 
+  String getLocalIP() {
+    sendAT(GF("+CIFSR;E0"));
+    String res;
+    if (waitResponse(10000L, res) != 1) {
+      return "";
+    }
+    res.replace(GSM_NL "OK" GSM_NL, "");
+    res.replace(GSM_NL, "");
+    res.trim();
+    return res;
+  }
+
+  IPAddress localIP() {
+    return TinyGsmIpFromString(getLocalIP());
+  }
+
+  /*
+   * WiFi functions
+   */
+
   /*
    * GPRS functions
    */
-  bool gprsConnect(const char* apn, const char* user, const char* pwd) {
+  bool gprsConnect(const char* apn, const char* user = "", const char* pwd = "") {
     gprsDisconnect();
 
     // Set the Bearer for the IP
@@ -561,22 +611,6 @@ public:
     return true;
   }
 
-  String getLocalIP() {
-    sendAT(GF("+CIFSR;E0"));
-    String res;
-    if (waitResponse(10000L, res) != 1) {
-      return "";
-    }
-    res.replace(GSM_NL "OK" GSM_NL, "");
-    res.replace(GSM_NL, "");
-    res.trim();
-    return res;
-  }
-
-  IPAddress localIP() {
-    return TinyGsmIpFromString(getLocalIP());
-  }
-
   /*
    * Messaging functions
    */
@@ -668,6 +702,7 @@ public:
   /*
    * Battery functions
    */
+
   // Use: float vBatt = modem.getBattVoltage() / 1000.0;
   uint16_t getBattVoltage() {
     sendAT(GF("+CBC"));
@@ -812,7 +847,7 @@ public:
     streamWrite("AT", cmd..., GSM_NL);
     stream.flush();
     TINY_GSM_YIELD();
-    //DBG("### AT:", cmd...);
+    // DBG("### AT:", cmd...);
   }
 
   // TODO: Optimize this!
