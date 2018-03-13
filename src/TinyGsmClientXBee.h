@@ -442,7 +442,7 @@ fail:
   /*
    * GPRS functions
    */
-  bool gprsConnect(const char* apn, const char* user = "", const char* pw = "") {
+  bool gprsConnect(const char* apn, const char* user = NULL, const char* pwd = NULL) {
     commandMode();
     sendAT(GF("AN"), apn);  // Set the APN
     waitResponse();
@@ -660,10 +660,12 @@ finish:
     return waitResponse(1000, r1, r2, r3, r4, r5);
   }
 
-private:
+public:
+  Stream&       stream;
+
+protected:
   int           guardTime;
   XBeeType      beeType;
-  Stream&       stream;
   GsmClient*    sockets[TINY_GSM_MUX_COUNT];
 };
 

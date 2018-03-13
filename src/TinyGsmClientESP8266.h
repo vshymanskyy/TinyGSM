@@ -381,6 +381,7 @@ protected:
   }
 
   bool modemGetConnected(uint8_t mux) {
+    // TODO: re-check this
     sendAT(GF("+CIPSTATUS="), mux);
     int res1 = waitResponse(3000, GF("STATUS:"));
     int res2;
@@ -518,8 +519,10 @@ finish:
     return waitResponse(1000, r1, r2, r3, r4, r5);
   }
 
-protected:
+public:
   Stream&       stream;
+
+protected:
   GsmClient*    sockets[TINY_GSM_MUX_COUNT];
 };
 
