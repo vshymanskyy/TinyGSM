@@ -288,11 +288,15 @@ public:
   }
 
   bool hasSSL() {
+#if defined(TINY_GSM_MODEM_SIM900)
+    return false;
+#else
     sendAT(GF("+CIPSSL=?"));
     if (waitResponse(GF(GSM_NL "+CIPSSL:")) != 1) {
       return false;
     }
     return waitResponse() == 1;
+#endif
   }
 
   /*
@@ -745,11 +749,13 @@ public:
 protected:
 
   bool modemConnect(const char* host, uint16_t port, uint8_t mux, bool ssl = false) {
+#if !defined(TINY_GSM_MODEM_SIM900)
     sendAT(GF("+CIPSSL="), ssl);
     int rsp = waitResponse();
     if (ssl && rsp != 1) {
       return false;
     }
+#endif
     sendAT(GF("+CIPSTART="), mux, ',', GF("\"TCP"), GF("\",\""), host, GF("\","), port);
     rsp = waitResponse(75000L,
                        GF("CONNECT OK" GSM_NL),
