@@ -760,7 +760,10 @@ protected:
     rsp = waitResponse(75000L,
                        GF("CONNECT OK" GSM_NL),
                        GF("CONNECT FAIL" GSM_NL),
-                       GF("ALREADY CONNECT" GSM_NL));
+                       GF("ALREADY CONNECT" GSM_NL),
+                       GF("ERROR" GSM_NL),
+                       GF("CLOSE OK" GSM_NL)   // Happens when HTTPS handshake fails
+                      );
     return (1 == rsp);
   }
 
