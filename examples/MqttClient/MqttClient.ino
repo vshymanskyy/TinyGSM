@@ -22,7 +22,7 @@
  * You can use Node-RED for wiring together MQTT-enabled devices
  *   https://nodered.org/
  * Also, take a look at these additional Node-RED modules:
- *   node-red-contrib-blynk-websockets
+ *   node-red-contrib-blynk-ws
  *   node-red-dashboard
  *
  **************************************************************/
