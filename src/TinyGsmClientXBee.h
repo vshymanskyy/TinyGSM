@@ -537,20 +537,12 @@ public:
   }
 
   bool waitForNetwork(unsigned long timeout = 60000L) {
-    commandMode();
     for (unsigned long start = millis(); millis() - start < timeout; ) {
-      sendAT(GF("AI"));
-      String res = readResponse();
-      char buf[3] = {0,};  // Set up buffer for response
-      res.toCharArray(buf, 3);
-      int intRes = strtol(buf, 0, 16);
-      if (intRes == 0) {
-        exitCommand();
+      if (isNetworkConnected()) {
         return true;
       }
       delay(250);
     }
-    exitCommand();
     return false;
   }
 
