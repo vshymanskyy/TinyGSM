@@ -462,9 +462,7 @@ public:
         else if(intRes == 0x02)  // 0x02 Wi-Fi transceiver initialized, but not yet scanning for access point.
           stat = REG_SEARCHING;
         else if(intRes == 0x13) { // 0x13 Disconnecting from access point.
-          sendAT(GF("NR0"));  // Do a network reset; the S6B tends to get stuck "disconnecting"
-          waitResponse(5000);
-          writeChanges();
+          restart();  // Restart the device; the S6B tends to get stuck "disconnecting"
           stat = REG_UNREGISTERED;
         }
         else if(intRes == 0x23)  // 0x23 SSID not configured.
@@ -541,7 +539,7 @@ public:
       if (isNetworkConnected()) {
         return true;
       }
-      delay(250);
+      // delay(250);  // Enough delay going in and out of command mode
     }
     return false;
   }
