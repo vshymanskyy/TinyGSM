@@ -462,9 +462,7 @@ public:
         else if(intRes == 0x02)  // 0x02 Wi-Fi transceiver initialized, but not yet scanning for access point.
           stat = REG_SEARCHING;
         else if(intRes == 0x13) { // 0x13 Disconnecting from access point.
-          sendAT(GF("NR0"));  // Do a network reset; the S6B tends to get stuck "disconnecting"
-          waitResponse(5000);
-          writeChanges();
+          restart();  // Restart the device; the S6B tends to get stuck "disconnecting"
           stat = REG_UNREGISTERED;
         }
         else if(intRes == 0x23)  // 0x23 SSID not configured.
@@ -537,20 +535,12 @@ public:
   }
 
   bool waitForNetwork(unsigned long timeout = 60000L) {
-    commandMode();
     for (unsigned long start = millis(); millis() - start < timeout; ) {
-      sendAT(GF("AI"));
-      String res = readResponse();
-      char buf[3] = {0,};  // Set up buffer for response
-      res.toCharArray(buf, 3);
-      int intRes = strtol(buf, 0, 16);
-      if (intRes == 0) {
-        exitCommand();
+      if (isNetworkConnected()) {
         return true;
       }
-      delay(250);
+      // delay(250);  // Enough delay going in and out of command mode
     }
-    exitCommand();
     return false;
   }
 
