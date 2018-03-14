@@ -535,7 +535,8 @@ public:
   }
 
   bool gprsDisconnect() {
-    sendAT(GF("+CIPSHUT"));  // Shut the TCP/IP connection
+    // Shut the TCP/IP connection
+    sendAT(GF("+CIPSHUT"));
     if (waitResponse(60000L) != 1)
       return false;
 
@@ -770,12 +771,12 @@ protected:
   int modemSend(const void* buff, size_t len, uint8_t mux) {
     sendAT(GF("+CIPSEND="), mux, ',', len);
     if (waitResponse(GF(">")) != 1) {
-      return -1;
+      return 0;
     }
     stream.write((uint8_t*)buff, len);
     stream.flush();
     if (waitResponse(GF(GSM_NL "DATA ACCEPT:")) != 1) {
-      return -1;
+      return 0;
     }
     streamSkipUntil(','); // Skip mux
     return stream.readStringUntil('\n').toInt();

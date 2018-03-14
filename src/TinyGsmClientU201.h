@@ -68,6 +68,7 @@ public:
 
 public:
   virtual int connect(const char *host, uint16_t port) {
+    stop();
     TINY_GSM_YIELD();
     rx.clear();
     sock_connected = at->modemConnect(host, port, &mux);
@@ -92,6 +93,7 @@ public:
     at->sendAT(GF("+USOCL="), mux);
     sock_connected = false;
     at->waitResponse();
+    rx.clear();
   }
 
   virtual size_t write(const uint8_t *buf, size_t size) {
@@ -106,7 +108,7 @@ public:
 
   virtual int available() {
     TINY_GSM_YIELD();
-    if (!rx.size() && sock_connected) { // TODO
+    if (!rx.size() && sock_connected) {
       at->maintain();
     }
     return rx.size() + sock_available;
@@ -180,6 +182,7 @@ public:
 
 public:
   virtual int connect(const char *host, uint16_t port) {
+    stop();
     TINY_GSM_YIELD();
     rx.clear();
     sock_connected = at->modemConnect(host, port, &mux, true);
@@ -256,6 +259,12 @@ public:
     waitResponse();
     sendAT(GF("+CFUN=16"));   // Auto-baud
     return waitResponse() == 1;
+  }
+
+  String getModemInfo() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
+  bool hasSSL() {
+    return true;
   }
 
   /*

@@ -53,6 +53,7 @@ public:
 
 public:
   virtual int connect(const char *host, uint16_t port) {
+    stop();
     TINY_GSM_YIELD();
     rx.clear();
     sock_connected = at->modemConnect(host, port, mux);
@@ -76,6 +77,7 @@ public:
     at->sendAT(GF("+CIPCLOSE="), mux);
     sock_connected = false;
     at->waitResponse();
+    rx.clear();
   }
 
   virtual size_t write(const uint8_t *buf, size_t size) {
@@ -159,6 +161,7 @@ public:
 
 public:
   virtual int connect(const char *host, uint16_t port) {
+    stop();
     TINY_GSM_YIELD();
     rx.clear();
     sock_connected = at->modemConnect(host, port, mux, true);
@@ -209,7 +212,7 @@ public:
   }
 
   void maintain() {
-      waitResponse(10, NULL, NULL);
+    waitResponse(10, NULL, NULL);
   }
 
   bool factoryDefault() {
@@ -370,12 +373,12 @@ protected:
   int modemSend(const void* buff, size_t len, uint8_t mux) {
     sendAT(GF("+CIPSEND="), mux, ',', len);
     if (waitResponse(GF(">")) != 1) {
-      return -1;
+      return 0;
     }
     stream.write((uint8_t*)buff, len);
     stream.flush();
     if (waitResponse(10000L, GF(GSM_NL "SEND OK" GSM_NL)) != 1) {
-      return -1;
+      return 0;
     }
     return len;
   }

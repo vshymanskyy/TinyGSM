@@ -66,6 +66,7 @@ public:
 
 public:
   virtual int connect(const char *host, uint16_t port) {
+    stop();
     TINY_GSM_YIELD();
     rx.clear();
     uint8_t newMux = -1;
@@ -94,6 +95,7 @@ public:
     at->sendAT(GF("+CIPCLOSE="), mux);
     sock_connected = false;
     at->waitResponse();
+    rx.clear();
   }
 
   virtual size_t write(const uint8_t *buf, size_t size) {
@@ -216,9 +218,7 @@ public:
   }
 
   void maintain() {
-    //while (stream.available()) {
-      waitResponse(10, NULL, NULL);
-    //}
+    waitResponse(10, NULL, NULL);
   }
 
   bool factoryDefault() {
@@ -238,6 +238,10 @@ public:
     res.replace(GSM_NL, " ");
     res.trim();
     return res;
+  }
+
+  bool hasSSL() {
+    return false;
   }
 
   /*
@@ -400,8 +404,10 @@ public:
   }
 
   bool gprsDisconnect() {
+    // Shut the TCP/IP connection
     sendAT(GF("+CIPSHUT"));
-    waitResponse(5000L);
+    if (waitResponse(60000L) != 1)
+      return false;
 
     for (int i = 0; i<3; i++) {
       sendAT(GF("+CGATT=0"));
@@ -612,12 +618,12 @@ protected:
   int modemSend(const void* buff, size_t len, uint8_t mux) {
     sendAT(GF("+CIPSEND="), mux, ',', len);
     if (waitResponse(2000L, GF(GSM_NL ">")) != 1) {
-      return -1;
+      return 0;
     }
     stream.write((uint8_t*)buff, len);
     stream.flush();
     if (waitResponse(10000L, GFP(GSM_OK), GF(GSM_NL "FAIL")) != 1) {
-      return -1;
+      return 0;
     }
     return len;
   }

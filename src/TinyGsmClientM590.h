@@ -68,6 +68,7 @@ public:
 
 public:
   virtual int connect(const char *host, uint16_t port) {
+    stop();
     TINY_GSM_YIELD();
     rx.clear();
     sock_connected = at->modemConnect(host, port, mux);
@@ -91,6 +92,7 @@ public:
     at->sendAT(GF("+TCPCLOSE="), mux);
     sock_connected = false;
     at->waitResponse();
+    rx.clear();
   }
 
   virtual size_t write(const uint8_t *buf, size_t size) {
@@ -240,6 +242,10 @@ public:
     res.replace(GSM_NL, " ");
     res.trim();
     return res;
+  }
+
+  bool hasSSL() {
+    return false;
   }
 
   /*

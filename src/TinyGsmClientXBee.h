@@ -9,7 +9,7 @@
 #ifndef TinyGsmClientXBee_h
 #define TinyGsmClientXBee_h
 
-// #define TINY_GSM_DEBUG Serial
+//#define TINY_GSM_DEBUG Serial
 
 #if !defined(TINY_GSM_RX_BUFFER)
   #define TINY_GSM_RX_BUFFER 256
@@ -459,11 +459,7 @@ fail:
    * Messaging functions
    */
 
-  void sendUSSD() {
-  }
-
-  void sendSMS() {
-  }
+  String sendUSSD(const String& code) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
   bool sendSMS(const String& number, const String& text) {
     commandMode();
