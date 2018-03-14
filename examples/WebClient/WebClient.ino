@@ -17,13 +17,16 @@
 // #define TINY_GSM_MODEM_M590
 // #define TINY_GSM_MODEM_ESP8266
 
+// Increase RX buffer if needed
+//#define TINY_GSM_RX_BUFFER 512
+
 #include <TinyGsmClient.h>
 
-// Your GPRS credentials
-// Leave empty, if missing user or pass
-const char apn[]  = "YourAPN";
-const char user[] = "";
-const char pass[] = "";
+// Uncomment this if you want to see all AT commands
+//#define DUMP_AT_COMMANDS
+
+// Set serial for debug console (to the Serial Monitor, default speed 115200)
+#define SerialMon Serial
 
 // Use Hardware Serial on Mega, Leonardo, Micro
 #define SerialAT Serial1
@@ -32,17 +35,31 @@ const char pass[] = "";
 //#include <SoftwareSerial.h>
 //SoftwareSerial SerialAT(2, 3); // RX, TX
 
-TinyGsm modem(SerialAT);
+
+// Your GPRS credentials
+// Leave empty, if missing user or pass
+const char apn[]  = "YourAPN";
+const char user[] = "";
+const char pass[] = "";
+
+// Server details
+const char server[] = "vsh.pp.ua";
+const char resource[] = "/TinyGSM/logo.txt";
+const int  port = 80;
+
+#ifdef DUMP_AT_COMMANDS
+  #include <StreamDebugger.h>
+  StreamDebugger debugger(SerialAT, SerialMon);
+  TinyGsm modem(debugger);
+#else
+  TinyGsm modem(SerialAT);
+#endif
+
 TinyGsmClient client(modem);
-
-const char server[] = "cdn.rawgit.com";
-const char resource[] = "/vshymanskyy/tinygsm/master/extras/logo.txt";
-
-const int port = 80;
 
 void setup() {
   // Set console baud rate
-  Serial.begin(115200);
+  SerialMon.begin(115200);
   delay(10);
 
   // Set GSM module baud rate
@@ -51,43 +68,43 @@ void setup() {
 
   // Restart takes quite some time
   // To skip it, call init() instead of restart()
-  Serial.println(F("Initializing modem..."));
+  SerialMon.println(F("Initializing modem..."));
   modem.restart();
 
   String modemInfo = modem.getModemInfo();
-  Serial.print("Modem: ");
-  Serial.println(modemInfo);
+  SerialMon.print(F("Modem: "));
+  SerialMon.println(modemInfo);
 
   // Unlock your SIM card with a PIN
   //modem.simUnlock("1234");
 }
 
 void loop() {
-  Serial.print(F("Waiting for network..."));
+  SerialMon.print(F("Waiting for network..."));
   if (!modem.waitForNetwork()) {
-    Serial.println(" fail");
+    SerialMon.println(" fail");
     delay(10000);
     return;
   }
-  Serial.println(" OK");
+  SerialMon.println(" OK");
 
-  Serial.print(F("Connecting to "));
-  Serial.print(apn);
+  SerialMon.print(F("Connecting to "));
+  SerialMon.print(apn);
   if (!modem.gprsConnect(apn, user, pass)) {
-    Serial.println(" fail");
+    SerialMon.println(" fail");
     delay(10000);
     return;
   }
-  Serial.println(" OK");
+  SerialMon.println(" OK");
 
-  Serial.print(F("Connecting to "));
-  Serial.print(server);
+  SerialMon.print(F("Connecting to "));
+  SerialMon.print(server);
   if (!client.connect(server, port)) {
-    Serial.println(" fail");
+    SerialMon.println(" fail");
     delay(10000);
     return;
   }
-  Serial.println(" OK");
+  SerialMon.println(" OK");
 
   // Make a HTTP GET request:
   client.print(String("GET ") + resource + " HTTP/1.0\r\n");
@@ -99,17 +116,19 @@ void loop() {
     // Print available data
     while (client.available()) {
       char c = client.read();
-      Serial.print(c);
+      SerialMon.print(c);
       timeout = millis();
     }
   }
-  Serial.println();
+  SerialMon.println();
+
+  // Shutdown
 
   client.stop();
-  Serial.println("Server disconnected");
+  SerialMon.println(F("Server disconnected"));
 
   modem.gprsDisconnect();
-  Serial.println("GPRS disconnected");
+  SerialMon.println(F("GPRS disconnected"));
 
   // Do nothing forevermore
   while (true) {
