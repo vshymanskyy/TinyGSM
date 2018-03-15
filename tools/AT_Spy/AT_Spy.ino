@@ -1,7 +1,7 @@
 /**************************************************************
  *
- * This script just listens in on the communication between an Arduino and the
- * modem.
+ * This script just listens in on the communication
+ * between an Arduino and the modem.
  *
  * TinyGSM Getting Started guide:
  *   http://tiny.cc/tiny-gsm-readme
@@ -28,18 +28,20 @@ AltSoftSerial BOARD_TX;
 
 void setup() {
   // Set console baud rate
-  SPY.begin(57600);
+  SPY.begin(115200);
+
   MODEM_TX.begin(BAUD_RATE);
   BOARD_TX.begin(BAUD_RATE);
-  delay(5000);
+  delay(1000);
 }
 
 void loop()
 {
-    while (MODEM_TX.available()) {
-      SPY.write(MODEM_TX.read());
-    }
-    while (BOARD_TX.available()) {
-      SPY.write(BOARD_TX.read());
-    }
+  while (MODEM_TX.available()) {
+    SPY.write(MODEM_TX.read());
+  }
+  while (BOARD_TX.available()) {
+    SPY.write(BOARD_TX.read());
+  }
 }
+

@@ -18,8 +18,6 @@
 // #define TINY_GSM_MODEM_ESP8266
 // #define TINY_GSM_MODEM_XBEE
 
-#include <TinyGsmClient.h>
-
 // Set serial for debug console (to the Serial Monitor, speed 115200)
 #define SerialMon Serial
 

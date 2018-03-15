@@ -85,6 +85,7 @@ public:
 
 public:
   virtual int connect(const char *host, uint16_t port) {
+    stop();
     TINY_GSM_YIELD();
     rx.clear();
     sock_connected = at->modemConnect(host, port, mux);
@@ -108,6 +109,7 @@ public:
     at->sendAT(GF("+CIPCLOSE="), mux);
     sock_connected = false;
     at->waitResponse();
+    rx.clear();
   }
 
   virtual size_t write(const uint8_t *buf, size_t size) {
@@ -211,6 +213,7 @@ public:
 
 public:
   virtual int connect(const char *host, uint16_t port) {
+    stop();
     TINY_GSM_YIELD();
     rx.clear();
     sock_connected = at->modemConnect(host, port, mux, true);
@@ -320,11 +323,15 @@ public:
   }
 
   bool hasSSL() {
+#if defined(TINY_GSM_MODEM_SIM900)
+    return false;
+#else
     sendAT(GF("+CIPSSL=?"));
     if (waitResponse(GF(GSM_NL "+CIPSSL:")) != 1) {
       return false;
     }
     return waitResponse() == 1;
+#endif
   }
 
   /*
@@ -495,7 +502,7 @@ public:
   /*
    * GPRS functions
    */
-  bool gprsConnect(const char* apn, const char* user = "", const char* pwd = "") {
+  bool gprsConnect(const char* apn, const char* user = NULL, const char* pwd = NULL) {
     gprsDisconnect();
 
     // Set the Bearer for the IP
@@ -583,7 +590,8 @@ public:
   }
 
   bool gprsDisconnect() {
-    sendAT(GF("+CIPSHUT"));  // Shut the TCP/IP connection
+    // Shut the TCP/IP connection
+    sendAT(GF("+CIPSHUT"));
     if (waitResponse(60000L) != 1)
       return false;
 
@@ -644,6 +652,7 @@ public:
   bool sendSMS(const String& number, const String& text) {
     sendAT(GF("+CMGF=1"));
     waitResponse();
+    //Set GSM 7 bit default alphabet (3GPP TS 23.038)
     sendAT(GF("+CSCS=\"GSM\""));
     waitResponse();
     sendAT(GF("+CMGS=\""), number, GF("\""));
@@ -731,28 +740,33 @@ public:
 protected:
 
   bool modemConnect(const char* host, uint16_t port, uint8_t mux, bool ssl = false) {
+#if !defined(TINY_GSM_MODEM_SIM900)
     sendAT(GF("+CIPSSL="), ssl);
     int rsp = waitResponse();
     if (ssl && rsp != 1) {
       return false;
     }
+#endif
     sendAT(GF("+CIPSTART="), mux, ',', GF("\"TCP"), GF("\",\""), host, GF("\","), port);
     rsp = waitResponse(75000L,
                        GF("CONNECT OK" GSM_NL),
                        GF("CONNECT FAIL" GSM_NL),
-                       GF("ALREADY CONNECT" GSM_NL));
+                       GF("ALREADY CONNECT" GSM_NL),
+                       GF("ERROR" GSM_NL),
+                       GF("CLOSE OK" GSM_NL)   // Happens when HTTPS handshake fails
+                      );
     return (1 == rsp);
   }
 
   int modemSend(const void* buff, size_t len, uint8_t mux) {
     sendAT(GF("+CIPSEND="), mux, ',', len);
     if (waitResponse(GF(">")) != 1) {
-      return -1;
+      return 0;
     }
     stream.write((uint8_t*)buff, len);
     stream.flush();
     if (waitResponse(GF(GSM_NL "DATA ACCEPT:")) != 1) {
-      return -1;
+      return 0;
     }
     streamSkipUntil(','); // Skip mux
     return stream.readStringUntil('\n').toInt();
@@ -934,8 +948,10 @@ finish:
     return waitResponse(1000, r1, r2, r3, r4, r5);
   }
 
-protected:
+public:
   Stream&       stream;
+
+protected:
   GsmClient*    sockets[TINY_GSM_MUX_COUNT];
 };
 

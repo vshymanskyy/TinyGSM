@@ -81,6 +81,7 @@ public:
 
 public:
   virtual int connect(const char *host, uint16_t port) {
+    stop();
     TINY_GSM_YIELD();
     rx.clear();
     sock_connected = at->modemConnect(host, port, &mux);
@@ -105,6 +106,7 @@ public:
     at->sendAT(GF("+USOCL="), mux);
     sock_connected = false;
     at->waitResponse();
+    rx.clear();
   }
 
   virtual size_t write(const uint8_t *buf, size_t size) {
@@ -119,7 +121,7 @@ public:
 
   virtual int available() {
     TINY_GSM_YIELD();
-    if (!rx.size() && sock_connected) { // TODO
+    if (!rx.size() && sock_connected) {
       at->maintain();
     }
     return rx.size() + sock_available;
@@ -200,6 +202,7 @@ public:
 
 public:
   virtual int connect(const char *host, uint16_t port) {
+    stop();
     TINY_GSM_YIELD();
     rx.clear();
     sock_connected = at->modemConnect(host, port, &mux, true);
@@ -287,7 +290,9 @@ public:
 
   String getModemInfo() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
-  bool hasSSL() { return true; }
+  bool hasSSL() {
+    return true;
+  }
 
   /*
    * Power functions
@@ -433,7 +438,7 @@ public:
   /*
    * GPRS functions
    */
-  bool gprsConnect(const char* apn, const char* user = "", const char* pwd = "") {
+  bool gprsConnect(const char* apn, const char* user = NULL, const char* pwd = NULL) {
     gprsDisconnect();
 
     sendAT(GF("+CGATT=1"));
@@ -732,8 +737,10 @@ finish:
     return waitResponse(1000, r1, r2, r3, r4, r5);
   }
 
-protected:
+public:
   Stream&       stream;
+
+protected:
   GsmClient*    sockets[TINY_GSM_MUX_COUNT];
 };
 

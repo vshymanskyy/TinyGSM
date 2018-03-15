@@ -9,7 +9,7 @@
 #ifndef TinyGsmClientXBee_h
 #define TinyGsmClientXBee_h
 
-// #define TINY_GSM_DEBUG Serial
+//#define TINY_GSM_DEBUG Serial
 
 
 #define TINY_GSM_MUX_COUNT 1  // Multi-plexing isn't supported using command mode
@@ -597,7 +597,7 @@ fail:
   /*
    * GPRS functions
    */
-  bool gprsConnect(const char* apn, const char* user = "", const char* pwd = "") {
+  bool gprsConnect(const char* apn, const char* user = NULL, const char* pwd = NULL) {
     if (!commandMode()) return false;  // Return immediately
     sendAT(GF("AN"), apn);  // Set the APN
     waitResponse();
@@ -626,9 +626,7 @@ fail:
    * Messaging functions
    */
 
-  void sendUSSD() TINY_GSM_ATTR_NOT_AVAILABLE;
-
-  void sendSMS() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  String sendUSSD(const String& code) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
   bool sendSMS(const String& number, const String& text) {
     if (!commandMode()) return false;  // Return immediately
@@ -870,10 +868,12 @@ finish:
     return waitResponse(1000, r1, r2, r3, r4, r5);
   }
 
+public:
+  Stream&       stream;
+
 protected:
   int           guardTime;
   XBeeType      beeType;
-  Stream&       stream;
   GsmClient*    sockets[TINY_GSM_MUX_COUNT];
 };
 

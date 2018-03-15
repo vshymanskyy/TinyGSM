@@ -10,14 +10,12 @@
  * TinyGSM Getting Started guide:
  *   http://tiny.cc/tiny-gsm-readme
  *
- * SSL/TLS is currently supported only with SIM8xx series
  * For more HTTP API examples, see ArduinoHttpClient library
  *
  **************************************************************/
 
-// Select your modem:
+// Industruino uses SIM800H
 #define TINY_GSM_MODEM_SIM800
-// #define TINY_GSM_MODEM_SIM808
 
 // Increase RX buffer if needed
 //#define TINY_GSM_RX_BUFFER 512
@@ -28,16 +26,14 @@
 // Uncomment this if you want to see all AT commands
 //#define DUMP_AT_COMMANDS
 
-// Set serial for debug console (to the Serial Monitor, default speed 115200)
-#define SerialMon Serial
+// Uncomment this if you want to use SSL
+//#define USE_SSL
 
-// Use Hardware Serial on Mega, Leonardo, Micro
+// Set serial for debug console (to the Serial Monitor, speed 115200)
+#define SerialMon SerialUSB
+
+// Select Serial1 or Serial depending on your module configuration
 #define SerialAT Serial1
-
-// or Software Serial on Uno, Nano
-//#include <SoftwareSerial.h>
-//SoftwareSerial SerialAT(2, 3); // RX, TX
-
 
 // Your GPRS credentials
 // Leave empty, if missing user or pass
@@ -48,7 +44,6 @@ const char pass[] = "";
 // Server details
 const char server[] = "vsh.pp.ua";
 const char resource[] = "/TinyGSM/logo.txt";
-const int  port = 443;
 
 #ifdef DUMP_AT_COMMANDS
   #include <StreamDebugger.h>
@@ -58,10 +53,21 @@ const int  port = 443;
   TinyGsm modem(SerialAT);
 #endif
 
-TinyGsmClientSecure client(modem);
-HttpClient http(client, server, port);
+#ifdef USE_SSL
+  TinyGsmClientSecure client(modem);
+  HttpClient http(client, server, 443);
+#else
+  TinyGsmClient client(modem);
+  HttpClient http(client, server, 80);
+#endif
 
 void setup() {
+  // Turn on modem with 1 second pulse on D6
+  pinMode(6, OUTPUT);
+  digitalWrite(6, HIGH);
+  delay(1000);
+  digitalWrite(6, LOW);
+
   // Set console baud rate
   SerialMon.begin(115200);
   delay(10);
@@ -81,11 +87,6 @@ void setup() {
 
   // Unlock your SIM card with a PIN
   //modem.simUnlock("1234");
-
-  if (!modem.hasSSL()) {
-    SerialMon.println(F("SSL is not supported by this modem"));
-    while(true) { delay(1000); }
-  }
 }
 
 void loop() {
@@ -106,8 +107,7 @@ void loop() {
   }
   SerialMon.println(" OK");
 
-  SerialMon.print(F("Performing HTTPS GET request... "));
-  http.connectionKeepAlive(); // Currently, this is needed for HTTPS
+  SerialMon.print(F("Performing HTTP GET request... "));
   int err = http.get(resource);
   if (err != 0) {
     SerialMon.println(F("failed to connect"));

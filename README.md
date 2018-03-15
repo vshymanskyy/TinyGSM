@@ -26,8 +26,8 @@ This library is easy to integrate with lots of sketches, which use Ethernet or W
 ### TinyGSM is tiny
 The complete WebClient example for Arduino Uno (via Software Serial) takes little resources:
 ```
-Sketch uses 14094 bytes (43%) of program storage space. Maximum is 32256 bytes.
-Global variables use 625 bytes (30%) of dynamic memory, leaving 1423 bytes for local variables. Maximum is 2048 bytes.
+Sketch uses 15022 bytes (46%) of program storage space. Maximum is 32256 bytes.
+Global variables use 574 bytes (28%) of dynamic memory, leaving 1474 bytes for local variables. Maximum is 2048 bytes.
 ```
 Arduino GSM library uses 15868 bytes (49%) of Flash and 1113 bytes (54%) of RAM in a similar scenario.  
 TinyGSM also pulls data gently from the modem (whenever possible), so it can operate on very little RAM.  
@@ -78,6 +78,7 @@ GPS/GNSS                     | ✔¹     | 🅧     | ◌¹        | 🅧   | �
 - Microduino GSM
 - Adafruit FONA (Mini Cellular GSM Breakout)
 - Adafruit FONA 800/808 Shield
+- Industruino GSM
 - ... other modules, based on supported modems
 
 More modems may be supported later:
