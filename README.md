@@ -169,9 +169,9 @@ This may result in problems such as:
 To return module to **Factory Defaults**, use this sketch:  
   File -> Examples -> TynyGSM -> tools -> [FactoryReset](https://github.com/vshymanskyy/TinyGSM/blob/master/tools/FactoryReset/FactoryReset.ino)
 
-### Goouuu Tech IOT-GA6 vs AiThinker A6 confusion
+### Goouuu Tech IOT-GA6 vs AI-Thinker A6 confusion
 
-It turns out that **Goouuu Tech IOT-GA6** is not the same as **AiThinker A6**. Unfortunately IOT-GA6 is not supported out of the box yet. There are some hints that IOT-GA6 firmware may be updated to match A6... But no one confirmed that up to my knowledge.
+It turns out that **Goouuu Tech IOT-GA6** is not the same as **AI-Thinker A6**. Unfortunately IOT-GA6 is not supported out of the box yet. There are some hints that IOT-GA6 firmware may be updated to match A6... But no one confirmed that up to my knowledge.
 
 __________
 
