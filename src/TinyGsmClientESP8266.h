@@ -238,6 +238,14 @@ public:
     if (waitResponse() != 1) {
       return false;
     }
+    sendAT(GF("+CIPMUX=1"));  // Enable Multiple Connections
+    if (waitResponse() != 1) {
+      return false;
+    }
+    sendAT(GF("+CWMODE_CUR=1"));  // Put into "station" mode
+    if (waitResponse() != 1) {
+      return false;
+    }
     return true;
   }
 
@@ -378,22 +386,10 @@ public:
    * WiFi functions
    */
   bool networkConnect(const char* ssid, const char* pwd) {
-
-    sendAT(GF("+CIPMUX=1"));
-    if (waitResponse() != 1) {
-      return false;
-    }
-
-    sendAT(GF("+CWMODE_CUR=1"));
-    if (waitResponse() != 1) {
-      return false;
-    }
-
     sendAT(GF("+CWJAP_CUR=\""), ssid, GF("\",\""), pwd, GF("\""));
     if (waitResponse(30000L, GFP(GSM_OK), GF(GSM_NL "FAIL" GSM_NL)) != 1) {
       return false;
     }
-
     return true;
   }
 
