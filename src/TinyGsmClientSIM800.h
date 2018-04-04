@@ -97,6 +97,7 @@ class TinyGsmSim800
 
 public:
 
+#ifndef TINY_GSM_NO_GPRS
 class GsmClient : public Client
 {
   friend class TinyGsmSim800;
@@ -252,13 +253,16 @@ public:
     return sock_connected;
   }
 };
+#endif // TINY_GSM_NO_GPRS
 
 public:
 
   TinyGsmSim800(Stream& stream)
     : stream(stream)
   {
+#ifndef TINY_GSM_NO_GPRS
     memset(sockets, 0, sizeof(sockets));
+#endif // TINY_GSM_NO_GPRS
   }
 
   /*
@@ -319,6 +323,7 @@ public:
   }
 
   void maintain() {
+#ifndef TINY_GSM_NO_GPRS
     for (int mux = 0; mux < TINY_GSM_MUX_COUNT; mux++) {
       GsmClient* sock = sockets[mux];
       if (sock && sock->got_data) {
@@ -326,6 +331,7 @@ public:
         sock->sock_available = modemGetAvailable(mux);
       }
     }
+#endif // TINY_GSM_NO_GPRS
     while (stream.available()) {
       waitResponse(10, NULL, NULL);
     }
@@ -634,7 +640,7 @@ public:
 
     return true;
   }
-
+#ifndef TINY_GSM_NO_GPRS
   String getLocalIP() {
     sendAT(GF("+CIFSR;E0"));
     String res;
@@ -650,7 +656,7 @@ public:
   IPAddress localIP() {
     return TinyGsmIpFromString(getLocalIP());
   }
-
+#endif // TINY_GSM_NO_GPRS
   /*
    * Phone Call functions
    */
@@ -1138,7 +1144,7 @@ public:
   }
 
 protected:
-
+#ifndef TINY_GSM_NO_GPRS
   bool modemConnect(const char* host, uint16_t port, uint8_t mux, bool ssl = false) {
 #if !defined(TINY_GSM_MODEM_SIM900)
     sendAT(GF("+CIPSSL="), ssl);
@@ -1227,7 +1233,7 @@ protected:
     waitResponse();
     return 1 == res;
   }
-
+#endif // TINY_GSM_NO_GPRS
 public:
 
   /* Utilities */
@@ -1295,7 +1301,9 @@ public:
         } else if (r5 && data.endsWith(r5)) {
           index = 5;
           goto finish;
-        } else if (data.endsWith(GF(GSM_NL "+CIPRXGET:"))) {
+        }
+        #ifndef TINY_GSM_NO_GPRS
+        else if (data.endsWith(GF(GSM_NL "+CIPRXGET:"))) {
           String mode = stream.readStringUntil(',');
           if (mode.toInt() == 1) {
             int mux = stream.readStringUntil('\n').toInt();
@@ -1316,6 +1324,7 @@ public:
           data = "";
           DBG("### Closed: ", mux);
         }
+        #endif // TINY_GSM_NO_GPRS
       }
     } while (millis() - startMillis < timeout);
 finish:
@@ -1347,7 +1356,9 @@ public:
   Stream&       stream;
 
 protected:
+#ifndef TINY_GSM_NO_GPRS
   GsmClient*    sockets[TINY_GSM_MUX_COUNT];
+#endif // TINY_GSM_NO_GPRS
 
   bool changeCharacterSet(const String &alphabet) {
     sendAT(GF("+CSCS=\""), alphabet, '"');

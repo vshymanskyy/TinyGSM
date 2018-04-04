@@ -18,11 +18,15 @@
 #endif
 
 #if   defined(TINY_GSM_MODEM_SIM800) || defined(TINY_GSM_MODEM_SIM900)
+#ifndef TINY_GSM_NO_GPRS
   #define TINY_GSM_MODEM_HAS_GPRS
+#endif // TINY_GSM_NO_GPRS
   #include <TinyGsmClientSIM800.h>
   typedef TinyGsmSim800 TinyGsm;
+#ifndef TINY_GSM_NO_GPRS
   typedef TinyGsmSim800::GsmClient TinyGsmClient;
   typedef TinyGsmSim800::GsmClientSecure TinyGsmClientSecure;
+#endif // TINY_GSM_NO_GPRS
 
 #elif defined(TINY_GSM_MODEM_SIM808) || defined(TINY_GSM_MODEM_SIM868)
   #define TINY_GSM_MODEM_HAS_GPRS

@@ -19,8 +19,10 @@
   #endif
 #endif
 
-#include <Client.h>
-#include <TinyGsmFifo.h>
+#ifndef TINY_GSM_NO_GPRS
+  #include <Client.h>
+  #include <TinyGsmFifo.h>
+#endif // TINY_GSM_NO_GPRS
 
 #ifndef TINY_GSM_YIELD
   #define TINY_GSM_YIELD() { delay(0); }
@@ -119,6 +121,7 @@ uint32_t TinyGsmAutoBaud(T& SerialAT, uint32_t minimum = 9600, uint32_t maximum 
   return 0;
 }
 
+#ifndef TINY_GSM_NO_GPRS
 static inline
 IPAddress TinyGsmIpFromString(const String& strIP) {
   int Parts[4] = {0, };
@@ -140,7 +143,7 @@ IPAddress TinyGsmIpFromString(const String& strIP) {
   }
   return IPAddress(Parts[0], Parts[1], Parts[2], Parts[3]);
 }
-
+#endif // TINY_GSM_NO_GPRS
 static inline
 String TinyGsmDecodeHex7bit(const String &instr) {
   String result;
