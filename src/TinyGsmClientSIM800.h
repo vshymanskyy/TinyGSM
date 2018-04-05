@@ -703,6 +703,107 @@ public:
     return waitResponse(60000L) == 1;
   }
 
+  Sms readSmsMessage(const uint8_t index, const bool changeStatusToRead = true) {
+      sendAT(GF("+CMGF=1")); // Select SMS Message Format: Text mode
+      waitResponse();
+      sendAT(GF("+CSDH=1")); // Show SMS Text Mode Parameters
+      waitResponse();
+      sendAT(GF("+CMGR="), index, GF(","), static_cast<const uint8_t>(!changeStatusToRead)); // Read SMS Message
+      if (waitResponse(5000L, GF(GSM_NL "+CMGR: \"")) != 1) {
+          stream.readString();
+          return {};
+      }
+
+      Sms sms;
+
+      // AT reply:
+      // <stat>,<oa>[,<alpha>],<scts>[,<tooa>,<fo>,<pid>,<dcs>,<sca>,<tosca>,<length>]<CR><LF><data>
+
+      //<stat>
+      const String res = stream.readStringUntil('"');
+      if (res == GF("REC READ")) {
+          sms.status = SmsStatus::REC_READ;
+      } else if (res == GF("REC UNREAD")) {
+          sms.status = SmsStatus::REC_UNREAD;
+      } else if (res == GF("STO UNSENT")) {
+          sms.status = SmsStatus::STO_UNSENT;
+      } else if (res == GF("STO SENT")) {
+          sms.status = SmsStatus::STO_SENT;
+      } else if (res == GF("ALL")) {
+          sms.status = SmsStatus::ALL;
+      } else {
+          stream.readString();
+          return {};
+      }
+
+      // <oa>
+      streamSkipUntil('"');
+      sms.originatingAddress = stream.readStringUntil('"');
+
+      // <alpha>
+      streamSkipUntil('"');
+      sms.phoneBookEntry = stream.readStringUntil('"');
+
+      // <scts>
+      streamSkipUntil('"');
+      sms.serviceCentreTimeStamp = stream.readStringUntil('"');
+      streamSkipUntil(',');
+
+      // <tooa>
+      streamSkipUntil(',');
+
+      // <fo>
+      streamSkipUntil(',');
+
+      // <pid>
+      streamSkipUntil(',');
+
+      // <dcs>
+      const uint8_t alphabet = (stream.readStringUntil(',').toInt() >> 2) & B11;
+      switch (alphabet) {
+      case B00:
+          sms.alphabet = SmsAlphabet::GSM_7bit;
+          break;
+      case B01:
+          sms.alphabet = SmsAlphabet::Data_8bit;
+          break;
+      case B10:
+          sms.alphabet = SmsAlphabet::UCS2;
+          break;
+      case B11:
+      default:
+          sms.alphabet = SmsAlphabet::Reserved;
+          break;
+      }
+
+      // <sca>
+      streamSkipUntil(',');
+
+      // <tosca>
+      streamSkipUntil(',');
+
+      // <length>, CR, LF
+      const long length = stream.readStringUntil('\n').toInt();
+
+      // <data>
+      String data = stream.readString();
+      data.remove(static_cast<const unsigned int>(length));
+      switch (sms.alphabet) {
+      case SmsAlphabet::GSM_7bit:
+          sms.message = data;
+          break;
+      case SmsAlphabet::Data_8bit:
+          sms.message = TinyGsmDecodeHex8bit(data);
+          break;
+      case SmsAlphabet::UCS2:
+          sms.message = TinyGsmDecodeHex16bit(data);
+          break;
+      case SmsAlphabet::Reserved:
+          return {};
+      }
+
+      return sms;
+  }
 
   /*
    * Location functions
