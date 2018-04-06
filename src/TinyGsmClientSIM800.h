@@ -58,6 +58,15 @@ struct MessageStorage {
   uint16_t total[3] = {0};
 };
 
+enum class DeleteAllSmsMethod : uint8_t {
+  Read     = 1,
+  Unread   = 2,
+  Sent     = 3,
+  Unsent   = 4,
+  Received = 5,
+  All      = 6
+};
+
 
 class TinyGsmSim800
 {
@@ -895,6 +904,28 @@ public:
 
     return waitResponse() == 1;
   }
+
+  bool deleteSmsMessage(const uint16_t index) {
+    sendAT(GF("+CMGD="), index, GF(","), 0); // Delete SMS Message from <mem1> location
+    return waitResponse(5000L) == 1;
+  }
+
+  bool deleteAllSmsMessages(const DeleteAllSmsMethod method) {
+    // Select SMS Message Format: PDU mode. Spares us space now
+    sendAT(GF("+CMGF=0"));
+    if (waitResponse() != 1) {
+        return false;
+    }
+
+    sendAT(GF("+CMGDA="), static_cast<const uint8_t>(method)); // Delete All SMS
+    const bool ok = waitResponse(25000L) == 1;
+
+    sendAT(GF("+CMGF=1"));
+    waitResponse();
+
+    return ok;
+  }
+
 
   /*
    * Location functions
