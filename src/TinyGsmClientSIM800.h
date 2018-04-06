@@ -39,6 +39,25 @@ enum RegStatus {
   REG_UNKNOWN      = 4,
 };
 
+enum class MessageStorageType : uint8_t {
+  SIM,                // SM
+  Phone,              // ME
+  SIMPreferred,       // SM_P
+  PhonePreferred,     // ME_P
+  Either_SIMPreferred // MT (use both)
+};
+
+struct MessageStorage {
+  /*
+   * [0]: Messages to be read and deleted from this memory storage
+   * [1]: Messages will be written and sent to this memory storage
+   * [2]: Received messages will be placed in this memory storage
+   */
+  MessageStorageType type[3];
+  uint16_t used[3]  = {0};
+  uint16_t total[3] = {0};
+};
+
 
 class TinyGsmSim800
 {
@@ -804,6 +823,77 @@ public:
     }
 
     return sms;
+  }
+
+  MessageStorage getPreferredMessageStorage() {
+    sendAT(GF("+CPMS?")); // Preferred SMS Message Storage
+    if (waitResponse(GF(GSM_NL "+CPMS:")) != 1) {
+      stream.readString();
+      return {};
+    }
+
+    // AT reply:
+    // +CPMS: <mem1>,<used1>,<total1>,<mem2>,<used2>,<total2>,<mem3>,<used3>,<total3>
+
+    MessageStorage messageStorage;
+    for (uint8_t i = 0; i < 3; ++i) {
+      // type
+      streamSkipUntil('"');
+      const String mem = stream.readStringUntil('"');
+      if (mem == GF("SM")) {
+        messageStorage.type[i] = MessageStorageType::SIM;
+      } else if (mem == GF("ME")) {
+        messageStorage.type[i] = MessageStorageType::Phone;
+      } else if (mem == GF("SM_P")) {
+        messageStorage.type[i] = MessageStorageType::SIMPreferred;
+      } else if (mem == GF("ME_P")) {
+        messageStorage.type[i] = MessageStorageType::PhonePreferred;
+      } else if (mem == GF("MT")) {
+        messageStorage.type[i] = MessageStorageType::Either_SIMPreferred;
+      } else {
+        stream.readString();
+        return {};
+      }
+
+      // used
+      streamSkipUntil(',');
+      messageStorage.used[i] = static_cast<uint16_t>(stream.readStringUntil(',').toInt());
+
+      // total
+      if (i < 2) {
+        messageStorage.total[i] = static_cast<uint16_t>(stream.readStringUntil(',').toInt());
+      } else {
+        messageStorage.total[i] = static_cast<uint16_t>(stream.readString().toInt());
+      }
+    }
+
+    return messageStorage;
+  }
+
+  bool setPreferredMessageStorage(const MessageStorageType type[3]) {
+    const auto convertMstToString = [](const MessageStorageType &type) -> auto {
+      switch (type) {
+      case MessageStorageType::SIM:
+        return GF("\"SM\"");
+      case MessageStorageType::Phone:
+        return GF("\"ME\"");
+      case MessageStorageType::SIMPreferred:
+        return GF("\"SM_P\"");
+      case MessageStorageType::PhonePreferred:
+        return GF("\"ME_P\"");
+      case MessageStorageType::Either_SIMPreferred:
+        return GF("\"MT\"");
+      }
+
+      return GF("");
+    };
+
+    sendAT(GF("+CPMS="),
+           convertMstToString(type[0]), GF(","),
+           convertMstToString(type[1]), GF(","),
+           convertMstToString(type[2]));
+
+    return waitResponse() == 1;
   }
 
   /*
