@@ -926,6 +926,15 @@ public:
     return ok;
   }
 
+  bool receiveNewMessageIndication(const bool enabled = true, const bool cbmIndication = false, const bool statusReport = false) {
+    sendAT(GF("+CNMI=2,"),           // New SMS Message Indications
+           enabled, GF(","),         // format: +CMTI: <mem>,<index>
+           cbmIndication, GF(","),   // format: +CBM: <sn>,<mid>,<dcs>,<page>,<pages><CR><LF><data>
+           statusReport, GF(",0"));  // format: +CDS: <fo>,<mr>[,<ra>][,<tora>],<scts>,<dt>,<st>
+
+    return waitResponse() == 1;
+  }
+
 
   /*
    * Location functions
