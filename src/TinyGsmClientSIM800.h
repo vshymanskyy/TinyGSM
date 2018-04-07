@@ -257,17 +257,23 @@ public:
       return false;
     }
 
-    sendAT(GF("+CMGF=1")); // Select SMS Message Format: Text mode
-    if (waitResponse() != 1) {
+    const SimStatus simStatus = getSimStatus();
+    if (simStatus == SimStatus::SIM_READY) {
+      if (waitResponse(10000L, GF("SMS Ready")) != 1) {
         return false;
+      }
+
+      sendAT(GF("+CMGF=1")); // Select SMS Message Format: Text mode
+      if (waitResponse() != 1) {
+        return false;
+      }
+
+      sendAT(GF("+CSDH=1")); // Show SMS Text Mode Parameters
+      if (waitResponse() != 1) {
+        return false;
+      }
     }
 
-    sendAT(GF("+CSDH=1")); // Show SMS Text Mode Parameters
-    if (waitResponse() != 1) {
-        return false;
-    }
-
-    getSimStatus();
     return true;
   }
 
