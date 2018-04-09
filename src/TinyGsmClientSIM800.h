@@ -54,8 +54,8 @@ struct MessageStorage {
    * [2]: Received messages will be placed in this memory storage
    */
   MessageStorageType type[3];
-  uint16_t used[3]  = {0};
-  uint16_t total[3] = {0};
+  uint8_t used[3]  = {0};
+  uint8_t total[3] = {0};
 };
 
 enum class DeleteAllSmsMethod : uint8_t {
@@ -872,13 +872,13 @@ public:
 
       // used
       streamSkipUntil(',');
-      messageStorage.used[i] = static_cast<uint16_t>(stream.readStringUntil(',').toInt());
+      messageStorage.used[i] = static_cast<uint8_t>(stream.readStringUntil(',').toInt());
 
       // total
       if (i < 2) {
-        messageStorage.total[i] = static_cast<uint16_t>(stream.readStringUntil(',').toInt());
+        messageStorage.total[i] = static_cast<uint8_t>(stream.readStringUntil(',').toInt());
       } else {
-        messageStorage.total[i] = static_cast<uint16_t>(stream.readString().toInt());
+        messageStorage.total[i] = static_cast<uint8_t>(stream.readString().toInt());
       }
     }
 
@@ -911,7 +911,7 @@ public:
     return waitResponse() == 1;
   }
 
-  bool deleteSmsMessage(const uint16_t index) {
+  bool deleteSmsMessage(const uint8_t index) {
     sendAT(GF("+CMGD="), index, GF(","), 0); // Delete SMS Message from <mem1> location
     return waitResponse(5000L) == 1;
   }
