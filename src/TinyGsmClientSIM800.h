@@ -750,9 +750,10 @@ public:
 protected:
 
   bool modemConnect(const char* host, uint16_t port, uint8_t mux, bool ssl = false) {
+    int rsp;
 #if !defined(TINY_GSM_MODEM_SIM900)
     sendAT(GF("+CIPSSL="), ssl);
-    int rsp = waitResponse();
+    rsp = waitResponse();
     if (ssl && rsp != 1) {
       return false;
     }
