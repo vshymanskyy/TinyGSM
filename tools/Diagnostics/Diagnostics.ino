@@ -47,8 +47,9 @@ StreamDebugger debugger(SerialAT, SerialMon);
 TinyGsm modem(debugger);
 TinyGsmClient client(modem);
 
-const char server[] = "cdn.rawgit.com";
-const char resource[] = "/vshymanskyy/tinygsm/master/extras/logo.txt";
+const char server[] = "vsh.pp.ua";
+const char resource[] = "/TinyGSM/logo.txt";
+const int  port = 80;
 
 void setup() {
   // Set console baud rate
@@ -108,7 +109,7 @@ void loop() {
 
   SerialMon.print("Connecting to ");
   SerialMon.print(server);
-  if (!client.connect(server, 80)) {
+  if (!client.connect(server, port)) {
     SerialMon.println(" fail");
     delay(10000);
     return;
