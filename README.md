@@ -107,7 +107,7 @@ If you have found TinyGSM to be useful in your work, research or company, please
 
   1. Using your phone:
     - Disable PIN code on the SIM card
-    - Check your ballance
+    - Check your balance
     - Check that APN,User,Pass are correct and you have internet
   2. Ensure the SIM card is correctly inserted into the module
   3. Check if serial connection is working (Hardware Serial is recommended)  
