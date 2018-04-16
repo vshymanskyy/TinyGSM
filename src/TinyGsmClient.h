@@ -34,11 +34,13 @@
 #elif defined(TINY_GSM_MODEM_A6) || defined(TINY_GSM_MODEM_A7)
   #define TINY_GSM_MODEM_HAS_GPRS
   #include <TinyGsmClientA6.h>
+  typedef TinyGsmA6 TinyGsm;
   typedef TinyGsm::GsmClient TinyGsmClient;
 
 #elif defined(TINY_GSM_MODEM_M590)
   #define TINY_GSM_MODEM_HAS_GPRS
   #include <TinyGsmClientM590.h>
+  typedef TinyGsmM590 TinyGsm;
   typedef TinyGsm::GsmClient TinyGsmClient;
 
 #elif defined(TINY_GSM_MODEM_U201)
@@ -51,6 +53,7 @@
 #elif defined(TINY_GSM_MODEM_ESP8266)
   #define TINY_GSM_MODEM_HAS_WIFI
   #include <TinyGsmClientESP8266.h>
+  typedef TinyGsmESP8266 TinyGsm;
   typedef TinyGsm::GsmClient TinyGsmClient;
   typedef TinyGsm::GsmClientSecure TinyGsmClientSecure;
 
@@ -58,7 +61,9 @@
   #define TINY_GSM_MODEM_HAS_GPRS
   #define TINY_GSM_MODEM_HAS_WIFI
   #include <TinyGsmClientXBee.h>
-  typedef TinyGsm::GsmClient TinyGsmClient;
+  typedef TinyGsmXBee TinyGsm;
+  typedef TinyGsmXBee::GsmClient TinyGsmClient;
+  typedef TinyGsmXBee::GsmClientSecure TinyGsmClientSecure;
 
 #else
   #error "Please define GSM modem model"

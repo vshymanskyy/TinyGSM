@@ -9,7 +9,7 @@
 #ifndef TinyGsmClientESP8266_h
 #define TinyGsmClientESP8266_h
 
-//#define TINY_GSM_DEBUG Serial
+// #define TINY_GSM_DEBUG Serial
 
 #if !defined(TINY_GSM_RX_BUFFER)
   #define TINY_GSM_RX_BUFFER 512
@@ -24,24 +24,51 @@ static const char GSM_OK[] TINY_GSM_PROGMEM = "OK" GSM_NL;
 static const char GSM_ERROR[] TINY_GSM_PROGMEM = "ERROR" GSM_NL;
 static unsigned TINY_GSM_TCP_KEEP_ALIVE = 120;
 
-class TinyGsm
+// <stat> status of ESP8266 station interface
+// 2 : ESP8266 station connected to an AP and has obtained IP
+// 3 : ESP8266 station created a TCP or UDP transmission
+// 4 : the TCP or UDP transmission of ESP8266 station disconnected
+// 5 : ESP8266 station did NOT connect to an AP
+enum RegStatus {
+  REG_OK_IP        = 2,
+  REG_OK_TCP       = 3,
+  REG_UNREGISTERED = 4,
+  REG_DENIED       = 5,
+  REG_UNKNOWN      = 6,
+};
+
+
+//============================================================================//
+//============================================================================//
+//                     Declaration of the TinyGsmESP8266 Class
+//============================================================================//
+//============================================================================//
+
+
+class TinyGsmESP8266
 {
+
+  //============================================================================//
+  //============================================================================//
+  //                          The ESP8266 Client Class
+  //============================================================================//
+  //============================================================================//
 
 public:
 
 class GsmClient : public Client
 {
-  friend class TinyGsm;
+  friend class TinyGsmESP8266;
   typedef TinyGsmFifo<uint8_t, TINY_GSM_RX_BUFFER> RxFifo;
 
 public:
   GsmClient() {}
 
-  GsmClient(TinyGsm& modem, uint8_t mux = 1) {
+  GsmClient(TinyGsmESP8266& modem, uint8_t mux = 1) {
     init(&modem, mux);
   }
 
-  bool init(TinyGsm* modem, uint8_t mux = 1) {
+  bool init(TinyGsmESP8266* modem, uint8_t mux = 1) {
     this->at = modem;
     this->mux = mux;
     sock_connected = false;
@@ -101,7 +128,8 @@ public:
   virtual int read(uint8_t *buf, size_t size) {
     TINY_GSM_YIELD();
     size_t cnt = 0;
-    while (cnt < size) {
+    uint32_t _startMillis = millis();
+    while (cnt < size && millis() - _startMillis < _timeout) {
       size_t chunk = TinyGsmMin(size-cnt, rx.size());
       if (chunk > 0) {
         rx.get(buf, chunk);
@@ -144,18 +172,25 @@ public:
   String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
 private:
-  TinyGsm*      at;
-  uint8_t       mux;
-  bool          sock_connected;
-  RxFifo        rx;
+  TinyGsmESP8266*  at;
+  uint8_t          mux;
+  bool             sock_connected;
+  RxFifo           rx;
 };
+
+//============================================================================//
+//============================================================================//
+//                          The Secure ESP8266 Client Class
+//============================================================================//
+//============================================================================//
+
 
 class GsmClientSecure : public GsmClient
 {
 public:
   GsmClientSecure() {}
 
-  GsmClientSecure(TinyGsm& modem, uint8_t mux = 1)
+  GsmClientSecure(TinyGsmESP8266& modem, uint8_t mux = 1)
     : GsmClient(modem, mux)
   {}
 
@@ -169,9 +204,20 @@ public:
   }
 };
 
+
+//============================================================================//
+//============================================================================//
+//                          The ESP8266 Modem Functions
+//============================================================================//
+//============================================================================//
+
 public:
 
-  TinyGsm(Stream& stream)
+#ifdef GSM_DEFAULT_STREAM
+  TinyGsmESP8266(Stream& stream = GSM_DEFAULT_STREAM)
+#else
+  TinyGsmESP8266(Stream& stream)
+#endif
     : stream(stream)
   {
     memset(sockets, 0, sizeof(sockets));
@@ -189,6 +235,14 @@ public:
       return false;
     }
     sendAT(GF("E0"));   // Echo Off
+    if (waitResponse() != 1) {
+      return false;
+    }
+    sendAT(GF("+CIPMUX=1"));  // Enable Multiple Connections
+    if (waitResponse() != 1) {
+      return false;
+    }
+    sendAT(GF("+CWMODE_CUR=1"));  // Put into "station" mode
     if (waitResponse() != 1) {
       return false;
     }
@@ -232,9 +286,7 @@ public:
     return res;
   }
 
-  bool hasSSL() {
-    return true;
-  }
+  bool hasSSL() { return true; }
 
   /*
    * Power functions
@@ -255,10 +307,29 @@ public:
     return init();
   }
 
+  bool poweroff() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
+  bool radioOff() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
+  bool sleepEnable(bool enable = true) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
+
+  /*
+   * SIM card functions
+   */
+
 
   /*
    * Generic network functions
    */
+
+   RegStatus getRegistrationStatus() {
+     sendAT(GF("+CIPSTATUS"));
+    if (waitResponse(3000, GF("STATUS:")) != 1) return REG_UNKNOWN;
+    int status = waitResponse(GFP(GSM_ERROR), GF("2"), GF("3"), GF("4"), GF("5"));
+     waitResponse();  // Returns an OK after the status
+    return (RegStatus)status;
+   }
 
   int getSignalQuality() {
     sendAT(GF("+CWJAP_CUR?"));
@@ -275,21 +346,9 @@ public:
     return res2;
   }
 
-  bool isNetworkConnected() {
-    sendAT(GF("+CIPSTATUS"));
-    int res1 = waitResponse(3000, GF("STATUS:"));
-    int res2 = 0;
-    if (res1 == 1) {
-      res2 = waitResponse(GFP(GSM_ERROR), GF("2"), GF("3"), GF("4"), GF("5"));
-    }
-    // <stat> status of ESP8266 station interface
-    // 2 : ESP8266 station connected to an AP and has obtained IP
-    // 3 : ESP8266 station created a TCP or UDP transmission
-    // 4 : the TCP or UDP transmission of ESP8266 station disconnected (but AP is connected)
-    // 5 : ESP8266 station did NOT connect to an AP
-    waitResponse();  // Returns an OK after the status
-    if (res2 == 2 || res2 == 3 || res2 == 4) return true;
-    else return false;
+  bool isNetworkConnected()  {
+    RegStatus s = getRegistrationStatus();
+    return (s == REG_OK_IP || s == REG_OK_TCP);
   }
 
   bool waitForNetwork(unsigned long timeout = 60000L) {
@@ -298,7 +357,7 @@ public:
       int res1 = waitResponse(3000, GF("busy p..."), GF("STATUS:"));
       if (res1 == 2) {
         int res2 = waitResponse(GFP(GSM_ERROR), GF("2"), GF("3"), GF("4"), GF("5"));
-        if (res2 == 2 || res2 == 3 || res2 == 4) {
+        if (res2 == 2 || res2 == 3) {
             waitResponse();
             return true;
          }
@@ -306,36 +365,6 @@ public:
       delay(250);
     }
     return false;
-  }
-
-  /*
-   * WiFi functions
-   */
-  bool networkConnect(const char* ssid, const char* pwd) {
-
-    sendAT(GF("+CIPMUX=1"));
-    if (waitResponse() != 1) {
-      return false;
-    }
-
-    sendAT(GF("+CWMODE_CUR=1"));
-    if (waitResponse() != 1) {
-      return false;
-    }
-
-    sendAT(GF("+CWJAP_CUR=\""), ssid, GF("\",\""), pwd, GF("\""));
-    if (waitResponse(30000L, GFP(GSM_OK), GF(GSM_NL "FAIL" GSM_NL)) != 1) {
-      return false;
-    }
-
-    return true;
-  }
-
-  bool networkDisconnect() {
-    sendAT(GF("+CWQAP"));
-    bool retVal = waitResponse(10000L) == 1;
-    waitResponse(GF("WIFI DISCONNECT"));
-    return retVal;
   }
 
   String getLocalIP() {
@@ -352,6 +381,46 @@ public:
   IPAddress localIP() {
     return TinyGsmIpFromString(getLocalIP());
   }
+
+  /*
+   * WiFi functions
+   */
+  bool networkConnect(const char* ssid, const char* pwd) {
+    sendAT(GF("+CWJAP_CUR=\""), ssid, GF("\",\""), pwd, GF("\""));
+    if (waitResponse(30000L, GFP(GSM_OK), GF(GSM_NL "FAIL" GSM_NL)) != 1) {
+      return false;
+    }
+    return true;
+  }
+
+  bool networkDisconnect() {
+    sendAT(GF("+CWQAP"));
+    bool retVal = waitResponse(10000L) == 1;
+    waitResponse(GF("WIFI DISCONNECT"));
+    return retVal;
+  }
+
+  /*
+   * GPRS functions
+   */
+
+  /*
+   * Messaging functions
+   */
+
+  /*
+   * Location functions
+   */
+
+  String getGsmLocation() TINY_GSM_ATTR_NOT_AVAILABLE;
+
+  /*
+   * Battery functions
+   */
+
+  uint16_t getBattVoltage() TINY_GSM_ATTR_NOT_AVAILABLE;
+
+  int getBattPercent() TINY_GSM_ATTR_NOT_AVAILABLE;
 
 protected:
 
@@ -384,21 +453,8 @@ protected:
   }
 
   bool modemGetConnected(uint8_t mux) {
-    // TODO: re-check this
-    sendAT(GF("+CIPSTATUS="), mux);
-    int res1 = waitResponse(3000, GF("STATUS:"));
-    int res2;
-    if (res1 == 1) {
-      res2 = waitResponse(GFP(GSM_ERROR), GF("2"), GF("3"), GF("4"), GF("5"));
-    }
-    // <stat> status of ESP8266 station interface
-    // 2 : ESP8266 station connected to an AP and has obtained IP
-    // 3 : ESP8266 station created a TCP or UDP transmission
-    // 4 : the TCP or UDP transmission of ESP8266 station disconnected (but AP is connected)
-    // 5 : ESP8266 station did NOT connect to an AP
-    waitResponse();  // Returns an OK after the status
-    if (res2 == 2 || res2 == 3 || res2 == 4) return true;
-    else return false;
+    RegStatus s = getRegistrationStatus();
+    return (s == REG_OK_IP || s == REG_OK_TCP);
   }
 
 public:
@@ -416,9 +472,13 @@ public:
     streamWrite(tail...);
   }
 
-  bool streamSkipUntil(char c) { //TODO: timeout
-    while (true) {
-      while (!stream.available()) { TINY_GSM_YIELD(); }
+  bool streamSkipUntil(char c) {
+    const unsigned long timeout = 1000L;
+    unsigned long startMillis = millis();
+    while (millis() - startMillis < timeout) {
+      while (millis() - startMillis < timeout && !stream.available()) {
+        TINY_GSM_YIELD();
+      }
       if (stream.read() == c)
         return true;
     }
@@ -430,7 +490,7 @@ public:
     streamWrite("AT", cmd..., GSM_NL);
     stream.flush();
     TINY_GSM_YIELD();
-    //DBG("### AT:", cmd...);
+    DBG("### AT:", cmd...);
   }
 
   // TODO: Optimize this!
@@ -438,12 +498,12 @@ public:
                        GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),
                        GsmConstStr r3=NULL, GsmConstStr r4=NULL, GsmConstStr r5=NULL)
   {
-    /*String r1s(r1); r1s.trim();
+    String r1s(r1); r1s.trim();
     String r2s(r2); r2s.trim();
     String r3s(r3); r3s.trim();
     String r4s(r4); r4s.trim();
     String r5s(r5); r5s.trim();
-    DBG("### ..:", r1s, ",", r2s, ",", r3s, ",", r4s, ",", r5s);*/
+    DBG("### ..:", r1s, ",", r2s, ",", r3s, ",", r4s, ",", r5s);
     data.reserve(64);
     int index = 0;
     unsigned long startMillis = millis();
@@ -505,6 +565,7 @@ finish:
       }
       data = "";
     }
+    DBG('<', index, '>');
     return index;
   }
 
