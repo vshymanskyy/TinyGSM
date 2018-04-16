@@ -107,13 +107,12 @@ If you have found TinyGSM to be useful in your work, research or company, please
 
   1. Using your phone:
     - Disable PIN code on the SIM card
-    - Check your ballance
+    - Check your balance
     - Check that APN,User,Pass are correct and you have internet
   2. Ensure the SIM card is correctly inserted into the module
-  3. Provide a good, [stable power supply](https://github.com/vshymanskyy/TinyGSM/wiki/Powering-GSM-module) (up to 2A and specific voltage according to your module documentation)
-  4. Check if serial connection is working (Hardware Serial is recommended)  
+  3. Check if serial connection is working (Hardware Serial is recommended)  
      Send an ```AT``` command using [this sketch](tools/AT_Debug/AT_Debug.ino)
-  5. Check if GSM antenna is attached
+  4. Ensure that GSM antenna is firmly attached
 
 ## How does it work?
 
@@ -131,6 +130,14 @@ For additional functions, please refer to [this example sketch](examples/AllFunc
 
 Use this sketch to diagnose your SIM card and GPRS connection:  
   File -> Examples -> TynyGSM -> tools -> [Diagnostics](https://github.com/vshymanskyy/TinyGSM/blob/master/tools/Diagnostics/Diagnostics.ino)
+  
+### Ensure stable data & power connection
+
+This actually solves stability problems in **many** cases:
+- Provide a good, [stable power supply](https://github.com/vshymanskyy/TinyGSM/wiki/Powering-GSM-module) (up to 2A and specific voltage according to your module documentation)
+- Keep your wires as short as possible
+- Consider soldering them for a stable connection
+- Do not put your wires next to noisy signal sources (buck converters, antennas, oscillators etc.)
 
 ### SoftwareSerial problems
 
@@ -161,6 +168,10 @@ This may result in problems such as:
 
 To return module to **Factory Defaults**, use this sketch:  
   File -> Examples -> TynyGSM -> tools -> [FactoryReset](https://github.com/vshymanskyy/TinyGSM/blob/master/tools/FactoryReset/FactoryReset.ino)
+
+### Goouuu Tech IOT-GA6 vs AI-Thinker A6 confusion
+
+It turns out that **Goouuu Tech IOT-GA6** is not the same as **AI-Thinker A6**. Unfortunately IOT-GA6 is not supported out of the box yet. There are some hints that IOT-GA6 firmware may be updated to match A6... But no one confirmed that up to my knowledge.
 
 __________
 
