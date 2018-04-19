@@ -17,12 +17,17 @@
 #endif
 
 #define TINY_GSM_MUX_COUNT 5
+#ifndef MAX_UNSOLIT
+#define MAX_UNSOLIT 2
+#endif
 
 #include <TinyGsmCommon.h>
 
 #define GSM_NL "\r\n"
 static const char GSM_OK[] TINY_GSM_PROGMEM = "OK" GSM_NL;
 static const char GSM_ERROR[] TINY_GSM_PROGMEM = "ERROR" GSM_NL;
+
+typedef void (*UnsolitCallback)(String &);
 
 enum SimStatus {
   SIM_ERROR = 0,
@@ -201,14 +206,35 @@ public:
   }
 };
 
+private:
+struct UnsolitFunction {
+		UnsolitCallback call;
+		String UnsolitString;
+};
+struct UnsolitFunction Functions[MAX_UNSOLIT];
+byte Func_count;
+
 public:
 
   TinyGsmSim800(Stream& stream)
     : stream(stream)
   {
     memset(sockets, 0, sizeof(sockets));
+    Func_count = 0;
   }
 
+  bool registerUnsolitCallback(const String& unString,UnsolitCallback callback)
+  {
+	  if (Func_count < MAX_UNSOLIT)
+	  {
+		  Functions[Func_count].call = callback;
+		  Functions[Func_count].UnsolitString = unString;
+		  Func_count++;
+		  DBG("registerUnsolitCallback\n");
+		  return 1;
+	  }
+	  return 0;
+  }
   /*
    * Basic functions
    */
@@ -676,6 +702,12 @@ public:
     return waitResponse(60000L) == 1;
   }
 
+  bool deleteAllSMS()
+  {
+	  sendAT(GF("+CMGD=4"));
+	  return waitResponse() == 1;
+  }
+
   bool sendSMS_UTF16(const String& number, const void* text, size_t len) {
     sendAT(GF("+CMGF=1"));
     waitResponse();
@@ -717,6 +749,38 @@ public:
     waitResponse();
     res.trim();
     return res;
+  }
+
+
+  /** Enable Ring Infication unsolit */
+
+  bool enableRING() {
+    sendAT(GF("+CLIP=1"));
+    return waitResponse(500L) == 1;
+  }
+
+  /** Enable Message Infication unsolit */
+
+  bool enableSMSIndication() {
+    sendAT(GF("+CNMI=1"));
+    return waitResponse(500L) == 1;
+  }
+
+  void process()
+  {
+	  String data;
+	  stream.setTimeout(100);
+	  data = stream.readStringUntil('\n');
+	  for (int i=0;i<Func_count;i++)
+	  {
+		  if (data.indexOf(Functions[i].UnsolitString)>=0)
+		  {
+			  DBG("Match\n");
+			  (Functions[i].call)(data);
+			  break;
+		  }
+	  }
+	  SerialMon.println(data);
   }
 
   /*
