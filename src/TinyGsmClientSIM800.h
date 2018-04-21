@@ -29,6 +29,15 @@ static const char GSM_ERROR[] TINY_GSM_PROGMEM = "ERROR" GSM_NL;
 
 typedef void (*UnsolitCallback)(String &);
 
+/* Struct and typedef to store and manipulate SMS */
+struct sms_str{
+  char number[15];
+  char datetime[22];
+  char content[161];
+};
+
+typedef struct sms_str SMS;
+
 enum SimStatus {
   SIM_ERROR = 0,
   SIM_READY = 1,
@@ -764,6 +773,42 @@ public:
   bool enableSMSIndication() {
     sendAT(GF("+CNMI=1"));
     return waitResponse(500L) == 1;
+  }
+
+  bool readSMS(uint8_t index, SMS &message){
+    sendAT(GF("+CMGF=1"));
+    waitResponse();
+    sendAT(GF("+CMGR="),index);
+    uint8_t rsp = waitResponse(5000L,GF("+CMGR:"));
+    if(rsp != 1){
+      return false;
+    }
+    streamSkipUntil(',');
+    streamSkipUntil('"');
+
+    String number;
+    String datetime;
+    String content;
+    rsp = waitResponse(1000,number,"\"");
+    if(rsp != 1){
+      return false;
+    }
+    streamSkipUntil(',');
+    streamSkipUntil(',');
+    streamSkipUntil('"');
+    rsp = waitResponse(1000,datetime,"\"");
+    if(rsp != 1){
+      return false;
+    }
+    streamSkipUntil('\n');
+    rsp = waitResponse(1000,content);
+    if(rsp != 1){
+      return false;
+    }
+    number.toCharArray(message.number,15);
+    datetime.toCharArray(message.datetime,21);
+    content.toCharArray(message.content,161);
+    return true;
   }
 
   void process()
