@@ -31,6 +31,12 @@
   typedef TinyGsmSim808::GsmClient TinyGsmClient;
   typedef TinyGsmSim808::GsmClientSecure TinyGsmClientSecure;
 
+#elif defined(TINY_GSM_MODEM_BG96)
+  #define TINY_GSM_MODEM_HAS_GPRS
+  #include <TinyGsmClientBG96.h>
+  typedef TinyGsmBG96 TinyGsm;
+  typedef TinyGsmBG96::GsmClient TinyGsmClient;
+
 #elif defined(TINY_GSM_MODEM_A6) || defined(TINY_GSM_MODEM_A7)
   #define TINY_GSM_MODEM_HAS_GPRS
   #include <TinyGsmClientA6.h>
