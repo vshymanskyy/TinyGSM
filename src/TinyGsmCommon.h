@@ -59,6 +59,30 @@ namespace {
   #define DBG(...)
 #endif
 
+enum class SmsStatus : uint8_t {
+  REC_UNREAD  = 0,
+  REC_READ    = 1,
+  STO_UNSENT  = 2,
+  STO_SENT    = 3,
+  ALL         = 4
+};
+
+enum class SmsAlphabet : uint8_t {
+  GSM_7bit   = B00,
+  Data_8bit  = B01,
+  UCS2       = B10,
+  Reserved   = B11
+};
+
+struct Sms {
+  SmsStatus status;              // <stat>
+  SmsAlphabet alphabet;          // alphabet part of TP-DCS
+  String originatingAddress;     // <oa>
+  String phoneBookEntry;         // <alpha>
+  String serviceCentreTimeStamp; // <scts>, format: yy/MM/dd,hh:mm:ss±zz; zz: time zone, quarter of an hour
+  String message;                // <data>
+};
+
 template<class T>
 const T& TinyGsmMin(const T& a, const T& b)
 {
@@ -118,7 +142,7 @@ IPAddress TinyGsmIpFromString(const String& strIP) {
 }
 
 static inline
-String TinyGsmDecodeHex7bit(String &instr) {
+String TinyGsmDecodeHex7bit(const String &instr) {
   String result;
   byte reminder = 0;
   int bitstate = 7;
@@ -144,7 +168,7 @@ String TinyGsmDecodeHex7bit(String &instr) {
 }
 
 static inline
-String TinyGsmDecodeHex8bit(String &instr) {
+String TinyGsmDecodeHex8bit(const String &instr) {
   String result;
   for (unsigned i=0; i<instr.length(); i+=2) {
     char buf[4] = { 0, };
@@ -157,7 +181,7 @@ String TinyGsmDecodeHex8bit(String &instr) {
 }
 
 static inline
-String TinyGsmDecodeHex16bit(String &instr) {
+String TinyGsmDecodeHex16bit(const String &instr) {
   String result;
   for (unsigned i=0; i<instr.length(); i+=4) {
     char buf[4] = { 0, };
