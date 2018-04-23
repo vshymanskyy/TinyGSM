@@ -85,6 +85,7 @@ GPS/GNSS                     | ✔¹     | 🅧     | ◌¹        | 🅧   | �
 
 More modems may be supported later:
 - [ ] Quectel M10, M35, M95, UG95
+- [ ] Sequans Monarch LTE Cat M1/NB1
 - [ ] SIMCom SIM5320, SIM5360, SIM5216, SIM7xxx
 - [ ] Telit GL865
 - [ ] ZTE MG2639
