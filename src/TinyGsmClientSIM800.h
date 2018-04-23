@@ -775,14 +775,16 @@ public:
     return waitResponse(500L) == 1;
   }
 
-  bool readSMS(uint8_t index, SMS &message){
+  bool readSMS(uint16_t index, SMS &message){
     sendAT(GF("+CMGF=1"));
     waitResponse();
     sendAT(GF("+CMGR="),index);
     uint8_t rsp = waitResponse(5000L,GF("+CMGR:"));
+    //Serial.print(1);
     if(rsp != 1){
       return false;
     }
+    //Serial.print(2);
     streamSkipUntil(',');
     streamSkipUntil('"');
 
@@ -790,25 +792,44 @@ public:
     String datetime;
     String content;
     rsp = waitResponse(1000,number,"\"");
+    //Serial.print(3);
     if(rsp != 1){
       return false;
     }
+    number.remove(number.length()-1);
+    //Serial.print(4);
     streamSkipUntil(',');
     streamSkipUntil(',');
     streamSkipUntil('"');
+    //Serial.print(5);
     rsp = waitResponse(1000,datetime,"\"");
     if(rsp != 1){
       return false;
     }
+    //Serial.print(6);
     streamSkipUntil('\n');
     rsp = waitResponse(1000,content);
+    //Serial.print(7);
     if(rsp != 1){
       return false;
     }
+    content.remove(content.length()-5,4); /* Remove "OK\r\n" */
     number.toCharArray(message.number,15);
     datetime.toCharArray(message.datetime,21);
     content.toCharArray(message.content,161);
     return true;
+  }
+
+  bool readSMSUnsolicited(String &cmti, SMS &msg){
+    /* unsolicited_msg +CMTI: "SM",<index> */
+    if(cmti.indexOf("+CMTI") == -1){
+      return false;
+    }
+    String index_str = cmti.substring(12);
+    uint16_t index = index_str.toInt();
+
+    bool rsp = readSMS(index,msg);
+    return rsp;
   }
 
   void process()
@@ -825,7 +846,10 @@ public:
 			  break;
 		  }
 	  }
-	  SerialMon.println(data);
+    if(data.length() != 0){
+      SerialMon.println(data);
+    }
+	  
   }
 
   /*
