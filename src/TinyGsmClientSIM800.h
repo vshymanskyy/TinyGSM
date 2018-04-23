@@ -39,6 +39,18 @@ enum RegStatus {
   REG_UNKNOWN      = 4,
 };
 
+enum class PhonebookStorageType : uint8_t {
+  SIM,    // Typical size: 250
+  Phone,  // Typical size: 100
+  Invalid
+};
+
+struct PhonebookStorage {
+  PhonebookStorageType type = PhonebookStorageType::Invalid;
+  uint8_t used  = {0};
+  uint8_t total = {0};
+};
+
 
 class TinyGsmSim800
 {
@@ -701,6 +713,52 @@ public:
     stream.write((char)0x1A);
     stream.flush();
     return waitResponse(60000L) == 1;
+  }
+
+
+  /*
+   * Phonebook functions
+   */
+
+  PhonebookStorage getPhonebookStorage() {
+    sendAT(GF("+CPBS?")); // Phonebook Memory Storage
+    if (waitResponse(GF(GSM_NL "+CPBS: \"")) != 1) {
+      stream.readString();
+      return {};
+    }
+
+    // AT reply:
+    // +CPBS: <storage>,<used>,<total>
+
+    PhonebookStorage phonebookStorage;
+
+    const String mem = stream.readStringUntil('"');
+    if (mem == GF("SM")) {
+      phonebookStorage.type = PhonebookStorageType::SIM;
+    } else if (mem == GF("ME")) {
+      phonebookStorage.type = PhonebookStorageType::Phone;
+    } else {
+      stream.readString();
+      return {};
+    }
+
+    // used, total
+    streamSkipUntil(',');
+    phonebookStorage.used = static_cast<uint8_t>(stream.readStringUntil(',').toInt());
+    phonebookStorage.total = static_cast<uint8_t>(stream.readString().toInt());
+
+    return phonebookStorage;
+  }
+
+  bool setPhonebookStorage(const PhonebookStorageType type) {
+    if (type == PhonebookStorageType::Invalid) {
+      return false;
+    }
+
+    const auto storage = type == PhonebookStorageType::SIM ? GF("\"SM\"") : GF("\"ME\"");
+    sendAT(GF("+CPBS="), storage); // Phonebook Memory Storage
+
+    return waitResponse() == 1;
   }
 
 
