@@ -84,7 +84,7 @@ GPS/GNSS                     | ✔¹     | 🅧     | ◌¹        | 🅧   | �
 - ... other modules, based on supported modems
 
 More modems may be supported later:
-- [ ] Quectel M10, M95, UG95
+- [ ] Quectel M10, M35, M95, UG95
 - [ ] SIMCom SIM5320, SIM5360, SIM5216, SIM7xxx
 - [ ] Telit GL865
 - [ ] ZTE MG2639
