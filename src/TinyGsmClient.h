@@ -66,6 +66,11 @@
   #include <TinyGsmClientXBee.h>
   typedef TinyGsm::GsmClient TinyGsmClient;
 
+#elif defined(TINY_GSM_MODEM_M95)
+  #define TINY_GSM_MODEM_HAS_GPRS
+  #include <TinyGsmClientM95.h>
+  typedef TinyGsm::GsmClient TinyGsmClient;
+
 #else
   #error "Please define GSM modem model"
 #endif
