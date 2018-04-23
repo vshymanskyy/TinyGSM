@@ -67,13 +67,15 @@ GPS/GNSS                     | ✔¹     | 🅧     | ◌¹        | 🅧   | �
 - SIMCom SIM800 series (SIM800A, SIM800C, SIM800L, SIM800H, SIM808, SIM868)
 - SIMCom SIM900 series (SIM900A, SIM900D, SIM908, SIM968)
 - AI-Thinker A6, A6C, A7, A20
-- U-blox SARA U201 (*alpha*)
 - ESP8266 (AT commands interface, similar to GSM modems)
 - Digi XBee WiFi and Cellular (using XBee command mode)
 - Neoway M590
+- U-blox SARA U201 ***(alpha)***
+- Quectel BG96 ***(alpha)***
 
 ### Supported boards/modules
-- Arduino MKR GSM 1400 (*alpha*)
+- Arduino MKR GSM 1400 ***(alpha)***
+- RAK WisLTE ***(alpha)***
 - GPRSbee
 - Microduino GSM
 - Adafruit FONA (Mini Cellular GSM Breakout)
