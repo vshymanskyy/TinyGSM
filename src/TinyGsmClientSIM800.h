@@ -717,6 +717,16 @@ public:
 	  return waitResponse() == 1;
   }
 
+  bool deleteSMS(uint16_t index){
+    sendAT(GF("+CMGD="),index);
+    uint8_t rsp = waitResponse();
+    if(rsp != 1){
+      return false;
+    }else{
+      return true;
+    }
+  }
+
   bool sendSMS_UTF16(const String& number, const void* text, size_t len) {
     sendAT(GF("+CMGF=1"));
     waitResponse();
