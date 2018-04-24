@@ -59,6 +59,12 @@ void incomingSMSCallback(String &unsolicited_msg){
     Serial.println(sms_msg.datetime);
     Serial.print("Content: ");
     Serial.println(sms_msg.content);
+
+    String index_str = unsolicited_msg.substring(12);
+    uint16_t index = index_str.toInt();
+    Serial.print("Deleting SMS, index ");
+    Serial.println(index);
+    sim800.deleteSMS(index);
 }
   
 void loop(void){
