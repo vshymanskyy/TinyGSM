@@ -33,7 +33,7 @@ typedef void (*UnsolitCallback)(String &);
 struct sms_str{
   char number[15];
   char datetime[22];
-  char content[161];
+  char content[180];
 };
 
 typedef struct sms_str SMS;
