@@ -66,7 +66,7 @@ void loop() {
   // To skip it, call init() instead of restart()
   SerialMon.print("Initializing modem...");
   if (!modem.restart()) {
-    SerialMon.println(" fail");
+    SerialMon.println(F(" [fail]"));
     SerialMon.println(F("************************"));
     SerialMon.println(F(" Is your modem connected properly?"));
     SerialMon.println(F(" Is your serial speed (baud rate) correct?"));
@@ -76,13 +76,18 @@ void loop() {
     SerialMon.println(F("************************"));
     delay(10000);
   }
+  SerialMon.println(F(" [OK]"));
+
+  String modemInfo = modem.getModemInfo();
+  SerialMon.print("Modem: ");
+  SerialMon.println(modemInfo);
 
   // Unlock your SIM card with a PIN
   //modem.simUnlock("1234");
 
   SerialMon.print("Waiting for network...");
   if (!modem.waitForNetwork()) {
-    SerialMon.println(" fail");
+    SerialMon.println(F(" [fail]"));
     SerialMon.println(F("************************"));
     SerialMon.println(F(" Is your sim card locked?"));
     SerialMon.println(F(" Do you have a good signal?"));
@@ -92,12 +97,12 @@ void loop() {
     delay(10000);
     return;
   }
-  SerialMon.println(" OK");
+  SerialMon.println(F(" [OK]"));
 
   SerialMon.print("Connecting to ");
   SerialMon.print(apn);
   if (!modem.gprsConnect(apn, user, pass)) {
-    SerialMon.println(" fail");
+    SerialMon.println(F(" [fail]"));
     SerialMon.println(F("************************"));
     SerialMon.println(F(" Is GPRS enabled by network provider?"));
     SerialMon.println(F(" Try checking your card balance."));
@@ -105,16 +110,16 @@ void loop() {
     delay(10000);
     return;
   }
-  SerialMon.println(" OK");
+  SerialMon.println(F(" [OK]"));
 
-  SerialMon.print("Connecting to ");
+  SerialMon.print(F("Connecting to "));
   SerialMon.print(server);
   if (!client.connect(server, port)) {
-    SerialMon.println(" fail");
+    SerialMon.println(F(" [fail]"));
     delay(10000);
     return;
   }
-  SerialMon.println(" OK");
+  SerialMon.println(F(" [OK]"));
 
   // Make a HTTP GET request:
   client.print(String("GET ") + resource + " HTTP/1.0\r\n");
@@ -130,26 +135,26 @@ void loop() {
   while (client.connected() && millis() - timeout < 10000L) {
     while (client.available()) {
       char c = client.read();
-      //SerialMon.print(c);
+      SerialMon.print(c);
       bytesReceived += 1;
       timeout = millis();
     }
   }
 
   client.stop();
-  SerialMon.println("Server disconnected");
+  SerialMon.println(F("Server disconnected"));
 
   modem.gprsDisconnect();
-  SerialMon.println("GPRS disconnected");
+  SerialMon.println(F("GPRS disconnected"));
 
   SerialMon.println();
-  SerialMon.println("************************");
-  SerialMon.print  (" Received: ");
+  SerialMon.println(F("************************"));
+  SerialMon.print  (F(" Received: "));
   SerialMon.print(bytesReceived);
-  SerialMon.println(" bytes");
-  SerialMon.print  (" Test:     ");
+  SerialMon.println(F(" bytes"));
+  SerialMon.print  (F(" Test:     "));
   SerialMon.println((bytesReceived == 121) ? "PASSED" : "FAILED");
-  SerialMon.println("************************");
+  SerialMon.println(F("************************"));
 
   // Do nothing forevermore
   while (true) {
