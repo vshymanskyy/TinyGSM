@@ -24,3 +24,6 @@ factoryReset	KEYWORD2
 #######################################
 # Literals (LITERAL1)
 #######################################
+DATE_FULL	LITERAL1
+DATE_TIME	LITERAL1
+DATE_DATE	LITERAL1

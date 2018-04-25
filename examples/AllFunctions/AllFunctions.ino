@@ -126,6 +126,12 @@ void loop() {
   String gsmLoc = modem.getGsmLocation();
   DBG("GSM location:", gsmLoc);
 
+  // This is only supported on SIMxxx series
+  String gsmTime = modem.getGSMDateTime(DATE_TIME);
+  DBG("GSM Time:", gsmTime);
+  String gsmDate = modem.getGSMDateTime(DATE_DATE);
+  DBG("GSM Date:", gsmDate);
+
   String ussd_balance = modem.sendUSSD("*111#");
   DBG("Balance (USSD):", ussd_balance);
 
