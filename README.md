@@ -67,13 +67,15 @@ GPS/GNSS                     | ✔¹     | 🅧     | ◌¹        | 🅧   | �
 - SIMCom SIM800 series (SIM800A, SIM800C, SIM800L, SIM800H, SIM808, SIM868)
 - SIMCom SIM900 series (SIM900A, SIM900D, SIM908, SIM968)
 - AI-Thinker A6, A6C, A7, A20
-- U-blox SARA U201 (*alpha*)
 - ESP8266 (AT commands interface, similar to GSM modems)
 - Digi XBee WiFi and Cellular (using XBee command mode)
 - Neoway M590
+- U-blox SARA U201 ***(alpha)***
+- Quectel BG96 ***(alpha)***
 
 ### Supported boards/modules
-- Arduino MKR GSM 1400 (*alpha*)
+- Arduino MKR GSM 1400 ***(alpha)***
+- RAK WisLTE ***(alpha)***
 - GPRSbee
 - Microduino GSM
 - Adafruit FONA (Mini Cellular GSM Breakout)
@@ -82,7 +84,8 @@ GPS/GNSS                     | ✔¹     | 🅧     | ◌¹        | 🅧   | �
 - ... other modules, based on supported modems
 
 More modems may be supported later:
-- [ ] Quectel M10, M95, UG95
+- [ ] Quectel M10, M35, M95, UG95
+- [ ] Sequans Monarch LTE Cat M1/NB1
 - [ ] SIMCom SIM5320, SIM5360, SIM5216, SIM7xxx
 - [ ] Telit GL865
 - [ ] ZTE MG2639
@@ -113,6 +116,13 @@ If you have found TinyGSM to be useful in your work, research or company, please
   3. Check if serial connection is working (Hardware Serial is recommended)  
      Send an ```AT``` command using [this sketch](tools/AT_Debug/AT_Debug.ino)
   4. Ensure that GSM antenna is firmly attached
+  
+If you have any issues:
+
+  1. Read the whole README (you're looking at it!)
+  2. Try running the Diagnostics sketch
+  3. Check for [**highlighted topics here**](https://github.com/vshymanskyy/TinyGSM/issues?utf8=%E2%9C%93&q=is%3Aissue+label%3A%22for+reference%22+)
+  4. If you have a question, post it in [Gitter chat](https://gitter.im/tinygsm)
 
 ## How does it work?
 
@@ -133,8 +143,9 @@ Use this sketch to diagnose your SIM card and GPRS connection:
   
 ### Ensure stable data & power connection
 
-This actually solves stability problems in **many** cases:
-- Provide a good, [stable power supply](https://github.com/vshymanskyy/TinyGSM/wiki/Powering-GSM-module) (up to 2A and specific voltage according to your module documentation)
+Most modules require up to 2A and specific voltage - according to the module documentation.
+So this actually solves stability problems in **many** cases:
+- Provide a good stable power supply. Read about [**powering your module**](https://github.com/vshymanskyy/TinyGSM/wiki/Powering-GSM-module).
 - Keep your wires as short as possible
 - Consider soldering them for a stable connection
 - Do not put your wires next to noisy signal sources (buck converters, antennas, oscillators etc.)
@@ -143,6 +154,7 @@ This actually solves stability problems in **many** cases:
 
 When using ```SoftwareSerial``` (on Uno, Nano, etc), the speed **115200** may not work.  
 Try selecting **57600**, **38400**, or even lower - the one that works best for you.  
+In some cases **9600** is unstable, but using **38400** helps, etc.  
 Be sure to set correct TX/RX pins in the sketch. Please note that not every Arduino pin can serve as TX or RX pin.  
 **Read more about SoftSerial options and configuration [here](https://www.pjrc.com/teensy/td_libs_AltSoftSerial.html) and [here](https://www.arduino.cc/en/Reference/SoftwareSerial).**
   
