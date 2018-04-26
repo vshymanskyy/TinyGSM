@@ -143,8 +143,9 @@ Use this sketch to diagnose your SIM card and GPRS connection:
   
 ### Ensure stable data & power connection
 
-This actually solves stability problems in **many** cases:
-- Provide a good, [stable power supply](https://github.com/vshymanskyy/TinyGSM/wiki/Powering-GSM-module) (up to 2A and specific voltage according to your module documentation)
+Most modules require up to 2A and specific voltage - according to the module documentation.
+So this actually solves stability problems in **many** cases:
+- Provide a good stable power supply. Read about [**powering your module**](https://github.com/vshymanskyy/TinyGSM/wiki/Powering-GSM-module).
 - Keep your wires as short as possible
 - Consider soldering them for a stable connection
 - Do not put your wires next to noisy signal sources (buck converters, antennas, oscillators etc.)
