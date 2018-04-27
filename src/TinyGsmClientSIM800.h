@@ -1008,6 +1008,28 @@ public:
     return waitResponse() == 1;
   }
 
+  bool addPhonebookEntry(const String &number, const String &text) {
+    // Always use international phone number style (+12345678910)
+    // Never use double quotes or backslashes in `text`, not even in escaped form
+
+    // Typical maximum length of `number`: 16
+    // Typical maximum length of `text`:   40
+
+    // AT format:
+    // AT+CPBW=<index>[,<number>,[<type>,[<text>]]]
+    sendAT(GF("+CPBW=,\""), number, GF("\",145,\""), text, GF("\""));  // Write Phonebook Entry
+
+    return waitResponse(3000L) == 1;
+  }
+
+  bool deletePhonebookEntry(const uint8_t index) {
+    // AT+CPBW=<index>
+    sendAT(GF("+CPBW="), index); // Write Phonebook Entry
+
+    // Returns OK even if an empty index is deleted in the valid range
+    return waitResponse(3000L) == 1;
+  }
+
 
   /*
    * Location functions
