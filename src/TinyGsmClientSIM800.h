@@ -51,6 +51,11 @@ struct PhonebookStorage {
   uint8_t total = {0};
 };
 
+struct PhonebookEntry {
+  String number;
+  String text;
+};
+
 
 class TinyGsmSim800
 {
@@ -781,6 +786,27 @@ public:
 
     // Returns OK even if an empty index is deleted in the valid range
     return waitResponse(3000L) == 1;
+  }
+
+  PhonebookEntry readPhonebookEntry(const uint8_t index) {
+    sendAT(GF("+CPBR="), index); // Read Current Phonebook Entries
+
+    // AT response:
+    // +CPBR:<index1>,<number>,<type>,<text>
+    if (waitResponse(3000L, GF(GSM_NL "+CPBR: ")) != 1) {
+      stream.readString();
+      return {};
+    }
+
+    PhonebookEntry phonebookEntry;
+    streamSkipUntil('"');
+    phonebookEntry.number = stream.readStringUntil('"');
+    streamSkipUntil('"');
+    phonebookEntry.text = stream.readStringUntil('"');
+
+    waitResponse();
+
+    return phonebookEntry;
   }
 
 
