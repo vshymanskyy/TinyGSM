@@ -662,8 +662,7 @@ public:
   String sendUSSD(const String& code) {
     sendAT(GF("+CMGF=1"));
     waitResponse();
-    sendAT(GF("+CSCS=\"HEX\""));
-    waitResponse();
+    changeCharacterSet(GF("HEX"));
     sendAT(GF("+CUSD=1,\""), code, GF("\""));
     if (waitResponse() != 1) {
       return "";
@@ -689,8 +688,7 @@ public:
     sendAT(GF("+CMGF=1"));
     waitResponse();
     //Set GSM 7 bit default alphabet (3GPP TS 23.038)
-    sendAT(GF("+CSCS=\"GSM\""));
-    waitResponse();
+    changeCharacterSet(GF("GSM"));
     sendAT(GF("+CMGS=\""), number, GF("\""));
     if (waitResponse(GF(">")) != 1) {
       return false;
@@ -704,8 +702,7 @@ public:
   bool sendSMS_UTF16(const String& number, const void* text, size_t len) {
     sendAT(GF("+CMGF=1"));
     waitResponse();
-    sendAT(GF("+CSCS=\"HEX\""));
-    waitResponse();
+    changeCharacterSet(GF("HEX"));
     sendAT(GF("+CSMP=17,167,0,8"));
     waitResponse();
 
@@ -775,15 +772,18 @@ public:
   }
 
   bool addPhonebookEntry(const String &number, const String &text) {
-    // Always use international phone number style (+12345678910)
-    // Never use double quotes or backslashes in `text`, not even in escaped form
+    // Always use international phone number style (+12345678910).
+    // Never use double quotes or backslashes in `text`, not even in escaped form.
+    // Use characters found in the GSM alphabet.
 
     // Typical maximum length of `number`: 16
     // Typical maximum length of `text`:   40
 
+    changeCharacterSet(GF("GSM"));
+
     // AT format:
     // AT+CPBW=<index>[,<number>,[<type>,[<text>]]]
-    sendAT(GF("+CPBW=,\""), number, GF("\",145,\""), text, GF("\""));  // Write Phonebook Entry
+    sendAT(GF("+CPBW=,\""), number, GF("\",145,\""), text, '"');  // Write Phonebook Entry
 
     return waitResponse(3000L) == 1;
   }
@@ -797,6 +797,7 @@ public:
   }
 
   PhonebookEntry readPhonebookEntry(const uint8_t index) {
+    changeCharacterSet(GF("GSM"));
     sendAT(GF("+CPBR="), index); // Read Current Phonebook Entries
 
     // AT response:
@@ -821,7 +822,9 @@ public:
     // Search among the `text` entries only.
     // Only the first TINY_GSM_PHONEBOOK_RESULTS indices are returned.
     // Make your query more specific if you have more results than that.
+    // Use characters found in the GSM alphabet.
 
+    changeCharacterSet(GF("GSM"));
     sendAT(GF("+CPBF=\""), needle, '"'); // Find Phonebook Entries
 
     // AT response:
@@ -844,6 +847,7 @@ public:
 
     return matches;
   }
+
 
   /*
    * Location functions
@@ -1099,6 +1103,11 @@ public:
 
 protected:
   GsmClient*    sockets[TINY_GSM_MUX_COUNT];
+
+  bool changeCharacterSet(const String &alphabet) {
+    sendAT(GF("+CSCS=\""), alphabet, '"');
+    return waitResponse() == 1;
+  }
 };
 
 #endif
