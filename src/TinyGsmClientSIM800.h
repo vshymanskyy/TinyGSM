@@ -18,6 +18,10 @@
 
 #define TINY_GSM_MUX_COUNT 5
 
+#ifndef TINY_GSM_PHONEBOOK_RESULTS
+  #define TINY_GSM_PHONEBOOK_RESULTS 5
+#endif
+
 #include <TinyGsmCommon.h>
 
 #define GSM_NL "\r\n"
@@ -54,6 +58,10 @@ struct PhonebookStorage {
 struct PhonebookEntry {
   String number;
   String text;
+};
+
+struct PhonebookMatches {
+  uint8_t index[TINY_GSM_PHONEBOOK_RESULTS] = {0};
 };
 
 
@@ -809,6 +817,33 @@ public:
     return phonebookEntry;
   }
 
+  PhonebookMatches findPhonebookEntries(const String &needle) {
+    // Search among the `text` entries only.
+    // Only the first TINY_GSM_PHONEBOOK_RESULTS indices are returned.
+    // Make your query more specific if you have more results than that.
+
+    sendAT(GF("+CPBF=\""), needle, '"'); // Find Phonebook Entries
+
+    // AT response:
+    // [+CPBF:<index1>,<number>,<type>,<text>]
+    // [[...]<CR><LF>+CBPF:<index2>,<number>,<type>,<text>]
+    if (waitResponse(30000L, GF(GSM_NL "+CPBF: ")) != 1) {
+      stream.readString();
+      return {};
+    }
+
+    PhonebookMatches matches;
+    for (uint8_t i = 0; i < TINY_GSM_PHONEBOOK_RESULTS; ++i) {
+      matches.index[i] = static_cast<uint8_t>(stream.readStringUntil(',').toInt());
+      if (waitResponse(GF(GSM_NL "+CPBF: ")) != 1) {
+        break;
+      }
+    }
+
+    waitResponse();
+
+    return matches;
+  }
 
   /*
    * Location functions
