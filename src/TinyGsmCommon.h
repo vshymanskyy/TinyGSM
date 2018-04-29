@@ -19,7 +19,12 @@
   #endif
 #endif
 
-#include <Client.h>
+#if defined(ARDUINO_DASH)
+  #include <ArduinoCompat/Client.h>
+#else
+  #include <Client.h>
+#endif
+
 #include <TinyGsmFifo.h>
 
 #ifndef TINY_GSM_YIELD
