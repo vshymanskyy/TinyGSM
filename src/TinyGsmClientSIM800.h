@@ -199,6 +199,8 @@ public:
 };
 
 public:
+  // events
+  Event<EventFunc> PowerOn;
 
   TinyGsmSim800(Stream& stream)
     : stream(stream)
@@ -214,6 +216,8 @@ public:
   }
 
   bool init() {
+    PowerOn(this, NULL);
+
     if (!testAT()) {
       return false;
     }
