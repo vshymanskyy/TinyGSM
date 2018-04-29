@@ -27,4 +27,3 @@ extras/docs/*
 .gcc-flags.json
 platformio.ini
 lib/readme.txt
-.DS_Store
