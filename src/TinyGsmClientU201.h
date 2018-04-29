@@ -108,7 +108,7 @@ public:
 
   virtual int available() {
     TINY_GSM_YIELD();
-    if (!rx.size() && sock_connected) {
+    if (!rx.size()) {
       at->maintain();
     }
     return rx.size() + sock_available;
@@ -129,7 +129,7 @@ public:
       // TODO: Read directly into user buffer?
       at->maintain();
       if (sock_available > 0) {
-        at->modemRead(rx.free(), mux);
+        sock_available -= at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available), mux);
       } else {
         break;
       }
@@ -233,8 +233,8 @@ public:
     for (unsigned long start = millis(); millis() - start < timeout; ) {
       sendAT(GF(""));
       if (waitResponse(200) == 1) {
-          delay(100);
-          return true;
+        delay(100);
+        return true;
       }
       delay(100);
     }
@@ -261,7 +261,17 @@ public:
     return waitResponse() == 1;
   }
 
-  String getModemInfo() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  String getModemInfo() {
+    sendAT(GF("I"));
+    String res;
+    if (waitResponse(1000L, res) != 1) {
+      return "";
+    }
+    res.replace(GSM_NL "OK" GSM_NL, "");
+    res.replace(GSM_NL, " ");
+    res.trim();
+    return res;
+  }
 
   bool hasSSL() {
     return true;
@@ -284,6 +294,15 @@ public:
   }
 
   bool poweroff() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
+  bool radioOff() {
+    sendAT(GF("+CFUN=0"));
+    if (waitResponse(10000L) != 1) {
+      return false;
+    }
+    delay(3000);
+    return true;
+  }
 
   /*
    * SIM card functions
@@ -393,7 +412,7 @@ public:
     gprsDisconnect();
 
     sendAT(GF("+CGATT=1"));
-    waitResponse(5000L);
+    waitResponse(60000L);
 
     sendAT(GF("+UPSD=0,1,\""), apn, '"');
     waitResponse();
@@ -411,13 +430,14 @@ public:
     waitResponse();
 
     sendAT(GF("+UPSDA=0,3"));
-    waitResponse(6000L);
+    waitResponse(60000L);
 
     // Open a GPRS context
     sendAT(GF("+UPSND=0,8"));
     if (waitResponse(GF(",8,1")) != 1) {
       return false;
     }
+    waitResponse();
     return true;
   }
 
@@ -443,20 +463,20 @@ public:
     if (res != 1)
       return false;
 
-    sendAT(GF("+CIFSR"));
-    if (waitResponse() != 1)
-      return false;
-
-    return true;
+    return localIP() != 0;
   }
 
   String getLocalIP() {
-    sendAT(GF("+CIFSR;E0"));
-    String res;
-    if (waitResponse(10000L, res) != 1) {
+    sendAT(GF("+UPSND=0,0"));
+    if (waitResponse(GF(GSM_NL "+UPSND:")) != 1) {
       return "";
     }
-    res.trim();
+    streamSkipUntil(',');  // Skip PSD profile
+    streamSkipUntil('\"'); // Skip request type
+    String res = stream.readStringUntil('\"');
+    if (waitResponse() != 1) {
+      return "";
+    }
     return res;
   }
 
@@ -468,7 +488,7 @@ public:
    * Phone Call functions
    */
 
-  bool setGsmBusy(bool busy = true) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool setGsmBusy(bool busy = true) TINY_GSM_ATTR_NOT_AVAILABLE;
 
   bool callAnswer() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
@@ -493,7 +513,7 @@ public:
 
   String getGsmLocation() {
     sendAT(GF("+ULOC=2,3,0,120,1"));
-    if (waitResponse(GF(GSM_NL "+UULOC:")) != 1) {
+    if (waitResponse(30000L, GF(GSM_NL "+UULOC:")) != 1) {
       return "";
     }
     String res = stream.readStringUntil('\n');
@@ -505,19 +525,18 @@ public:
   /*
    * Battery functions
    */
-  // Use: float vBatt = modem.getBattVoltage() / 1000.0;
-  uint16_t getBattVoltage() {
-    sendAT(GF("+CIND"));
+  uint16_t getBattVoltage() TINY_GSM_ATTR_NOT_AVAILABLE;
+
+  int getBattPercent() {
+    sendAT(GF("+CIND?"));
     if (waitResponse(GF(GSM_NL "+CIND:")) != 1) {
       return 0;
     }
 
-    uint16_t res = stream.readStringUntil(',').toInt();
+    int res = stream.readStringUntil(',').toInt();
     waitResponse();
     return res;
   }
-
-  int getBattPercent() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
 protected:
 
@@ -542,14 +561,14 @@ protected:
   int modemSend(const void* buff, size_t len, uint8_t mux) {
     sendAT(GF("+USOWR="), mux, ',', len);
     if (waitResponse(GF("@")) != 1) {
-      return -1;
+      return 0;
     }
     // 50ms delay, see AT manual section 25.10.4
     delay(50);
     stream.write((uint8_t*)buff, len);
     stream.flush();
     if (waitResponse(GF(GSM_NL "+USOWR:")) != 1) {
-      return -1;
+      return 0;
     }
     streamSkipUntil(','); // Skip mux
     return stream.readStringUntil('\n').toInt();
