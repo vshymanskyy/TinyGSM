@@ -47,7 +47,7 @@
   #include <TinyGsmClientM590.h>
   typedef TinyGsm::GsmClient TinyGsmClient;
 
-#elif defined(TINY_GSM_MODEM_U201)
+#elif defined(TINY_GSM_MODEM_UBLOX) || defined(TINY_GSM_MODEM_U201)
   #define TINY_GSM_MODEM_HAS_GPRS
   #include <TinyGsmClientU201.h>
   typedef TinyGsmU201 TinyGsm;
