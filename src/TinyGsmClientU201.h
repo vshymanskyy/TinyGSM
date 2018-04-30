@@ -192,6 +192,8 @@ public:
 };
 
 public:
+    Event<EventFunc> PowerOn;
+    Event<EventFunc> ModemReady;
 
 #ifdef GSM_DEFAULT_STREAM
   TinyGsmU201(Stream& stream = GSM_DEFAULT_STREAM)
@@ -211,9 +213,15 @@ public:
   }
 
   bool init(const char* pin = NULL) {
+      
+    PowerOn(this, NULL);
+
     if (!testAT()) {
       return false;
     }
+      
+    ModemReady(this, NULL);
+
     sendAT(GF("E0"));   // Echo Off
     if (waitResponse() != 1) {
       return false;
