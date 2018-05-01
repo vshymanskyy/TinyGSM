@@ -49,15 +49,23 @@
 #ifdef TINY_GSM_DEBUG
 namespace {
   template<typename T>
-  static void DBG(T last) {
+  static void DBG_PLAIN(T last) {
     TINY_GSM_DEBUG.println(last);
   }
 
   template<typename T, typename... Args>
-  static void DBG(T head, Args... tail) {
+  static void DBG_PLAIN(T head, Args... tail) {
     TINY_GSM_DEBUG.print(head);
     TINY_GSM_DEBUG.print(' ');
-    DBG(tail...);
+    DBG_PLAIN(tail...);
+  }
+
+  template<typename... Args>
+  static void DBG(Args... args) {
+    TINY_GSM_DEBUG.print(GF("["));
+    TINY_GSM_DEBUG.print(millis());
+    TINY_GSM_DEBUG.print(GF("] "));
+    DBG_PLAIN(args...);
   }
 }
 #else
