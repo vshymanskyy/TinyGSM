@@ -13,6 +13,7 @@
 #define TINY_GSM_MODEM_SIM800
 // #define TINY_GSM_MODEM_SIM808
 // #define TINY_GSM_MODEM_SIM900
+// #define TINY_GSM_MODEM_UBLOX
 // #define TINY_GSM_MODEM_A6
 // #define TINY_GSM_MODEM_A7
 // #define TINY_GSM_MODEM_M590
@@ -21,6 +22,9 @@
 
 // Increase the buffer
 #define TINY_GSM_RX_BUFFER 512
+
+// Define the serial console for debug prints, if needed
+//#define TINY_GSM_DEBUG Serial
 
 #include <TinyGsmClient.h>
 
@@ -45,11 +49,15 @@ const char pass[] = "";
 #include <StreamDebugger.h>
 StreamDebugger debugger(SerialAT, SerialMon);
 TinyGsm modem(debugger);
-TinyGsmClient client(modem);
 
 const char server[] = "vsh.pp.ua";
 const char resource[] = "/TinyGSM/logo.txt";
+
 const int  port = 80;
+TinyGsmClient client(myModem);
+
+//const int  port = 443;
+//TinyGsmClientSecure client(myModem);
 
 void setup() {
   // Set console baud rate
@@ -75,6 +83,7 @@ void loop() {
     SerialMon.println(F(" Try useing File -> Examples -> TinyGSM -> tools -> AT_Debug to find correct configuration"));
     SerialMon.println(F("************************"));
     delay(10000);
+    return;
   }
   SerialMon.println(F(" [OK]"));
 
@@ -112,6 +121,10 @@ void loop() {
   }
   SerialMon.println(F(" [OK]"));
 
+  IPAddress local = myModem.localIP();
+  SerialMon.print("Local IP: ");
+  SerialMon.println(local);
+
   SerialMon.print(F("Connecting to "));
   SerialMon.print(server);
   if (!client.connect(server, port)) {
@@ -125,6 +138,13 @@ void loop() {
   client.print(String("GET ") + resource + " HTTP/1.0\r\n");
   client.print(String("Host: ") + server + "\r\n");
   client.print("Connection: close\r\n\r\n");
+
+  // Wait for data to arrive
+  while (client.connected() && !client.available()) {
+    delay(100);
+    SerialMon.print('.');
+  };
+  SerialMon.println();
 
   // Skip all headers
   client.find("\r\n\r\n");
