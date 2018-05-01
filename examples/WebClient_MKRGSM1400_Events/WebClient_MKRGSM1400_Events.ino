@@ -60,10 +60,32 @@ TinyGsm modem(SerialAT);
 
 TinyGsmClient client(modem);
 
+void OnPowerOn(void* sender, EventArgs* e)
+{
+    // FOR THE MKR GSM 1400
+    // reset / powerup the modem
+    pinMode(GSM_RESETN, OUTPUT);
+    digitalWrite(GSM_RESETN, HIGH);
+    delay(100);
+    digitalWrite(GSM_RESETN, LOW);
+}
+
+void OnModemReady(void* sender, EventArgs* e)
+{
+    modem.setBaud(921600);
+    
+    SerialAT.end();
+    delay(100);
+    SerialAT.begin(921600);
+}
+
 void setup() {
   // Set console baud rate
   SerialMon.begin(115200);
   while (!SerialMon) {}
+
+  modem.PowerOn    += OnPowerOn;
+  modem.ModemReady += OnModemReady;
 
   // Set GSM module baud rate
   SerialAT.begin(115200);
@@ -78,7 +100,7 @@ void setup() {
   // Restart takes quite some time
   // To skip it, call init() instead of restart()
   SerialMon.println(F("Initializing modem..."));
-  modem.restart();
+  modem.init();
 
   String modemInfo = modem.getModemInfo();
   SerialMon.print(F("Modem: "));
