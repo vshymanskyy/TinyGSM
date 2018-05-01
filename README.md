@@ -35,7 +35,7 @@ TinyGSM also pulls data gently from the modem (whenever possible), so it can ope
 
 ## Features
 
-Feature \ Modem              | SIM8xx | U201   | A6/A7/A20 | M590 | ESP8266 | XBee 
+Feature \ Modem              | SIM8xx | U2     | A6/A7/A20 | M590 | ESP8266 | XBee 
 ---                          | ---    | ---    | ---       | ---  | ---     | ---
 **Data connections**
 TCP (HTTP, MQTT, Blynk, ...) | ✔      | ✔      | ✔         | ✔    | ✔       | ✔
@@ -70,17 +70,17 @@ GPS/GNSS                     | ✔¹     | 🅧     | ◌¹        | 🅧   | �
 - ESP8266 (AT commands interface, similar to GSM modems)
 - Digi XBee WiFi and Cellular (using XBee command mode)
 - Neoway M590
-- U-blox SARA U201 ***(alpha)***
+- U-blox SARA U2
 - Quectel BG96 ***(alpha)***
 
 ### Supported boards/modules
-- Arduino MKR GSM 1400 ***(alpha)***
-- RAK WisLTE ***(alpha)***
+- Arduino MKR GSM 1400
 - GPRSbee
 - Microduino GSM
 - Adafruit FONA (Mini Cellular GSM Breakout)
 - Adafruit FONA 800/808 Shield
 - Industruino GSM
+- RAK WisLTE ***(alpha)***
 - ... other modules, based on supported modems
 
 More modems may be supported later:
