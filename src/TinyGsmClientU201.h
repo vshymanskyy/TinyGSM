@@ -22,6 +22,7 @@
 #define GSM_NL "\r\n"
 static const char GSM_OK[] TINY_GSM_PROGMEM = "OK" GSM_NL;
 static const char GSM_ERROR[] TINY_GSM_PROGMEM = "ERROR" GSM_NL;
+static const char GSM_CME_ERROR[] TINY_GSM_PROGMEM = GSM_NL "+CME ERROR:";
 
 enum SimStatus {
   SIM_ERROR = 0,
@@ -412,7 +413,9 @@ public:
     gprsDisconnect();
 
     sendAT(GF("+CGATT=1"));
-    waitResponse(60000L);
+    if (waitResponse(60000L) != 1) {
+      return false;
+    }
 
     sendAT(GF("+UPSD=0,1,\""), apn, '"');
     waitResponse();
@@ -430,7 +433,9 @@ public:
     waitResponse();
 
     sendAT(GF("+UPSDA=0,3"));
-    waitResponse(60000L);
+    if (waitResponse(60000L) != 1) {
+      return false;
+    }
 
     // Open a GPRS context
     sendAT(GF("+UPSND=0,8"));
@@ -553,6 +558,14 @@ protected:
       waitResponse();
     }
 
+    // Enable NODELAY
+    sendAT(GF("+USOSO="), *mux, GF(",6,1,1"));
+    waitResponse();
+
+    // Enable KEEPALIVE, 30 sec
+    //sendAT(GF("+USOSO="), *mux, GF(",6,2,30000"));
+    //waitResponse();
+
     sendAT(GF("+USOCO="), *mux, ",\"", host, "\",", port);
     int rsp = waitResponse(75000L);
     return (1 == rsp);
@@ -571,7 +584,9 @@ protected:
       return 0;
     }
     streamSkipUntil(','); // Skip mux
-    return stream.readStringUntil('\n').toInt();
+    int sent = stream.readStringUntil('\n').toInt();
+    waitResponse();
+    return sent;
   }
 
   size_t modemRead(size_t size, uint8_t mux) {
@@ -594,7 +609,7 @@ protected:
   }
 
   size_t modemGetAvailable(uint8_t mux) {
-    sendAT(GF("+USORD="), mux, ',', 0);
+    sendAT(GF("+USORD="), mux, ",0");
     size_t result = 0;
     if (waitResponse(GF(GSM_NL "+USORD:")) == 1) {
       streamSkipUntil(','); // Skip mux
@@ -615,7 +630,7 @@ protected:
     streamSkipUntil(','); // Skip mux
     streamSkipUntil(','); // Skip type
     int result = stream.readStringUntil('\n').toInt();
-
+    waitResponse();
     return result != 0;
   }
 
@@ -654,7 +669,7 @@ public:
   // TODO: Optimize this!
   uint8_t waitResponse(uint32_t timeout, String& data,
                        GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),
-                       GsmConstStr r3=NULL, GsmConstStr r4=NULL, GsmConstStr r5=NULL)
+                       GsmConstStr r3=GFP(GSM_CME_ERROR), GsmConstStr r4=NULL, GsmConstStr r5=NULL)
   {
     /*String r1s(r1); r1s.trim();
     String r2s(r2); r2s.trim();
@@ -688,17 +703,19 @@ public:
           goto finish;
         } else if (data.endsWith(GF(GSM_NL "+UUSORD:"))) {
           int mux = stream.readStringUntil(',').toInt();
+          streamSkipUntil('\n');
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
             sockets[mux]->got_data = true;
           }
           data = "";
+          DBG("### Got Data:", mux);
         } else if (data.endsWith(GF(GSM_NL "+UUSOCL:"))) {
           int mux = stream.readStringUntil('\n').toInt();
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
             sockets[mux]->sock_connected = false;
           }
           data = "";
-          DBG("### Closed: ", mux);
+          DBG("### Closed:", mux);
         }
       }
     } while (millis() - startMillis < timeout);
@@ -715,14 +732,14 @@ finish:
 
   uint8_t waitResponse(uint32_t timeout,
                        GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),
-                       GsmConstStr r3=NULL, GsmConstStr r4=NULL, GsmConstStr r5=NULL)
+                       GsmConstStr r3=GFP(GSM_CME_ERROR), GsmConstStr r4=NULL, GsmConstStr r5=NULL)
   {
     String data;
     return waitResponse(timeout, data, r1, r2, r3, r4, r5);
   }
 
   uint8_t waitResponse(GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),
-                       GsmConstStr r3=NULL, GsmConstStr r4=NULL, GsmConstStr r5=NULL)
+                       GsmConstStr r3=GFP(GSM_CME_ERROR), GsmConstStr r4=NULL, GsmConstStr r5=NULL)
   {
     return waitResponse(1000, r1, r2, r3, r4, r5);
   }
