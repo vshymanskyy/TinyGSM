@@ -54,10 +54,10 @@ const char server[] = "vsh.pp.ua";
 const char resource[] = "/TinyGSM/logo.txt";
 
 const int  port = 80;
-TinyGsmClient client(myModem);
+TinyGsmClient client(modem);
 
 //const int  port = 443;
-//TinyGsmClientSecure client(myModem);
+//TinyGsmClientSecure client(modem);
 
 void setup() {
   // Set console baud rate
@@ -121,7 +121,7 @@ void loop() {
   }
   SerialMon.println(F(" [OK]"));
 
-  IPAddress local = myModem.localIP();
+  IPAddress local = modem.localIP();
   SerialMon.print("Local IP: ");
   SerialMon.println(local);
 
