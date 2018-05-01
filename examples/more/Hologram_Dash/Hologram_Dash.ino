@@ -19,6 +19,9 @@
 // Uncomment this if you want to see all AT commands
 //#define DUMP_AT_COMMANDS
 
+// Uncomment this if you want to use SSL
+//#define USE_SSL
+
 // Set serial for debug console (to the Serial Monitor, speed 115200)
 #define SerialMon Serial
 
@@ -34,7 +37,6 @@ const char pass[] = "";
 // Server details
 const char server[] = "vsh.pp.ua";
 const char resource[] = "/TinyGSM/logo.txt";
-const int  port = 80;
 
 #ifdef DUMP_AT_COMMANDS
   #include <StreamDebugger.h>
@@ -44,7 +46,13 @@ const int  port = 80;
   TinyGsm mdm(SerialAT);
 #endif
 
-TinyGsmClient client(mdm);
+#ifdef USE_SSL
+  TinyGsmClientSecure client(mdm);
+  const int  port = 443;
+#else
+  TinyGsmClient client(mdm);
+  const int  port = 80;
+#endif
 
 void setup() {
   // Set console baud rate
