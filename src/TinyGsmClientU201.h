@@ -579,8 +579,10 @@ protected:
       return 0;
     }
     streamSkipUntil(','); // Skip mux
-    return stream.readStringUntil('\n').toInt();
-  }
+    int bytesSend = stream.readStringUntil('\n').toInt();
+    waitResponse(); // waits for OK, see 25.10.2 Syntax in https://www.u-blox.com/sites/default/files/u-blox-CEL_ATCommands_%28UBX-13002752%29.pdf
+    return bytesSend;
+ }
 
   size_t modemRead(size_t size, uint8_t mux) {
     sendAT(GF("+USORD="), mux, ',', size);
