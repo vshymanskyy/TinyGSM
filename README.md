@@ -121,9 +121,9 @@ If you have any issues:
 
   1. Read the whole README (you're looking at it!)
   2. Some boards require [**special configuration**](https://github.com/vshymanskyy/TinyGSM/wiki/Board-configuration).
-  2. Try running the Diagnostics sketch
-  3. Check for [**highlighted topics here**](https://github.com/vshymanskyy/TinyGSM/issues?utf8=%E2%9C%93&q=is%3Aissue+label%3A%22for+reference%22+)
-  4. If you have a question, post it in [Gitter chat](https://gitter.im/tinygsm)
+  3. Try running the Diagnostics sketch
+  4. Check for [**highlighted topics here**](https://github.com/vshymanskyy/TinyGSM/issues?utf8=%E2%9C%93&q=is%3Aissue+label%3A%22for+reference%22+)
+  5. If you have a question, please post it in our [Gitter chat](https://gitter.im/tinygsm)
 
 ## How does it work?
 
