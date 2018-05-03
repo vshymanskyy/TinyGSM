@@ -113,13 +113,14 @@ If you have found TinyGSM to be useful in your work, research or company, please
     - Check your balance
     - Check that APN,User,Pass are correct and you have internet
   2. Ensure the SIM card is correctly inserted into the module
-  3. Check if serial connection is working (Hardware Serial is recommended)  
+  3. Ensure that GSM antenna is firmly attached
+  4. Check if serial connection is working (Hardware Serial is recommended)  
      Send an ```AT``` command using [this sketch](tools/AT_Debug/AT_Debug.ino)
-  4. Ensure that GSM antenna is firmly attached
-  
+
 If you have any issues:
 
   1. Read the whole README (you're looking at it!)
+  2. Some boards require [**special configuration**](https://github.com/vshymanskyy/TinyGSM/wiki/Board-configuration).
   2. Try running the Diagnostics sketch
   3. Check for [**highlighted topics here**](https://github.com/vshymanskyy/TinyGSM/issues?utf8=%E2%9C%93&q=is%3Aissue+label%3A%22for+reference%22+)
   4. If you have a question, post it in [Gitter chat](https://gitter.im/tinygsm)
