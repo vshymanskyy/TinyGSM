@@ -81,7 +81,7 @@ GPS/GNSS                     | ✔¹     | 🅧     | ◌¹        | 🅧   | �
 - Adafruit FONA 800/808 Shield
 - Industruino GSM
 - RAK WisLTE ***(alpha)***
-- ... other modules, based on supported modems
+- ... other modules, based on supported modems. Some boards require [**special configuration**](https://github.com/vshymanskyy/TinyGSM/wiki/Board-configuration).
 
 More modems may be supported later:
 - [ ] Quectel M10, M35, M95, UG95
