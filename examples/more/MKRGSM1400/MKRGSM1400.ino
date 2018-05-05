@@ -22,13 +22,6 @@
 // Set serial for debug console (to the Serial Monitor, default speed 115200)
 #define SerialMon Serial
 
-// Use Hardware Serial on Mega, Leonardo, Micro
-//#define SerialAT Serial1
-
-// or Software Serial on Uno, Nano
-//#include <SoftwareSerial.h>
-//SoftwareSerial SerialAT(2, 3); // RX, TX
-
 // Use Hardware Serial on MKR GSM
 #define SerialAT SerialGSM
 
@@ -86,13 +79,6 @@ void setup() {
 
   // Set GSM module baud rate
   SerialAT.begin( (baud > 115200) ? 115200 : baud);
-
-  // FOR THE MKR GSM 1400
-  // reset / powerup the modem
-  pinMode(GSM_RESETN, OUTPUT);
-  digitalWrite(GSM_RESETN, HIGH);
-  delay(100);
-  digitalWrite(GSM_RESETN, LOW);
 
   // Restart takes quite some time
   // To skip it, call init() instead of restart()
