@@ -208,6 +208,9 @@ public:
 
 public:
 
+  Event<EventFunc> PowerOn;
+  Event<EventFunc> ModemReady;
+
   TinyGsmSim800(Stream& stream)
     : stream(stream)
   {
@@ -222,9 +225,15 @@ public:
   }
 
   bool init() {
+      
+    PowerOn(this, NULL);
+
     if (!testAT()) {
       return false;
     }
+      
+    ModemReady(this, NULL);
+
     sendAT(GF("&FZ"));  // Factory + Reset
     waitResponse();
     sendAT(GF("E0"));   // Echo Off
