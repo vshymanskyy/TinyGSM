@@ -35,7 +35,7 @@ TinyGSM also pulls data gently from the modem (whenever possible), so it can ope
 
 ## Features
 
-Feature \ Modem              | SIM8xx | U2     | A6/A7/A20 | M590 | ESP8266 | XBee 
+Feature \ Modem              | SIM8xx | Ublox  | A6/A7/A20 | M590 | ESP8266 | XBee 
 ---                          | ---    | ---    | ---       | ---  | ---     | ---
 **Data connections**
 TCP (HTTP, MQTT, Blynk, ...) | ✔      | ✔      | ✔         | ✔    | ✔       | ✔
@@ -70,7 +70,7 @@ GPS/GNSS                     | ✔¹     | 🅧     | ◌¹        | 🅧   | �
 - ESP8266 (AT commands interface, similar to GSM modems)
 - Digi XBee WiFi and Cellular (using XBee command mode)
 - Neoway M590
-- U-blox SARA U2
+- U-blox SARA U2 (U201, U260, U270)
 - Quectel BG96 ***(alpha)***
 
 ### Supported boards/modules
@@ -184,7 +184,7 @@ To return module to **Factory Defaults**, use this sketch:
 
 ### Goouuu Tech IOT-GA6 vs AI-Thinker A6 confusion
 
-It turns out that **Goouuu Tech IOT-GA6** is not the same as **AI-Thinker A6**. Unfortunately IOT-GA6 is not supported out of the box yet. There are some hints that IOT-GA6 firmware may be updated to match A6... But no one confirmed that up to my knowledge.
+It turns out that **Goouuu Tech IOT-GA6** is not the same as **AI-Thinker A6**. Unfortunately IOT-GA6 is not supported out of the box yet. There are some hints that IOT-GA6 firmware may be updated to match A6... See [this topic](https://github.com/vshymanskyy/TinyGSM/issues/164).
 
 __________
 
