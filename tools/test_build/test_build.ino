@@ -42,7 +42,7 @@ void loop() {
 
   // Test the Networking functions
   modem.getSignalQuality();
-
+  modem.localIP();
 
   #if defined(TINY_GSM_MODEM_HAS_GPRS)
     modem.waitForNetwork();
