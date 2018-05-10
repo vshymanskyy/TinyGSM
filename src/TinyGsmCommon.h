@@ -26,6 +26,7 @@
 #endif
 
 #include <TinyGsmFifo.h>
+#include <TinyGsmEvents.h>
 
 #ifndef TINY_GSM_YIELD
   #define TINY_GSM_YIELD() { delay(0); }

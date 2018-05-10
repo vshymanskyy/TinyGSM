@@ -39,7 +39,6 @@ enum RegStatus {
   REG_UNKNOWN      = 4,
 };
 
-
 class TinyGsmU201
 {
 
@@ -193,6 +192,8 @@ public:
 };
 
 public:
+    Event<EventFunc> PowerOn;
+    Event<EventFunc> ModemReady;
 
 #ifdef GSM_DEFAULT_STREAM
   TinyGsmU201(Stream& stream = GSM_DEFAULT_STREAM)
@@ -212,13 +213,20 @@ public:
   }
 
   bool init(const char* pin = NULL) {
+      
+    PowerOn(this, NULL);
+
     if (!testAT()) {
       return false;
     }
+      
+    ModemReady(this, NULL);
+
     sendAT(GF("E0"));   // Echo Off
     if (waitResponse() != 1) {
       return false;
     }
+      
     int ret = getSimStatus();
     if (ret != SIM_READY && pin != NULL && strlen(pin) > 0) {
       simUnlock(pin);
