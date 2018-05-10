@@ -757,7 +757,7 @@ public:
       // Default guard time is 1s, but the init fxn decreases it to 250 ms
       delay(guardTime);
       streamWrite(GF("+++"));  // enter command mode
-      DBG("\r\n+++");
+      DBG("+++");
       success = (1 == waitResponse(guardTime*2));
       triesMade ++;
     }
