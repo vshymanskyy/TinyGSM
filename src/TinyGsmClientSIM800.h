@@ -39,12 +39,6 @@ enum RegStatus {
   REG_UNKNOWN      = 4,
 };
 
-enum DateTime {
-  DATE_FULL = 0,
-  DATE_TIME = 1,
-  DATE_DATE = 2
-};
-
 //============================================================================//
 //============================================================================//
 //                    Declaration of the TinyGsmSim800 Class
@@ -717,32 +711,6 @@ public:
     String res = stream.readStringUntil('\n');
     waitResponse();
     res.trim();
-    return res;
-  }
-
-  /*
-   * Time functions
-   */
-  String getGSMDateTime(DateTime format) {
-    sendAT(GF("+CCLK?"));
-    if (waitResponse(2000L, GF(GSM_NL "+CCLK: \"")) != 1) {
-      return "";
-    }
-    
-    String res;
-
-    switch(format) {
-      case DATE_FULL:
-        res = stream.readStringUntil('"');
-      break;
-      case DATE_TIME:
-        streamSkipUntil(',');
-        res = stream.readStringUntil('"');
-      break;
-      case DATE_DATE:
-        res = stream.readStringUntil(',');
-      break;
-    }
     return res;
   }
 

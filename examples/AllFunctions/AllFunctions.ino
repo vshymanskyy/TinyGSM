@@ -107,7 +107,7 @@ void loop() {
 
   String cop = modem.getOperator();
   DBG("Operator:", cop);
-  
+
   IPAddress local = modem.localIP();
   DBG("Local IP:", local);
 
@@ -127,10 +127,10 @@ void loop() {
   DBG("GSM location:", gsmLoc);
 
   // This is only supported on SIMxxx series
-  String gsmTime = modem.getGSMDateTime(DATE_TIME);
-  DBG("GSM Time:", gsmTime);
-  String gsmDate = modem.getGSMDateTime(DATE_DATE);
-  DBG("GSM Date:", gsmDate);
+  // String gsmTime = modem.getGSMDateTime(DATE_TIME);
+  // DBG("GSM Time:", gsmTime);
+  // String gsmDate = modem.getGSMDateTime(DATE_DATE);
+  // DBG("GSM Date:", gsmDate);
 
   String ussd_balance = modem.sendUSSD("*111#");
   DBG("Balance (USSD):", ussd_balance);
@@ -196,4 +196,3 @@ void loop() {
     modem.maintain();
   }
 }
-
