@@ -713,7 +713,7 @@ public:
 
   bool deleteAllSMS()
   {
-	  sendAT(GF("+CMGD=0,4"));
+	  sendAT(GF("+CMGD=1,4"));
 	  return waitResponse() == 1;
   }
 
