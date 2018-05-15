@@ -16,6 +16,8 @@
 // #define TINY_GSM_MODEM_A6
 // #define TINY_GSM_MODEM_A7
 // #define TINY_GSM_MODEM_M590
+// #define TINY_GSM_MODEM_MC60
+// #define TINY_GSM_MODEM_MC60E
 
 // Set serial for debug console (to the Serial Monitor, speed 115200)
 #define SerialMon Serial
@@ -31,6 +33,22 @@
 
 //#define DUMP_AT_COMMANDS
 #define TINY_GSM_DEBUG SerialMon
+
+#define GSM_AUTOBAUD_MIN 9600
+#define GSM_AUTOBAUD_MAX 38400
+
+/*
+ * Test enabled
+ */
+#define TINY_GSM_USE_GPRS true
+#define TINY_GSM_USE_CALL true
+#define TINY_GSM_USE_SMS true
+#define TINY_GSM_USE_USSD true
+// powerdown modem after tests
+#define TINY_GSM_POWERDOWN false
+
+// set GSM PIN, if any
+#define GSM_PIN ""
 
 // Set phone numbers, if you want to test SMS and Calls
 //#define SMS_TARGET  "+380xxxxxxxxx"
@@ -62,7 +80,7 @@ void setup() {
   delay(3000);
 
   // Set GSM module baud rate
-  TinyGsmAutoBaud(SerialAT);
+  TinyGsmAutoBaud(SerialAT,GSM_AUTOBAUD_MIN,GSM_AUTOBAUD_MAX);
 }
 
 void loop() {
@@ -71,6 +89,10 @@ void loop() {
   // To skip it, call init() instead of restart()
   DBG("Initializing modem...");
   if (!modem.restart()) {
+    DBG("Failed to restart modem, delayin 10s and retring");
+    delay(3000);
+    // restart autobaud in case GSM just rebooted
+    TinyGsmAutoBaud(SerialAT,GSM_AUTOBAUD_MIN,GSM_AUTOBAUD_MAX);
     delay(10000);
     return;
   }
@@ -78,8 +100,10 @@ void loop() {
   String modemInfo = modem.getModemInfo();
   DBG("Modem:", modemInfo);
 
-  // Unlock your SIM card with a PIN
-  //modem.simUnlock("1234");
+  // Unlock your SIM card with a PIN if needed
+  if ( GSM_PIN && modem.getSimStatus() != 3 ) { 
+    modem.simUnlock(GSM_PIN);
+  }
 
   DBG("Waiting for network...");
   if (!modem.waitForNetwork()) {
@@ -91,11 +115,13 @@ void loop() {
     DBG("Network connected");
   }
 
+#if TINY_GSM_USE_GPRS
   DBG("Connecting to", apn);
   if (!modem.gprsConnect(apn, user, pass)) {
     delay(10000);
     return;
   }
+#endif
 
   bool res;
 
@@ -110,6 +136,7 @@ void loop() {
 
   IPAddress local = modem.localIP();
   DBG("Local IP:", local);
+#endif
 
   int csq = modem.getSignalQuality();
   DBG("Signal quality:", csq);
@@ -137,15 +164,16 @@ void loop() {
 
   String ussd_phone_num = modem.sendUSSD("*161#");
   DBG("Phone number (USSD):", ussd_phone_num);
+#endif
 
-#if defined(TINY_GSM_MODEM_SIM808)
+#if defined(TINY_GSM_MODEM_HAS_GPS)
   modem.enableGPS();
   String gps_raw = modem.getGPSraw();
   modem.disableGPS();
   DBG("GPS raw data:", gps_raw);
 #endif
 
-#if defined(SMS_TARGET)
+#if TINY_GSM_USE_SMS && defined(SMS_TARGET)
   res = modem.sendSMS(SMS_TARGET, String("Hello from ") + imei);
   DBG("SMS:", res ? "OK" : "fail");
 
@@ -154,7 +182,7 @@ void loop() {
   DBG("UTF16 SMS:", res ? "OK" : "fail");
 #endif
 
-#if defined(CALL_TARGET)
+#if TINY_GSM_USE_CALL && defined(CALL_TARGET)
   DBG("Calling:", CALL_TARGET);
 
   // This is NOT supported on M590
@@ -179,17 +207,21 @@ void loop() {
   }
 #endif
 
+#if TINY_GSM_USE_GPRS
   modem.gprsDisconnect();
   if (!modem.isGprsConnected()) {
     DBG("GPRS disconnected");
   } else {
     DBG("GPRS disconnect: Failed.");
   }
+#endif
 
+#if TINY_GSM_POWERDOWN 
   // Try to power-off (modem may decide to restart automatically)
   // To turn off modem completely, please use Reset/Enable pins
   modem.poweroff();
   DBG("Poweroff.");
+#endif
 
   // Do nothing forevermore
   while (true) {
