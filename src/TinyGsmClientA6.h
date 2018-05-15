@@ -175,10 +175,10 @@ public:
   String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
 private:
-  TinyGsmA6*  at;
-  uint8_t     mux;
-  bool        sock_connected;
-  RxFifo      rx;
+  TinyGsmA6*      at;
+  uint8_t         mux;
+  bool            sock_connected;
+  RxFifo          rx;
 };
 
 //============================================================================//
@@ -194,7 +194,6 @@ private:
 //                          The A6 Modem Functions
 //============================================================================//
 //============================================================================//
-
 
 public:
 
@@ -241,8 +240,8 @@ public:
     for (unsigned long start = millis(); millis() - start < timeout; ) {
       sendAT(GF(""));
       if (waitResponse(200) == 1) {
-          delay(100);
-          return true;
+        delay(100);
+        return true;
       }
       delay(100);
     }
@@ -348,6 +347,17 @@ public:
     return SIM_ERROR;
   }
 
+  RegStatus getRegistrationStatus() {
+    sendAT(GF("+CREG?"));
+    if (waitResponse(GF(GSM_NL "+CREG:")) != 1) {
+      return REG_UNKNOWN;
+    }
+    streamSkipUntil(','); // Skip format (0)
+    int status = stream.readStringUntil('\n').toInt();
+    waitResponse();
+    return (RegStatus)status;
+  }
+
   String getOperator() {
     sendAT(GF("+COPS=3,0")); // Set format
     waitResponse();
@@ -365,17 +375,6 @@ public:
   /*
    * Generic network functions
    */
-
-  RegStatus getRegistrationStatus() {
-    sendAT(GF("+CREG?"));
-    if (waitResponse(GF(GSM_NL "+CREG:")) != 1) {
-      return REG_UNKNOWN;
-    }
-    streamSkipUntil(','); // Skip format (0)
-    int status = stream.readStringUntil('\n').toInt();
-    waitResponse();
-    return (RegStatus)status;
-  }
 
   int getSignalQuality() {
     sendAT(GF("+CSQ"));
@@ -400,22 +399,6 @@ public:
       delay(250);
     }
     return false;
-  }
-
-  String getLocalIP() {
-    sendAT(GF("+CIFSR"));
-    String res;
-    if (waitResponse(10000L, res) != 1) {
-      return "";
-    }
-    res.replace(GSM_NL "OK" GSM_NL, "");
-    res.replace(GSM_NL, "");
-    res.trim();
-    return res;
-  }
-
-  IPAddress localIP() {
-    return TinyGsmIpFromString(getLocalIP());
   }
 
   /*
@@ -478,6 +461,22 @@ public:
     int res = stream.readStringUntil('\n').toInt();
     waitResponse();
     return (res == 1);
+  }
+
+  String getLocalIP() {
+    sendAT(GF("+CIFSR"));
+    String res;
+    if (waitResponse(10000L, res) != 1) {
+      return "";
+    }
+    res.replace(GSM_NL "OK" GSM_NL, "");
+    res.replace(GSM_NL, "");
+    res.trim();
+    return res;
+  }
+
+  IPAddress localIP() {
+    return TinyGsmIpFromString(getLocalIP());
   }
 
   /*
@@ -583,7 +582,7 @@ protected:
   }
 
   bool modemGetConnected(uint8_t mux) {
-    sendAT(GF("+CIPSTATUS")); // TODO mux?
+    sendAT(GF("+CIPSTATUS")); //TODO mux?
     int res = waitResponse(GF(",\"CONNECTED\""), GF(",\"CLOSED\""), GF(",\"CLOSING\""), GF(",\"INITIAL\""));
     waitResponse();
     return 1 == res;

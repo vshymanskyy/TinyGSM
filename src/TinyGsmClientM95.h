@@ -372,6 +372,17 @@ public:
     return SIM_ERROR;
   }
 
+  RegStatus getRegistrationStatus() {
+    sendAT(GF("+CREG?"));
+    if (waitResponse(GF(GSM_NL "+CREG:")) != 1) {
+      return REG_UNKNOWN;
+    }
+    streamSkipUntil(','); // Skip format (0)
+    int status = stream.readStringUntil('\n').toInt();
+    waitResponse();
+    return (RegStatus)status;
+  }
+
   String getOperator() {
     sendAT(GF("+COPS?"));
     if (waitResponse(GF(GSM_NL "+COPS:")) != 1) {
@@ -386,17 +397,6 @@ public:
   /*
    * Generic network functions
    */
-
-  RegStatus getRegistrationStatus() {
-    sendAT(GF("+CREG?"));
-    if (waitResponse(GF(GSM_NL "+CREG:")) != 1) {
-      return REG_UNKNOWN;
-    }
-    streamSkipUntil(','); // Skip format (0)
-    int status = stream.readStringUntil('\n').toInt();
-    waitResponse();
-    return (RegStatus)status;
-  }
 
   int getSignalQuality() {
     sendAT(GF("+CSQ"));
@@ -430,23 +430,6 @@ public:
       sendAT(GF("+QIDNSIP=1"));
     }
     waitResponse();
-  }
-
-  String getLocalIP() {
-    sendAT(GF("+CGPADDR=1"));
-    if (waitResponse(10000L, GF(GSM_NL "+CGPADDR:")) != 1) {
-      return "";
-    }
-    streamSkipUntil(',');
-    String res = stream.readStringUntil('\n');
-    if (waitResponse() != 1) {
-      return "";
-    }
-    return res;
-  }
-
-  IPAddress localIP() {
-    return TinyGsmIpFromString(getLocalIP());
   }
 
   /*
@@ -496,6 +479,23 @@ public:
       return false;
 
     return localIP() != 0;
+  }
+
+  String getLocalIP() {
+    sendAT(GF("+CGPADDR=1"));
+    if (waitResponse(10000L, GF(GSM_NL "+CGPADDR:")) != 1) {
+      return "";
+    }
+    streamSkipUntil(',');
+    String res = stream.readStringUntil('\n');
+    if (waitResponse() != 1) {
+      return "";
+    }
+    return res;
+  }
+
+  IPAddress localIP() {
+    return TinyGsmIpFromString(getLocalIP());
   }
 
   /*
@@ -608,9 +608,9 @@ protected:
   bool modemConnect(const char* host, uint16_t port, uint8_t mux) {
     sendAT(GF("+QIOPEN="), GF("\"TCP"), GF("\",\""), host, GF("\","), port);
     int rsp = waitResponse(75000L,
-                 GF("CONNECT OK" GSM_NL),
-                 GF("CONNECT FAIL" GSM_NL),
-                 GF("ALREADY CONNECT" GSM_NL));
+                           GF("CONNECT OK" GSM_NL),
+                           GF("CONNECT FAIL" GSM_NL),
+                           GF("ALREADY CONNECT" GSM_NL));
     if ( rsp != 1 ) {
       return false;
     }

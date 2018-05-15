@@ -9,7 +9,7 @@
 #ifndef TinyGsmClientM590_h
 #define TinyGsmClientM590_h
 
-// #define TINY_GSM_DEBUG Serial
+//#define TINY_GSM_DEBUG Serial
 
 #if !defined(TINY_GSM_RX_BUFFER)
   #define TINY_GSM_RX_BUFFER 256
@@ -173,10 +173,10 @@ public:
   String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
 private:
-  TinyGsmM590*    at;
-  uint8_t         mux;
-  bool            sock_connected;
-  RxFifo          rx;
+  TinyGsmM590*  at;
+  uint8_t       mux;
+  bool          sock_connected;
+  RxFifo        rx;
 };
 
 //============================================================================//
@@ -359,6 +359,17 @@ public:
     return SIM_ERROR;
   }
 
+  RegStatus getRegistrationStatus() {
+    sendAT(GF("+CREG?"));
+    if (waitResponse(GF(GSM_NL "+CREG:")) != 1) {
+      return REG_UNKNOWN;
+    }
+    streamSkipUntil(','); // Skip format (0)
+    int status = stream.readStringUntil('\n').toInt();
+    waitResponse();
+    return (RegStatus)status;
+  }
+
   String getOperator() {
     sendAT(GF("+COPS?"));
     if (waitResponse(GF(GSM_NL "+COPS:")) != 1) {
@@ -373,17 +384,6 @@ public:
   /*
    * Generic network functions
    */
-
-  RegStatus getRegistrationStatus() {
-    sendAT(GF("+CREG?"));
-    if (waitResponse(GF(GSM_NL "+CREG:")) != 1) {
-      return REG_UNKNOWN;
-    }
-    streamSkipUntil(','); // Skip format (0)
-    int status = stream.readStringUntil('\n').toInt();
-    waitResponse();
-    return (RegStatus)status;
-  }
 
   int getSignalQuality() {
     sendAT(GF("+CSQ"));
@@ -408,22 +408,6 @@ public:
       delay(250);
     }
     return false;
-  }
-
-  String getLocalIP() {
-    sendAT(GF("+XIIC?"));
-    if (waitResponse(GF(GSM_NL "+XIIC:")) != 1) {
-      return "";
-    }
-    stream.readStringUntil(',');
-    String res = stream.readStringUntil('\n');
-    waitResponse();
-    res.trim();
-    return res;
-  }
-
-  IPAddress localIP() {
-    return TinyGsmIpFromString(getLocalIP());
   }
 
   /*
@@ -484,6 +468,22 @@ public:
     int res = stream.readStringUntil(',').toInt();
     waitResponse();
     return res == 1;
+  }
+
+  String getLocalIP() {
+    sendAT(GF("+XIIC?"));
+    if (waitResponse(GF(GSM_NL "+XIIC:")) != 1) {
+      return "";
+    }
+    stream.readStringUntil(',');
+    String res = stream.readStringUntil('\n');
+    waitResponse();
+    res.trim();
+    return res;
+  }
+
+  IPAddress localIP() {
+    return TinyGsmIpFromString(getLocalIP());
   }
 
   /*

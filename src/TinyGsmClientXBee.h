@@ -169,9 +169,9 @@ public:
   String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
 private:
-  TinyGsmXBee*    at;
-  uint8_t         mux;
-  bool            sock_connected;
+  TinyGsmXBee*  at;
+  uint8_t       mux;
+  bool          sock_connected;
 };
 
 //============================================================================//
@@ -430,18 +430,6 @@ public:
     return SIM_READY;  // unsupported
   }
 
-  String getOperator() {
-    if (!commandMode()) return "";  // Return immediately
-    sendAT(GF("MN"));
-    String res = readResponse();
-    exitCommand();
-    return res;
-  }
-
- /*
-  * Generic network functions
-  */
-
   RegStatus getRegistrationStatus() {
     if (!commandMode()) return REG_UNKNOWN;  // Return immediately
 
@@ -514,6 +502,17 @@ public:
     exitCommand();
     return stat;
   }
+  String getOperator() {
+    if (!commandMode()) return "";  // Return immediately
+    sendAT(GF("MN"));
+    String res = readResponse();
+    exitCommand();
+    return res;
+  }
+
+ /*
+  * Generic network functions
+  */
 
   int getSignalQuality() {
     if (!commandMode()) return 0;  // Return immediately
@@ -541,21 +540,6 @@ public:
       // delay(250);  // Enough delay going in and out of command mode
     }
     return false;
-  }
-
-  String getLocalIP() {
-    if (!commandMode()) return "";  // Return immediately
-    sendAT(GF("MY"));
-    String IPaddr; IPaddr.reserve(16);
-    // wait for the response - this response can be very slow
-    IPaddr = readResponse(30000);
-    exitCommand();
-    IPaddr.trim();
-    return IPaddr;
-  }
-
-  IPAddress localIP() {
-    return TinyGsmIpFromString(getLocalIP());
   }
 
   /*
@@ -591,6 +575,21 @@ fail:
     writeChanges();
     exitCommand();
     return res;
+  }
+
+  String getLocalIP() {
+    if (!commandMode()) return "";  // Return immediately
+    sendAT(GF("MY"));
+    String IPaddr; IPaddr.reserve(16);
+    // wait for the response - this response can be very slow
+    IPaddr = readResponse(30000);
+    exitCommand();
+    IPaddr.trim();
+    return IPaddr;
+  }
+
+  IPAddress localIP() {
+    return TinyGsmIpFromString(getLocalIP());
   }
 
   /*

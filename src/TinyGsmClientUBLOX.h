@@ -176,12 +176,12 @@ public:
   String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
 private:
-  TinyGsmU201*    at;
-  uint8_t         mux;
-  uint16_t        sock_available;
-  bool            sock_connected;
-  bool            got_data;
-  RxFifo          rx;
+  TinyGsmU201*  at;
+  uint8_t       mux;
+  uint16_t      sock_available;
+  bool          sock_connected;
+  bool          got_data;
+  RxFifo        rx;
 };
 
 //============================================================================//
@@ -382,6 +382,17 @@ public:
     return SIM_ERROR;
   }
 
+  RegStatus getRegistrationStatus() {
+    sendAT(GF("+CGREG?"));
+    if (waitResponse(GF(GSM_NL "+CGREG:")) != 1) {
+      return REG_UNKNOWN;
+    }
+    streamSkipUntil(','); // Skip format (0)
+    int status = stream.readStringUntil('\n').toInt();
+    waitResponse();
+    return (RegStatus)status;
+  }
+
   String getOperator() {
     sendAT(GF("+COPS?"));
     if (waitResponse(GF(GSM_NL "+COPS:")) != 1) {
@@ -396,17 +407,6 @@ public:
   /*
    * Generic network functions
    */
-
-  RegStatus getRegistrationStatus() {
-    sendAT(GF("+CGREG?"));
-    if (waitResponse(GF(GSM_NL "+CGREG:")) != 1) {
-      return REG_UNKNOWN;
-    }
-    streamSkipUntil(','); // Skip format (0)
-    int status = stream.readStringUntil('\n').toInt();
-    waitResponse();
-    return (RegStatus)status;
-  }
 
   int getSignalQuality() {
     sendAT(GF("+CSQ"));
@@ -431,24 +431,6 @@ public:
       delay(250);
     }
     return false;
-  }
-
-  String getLocalIP() {
-    sendAT(GF("+UPSND=0,0"));
-    if (waitResponse(GF(GSM_NL "+UPSND:")) != 1) {
-      return "";
-    }
-    streamSkipUntil(',');  // Skip PSD profile
-    streamSkipUntil('\"'); // Skip request type
-    String res = stream.readStringUntil('\"');
-    if (waitResponse() != 1) {
-      return "";
-    }
-    return res;
-  }
-
-  IPAddress localIP() {
-    return TinyGsmIpFromString(getLocalIP());
   }
 
   /*
@@ -518,6 +500,24 @@ public:
       return false;
 
     return localIP() != 0;
+  }
+
+  String getLocalIP() {
+    sendAT(GF("+UPSND=0,0"));
+    if (waitResponse(GF(GSM_NL "+UPSND:")) != 1) {
+      return "";
+    }
+    streamSkipUntil(',');  // Skip PSD profile
+    streamSkipUntil('\"'); // Skip request type
+    String res = stream.readStringUntil('\"');
+    if (waitResponse() != 1) {
+      return "";
+    }
+    return res;
+  }
+
+  IPAddress localIP() {
+    return TinyGsmIpFromString(getLocalIP());
   }
   /*
    * Messaging functions

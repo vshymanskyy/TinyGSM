@@ -9,7 +9,7 @@
 #ifndef TinyGsmClientESP8266_h
 #define TinyGsmClientESP8266_h
 
-// #define TINY_GSM_DEBUG Serial
+//#define TINY_GSM_DEBUG Serial
 
 #if !defined(TINY_GSM_RX_BUFFER)
   #define TINY_GSM_RX_BUFFER 512
@@ -286,7 +286,9 @@ public:
     return res;
   }
 
-  bool hasSSL() { return true; }
+  bool hasSSL() {
+    return true;
+  }
 
   /*
    * Power functions
@@ -317,11 +319,6 @@ public:
    * SIM card functions
    */
 
-
-  /*
-   * Generic network functions
-   */
-
   RegStatus getRegistrationStatus() {
     sendAT(GF("+CIPSTATUS"));
     if (waitResponse(3000, GF("STATUS:")) != 1) return REG_UNKNOWN;
@@ -329,6 +326,10 @@ public:
     waitResponse();  // Returns an OK after the status
     return (RegStatus)status;
   }
+
+  /*
+   * Generic network functions
+   */
 
   int getSignalQuality() {
     sendAT(GF("+CWJAP_CUR?"));
@@ -366,6 +367,25 @@ public:
     return false;
   }
 
+  /*
+   * WiFi functions
+   */
+  bool networkConnect(const char* ssid, const char* pwd) {
+    sendAT(GF("+CWJAP_CUR=\""), ssid, GF("\",\""), pwd, GF("\""));
+    if (waitResponse(30000L, GFP(GSM_OK), GF(GSM_NL "FAIL" GSM_NL)) != 1) {
+      return false;
+    }
+
+    return true;
+  }
+
+  bool networkDisconnect() {
+    sendAT(GF("+CWQAP"));
+    bool retVal = waitResponse(10000L) == 1;
+    waitResponse(GF("WIFI DISCONNECT"));
+    return retVal;
+  }
+
   String getLocalIP() {
     sendAT(GF("+CIPSTA_CUR??"));
     int res1 = waitResponse(GF("ERROR"), GF("+CWJAP_CUR:"));
@@ -379,24 +399,6 @@ public:
 
   IPAddress localIP() {
     return TinyGsmIpFromString(getLocalIP());
-  }
-
-  /*
-   * WiFi functions
-   */
-  bool networkConnect(const char* ssid, const char* pwd) {
-    sendAT(GF("+CWJAP_CUR=\""), ssid, GF("\",\""), pwd, GF("\""));
-    if (waitResponse(30000L, GFP(GSM_OK), GF(GSM_NL "FAIL" GSM_NL)) != 1) {
-      return false;
-    }
-    return true;
-  }
-
-  bool networkDisconnect() {
-    sendAT(GF("+CWQAP"));
-    bool retVal = waitResponse(10000L) == 1;
-    waitResponse(GF("WIFI DISCONNECT"));
-    return retVal;
   }
 
   /*
