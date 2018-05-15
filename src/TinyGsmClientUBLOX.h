@@ -39,7 +39,6 @@ enum RegStatus {
   REG_UNKNOWN      = 4,
 };
 
-
 //============================================================================//
 //============================================================================//
 //                   Declaration of the TinyGsmU201 Class
@@ -177,12 +176,12 @@ public:
   String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
 private:
-  TinyGsmU201*  at;
-  uint8_t       mux;
-  uint16_t      sock_available;
-  bool          sock_connected;
-  bool          got_data;
-  RxFifo        rx;
+  TinyGsmU201*    at;
+  uint8_t         mux;
+  uint16_t        sock_available;
+  bool            sock_connected;
+  bool            got_data;
+  RxFifo          rx;
 };
 
 //============================================================================//
@@ -211,7 +210,6 @@ public:
     return sock_connected;
   }
 };
-
 
 //============================================================================//
 //============================================================================//
@@ -375,10 +373,10 @@ public:
       int status = waitResponse(GF("READY"), GF("SIM PIN"), GF("SIM PUK"), GF("NOT INSERTED"));
       waitResponse();
       switch (status) {
-      case 2:
-      case 3:  return SIM_LOCKED;
-      case 1:  return SIM_READY;
-      default: return SIM_ERROR;
+        case 2:
+        case 3:  return SIM_LOCKED;
+        case 1:  return SIM_READY;
+        default: return SIM_ERROR;
       }
     }
     return SIM_ERROR;
@@ -399,16 +397,16 @@ public:
    * Generic network functions
    */
 
-   RegStatus getRegistrationStatus() {
-     sendAT(GF("+CGREG?"));
-     if (waitResponse(GF(GSM_NL "+CGREG:")) != 1) {
-       return REG_UNKNOWN;
-     }
-     streamSkipUntil(','); // Skip format (0)
-     int status = stream.readStringUntil('\n').toInt();
-     waitResponse();
-     return (RegStatus)status;
-   }
+  RegStatus getRegistrationStatus() {
+    sendAT(GF("+CGREG?"));
+    if (waitResponse(GF(GSM_NL "+CGREG:")) != 1) {
+      return REG_UNKNOWN;
+    }
+    streamSkipUntil(','); // Skip format (0)
+    int status = stream.readStringUntil('\n').toInt();
+    waitResponse();
+    return (RegStatus)status;
+  }
 
   int getSignalQuality() {
     sendAT(GF("+CSQ"));
@@ -521,19 +519,6 @@ public:
 
     return localIP() != 0;
   }
-
-  /*
-   * Phone Call functions
-   */
-
-  bool setGsmBusy(bool busy = true) TINY_GSM_ATTR_NOT_AVAILABLE;
-
-  bool callAnswer() TINY_GSM_ATTR_NOT_IMPLEMENTED;
-
-  bool callNumber(const String& number) TINY_GSM_ATTR_NOT_IMPLEMENTED;
-
-  bool callHangup() TINY_GSM_ATTR_NOT_IMPLEMENTED;
-
   /*
    * Messaging functions
    */
@@ -721,7 +706,7 @@ public:
       TINY_GSM_YIELD();
       while (stream.available() > 0) {
         int a = stream.read();
-        if (a < 0) continue;
+        if (a <= 0) continue; // Skip 0x00 bytes, just in case
         data += (char)a;
         if (r1 && data.endsWith(r1)) {
           index = 1;

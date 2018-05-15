@@ -38,20 +38,14 @@ enum RegStatus {
   REG_UNKNOWN      = 4,
 };
 
-
 //============================================================================//
 //============================================================================//
 //                       Declaration of the TinyGsmA6 Class
 //============================================================================//
 //============================================================================//
 
-
-
 class TinyGsmA6
 {
-
-public:
-
 
 //============================================================================//
 //============================================================================//
@@ -59,6 +53,8 @@ public:
 //============================================================================//
 //============================================================================//
 
+
+public:
 
 class GsmClient : public Client
 {
@@ -343,10 +339,10 @@ public:
       int status = waitResponse(GF("READY"), GF("SIM PIN"), GF("SIM PUK"));
       waitResponse();
       switch (status) {
-      case 2:
-      case 3:  return SIM_LOCKED;
-      case 1:  return SIM_READY;
-      default: return SIM_ERROR;
+        case 2:
+        case 3:  return SIM_LOCKED;
+        case 1:  return SIM_READY;
+        default: return SIM_ERROR;
       }
     }
     return SIM_ERROR;
@@ -370,16 +366,16 @@ public:
    * Generic network functions
    */
 
-   RegStatus getRegistrationStatus() {
-     sendAT(GF("+CREG?"));
-     if (waitResponse(GF(GSM_NL "+CREG:")) != 1) {
-       return REG_UNKNOWN;
-     }
-     streamSkipUntil(','); // Skip format (0)
-     int status = stream.readStringUntil('\n').toInt();
-     waitResponse();
-     return (RegStatus)status;
-   }
+  RegStatus getRegistrationStatus() {
+    sendAT(GF("+CREG?"));
+    if (waitResponse(GF(GSM_NL "+CREG:")) != 1) {
+      return REG_UNKNOWN;
+    }
+    streamSkipUntil(','); // Skip format (0)
+    int status = stream.readStringUntil('\n').toInt();
+    waitResponse();
+    return (RegStatus)status;
+  }
 
   int getSignalQuality() {
     sendAT(GF("+CSQ"));
@@ -587,7 +583,7 @@ protected:
   }
 
   bool modemGetConnected(uint8_t mux) {
-    sendAT(GF("+CIPSTATUS")); //TODO mux?
+    sendAT(GF("+CIPSTATUS")); // TODO mux?
     int res = waitResponse(GF(",\"CONNECTED\""), GF(",\"CLOSED\""), GF(",\"CLOSING\""), GF(",\"INITIAL\""));
     waitResponse();
     return 1 == res;

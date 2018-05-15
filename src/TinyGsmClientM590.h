@@ -54,6 +54,7 @@ class TinyGsmM590
 //============================================================================//
 //============================================================================//
 
+
 public:
 
 class GsmClient : public Client
@@ -172,10 +173,10 @@ public:
   String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
 private:
-  TinyGsmM590*  at;
-  uint8_t       mux;
-  bool          sock_connected;
-  RxFifo        rx;
+  TinyGsmM590*    at;
+  uint8_t         mux;
+  bool            sock_connected;
+  RxFifo          rx;
 };
 
 //============================================================================//
@@ -236,8 +237,8 @@ public:
     for (unsigned long start = millis(); millis() - start < timeout; ) {
       sendAT(GF(""));
       if (waitResponse(200) == 1) {
-          delay(100);
-          return true;
+        delay(100);
+        return true;
       }
       delay(100);
     }
@@ -349,10 +350,10 @@ public:
       int status = waitResponse(GF("READY"), GF("SIM PIN"), GF("SIM PUK"));
       waitResponse();
       switch (status) {
-      case 2:
-      case 3:  return SIM_LOCKED;
-      case 1:  return SIM_READY;
-      default: return SIM_ERROR;
+        case 2:
+        case 3:  return SIM_LOCKED;
+        case 1:  return SIM_READY;
+        default: return SIM_ERROR;
       }
     }
     return SIM_ERROR;
@@ -373,16 +374,16 @@ public:
    * Generic network functions
    */
 
-   RegStatus getRegistrationStatus() {
-     sendAT(GF("+CREG?"));
-     if (waitResponse(GF(GSM_NL "+CREG:")) != 1) {
-       return REG_UNKNOWN;
-     }
-     streamSkipUntil(','); // Skip format (0)
-     int status = stream.readStringUntil('\n').toInt();
-     waitResponse();
-     return (RegStatus)status;
-   }
+  RegStatus getRegistrationStatus() {
+    sendAT(GF("+CREG?"));
+    if (waitResponse(GF(GSM_NL "+CREG:")) != 1) {
+      return REG_UNKNOWN;
+    }
+    streamSkipUntil(','); // Skip format (0)
+    int status = stream.readStringUntil('\n').toInt();
+    waitResponse();
+    return (RegStatus)status;
+  }
 
   int getSignalQuality() {
     sendAT(GF("+CSQ"));

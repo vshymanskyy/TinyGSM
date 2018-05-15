@@ -9,14 +9,14 @@
 #ifndef TinyGsmClientBG96_h
 #define TinyGsmClientBG96_h
 
-//#define TINY_GSM_DEBUG Serial
-//#define TINY_GSM_USE_HEX
+// #define TINY_GSM_DEBUG Serial
+// #define TINY_GSM_USE_HEX
 
 #if !defined(TINY_GSM_RX_BUFFER)
   #define TINY_GSM_RX_BUFFER 64
 #endif
 
-#define TINY_GSM_MUX_COUNT 5
+#define TINY_GSM_MUX_COUNT 12
 
 #include <TinyGsmCommon.h>
 
@@ -39,9 +39,21 @@ enum RegStatus {
   REG_UNKNOWN      = 4,
 };
 
+//============================================================================//
+//============================================================================//
+//                    Declaration of the TinyGsmBG96 Class
+//============================================================================//
+//============================================================================//
 
 class TinyGsmBG96
 {
+
+//============================================================================//
+//============================================================================//
+//                          The BG96 Client Class
+//============================================================================//
+//============================================================================//
+
 
 public:
 
@@ -166,12 +178,19 @@ public:
 
 private:
   TinyGsmBG96*  at;
-  uint8_t       mux;
-  uint16_t      sock_available;
-  bool          sock_connected;
-  bool          got_data;
-  RxFifo        rx;
+  uint8_t         mux;
+  uint16_t        sock_available;
+  bool            sock_connected;
+  bool            got_data;
+  RxFifo          rx;
 };
+
+//============================================================================//
+//============================================================================//
+//                          The BG96 Secure Client
+//============================================================================//
+//============================================================================//
+
 
 class GsmClientSecure : public GsmClient
 {
@@ -192,9 +211,19 @@ public:
   }
 };
 
+//============================================================================//
+//============================================================================//
+//                          The BG96 Modem Functions
+//============================================================================//
+//============================================================================//
+
 public:
 
+#ifdef GSM_DEFAULT_STREAM
+  TinyGsmBG96(Stream& stream = GSM_DEFAULT_STREAM)
+#else
   TinyGsmBG96(Stream& stream)
+#endif
     : stream(stream)
   {
     memset(sockets, 0, sizeof(sockets));
@@ -344,24 +373,13 @@ public:
       int status = waitResponse(GF("READY"), GF("SIM PIN"), GF("SIM PUK"), GF("NOT INSERTED"));
       waitResponse();
       switch (status) {
-      case 2:
-      case 3:  return SIM_LOCKED;
-      case 1:  return SIM_READY;
-      default: return SIM_ERROR;
+        case 2:
+        case 3:  return SIM_LOCKED;
+        case 1:  return SIM_READY;
+        default: return SIM_ERROR;
       }
     }
     return SIM_ERROR;
-  }
-
-  RegStatus getRegistrationStatus() {
-    sendAT(GF("+CREG?"));
-    if (waitResponse(GF(GSM_NL "+CREG:")) != 1) {
-      return REG_UNKNOWN;
-    }
-    streamSkipUntil(','); // Skip format (0)
-    int status = stream.readStringUntil('\n').toInt();
-    waitResponse();
-    return (RegStatus)status;
   }
 
   String getOperator() {
@@ -378,6 +396,17 @@ public:
   /*
    * Generic network functions
    */
+
+  RegStatus getRegistrationStatus() {
+    sendAT(GF("+CREG?"));
+    if (waitResponse(GF(GSM_NL "+CREG:")) != 1) {
+      return REG_UNKNOWN;
+    }
+    streamSkipUntil(','); // Skip format (0)
+    int status = stream.readStringUntil('\n').toInt();
+    waitResponse();
+    return (RegStatus)status;
+  }
 
   int getSignalQuality() {
     sendAT(GF("+CSQ"));
@@ -403,6 +432,27 @@ public:
     }
     return false;
   }
+
+  String getLocalIP() {
+    sendAT(GF("+CGPADDR=1"));
+    if (waitResponse(10000L, GF(GSM_NL "+CGPADDR:")) != 1) {
+      return "";
+    }
+    streamSkipUntil(',');
+    String res = stream.readStringUntil('\n');
+    if (waitResponse() != 1) {
+      return "";
+    }
+    return res;
+  }
+
+  IPAddress localIP() {
+    return TinyGsmIpFromString(getLocalIP());
+  }
+
+  /*
+   * WiFi functions
+   */
 
   /*
    * GPRS functions
@@ -448,53 +498,6 @@ public:
       return false;
 
     return localIP() != 0;
-  }
-
-  String getLocalIP() {
-    sendAT(GF("+CGPADDR=1"));
-    if (waitResponse(10000L, GF(GSM_NL "+CGPADDR:")) != 1) {
-      return "";
-    }
-    streamSkipUntil(',');
-    String res = stream.readStringUntil('\n');
-    if (waitResponse() != 1) {
-      return "";
-    }
-    return res;
-  }
-
-  IPAddress localIP() {
-    return TinyGsmIpFromString(getLocalIP());
-  }
-
-  /*
-   * Phone Call functions
-   */
-
-  bool setGsmBusy(bool busy = true) TINY_GSM_ATTR_NOT_AVAILABLE;
-
-  bool callAnswer() {
-    sendAT(GF("A"));
-    return waitResponse() == 1;
-  }
-
-  // Returns true on pick-up, false on error/busy
-  bool callNumber(const String& number) TINY_GSM_ATTR_NOT_IMPLEMENTED;
-
-  bool callHangup() {
-    sendAT(GF("H"));
-    return waitResponse() == 1;
-  }
-
-  // 0-9,*,#,A,B,C,D
-  bool dtmfSend(char cmd, int duration_ms = 100) { // TODO: check
-    duration_ms = constrain(duration_ms, 100, 1000);
-
-    sendAT(GF("+VTD="), duration_ms / 100); // VTD accepts in 1/10 of a second
-    waitResponse();
-
-    sendAT(GF("+VTS="), cmd);
-    return waitResponse(10000L) == 1;
   }
 
   /*
@@ -660,9 +663,13 @@ public:
     streamWrite(tail...);
   }
 
-  bool streamSkipUntil(char c) { //TODO: timeout
-    while (true) {
-      while (!stream.available()) { TINY_GSM_YIELD(); }
+  bool streamSkipUntil(char c) {
+    const unsigned long timeout = 1000L;
+    unsigned long startMillis = millis();
+    while (millis() - startMillis < timeout) {
+      while (millis() - startMillis < timeout && !stream.available()) {
+        TINY_GSM_YIELD();
+      }
       if (stream.read() == c)
         return true;
     }
@@ -674,7 +681,7 @@ public:
     streamWrite("AT", cmd..., GSM_NL);
     stream.flush();
     TINY_GSM_YIELD();
-    //DBG("### AT:", cmd...);
+    DBG("### AT:", cmd...);
   }
 
   // TODO: Optimize this!
@@ -682,12 +689,12 @@ public:
                        GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),
                        GsmConstStr r3=NULL, GsmConstStr r4=NULL, GsmConstStr r5=NULL)
   {
-    /*String r1s(r1); r1s.trim();
+    String r1s(r1); r1s.trim();
     String r2s(r2); r2s.trim();
     String r3s(r3); r3s.trim();
     String r4s(r4); r4s.trim();
     String r5s(r5); r5s.trim();
-    DBG("### ..:", r1s, ",", r2s, ",", r3s, ",", r4s, ",", r5s);*/
+    DBG("### ..:", r1s, ",", r2s, ",", r3s, ",", r4s, ",", r5s);
     data.reserve(64);
     int index = 0;
     unsigned long startMillis = millis();
@@ -743,6 +750,7 @@ finish:
       }
       data = "";
     }
+    DBG('<', index, '>');
     return index;
   }
 

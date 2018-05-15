@@ -172,10 +172,10 @@ public:
   String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
 private:
-  TinyGsmESP8266*  at;
-  uint8_t          mux;
-  bool             sock_connected;
-  RxFifo           rx;
+  TinyGsmESP8266* at;
+  uint8_t         mux;
+  bool            sock_connected;
+  RxFifo          rx;
 };
 
 //============================================================================//
@@ -257,8 +257,8 @@ public:
     for (unsigned long start = millis(); millis() - start < timeout; ) {
       sendAT(GF(""));
       if (waitResponse(200) == 1) {
-          delay(100);
-          return true;
+        delay(100);
+        return true;
       }
       delay(100);
     }
@@ -313,7 +313,6 @@ public:
 
   bool sleepEnable(bool enable = true) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
-
   /*
    * SIM card functions
    */
@@ -323,13 +322,13 @@ public:
    * Generic network functions
    */
 
-   RegStatus getRegistrationStatus() {
-     sendAT(GF("+CIPSTATUS"));
+  RegStatus getRegistrationStatus() {
+    sendAT(GF("+CIPSTATUS"));
     if (waitResponse(3000, GF("STATUS:")) != 1) return REG_UNKNOWN;
     int status = waitResponse(GFP(GSM_ERROR), GF("2"), GF("3"), GF("4"), GF("5"));
-     waitResponse();  // Returns an OK after the status
+    waitResponse();  // Returns an OK after the status
     return (RegStatus)status;
-   }
+  }
 
   int getSignalQuality() {
     sendAT(GF("+CWJAP_CUR?"));

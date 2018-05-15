@@ -44,7 +44,6 @@ enum XBeeType {
   XBEE3_LTENB    = 3,  // Digi XBee3™ Cellular NB-IoT  -- HS unknown to SRGD
 };
 
-
 //============================================================================//
 //============================================================================//
 //                   Declaration of the TinyGsmXBee Class
@@ -170,9 +169,9 @@ public:
   String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
 private:
-  TinyGsmXBee*  at;
-  uint8_t       mux;
-  bool          sock_connected;
+  TinyGsmXBee*    at;
+  uint8_t         mux;
+  bool            sock_connected;
 };
 
 //============================================================================//
@@ -664,8 +663,6 @@ fail:
   int getBattPercent() TINY_GSM_ATTR_NOT_AVAILABLE;
 
 protected:
-
-private:
 
   bool modemConnect(const char* host, uint16_t port, uint8_t mux = 0, bool ssl = false) {
     String strIP; strIP.reserve(16);
