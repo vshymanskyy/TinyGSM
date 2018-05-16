@@ -35,7 +35,7 @@ TinyGSM also pulls data gently from the modem (whenever possible), so it can ope
 
 ## Features
 
-Feature \ Modem              | SIM8xx | U201   | A6/A7/A20 | M590 | ESP8266 | XBee | Quectel M95 |
+Feature \ Modem              | SIM8xx | u-Blox | A6/A7/A20 | M590 | ESP8266 | XBee | Quectel M95 |
 ---                          | ---    | ---    | ---       | ---  | ---     | ---  | ----------- |
 **Data connections**
 TCP (HTTP, MQTT, Blynk, ...) | ✔      | ✔      | ✔         | ✔    | ✔       | ✔    | ✔           |
@@ -45,7 +45,7 @@ SSL/TLS (HTTPS)              | ✔¹     | ✔      | 🅧        | 🅧    | �
 Sending USSD requests        | ✔      |        | ✔         | ✔    | 🅧       |      |             |
 Decoding 7,8,16-bit response | ✔      |        | ✔         | ✔    | 🅧      |      |             |
 **SMS**
-Sending                      | ✔      |        | ✔         | ✔    | 🅧      | ✔    | ✔           |
+Sending                      | ✔      | ✔      | ✔         | ✔    | 🅧      | ✔    | ✔           |
 Sending Unicode              | ✔      |        | ◌         | 🅧   | 🅧      |       | ?           |
 Reading                      |        |        |           |      | 🅧      |      | ?           |
 Incoming message event       |        |        |           | ?    | 🅧      |      |             |
@@ -70,8 +70,10 @@ GPS/GNSS                     | ✔¹     | 🅧     | ◌¹        | 🅧   | �
 - ESP8266 (AT commands interface, similar to GSM modems)
 - Digi XBee WiFi and Cellular (using XBee command mode)
 - Neoway M590
-- U-blox SARA U2 (U201, U260, U270)
+- u-blox Cellular Modems (LEON-G100, LISA-U2xx, SARA-G3xx, SARA-U2xx, TOBY-L2xx, LARA-R2xx, MPCI-L2xx)
 - Quectel BG96 ***(alpha)***
+- Quectel M95 ***(alpha)***
+- Quectel MC60 ***(alpha)***
 
 ### Supported boards/modules
 - Arduino MKR GSM 1400
@@ -180,7 +182,7 @@ This may result in problems such as:
  * etc.
 
 To return module to **Factory Defaults**, use this sketch:  
-  File -> Examples -> TynyGSM -> tools -> [FactoryReset](https://github.com/vshymanskyy/TinyGSM/blob/master/tools/FactoryReset/FactoryReset.ino)
+  File -> Examples -> TinyGSM -> tools -> [FactoryReset](https://github.com/vshymanskyy/TinyGSM/blob/master/tools/FactoryReset/FactoryReset.ino)
 
 ### Goouuu Tech IOT-GA6 vs AI-Thinker A6 confusion
 

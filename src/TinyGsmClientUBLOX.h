@@ -75,7 +75,6 @@ public:
     sock_available = 0;
     sock_connected = false;
     got_data = false;
-
     return true;
   }
 
@@ -519,13 +518,27 @@ public:
   IPAddress localIP() {
     return TinyGsmIpFromString(getLocalIP());
   }
+
   /*
    * Messaging functions
    */
 
   String sendUSSD(const String& code) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
-  bool sendSMS(const String& number, const String& text) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool sendSMS(const String& number, const String& text) {
+    sendAT(GF("+CSCS=\"GSM\""));  // Set GSM default alphabet
+    waitResponse();
+    sendAT(GF("+CMGF=1"));  // Set preferred message format to text mode
+    waitResponse();
+    sendAT(GF("+CMGS=\""), number, GF("\""));  // set the phone number
+    if (waitResponse(GF(">")) != 1) {
+      return false;
+    }
+    stream.print(text);  // Actually send the message
+    stream.write((char)0x1A);
+    stream.flush();
+    return waitResponse(60000L) == 1;
+  }
 
   bool sendSMS_UTF16(const String& number, const void* text, size_t len) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
