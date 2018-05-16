@@ -9,8 +9,8 @@
 #ifndef TinyGsmClientBG96_h
 #define TinyGsmClientBG96_h
 
-// #define TINY_GSM_DEBUG Serial
-// #define TINY_GSM_USE_HEX
+//#define TINY_GSM_DEBUG Serial
+//#define TINY_GSM_USE_HEX
 
 #if !defined(TINY_GSM_RX_BUFFER)
   #define TINY_GSM_RX_BUFFER 64
@@ -50,7 +50,7 @@ class TinyGsmBG96
 
 //============================================================================//
 //============================================================================//
-//                          The BG96 Client Class
+//                         The BG96 Internal Client Class
 //============================================================================//
 //============================================================================//
 
@@ -178,11 +178,11 @@ public:
 
 private:
   TinyGsmBG96*  at;
-  uint8_t         mux;
-  uint16_t        sock_available;
-  bool            sock_connected;
-  bool            got_data;
-  RxFifo          rx;
+  uint8_t       mux;
+  uint16_t      sock_available;
+  bool          sock_connected;
+  bool          got_data;
+  RxFifo        rx;
 };
 
 //============================================================================//

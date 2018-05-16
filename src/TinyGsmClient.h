@@ -34,9 +34,9 @@
 #elif defined(TINY_GSM_MODEM_UBLOX)
   #define TINY_GSM_MODEM_HAS_GPRS
   #include <TinyGsmClientUBLOX.h>
-  typedef TinyGsmU201 TinyGsm;
-  typedef TinyGsmU201::GsmClient TinyGsmClient;
-  typedef TinyGsmU201::GsmClientSecure TinyGsmClientSecure;
+  typedef TinyGsmUBLOX TinyGsm;
+  typedef TinyGsmUBLOX::GsmClient TinyGsmClient;
+  typedef TinyGsmUBLOX::GsmClientSecure TinyGsmClientSecure;
 
 #elif defined(TINY_GSM_MODEM_M95)
   #define TINY_GSM_MODEM_HAS_GPRS

@@ -56,7 +56,7 @@ class TinyGsmMC60
 
 //============================================================================//
 //============================================================================//
-//                          The MC60 Client Class
+//                          The MC60 Internal Client Class
 //============================================================================//
 //============================================================================//
 
@@ -190,13 +190,13 @@ public:
   String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
 private:
-  TinyGsmMC60*    at;
-  uint8_t         mux;
-  uint16_t        sock_available;
-  uint32_t        prev_check;
-  bool            sock_connected;
-  bool            got_data;
-  RxFifo          rx;
+  TinyGsmMC60*  at;
+  uint8_t       mux;
+  uint16_t      sock_available;
+  uint32_t      prev_check;
+  bool          sock_connected;
+  bool          got_data;
+  RxFifo        rx;
 };
 
 //============================================================================//

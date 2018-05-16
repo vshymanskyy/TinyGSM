@@ -50,7 +50,7 @@ class TinyGsmSim800
 
 //============================================================================//
 //============================================================================//
-//                          The Sim800 Client Class
+//                          The Sim800 Internal Client Class
 //============================================================================//
 //============================================================================//
 
@@ -185,13 +185,13 @@ public:
   String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
 private:
-  TinyGsmSim800*  at;
-  uint8_t         mux;
-  uint16_t        sock_available;
-  uint32_t        prev_check;
-  bool            sock_connected;
-  bool            got_data;
-  RxFifo          rx;
+  TinyGsmSim800* at;
+  uint8_t        mux;
+  uint16_t       sock_available;
+  uint32_t       prev_check;
+  bool           sock_connected;
+  bool           got_data;
+  RxFifo         rx;
 };
 
 //============================================================================//

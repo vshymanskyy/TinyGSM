@@ -1,13 +1,13 @@
 /**
- * @file       TinyGsmClientU201.h
+ * @file       TinyGsmClientUBLOX.h
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
  * @date       Nov 2016
  */
 
-#ifndef TinyGsmClientU201_h
-#define TinyGsmClientU201_h
+#ifndef TinyGsmClientUBLOX_h
+#define TinyGsmClientUBLOX_h
 
 //#define TINY_GSM_DEBUG Serial
 
@@ -41,16 +41,16 @@ enum RegStatus {
 
 //============================================================================//
 //============================================================================//
-//                   Declaration of the TinyGsmU201 Class
+//                   Declaration of the TinyGsmUBLOX Class
 //============================================================================//
 //============================================================================//
 
-class TinyGsmU201
+class TinyGsmUBLOX
 {
 
 //============================================================================//
 //============================================================================//
-//                          The U201 Client Class
+//                          The UBLOX Internal Client Class
 //============================================================================//
 //============================================================================//
 
@@ -59,17 +59,17 @@ public:
 
 class GsmClient : public Client
 {
-  friend class TinyGsmU201;
+  friend class TinyGsmUBLOX;
   typedef TinyGsmFifo<uint8_t, TINY_GSM_RX_BUFFER> RxFifo;
 
 public:
   GsmClient() {}
 
-  GsmClient(TinyGsmU201& modem, uint8_t mux = 1) {
+  GsmClient(TinyGsmUBLOX& modem, uint8_t mux = 1) {
     init(&modem, mux);
   }
 
-  bool init(TinyGsmU201* modem, uint8_t mux = 1) {
+  bool init(TinyGsmUBLOX* modem, uint8_t mux = 1) {
     this->at = modem;
     this->mux = mux;
     sock_available = 0;
@@ -175,7 +175,7 @@ public:
   String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
 private:
-  TinyGsmU201*  at;
+  TinyGsmUBLOX* at;
   uint8_t       mux;
   uint16_t      sock_available;
   bool          sock_connected;
@@ -185,7 +185,7 @@ private:
 
 //============================================================================//
 //============================================================================//
-//                          The Secure U201 Client Class
+//                          The Secure UBLOX Client Class
 //============================================================================//
 //============================================================================//
 
@@ -195,7 +195,7 @@ class GsmClientSecure : public GsmClient
 public:
   GsmClientSecure() {}
 
-  GsmClientSecure(TinyGsmU201& modem, uint8_t mux = 1)
+  GsmClientSecure(TinyGsmUBLOX& modem, uint8_t mux = 1)
     : GsmClient(modem, mux)
   {}
 
@@ -212,16 +212,16 @@ public:
 
 //============================================================================//
 //============================================================================//
-//                          The U201 Modem Functions
+//                          The UBLOX Modem Functions
 //============================================================================//
 //============================================================================//
 
 public:
 
 #ifdef GSM_DEFAULT_STREAM
-  TinyGsmU201(Stream& stream = GSM_DEFAULT_STREAM)
+  TinyGsmUBLOX(Stream& stream = GSM_DEFAULT_STREAM)
 #else
-  TinyGsmU201(Stream& stream)
+  TinyGsmUBLOX(Stream& stream)
 #endif
     : stream(stream)
   {

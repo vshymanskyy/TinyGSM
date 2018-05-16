@@ -9,8 +9,8 @@
 #ifndef TinyGsmClientM95_h
 #define TinyGsmClientM95_h
 
-// #define TINY_GSM_DEBUG Serial
-// #define TINY_GSM_USE_HEX
+//#define TINY_GSM_DEBUG Serial
+//#define TINY_GSM_USE_HEX
 
 #if !defined(TINY_GSM_RX_BUFFER)
   #define TINY_GSM_RX_BUFFER 64
@@ -50,7 +50,7 @@ class TinyGsmM95
 
 //============================================================================//
 //============================================================================//
-//                          The M95 Client Class
+//                         The M95 Internal Client Class
 //============================================================================//
 //============================================================================//
 
@@ -177,17 +177,17 @@ public:
   String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
 private:
-  TinyGsmM95*     at;
-  uint8_t         mux;
-  uint16_t        sock_available;
-  bool            sock_connected;
-  bool            got_data;
-  RxFifo          rx;
+  TinyGsmM95*   at;
+  uint8_t       mux;
+  uint16_t      sock_available;
+  bool          sock_connected;
+  bool          got_data;
+  RxFifo        rx;
 };
 
 //============================================================================//
 //============================================================================//
-//                          The M95 Has No Secure Client
+//                         The M95 has no Secure Client (yet)
 //============================================================================//
 //============================================================================//
 
