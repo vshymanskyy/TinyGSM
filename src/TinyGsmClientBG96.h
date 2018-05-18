@@ -16,7 +16,7 @@
   #define TINY_GSM_RX_BUFFER 64
 #endif
 
-#define TINY_GSM_MUX_COUNT 5
+#define TINY_GSM_MUX_COUNT 12
 
 #include <TinyGsmCommon.h>
 
@@ -39,9 +39,21 @@ enum RegStatus {
   REG_UNKNOWN      = 4,
 };
 
+//============================================================================//
+//============================================================================//
+//                    Declaration of the TinyGsmBG96 Class
+//============================================================================//
+//============================================================================//
 
 class TinyGsmBG96
 {
+
+//============================================================================//
+//============================================================================//
+//                         The Internal BG96 Client Class
+//============================================================================//
+//============================================================================//
+
 
 public:
 
@@ -173,6 +185,13 @@ private:
   RxFifo        rx;
 };
 
+//============================================================================//
+//============================================================================//
+//                          The BG96 Secure Client
+//============================================================================//
+//============================================================================//
+
+
 class GsmClientSecure : public GsmClient
 {
 public:
@@ -192,9 +211,19 @@ public:
   }
 };
 
+//============================================================================//
+//============================================================================//
+//                          The BG96 Modem Functions
+//============================================================================//
+//============================================================================//
+
 public:
 
+#ifdef GSM_DEFAULT_STREAM
+  TinyGsmBG96(Stream& stream = GSM_DEFAULT_STREAM)
+#else
   TinyGsmBG96(Stream& stream)
+#endif
     : stream(stream)
   {
     memset(sockets, 0, sizeof(sockets));
@@ -344,10 +373,10 @@ public:
       int status = waitResponse(GF("READY"), GF("SIM PIN"), GF("SIM PUK"), GF("NOT INSERTED"));
       waitResponse();
       switch (status) {
-      case 2:
-      case 3:  return SIM_LOCKED;
-      case 1:  return SIM_READY;
-      default: return SIM_ERROR;
+        case 2:
+        case 3:  return SIM_LOCKED;
+        case 1:  return SIM_READY;
+        default: return SIM_ERROR;
       }
     }
     return SIM_ERROR;
@@ -403,6 +432,10 @@ public:
     }
     return false;
   }
+
+  /*
+   * WiFi functions
+   */
 
   /*
    * GPRS functions
@@ -660,9 +693,13 @@ public:
     streamWrite(tail...);
   }
 
-  bool streamSkipUntil(char c) { //TODO: timeout
-    while (true) {
-      while (!stream.available()) { TINY_GSM_YIELD(); }
+  bool streamSkipUntil(char c) {
+    const unsigned long timeout = 1000L;
+    unsigned long startMillis = millis();
+    while (millis() - startMillis < timeout) {
+      while (millis() - startMillis < timeout && !stream.available()) {
+        TINY_GSM_YIELD();
+      }
       if (stream.read() == c)
         return true;
     }
@@ -743,6 +780,7 @@ finish:
       }
       data = "";
     }
+    //DBG('<', index, '>');
     return index;
   }
 
