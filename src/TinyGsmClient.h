@@ -71,6 +71,15 @@
   typedef TinyGsmXBee::GsmClient TinyGsmClient;
   typedef TinyGsmXBee::GsmClientSecure TinyGsmClientSecure;
 
+#elif defined(TINY_GSM_MODEM_SEQUANS_MONARCH_CATM1)
+  #define TINY_GSM_MODEM_HAS_GPRS
+  #define TINY_GSM_MODEM_HAS_SSL
+  #include <TinyGsmClientSequansMonarchCatM1.h>
+  typedef TinyGsmSequansMonarchCatM1 TinyGsm;
+  typedef TinyGsm::GsmClient TinyGsmClient;
+  typedef TinyGsm::GsmClientSecure TinyGsmClientSecure;
+
+
 #else
   #error "Please define GSM modem model"
 #endif
