@@ -45,21 +45,8 @@ enum TinyGSMDateTimeFormat {
   DATE_DATE = 2
 };
 
-//============================================================================//
-//============================================================================//
-//                    Declaration of the TinyGsmSim800 Class
-//============================================================================//
-//============================================================================//
-
 class TinyGsmSim800
 {
-
-//============================================================================//
-//============================================================================//
-//                          The Sim800 Internal Client Class
-//============================================================================//
-//============================================================================//
-
 
 public:
 
@@ -205,13 +192,6 @@ private:
   RxFifo         rx;
 };
 
-//============================================================================//
-//============================================================================//
-//                          The SIM800 Secure Client
-//============================================================================//
-//============================================================================//
-
-
 class GsmClientSecure : public GsmClient
 {
 public:
@@ -231,19 +211,9 @@ public:
   }
 };
 
-//============================================================================//
-//============================================================================//
-//                          The SIM800 Modem Functions
-//============================================================================//
-//============================================================================//
-
 public:
 
-#ifdef GSM_DEFAULT_STREAM
-  TinyGsmSim800(Stream& stream = GSM_DEFAULT_STREAM)
-#else
   TinyGsmSim800(Stream& stream)
-#endif
     : stream(stream)
   {
     memset(sockets, 0, sizeof(sockets));
@@ -432,10 +402,10 @@ public:
       int status = waitResponse(GF("READY"), GF("SIM PIN"), GF("SIM PUK"), GF("NOT INSERTED"));
       waitResponse();
       switch (status) {
-        case 2:
-        case 3:  return SIM_LOCKED;
-        case 1:  return SIM_READY;
-        default: return SIM_ERROR;
+      case 2:
+      case 3:  return SIM_LOCKED;
+      case 1:  return SIM_READY;
+      default: return SIM_ERROR;
       }
     }
     return SIM_ERROR;
@@ -491,10 +461,6 @@ public:
     }
     return false;
   }
-
-  /*
-   * WiFi functions
-   */
 
   /*
    * GPRS functions
@@ -932,8 +898,7 @@ public:
     streamWrite(tail...);
   }
 
-  bool streamSkipUntil(char c) {
-    const unsigned long timeout = 1000L;
+  bool streamSkipUntil(const char c, const unsigned long timeout = 3000L) {
     unsigned long startMillis = millis();
     while (millis() - startMillis < timeout) {
       while (millis() - startMillis < timeout && !stream.available()) {
@@ -1019,7 +984,6 @@ finish:
       }
       data = "";
     }
-    //DBG('<', index, '>');
     return index;
   }
 
