@@ -244,8 +244,8 @@ public:
     for (unsigned long start = millis(); millis() - start < timeout; ) {
       sendAT(GF(""));
       if (waitResponse(200) == 1) {
-          delay(100);
-          return true;
+        delay(100);
+        return true;
       }
       delay(100);
     }
@@ -313,6 +313,7 @@ public:
       return false;
     }
     //Enable Local Time Stamp for getting network time
+    // TODO: Find a better place for this
     sendAT(GF("+CLTS=1"));
     if (waitResponse(10000L) != 1) {
       return false;
