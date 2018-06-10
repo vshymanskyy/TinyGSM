@@ -35,20 +35,20 @@ TinyGSM also pulls data gently from the modem (whenever possible), so it can ope
 
 ## Features
 
-Feature \ Modem              | SIM8xx | U2     | A6/A7/A20 | M590 | ESP8266 | XBee 
+Feature \ Modem              | SIM8xx | u-Blox | A6/A7/A20 | M590 | ESP8266 | XBee
 ---                          | ---    | ---    | ---       | ---  | ---     | ---
 **Data connections**
 TCP (HTTP, MQTT, Blynk, ...) | ✔      | ✔      | ✔         | ✔    | ✔       | ✔
 UDP                          | ◌      | ◌      |           |      |         | ◌
 SSL/TLS (HTTPS)              | ✔¹     | ✔      | 🅧        | 🅧    | ✔¹      | ✔¹
 **USSD**
-Sending USSD requests        | ✔      |        | ✔         | ✔    | 🅧       | 
-Decoding 7,8,16-bit response | ✔      |        | ✔         | ✔    | 🅧      | 
+Sending USSD requests        | ✔      |        | ✔         | ✔    | 🅧       |
+Decoding 7,8,16-bit response | ✔      |        | ✔         | ✔    | 🅧      |
 **SMS**
-Sending                      | ✔      |        | ✔         | ✔    | 🅧      | ✔
-Sending Unicode              | ✔      |        | ◌         | 🅧   | 🅧      | 
-Reading                      |        |        |           |      | 🅧      | 
-Incoming message event       |        |        |           | ?    | 🅧      | 
+Sending                      | ✔      | ✔      | ✔         | ✔    | 🅧      | ✔
+Sending Unicode              | ✔      |        | ◌         | 🅧   | 🅧      |
+Reading                      |        |        |           |      | 🅧      |
+Incoming message event       |        |        |           | ?    | 🅧      |
 **Calls**
 Dial, hangup                 | ✔      |        | ✔         | 🅧   | 🅧      | 🅧
 Receiving calls              | ✔      |        | ✔         | 🅧   | 🅧      | 🅧
@@ -70,7 +70,7 @@ GPS/GNSS                     | ✔¹     | 🅧     | ◌¹        | 🅧   | �
 - ESP8266 (AT commands interface, similar to GSM modems)
 - Digi XBee WiFi and Cellular (using XBee command mode)
 - Neoway M590
-- U-blox SARA U2
+- u-blox Cellular Modems (LEON-G100, LISA-U2xx, SARA-G3xx, SARA-U2xx, TOBY-L2xx, LARA-R2xx, MPCI-L2xx)
 - Quectel BG96 ***(alpha)***
 
 ### Supported boards/modules
@@ -141,7 +141,7 @@ For additional functions, please refer to [this example sketch](examples/AllFunc
 
 Use this sketch to diagnose your SIM card and GPRS connection:  
   File -> Examples -> TynyGSM -> tools -> [Diagnostics](https://github.com/vshymanskyy/TinyGSM/blob/master/tools/Diagnostics/Diagnostics.ino)
-  
+
 ### Ensure stable data & power connection
 
 Most modules require up to 2A and specific voltage - according to the module documentation.
@@ -158,7 +158,7 @@ Try selecting **57600**, **38400**, or even lower - the one that works best for 
 In some cases **9600** is unstable, but using **38400** helps, etc.  
 Be sure to set correct TX/RX pins in the sketch. Please note that not every Arduino pin can serve as TX or RX pin.  
 **Read more about SoftSerial options and configuration [here](https://www.pjrc.com/teensy/td_libs_AltSoftSerial.html) and [here](https://www.arduino.cc/en/Reference/SoftwareSerial).**
-  
+
 ### ESP32 HardwareSerial
 
 When using ESP32 `HardwareSerial`, you may need to specify additional parameters to the `.begin()` call.
@@ -180,11 +180,11 @@ This may result in problems such as:
  * etc.
 
 To return module to **Factory Defaults**, use this sketch:  
-  File -> Examples -> TynyGSM -> tools -> [FactoryReset](https://github.com/vshymanskyy/TinyGSM/blob/master/tools/FactoryReset/FactoryReset.ino)
+  File -> Examples -> TinyGSM -> tools -> [FactoryReset](https://github.com/vshymanskyy/TinyGSM/blob/master/tools/FactoryReset/FactoryReset.ino)
 
 ### Goouuu Tech IOT-GA6 vs AI-Thinker A6 confusion
 
-It turns out that **Goouuu Tech IOT-GA6** is not the same as **AI-Thinker A6**. Unfortunately IOT-GA6 is not supported out of the box yet. There are some hints that IOT-GA6 firmware may be updated to match A6... But no one confirmed that up to my knowledge.
+It turns out that **Goouuu Tech IOT-GA6** is not the same as **AI-Thinker A6**. Unfortunately IOT-GA6 is not supported out of the box yet. There are some hints that IOT-GA6 firmware may be updated to match A6... See [this topic](https://github.com/vshymanskyy/TinyGSM/issues/164).
 
 __________
 

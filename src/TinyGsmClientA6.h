@@ -38,25 +38,37 @@ enum RegStatus {
   REG_UNKNOWN      = 4,
 };
 
+//============================================================================//
+//============================================================================//
+//                       Declaration of the TinyGsmA6 Class
+//============================================================================//
+//============================================================================//
 
-class TinyGsm
+class TinyGsmA6
 {
+
+//============================================================================//
+//============================================================================//
+//                          The Internal A6 Client Class
+//============================================================================//
+//============================================================================//
+
 
 public:
 
 class GsmClient : public Client
 {
-  friend class TinyGsm;
+  friend class TinyGsmA6;
   typedef TinyGsmFifo<uint8_t, TINY_GSM_RX_BUFFER> RxFifo;
 
 public:
   GsmClient() {}
 
-  GsmClient(TinyGsm& modem) {
+  GsmClient(TinyGsmA6& modem) {
     init(&modem);
   }
 
-  bool init(TinyGsm* modem) {
+  bool init(TinyGsmA6* modem) {
     this->at = modem;
     this->mux = -1;
     sock_connected = false;
@@ -167,15 +179,33 @@ public:
   String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
 private:
-  TinyGsm*      at;
-  uint8_t       mux;
-  bool          sock_connected;
-  RxFifo        rx;
+  TinyGsmA6*      at;
+  uint8_t         mux;
+  bool            sock_connected;
+  RxFifo          rx;
 };
+
+//============================================================================//
+//============================================================================//
+//                      The A6 does not have a secure client!
+//============================================================================//
+//============================================================================//
+
+
+
+//============================================================================//
+//============================================================================//
+//                          The A6 Modem Functions
+//============================================================================//
+//============================================================================//
 
 public:
 
-  TinyGsm(Stream& stream)
+#ifdef GSM_DEFAULT_STREAM
+  TinyGsmA6(Stream& stream = GSM_DEFAULT_STREAM)
+#else
+  TinyGsmA6(Stream& stream)
+#endif
     : stream(stream)
   {
     memset(sockets, 0, sizeof(sockets));
@@ -214,8 +244,8 @@ public:
     for (unsigned long start = millis(); millis() - start < timeout; ) {
       sendAT(GF(""));
       if (waitResponse(200) == 1) {
-          delay(100);
-          return true;
+        delay(100);
+        return true;
       }
       delay(100);
     }
@@ -312,10 +342,10 @@ public:
       int status = waitResponse(GF("READY"), GF("SIM PIN"), GF("SIM PUK"));
       waitResponse();
       switch (status) {
-      case 2:
-      case 3:  return SIM_LOCKED;
-      case 1:  return SIM_READY;
-      default: return SIM_ERROR;
+        case 2:
+        case 3:  return SIM_LOCKED;
+        case 1:  return SIM_READY;
+        default: return SIM_ERROR;
       }
     }
     return SIM_ERROR;
@@ -374,6 +404,10 @@ public:
     }
     return false;
   }
+
+  /*
+   * WiFi functions
+   */
 
   /*
    * GPRS functions
@@ -655,9 +689,13 @@ public:
     streamWrite(tail...);
   }
 
-  bool streamSkipUntil(char c) { //TODO: timeout
-    while (true) {
-      while (!stream.available()) { TINY_GSM_YIELD(); }
+  bool streamSkipUntil(char c) {
+    const unsigned long timeout = 1000L;
+    unsigned long startMillis = millis();
+    while (millis() - startMillis < timeout) {
+      while (millis() - startMillis < timeout && !stream.available()) {
+        TINY_GSM_YIELD();
+      }
       if (stream.read() == c)
         return true;
     }
@@ -742,6 +780,7 @@ finish:
       }
       data = "";
     }
+    //DBG('<', index, '>');
     return index;
   }
 
