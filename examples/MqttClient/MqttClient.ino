@@ -121,7 +121,14 @@ void setup() {
 boolean mqttConnect() {
   SerialMon.print("Connecting to ");
   SerialMon.print(broker);
-  if (!mqtt.connect("GsmClientTest")) {
+
+  // Connect to MQTT Broker
+  boolean status = mqtt.connect("GsmClientTest");
+
+  // Or, if you want to authenticate MQTT:
+  //boolean status = mqtt.connect("GsmClientName", "mqtt_user", "mqtt_pass");
+
+  if (status == false) {
     SerialMon.println(" fail");
     return false;
   }
