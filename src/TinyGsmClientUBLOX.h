@@ -107,6 +107,11 @@ public:
     return write(&c, 1);
   }
 
+  virtual size_t write(const char *str) {
+    if (str == NULL) return 0;
+    return write((const uint8_t *)str, strlen(str));
+  }
+
   virtual int available() {
     TINY_GSM_YIELD();
     if (!rx.size()) {
