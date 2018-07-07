@@ -18,6 +18,10 @@
 
 #define TINY_GSM_MUX_COUNT 5
 
+#ifndef TINY_GSM_PHONEBOOK_RESULTS
+  #define TINY_GSM_PHONEBOOK_RESULTS 5
+#endif
+
 #include <TinyGsmCommon.h>
 
 #define GSM_NL "\r\n"
@@ -37,6 +41,27 @@ enum RegStatus {
   REG_OK_HOME      = 1,
   REG_OK_ROAMING   = 5,
   REG_UNKNOWN      = 4,
+};
+
+enum class PhonebookStorageType : uint8_t {
+  SIM,    // Typical size: 250
+  Phone,  // Typical size: 100
+  Invalid
+};
+
+struct PhonebookStorage {
+  PhonebookStorageType type = PhonebookStorageType::Invalid;
+  uint8_t used  = {0};
+  uint8_t total = {0};
+};
+
+struct PhonebookEntry {
+  String number;
+  String text;
+};
+
+struct PhonebookMatches {
+  uint8_t index[TINY_GSM_PHONEBOOK_RESULTS] = {0};
 };
 
 enum class MessageStorageType : uint8_t {
@@ -66,19 +91,6 @@ enum class DeleteAllSmsMethod : uint8_t {
   Received = 5,
   All      = 6
 };
-
-enum class PhonebookStorageType : uint8_t {
-  SIM,    // Typical size: 250
-  Phone,  // Typical size: 100
-  Invalid
-};
-
-struct PhonebookStorage {
-  PhonebookStorageType type = PhonebookStorageType::Invalid;
-  uint8_t used  = {0};
-  uint8_t total = {0};
-};
-
 
 class TinyGsmSim800
 {
@@ -705,8 +717,7 @@ public:
   String sendUSSD(const String& code) {
     sendAT(GF("+CMGF=1"));
     waitResponse();
-    sendAT(GF("+CSCS=\"HEX\""));
-    waitResponse();
+    changeCharacterSet(GF("HEX"));
     sendAT(GF("+CUSD=1,\""), code, GF("\""));
     if (waitResponse() != 1) {
       return "";
@@ -732,8 +743,7 @@ public:
     sendAT(GF("+CMGF=1"));
     waitResponse();
     //Set GSM 7 bit default alphabet (3GPP TS 23.038)
-    sendAT(GF("+CSCS=\"GSM\""));
-    waitResponse();
+    changeCharacterSet(GF("GSM"));
     sendAT(GF("+CMGS=\""), number, GF("\""));
     if (waitResponse(GF(">")) != 1) {
       return false;
@@ -747,8 +757,7 @@ public:
   bool sendSMS_UTF16(const String& number, const void* text, size_t len) {
     sendAT(GF("+CMGF=1"));
     waitResponse();
-    sendAT(GF("+CSCS=\"HEX\""));
-    waitResponse();
+    changeCharacterSet(GF("HEX"));
     sendAT(GF("+CSMP=17,167,0,8"));
     waitResponse();
 
@@ -962,7 +971,6 @@ public:
     return waitResponse() == 1;
   }
 
-
   /*
    * Phonebook functions
    */
@@ -1009,15 +1017,18 @@ public:
   }
 
   bool addPhonebookEntry(const String &number, const String &text) {
-    // Always use international phone number style (+12345678910)
-    // Never use double quotes or backslashes in `text`, not even in escaped form
+    // Always use international phone number style (+12345678910).
+    // Never use double quotes or backslashes in `text`, not even in escaped form.
+    // Use characters found in the GSM alphabet.
 
-    // Typical maximum length of `number`: 16
-    // Typical maximum length of `text`:   40
+    // Typical maximum length of `number`: 38
+    // Typical maximum length of `text`:   14
+
+    changeCharacterSet(GF("GSM"));
 
     // AT format:
     // AT+CPBW=<index>[,<number>,[<type>,[<text>]]]
-    sendAT(GF("+CPBW=,\""), number, GF("\",145,\""), text, GF("\""));  // Write Phonebook Entry
+    sendAT(GF("+CPBW=,\""), number, GF("\",145,\""), text, '"');  // Write Phonebook Entry
 
     return waitResponse(3000L) == 1;
   }
@@ -1028,6 +1039,58 @@ public:
 
     // Returns OK even if an empty index is deleted in the valid range
     return waitResponse(3000L) == 1;
+  }
+
+  PhonebookEntry readPhonebookEntry(const uint8_t index) {
+    changeCharacterSet(GF("GSM"));
+    sendAT(GF("+CPBR="), index); // Read Current Phonebook Entries
+
+    // AT response:
+    // +CPBR:<index1>,<number>,<type>,<text>
+    if (waitResponse(3000L, GF(GSM_NL "+CPBR: ")) != 1) {
+      stream.readString();
+      return {};
+    }
+
+    PhonebookEntry phonebookEntry;
+    streamSkipUntil('"');
+    phonebookEntry.number = stream.readStringUntil('"');
+    streamSkipUntil('"');
+    phonebookEntry.text = stream.readStringUntil('"');
+
+    waitResponse();
+
+    return phonebookEntry;
+  }
+
+  PhonebookMatches findPhonebookEntries(const String &needle) {
+    // Search among the `text` entries only.
+    // Only the first TINY_GSM_PHONEBOOK_RESULTS indices are returned.
+    // Make your query more specific if you have more results than that.
+    // Use characters found in the GSM alphabet.
+
+    changeCharacterSet(GF("GSM"));
+    sendAT(GF("+CPBF=\""), needle, '"'); // Find Phonebook Entries
+
+    // AT response:
+    // [+CPBF:<index1>,<number>,<type>,<text>]
+    // [[...]<CR><LF>+CBPF:<index2>,<number>,<type>,<text>]
+    if (waitResponse(30000L, GF(GSM_NL "+CPBF: ")) != 1) {
+      stream.readString();
+      return {};
+    }
+
+    PhonebookMatches matches;
+    for (uint8_t i = 0; i < TINY_GSM_PHONEBOOK_RESULTS; ++i) {
+      matches.index[i] = static_cast<uint8_t>(stream.readStringUntil(',').toInt());
+      if (waitResponse(GF(GSM_NL "+CPBF: ")) != 1) {
+        break;
+      }
+    }
+
+    waitResponse();
+
+    return matches;
   }
 
 
@@ -1285,6 +1348,11 @@ public:
 
 protected:
   GsmClient*    sockets[TINY_GSM_MUX_COUNT];
+
+  bool changeCharacterSet(const String &alphabet) {
+    sendAT(GF("+CSCS=\""), alphabet, '"');
+    return waitResponse() == 1;
+  }
 };
 
 #endif
