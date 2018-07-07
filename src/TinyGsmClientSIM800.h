@@ -776,8 +776,8 @@ public:
     // Never use double quotes or backslashes in `text`, not even in escaped form.
     // Use characters found in the GSM alphabet.
 
-    // Typical maximum length of `number`: 16
-    // Typical maximum length of `text`:   40
+    // Typical maximum length of `number`: 38
+    // Typical maximum length of `text`:   14
 
     changeCharacterSet(GF("GSM"));
 
