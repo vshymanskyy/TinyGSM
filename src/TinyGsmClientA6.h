@@ -16,6 +16,7 @@
 #endif
 
 #define TINY_GSM_MUX_COUNT 8
+#define ANSWER_TIMEOUT 5000
 
 #include <TinyGsmCommon.h>
 
@@ -755,7 +756,10 @@ public:
             DBG("### Got: ", len, "->", sockets[mux]->rx.free());
           }
           while (len--) {
-            while (!stream.available()) { TINY_GSM_YIELD(); }
+            while (!stream.available() && millis() - startMillis < ANSWER_TIMEOUT) { TINY_GSM_YIELD(); }
+            if (!stream.available()) {
+              break;
+            }
             sockets[mux]->rx.put(stream.read());
           }
           if (len_orig > sockets[mux]->available()) { // TODO
