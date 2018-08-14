@@ -68,6 +68,9 @@ const char* topicLedStatus = "GsmClientTest/ledStatus";
 
 TinyGsm modem(SerialAT);
 TinyGsmClient client(modem);
+// Or, if you have a SSL capable modem you can connect securely instead
+// You'll also need to change the port from 1883 to 8883 further below
+// TinyGsmClientSecure client(modem);
 PubSubClient mqtt(client);
 
 #define LED_PIN 13
@@ -114,6 +117,7 @@ void setup() {
   SerialMon.println(" OK");
 
   // MQTT Broker setup
+  // For SSL connection, use port 8883 (your modem has to support it)
   mqtt.setServer(broker, 1883);
   mqtt.setCallback(mqttCallback);
 }
@@ -171,4 +175,3 @@ void mqttCallback(char* topic, byte* payload, unsigned int len) {
     mqtt.publish(topicLedStatus, ledStatus ? "1" : "0");
   }
 }
-
