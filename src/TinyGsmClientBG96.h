@@ -50,7 +50,7 @@ class TinyGsmBG96
 
 //============================================================================//
 //============================================================================//
-//                         The BG96 Internal Client Class
+//                         The Internal BG96 Client Class
 //============================================================================//
 //============================================================================//
 
@@ -118,6 +118,11 @@ public:
 
   virtual size_t write(uint8_t c) {
     return write(&c, 1);
+  }
+
+  virtual size_t write(const char *str) {
+    if (str == NULL) return 0;
+    return write((const uint8_t *)str, strlen(str));
   }
 
   virtual int available() {

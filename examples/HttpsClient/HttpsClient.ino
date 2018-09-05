@@ -10,7 +10,8 @@
  * TinyGSM Getting Started guide:
  *   http://tiny.cc/tiny-gsm-readme
  *
- * SSL/TLS is currently supported only with SIM8xx series
+ * SSL/TLS is currently supported only with: SIM8xx, uBlox
+ *
  * For more HTTP API examples, see ArduinoHttpClient library
  *
  **************************************************************/
@@ -18,6 +19,7 @@
 // Select your modem:
 #define TINY_GSM_MODEM_SIM800
 // #define TINY_GSM_MODEM_SIM808
+// #define TINY_GSM_MODEM_UBLOX
 
 // Increase RX buffer if needed
 //#define TINY_GSM_RX_BUFFER 512

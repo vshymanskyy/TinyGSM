@@ -49,7 +49,7 @@ class TinyGsmA6
 
 //============================================================================//
 //============================================================================//
-//                          The A6 Internal Client Class
+//                         The Internal A6 Client Class
 //============================================================================//
 //============================================================================//
 
@@ -118,6 +118,11 @@ public:
 
   virtual size_t write(uint8_t c) {
     return write(&c, 1);
+  }
+
+  virtual size_t write(const char *str) {
+    if (str == NULL) return 0;
+    return write((const uint8_t *)str, strlen(str));
   }
 
   virtual int available() {

@@ -50,7 +50,7 @@ class TinyGsmSim800
 
 //============================================================================//
 //============================================================================//
-//                          The Sim800 Internal Client Class
+//                          The Internal SIM800 Client Class
 //============================================================================//
 //============================================================================//
 
@@ -119,6 +119,11 @@ public:
 
   virtual size_t write(uint8_t c) {
     return write(&c, 1);
+  }
+
+  virtual size_t write(const char *str) {
+    if (str == NULL) return 0;
+    return write((const uint8_t *)str, strlen(str));
   }
 
   virtual int available() {
@@ -337,6 +342,7 @@ public:
       return false;
     }
     //Enable Local Time Stamp for getting network time
+    // TODO: Find a better place for this
     sendAT(GF("+CLTS=1"));
     if (waitResponse(10000L) != 1) {
       return false;
