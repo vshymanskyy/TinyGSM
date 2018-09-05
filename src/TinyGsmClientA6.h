@@ -404,6 +404,8 @@ public:
   /*
    * WiFi functions
    */
+  bool networkConnect(const char* ssid, const char* pwd) TINY_GSM_ATTR_NOT_AVAILABLE;
+  bool networkDisconnect() TINY_GSM_ATTR_NOT_AVAILABLE;
 
   /*
    * GPRS functions
@@ -411,9 +413,8 @@ public:
   bool gprsConnect(const char* apn, const char* user = NULL, const char* pwd = NULL) {
     gprsDisconnect();
 
-    sendAT(GF("+CGATT=1"));
-    if (waitResponse(60000L) != 1)
-      return false;
+    sendAT(GF("EE"), 2);  // Set security to WPA2
+    if (waitResponse() != 1) goto fail;
 
     // TODO: wait AT+CGATT?
 
