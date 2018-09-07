@@ -852,8 +852,7 @@ public:
     streamWrite(tail...);
   }
 
-  bool streamSkipUntil(char c) {
-    const unsigned long timeout = 1000L;
+  bool streamSkipUntil(const char c, const unsigned long timeout = 3000L) {
     unsigned long startMillis = millis();
     while (millis() - startMillis < timeout) {
       while (millis() - startMillis < timeout && !stream.available()) {

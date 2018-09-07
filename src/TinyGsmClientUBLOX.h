@@ -726,7 +726,7 @@ public:
       TINY_GSM_YIELD();
       while (stream.available() > 0) {
         int a = stream.read();
-        if (a <= 0) continue; // Skip 0x00 bytes, just in case
+        if (a < 0) continue;
         data += (char)a;
         if (r1 && data.endsWith(r1)) {
           index = 1;

@@ -49,7 +49,7 @@ class TinyGsmA6
 
 //============================================================================//
 //============================================================================//
-//                         The Internal A6 Client Class
+//                          The Internal A6 Client Class
 //============================================================================//
 //============================================================================//
 
@@ -418,8 +418,9 @@ public:
   bool gprsConnect(const char* apn, const char* user = NULL, const char* pwd = NULL) {
     gprsDisconnect();
 
-    sendAT(GF("EE"), 2);  // Set security to WPA2
-    if (waitResponse() != 1) goto fail;
+    sendAT(GF("+CGATT=1"));
+    if (waitResponse(60000L) != 1)
+      return false;
 
     // TODO: wait AT+CGATT?
 
