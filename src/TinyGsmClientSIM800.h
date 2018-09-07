@@ -45,6 +45,7 @@ enum TinyGSMDateTimeFormat {
   DATE_DATE = 2
 };
 
+
 class TinyGsmSim800
 {
 
@@ -192,6 +193,7 @@ private:
   RxFifo         rx;
 };
 
+
 class GsmClientSecure : public GsmClient
 {
 public:
@@ -210,6 +212,7 @@ public:
     return sock_connected;
   }
 };
+
 
 public:
 
