@@ -194,4 +194,99 @@ String TinyGsmDecodeHex16bit(String &instr) {
   return result;
 }
 
+
+
+
+class TinyGsmMasterModem
+{
+
+public:
+
+class GsmClient : public Client
+{
+  friend class TinyGsmXBee;
+};
+
+
+public:
+
+#ifdef GSM_DEFAULT_STREAM
+  TinyGsmMasterModem(Stream& stream = GSM_DEFAULT_STREAM)
+#else
+  TinyGsmMasterModem(Stream& stream)
+#endif
+    : stream(stream)
+  {}
+
+  /*
+   * Basic functions
+   */
+
+  virtual bool begin() = 0;
+  virtual bool init() = 0;
+  virtual void setBaud(unsigned long baud) = 0;
+  virtual bool testAT(unsigned long timeout = 10000L) = 0;
+  virtual void maintain() = 0;
+  virtual bool factoryDefault() = 0;
+  virtual String getModemInfo() = 0;
+  virtual bool hasSSL() = 0;
+
+  /*
+   * Power functions
+   */
+
+  virtual bool restart() = 0;
+
+  /*
+   * SIM card functions
+   */
+
+  virtual bool simUnlock(const char *pin) = 0;
+  virtual String getSimCCID() = 0;
+  virtual String getIMEI() = 0;
+  virtual String getOperator() = 0;
+
+ /*
+  * Generic network functions
+  */
+
+  virtual int getSignalQuality() = 0;
+  virtual bool isNetworkConnected() = 0;
+
+  /*
+   * WiFi functions
+   */
+
+  virtual bool networkConnect(const char* ssid, const char* pwd) = 0;
+  virtual bool networkDisconnect() = 0;
+
+  /*
+   * GPRS functions
+   */
+  virtual bool gprsConnect(const char* apn, const char* user = NULL, const char* pwd = NULL) = 0;
+  virtual bool gprsDisconnect() = 0;
+  virtual bool isGprsConnected() = 0;
+
+  /*
+   * IP Address functions
+   */
+
+  virtual String getLocalIP() = 0;
+  virtual IPAddress localIP() {
+    return TinyGsmIpFromString(getLocalIP());
+  }
+
+  /*
+   * Messaging functions
+   */
+
+  virtual bool sendSMS(const String& number, const String& text) = 0;
+
+public:
+  Stream&       stream;
+};
+
+
+
+
 #endif

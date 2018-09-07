@@ -39,7 +39,7 @@ enum RegStatus {
 };
 
 
-class TinyGsmA6
+class TinyGsmA6 : public TinyGsmMasterModem
 {
 
 public:
@@ -182,7 +182,7 @@ public:
 #else
   TinyGsmA6(Stream& stream)
 #endif
-    : stream(stream)
+    : TinyGsmMasterModem(stream), stream(stream)
   {
     memset(sockets, 0, sizeof(sockets));
   }
@@ -445,6 +445,10 @@ public:
     return (res == 1);
   }
 
+  /*
+   * IP Address functions
+   */
+
   String getLocalIP() {
     sendAT(GF("+CIFSR"));
     String res;
@@ -455,10 +459,6 @@ public:
     res.replace(GSM_NL, "");
     res.trim();
     return res;
-  }
-
-  IPAddress localIP() {
-    return TinyGsmIpFromString(getLocalIP());
   }
 
   /*

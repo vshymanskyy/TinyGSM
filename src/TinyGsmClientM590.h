@@ -39,7 +39,7 @@ enum RegStatus {
 };
 
 
-class TinyGsmM590
+class TinyGsmM590 : public TinyGsmMasterModem
 {
 
 public:
@@ -179,7 +179,7 @@ public:
 #else
   TinyGsmM590(Stream& stream)
 #endif
-    : stream(stream)
+    : TinyGsmMasterModem(stream), stream(stream)
   {
     memset(sockets, 0, sizeof(sockets));
   }
@@ -451,6 +451,10 @@ public:
     return res == 1;
   }
 
+  /*
+   * IP Address functions
+   */
+
   String getLocalIP() {
     sendAT(GF("+XIIC?"));
     if (waitResponse(GF(GSM_NL "+XIIC:")) != 1) {
@@ -461,10 +465,6 @@ public:
     waitResponse();
     res.trim();
     return res;
-  }
-
-  IPAddress localIP() {
-    return TinyGsmIpFromString(getLocalIP());
   }
 
   /*

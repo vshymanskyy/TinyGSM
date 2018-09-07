@@ -40,7 +40,7 @@ enum RegStatus {
 };
 
 
-class TinyGsmM95
+class TinyGsmM95 : public TinyGsmMasterModem
 {
 
 public:
@@ -186,7 +186,7 @@ public:
 #else
   TinyGsmM95(Stream& stream)
 #endif
-    : stream(stream)
+    : TinyGsmMasterModem(stream), stream(stream)
   {
     memset(sockets, 0, sizeof(sockets));
   }
@@ -470,16 +470,16 @@ public:
     return true;
   }
 
+  /*
+   * IP Address functions
+   */
+
   String getLocalIP() {
     sendAT(GF("+QILOCIP"));
     stream.readStringUntil('\n');
     String res = stream.readStringUntil('\n');
     res.trim();
     return res;
-  }
-
-  IPAddress localIP() {
-    return TinyGsmIpFromString(getLocalIP());
   }
 
   /*

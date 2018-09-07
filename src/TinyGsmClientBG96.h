@@ -40,7 +40,7 @@ enum RegStatus {
 };
 
 
-class TinyGsmBG96
+class TinyGsmBG96 : public TinyGsmMasterModem
 {
 
 public:
@@ -206,7 +206,7 @@ public:
 #else
   TinyGsmBG96(Stream& stream)
 #endif
-    : stream(stream)
+    : TinyGsmMasterModem(stream), stream(stream)
   {
     memset(sockets, 0, sizeof(sockets));
   }
@@ -467,6 +467,10 @@ public:
     return localIP() != 0;
   }
 
+  /*
+   * IP Address functions
+   */
+
   String getLocalIP() {
     sendAT(GF("+CGPADDR=1"));
     if (waitResponse(10000L, GF(GSM_NL "+CGPADDR:")) != 1) {
@@ -478,10 +482,6 @@ public:
       return "";
     }
     return res;
-  }
-
-  IPAddress localIP() {
-    return TinyGsmIpFromString(getLocalIP());
   }
 
   /*

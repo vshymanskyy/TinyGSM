@@ -45,7 +45,7 @@ enum XBeeType {
 };
 
 
-class TinyGsmXBee
+class TinyGsmXBee : public TinyGsmMasterModem
 {
 
 public:
@@ -211,7 +211,7 @@ public:
 #else
   TinyGsmXBee(Stream& stream)
 #endif
-    : stream(stream)
+    : TinyGsmMasterModem(stream), stream(stream)
   {}
 
   /*
@@ -559,6 +559,10 @@ fail:
     return res;
   }
 
+  /*
+   * IP Address functions
+   */
+
   String getLocalIP() {
     if (!commandMode()) return "";  // Return immediately
     sendAT(GF("MY"));
@@ -568,10 +572,6 @@ fail:
     exitCommand();
     IPaddr.trim();
     return IPaddr;
-  }
-
-  IPAddress localIP() {
-    return TinyGsmIpFromString(getLocalIP());
   }
 
   /*

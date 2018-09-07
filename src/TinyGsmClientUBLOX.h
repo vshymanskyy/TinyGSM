@@ -40,7 +40,7 @@ enum RegStatus {
 };
 
 
-class TinyGsmUBLOX
+class TinyGsmUBLOX : public TinyGsmMasterModem
 {
 
 public:
@@ -205,7 +205,7 @@ public:
 #else
   TinyGsmUBLOX(Stream& stream)
 #endif
-    : stream(stream)
+    : TinyGsmMasterModem(stream), stream(stream)
   {
     memset(sockets, 0, sizeof(sockets));
   }
@@ -485,6 +485,10 @@ public:
     return localIP() != 0;
   }
 
+  /*
+   * IP Address functions
+   */
+
   String getLocalIP() {
     sendAT(GF("+UPSND=0,0"));
     if (waitResponse(GF(GSM_NL "+UPSND:")) != 1) {
@@ -497,10 +501,6 @@ public:
       return "";
     }
     return res;
-  }
-
-  IPAddress localIP() {
-    return TinyGsmIpFromString(getLocalIP());
   }
 
   /*

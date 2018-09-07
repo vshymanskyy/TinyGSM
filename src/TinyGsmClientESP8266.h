@@ -39,7 +39,7 @@ enum RegStatus {
 
 
 
-class TinyGsmESP8266
+class TinyGsmESP8266 : public TinyGsmMasterModem
 {
 
 public:
@@ -198,7 +198,7 @@ public:
 #else
   TinyGsmESP8266(Stream& stream)
 #endif
-    : stream(stream)
+    : TinyGsmMasterModem(stream), stream(stream)
   {
     memset(sockets, 0, sizeof(sockets));
   }
@@ -366,6 +366,10 @@ public:
     return retVal;
   }
 
+  /*
+   * IP Address functions
+   */
+
   String getLocalIP() {
     sendAT(GF("+CIPSTA_CUR??"));
     int res1 = waitResponse(GF("ERROR"), GF("+CWJAP_CUR:"));
@@ -375,10 +379,6 @@ public:
     String res2 = stream.readStringUntil('"');
     waitResponse();
     return res2;
-  }
-
-  IPAddress localIP() {
-    return TinyGsmIpFromString(getLocalIP());
   }
 
   /*
