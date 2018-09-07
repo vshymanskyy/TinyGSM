@@ -1,6 +1,6 @@
 /**
  * @file       TinyGsmClientM95.h
- * @author     Volodymyr Shymanskyy, Replicade Ltd.
+ * @author     Volodymyr Shymanskyy - Modified by Pacman Pereira
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy, (c)2017 Replicade Ltd. <http://www.replicade.com>
  * @date       Nov 2016
@@ -39,21 +39,9 @@ enum RegStatus {
   REG_UNKNOWN      = 4,
 };
 
-//============================================================================//
-//============================================================================//
-//                    Declaration of the TinyGsmM95 Class
-//============================================================================//
-//============================================================================//
 
 class TinyGsmM95
 {
-
-//============================================================================//
-//============================================================================//
-//                         The M95 Internal Client Class
-//============================================================================//
-//============================================================================//
-
 
 public:
 
@@ -120,9 +108,14 @@ public:
     return write(&c, 1);
   }
 
+  virtual size_t write(const char *str) {
+    if (str == NULL) return 0;
+    return write((const uint8_t *)str, strlen(str));
+  }
+
   virtual int available() {
     TINY_GSM_YIELD();
-    if (!rx.size()) {
+    if (!rx.size() && sock_connected) {
       at->maintain();
     }
     return rx.size() + sock_available;
@@ -185,18 +178,6 @@ private:
   RxFifo        rx;
 };
 
-//============================================================================//
-//============================================================================//
-//                         The M95 has no Secure Client (yet)
-//============================================================================//
-//============================================================================//
-
-
-//============================================================================//
-//============================================================================//
-//                          The M95 Modem Functions
-//============================================================================//
-//============================================================================//
 
 public:
 
@@ -225,6 +206,11 @@ public:
     if (waitResponse() != 1) {
       return false;
     }
+#ifdef TINY_GSM_DEBUG
+    sendAT(GF("+CMEE=2"));
+    waitResponse();
+#endif
+
     getSimStatus();
     return true;
   }
@@ -259,16 +245,14 @@ public:
   }
 
   bool factoryDefault() {
-    sendAT(GF("&FZE0&W"));  // Factory + Reset + Echo Off + Write
+    sendAT(GF("&FZE1&W"));  // Factory + Reset + Echo Off + Write
     waitResponse();
-    sendAT(GF("+IPR=0"));   // Auto-baud
+    sendAT(GF("+ICF=3,1")); // 8 data 0 parity 1 stop
     waitResponse();
-    sendAT(GF("+IFC=0,0")); // No Flow Control
-    waitResponse();
-    sendAT(GF("+ICF=3,3")); // 8 data 0 parity 1 stop
-    waitResponse();
-    sendAT(GF("+CSCLK=0")); // Disable Slow Clock
-    waitResponse();
+    //sendAT(GF("+ENPWRSAVE=0")); // Disable PWR save
+    //waitResponse();
+    //sendAT(GF("+XISP=0"));  // Use internal stack
+    //waitResponse();
     sendAT(GF("&W"));       // Write configuration
     return waitResponse() == 1;
   }
@@ -360,7 +344,7 @@ public:
         delay(1000);
         continue;
       }
-      int status = waitResponse(GF("READY"), GF("SIM PIN"), GF("SIM PUK"), GF("NOT INSERTED"));
+      int status = waitResponse(GF("READY"), GF("SIM PIN"), GF("SIM PUK"));
       waitResponse();
       switch (status) {
         case 2:
@@ -444,55 +428,53 @@ public:
   bool gprsConnect(const char* apn, const char* user = NULL, const char* pwd = NULL) {
     gprsDisconnect();
 
-    sendAT(GF("+QIFGCNT=0"));  // Set the forground context
+    // set as foreground context 0 = VIRTUAL_UART_1
+    sendAT(GF("+QIFGCNT=0"));
     if (waitResponse() != 1) {
       return false;
     }
 
+    // Select CSD or GPRS as the Bearer
     sendAT(GF("+QICSGP=1,\""), apn, GF("\",\""), user, GF("\",\""), pwd, GF("\""));
     if (waitResponse() != 1) {
       return false;
     }
 
+    //Start TCPIP Task and Set APN, User Name and
     sendAT(GF("+QIREGAPP"));
     if (waitResponse() != 1) {
       return false;
     }
 
+    //Activate GPRS/CSD Context
     sendAT(GF("+QIACT"));
-    waitResponse(10000L);
+    if (waitResponse(10000) != 1) {
+      return false;
+    }
 
     return true;
   }
 
   bool gprsDisconnect() {
+    // TODO: There is no command in AT command set
+    // XIIC=0 does not work
     sendAT(GF("+QIDEACT"));
     return waitResponse(60000L, GF("DEACT OK"), GF("ERROR")) == 1;
   }
 
   bool isGprsConnected() {
-    sendAT(GF("+CGATT?"));
-    if (waitResponse(GF(GSM_NL "+CGATT:")) != 1) {
+    sendAT(GF("+QISTAT"));
+    if (waitResponse(GF(GSM_NL "STATE: IP GPRSACT")) != 1) {
       return false;
     }
-    int res = stream.readStringUntil('\n').toInt();
-    waitResponse();
-    if (res != 1)
-      return false;
-
-    return localIP() != 0;
+    return true;
   }
 
   String getLocalIP() {
-    sendAT(GF("+CGPADDR=1"));
-    if (waitResponse(10000L, GF(GSM_NL "+CGPADDR:")) != 1) {
-      return "";
-    }
-    streamSkipUntil(',');
+    sendAT(GF("+QILOCIP"));
+    stream.readStringUntil('\n');
     String res = stream.readStringUntil('\n');
-    if (waitResponse() != 1) {
-      return "";
-    }
+    res.trim();
     return res;
   }
 
@@ -501,13 +483,52 @@ public:
   }
 
   /*
+   * Phone Call functions
+   */
+
+  bool setGsmBusy(bool busy = true) TINY_GSM_ATTR_NOT_AVAILABLE;
+
+  bool callAnswer() TINY_GSM_ATTR_NOT_AVAILABLE;
+
+  bool callNumber(const String& number) TINY_GSM_ATTR_NOT_AVAILABLE;
+
+  bool callHangup() TINY_GSM_ATTR_NOT_AVAILABLE;
+
+  /*
    * Messaging functions
    */
 
-  String sendUSSD(const String& code) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  String sendUSSD(const String& code) {
+    sendAT(GF("+CMGF=1"));
+    waitResponse();
+    sendAT(GF("+CSCS=\"HEX\""));
+    waitResponse();
+    sendAT(GF("D"), code);
+    if (waitResponse(10000L, GF(GSM_NL "+CUSD:")) != 1) {
+      return "";
+    }
+    stream.readStringUntil('"');
+    String hex = stream.readStringUntil('"');
+    stream.readStringUntil(',');
+    int dcs = stream.readStringUntil('\n').toInt();
+
+    if (waitResponse() != 1) {
+      return "";
+    }
+
+    if (dcs == 15) {
+      return TinyGsmDecodeHex8bit(hex);
+    } else if (dcs == 72) {
+      return TinyGsmDecodeHex16bit(hex);
+    } else {
+      return hex;
+    }
+  }
 
   bool sendSMS(const String& number, const String& text) {
     sendAT(GF("+CMGF=1"));
+    waitResponse();
+    sendAT(GF("+CSCS=\"GSM\""));
     waitResponse();
     sendAT(GF("+CMGS=\""), number, GF("\""));
     if (waitResponse(GF(">")) != 1) {
@@ -563,18 +584,8 @@ public:
   /*
    * Location functions
    */
-  void getLocation() {}
 
-  String getGsmLocation() {
-    sendAT(GF("+CIPGSMLOC=1,1"));
-    if (waitResponse(GF(GSM_NL "+CIPGSMLOC:")) != 1) {
-      return "";
-    }
-    String res = stream.readStringUntil('\n');
-    waitResponse();
-    res.trim();
-    return res;
-  }
+  String getGsmLocation() TINY_GSM_ATTR_NOT_AVAILABLE;
 
   /*
    * Battery functions
