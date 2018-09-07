@@ -408,6 +408,8 @@ public:
   /*
    * GPRS functions
    */
+  bool gprsConnect(const char* apn, const char* user = NULL, const char* pwd = NULL) TINY_GSM_ATTR_NOT_AVAILABLE;
+  bool gprsDisconnect() TINY_GSM_ATTR_NOT_AVAILABLE;
 
   /*
    * Messaging functions

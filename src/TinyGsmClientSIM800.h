@@ -463,6 +463,12 @@ public:
   }
 
   /*
+   * WiFi functions
+   */
+  bool networkConnect(const char* ssid, const char* pwd) TINY_GSM_ATTR_NOT_AVAILABLE;
+  bool networkDisconnect() TINY_GSM_ATTR_NOT_AVAILABLE;
+
+  /*
    * GPRS functions
    */
   bool gprsConnect(const char* apn, const char* user = NULL, const char* pwd = NULL) {

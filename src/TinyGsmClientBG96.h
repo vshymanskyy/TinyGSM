@@ -441,6 +441,8 @@ public:
   /*
    * WiFi functions
    */
+  bool networkConnect(const char* ssid, const char* pwd) TINY_GSM_ATTR_NOT_AVAILABLE;
+  bool networkDisconnect() TINY_GSM_ATTR_NOT_AVAILABLE;
 
   /*
    * GPRS functions
