@@ -40,7 +40,7 @@ enum RegStatus {
 };
 
 
-class TinyGsmBG96 : public TinyGsmMasterModem
+class TinyGsmBG96 : public TinyGsmModem
 {
 
 public:
@@ -206,7 +206,7 @@ public:
 #else
   TinyGsmBG96(Stream& stream)
 #endif
-    : TinyGsmMasterModem(stream), stream(stream)
+    : TinyGsmModem(stream), stream(stream)
   {
     memset(sockets, 0, sizeof(sockets));
   }

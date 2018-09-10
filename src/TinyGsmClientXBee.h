@@ -45,7 +45,7 @@ enum XBeeType {
 };
 
 
-class TinyGsmXBee : public TinyGsmMasterModem
+class TinyGsmXBee : public TinyGsmModem
 {
 
 public:
@@ -211,7 +211,7 @@ public:
 #else
   TinyGsmXBee(Stream& stream)
 #endif
-    : TinyGsmMasterModem(stream), stream(stream)
+    : TinyGsmModem(stream), stream(stream)
   {}
 
   /*

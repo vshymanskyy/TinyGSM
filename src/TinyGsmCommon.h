@@ -197,23 +197,23 @@ String TinyGsmDecodeHex16bit(String &instr) {
 
 
 
-class TinyGsmMasterModem
+class TinyGsmModem
 {
 
 public:
 
 class GsmClient : public Client
 {
-  friend class TinyGsmMasterModem;
+  friend class TinyGsmModem;
 };
 
 
 public:
 
 #ifdef GSM_DEFAULT_STREAM
-  TinyGsmMasterModem(Stream& stream = GSM_DEFAULT_STREAM)
+  TinyGsmModem(Stream& stream = GSM_DEFAULT_STREAM)
 #else
-  TinyGsmMasterModem(Stream& stream)
+  TinyGsmModem(Stream& stream)
 #endif
     : stream(stream)
   {}
