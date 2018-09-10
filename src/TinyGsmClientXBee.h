@@ -217,11 +217,8 @@ public:
   /*
    * Basic functions
    */
-  bool begin() {
-    return init();
-  }
 
-  bool init() {
+  bool init(const char* pin = NULL) {
     guardTime = 1100;  // Start with a default guard time of 1 second
 
     if (!commandMode(10)) return false;  // Try up to 10 times for the init
@@ -244,6 +241,10 @@ public:
 
     exitCommand();
     return ret_val;
+  }
+
+  String getModemName() {
+    return getBeeName();
   }
 
   void setBaud(unsigned long baud) {
@@ -313,6 +314,16 @@ public:
     else return true;
   }
 
+  bool hasWifi() {
+    if (beeType == XBEE_S6B_WIFI) return true;
+    else return false;
+  }
+
+  bool hasGPRS() {
+    if (beeType == XBEE_S6B_WIFI) return false;
+    else return true;
+  }
+
   XBeeType getBeeType() {
     return beeType;
   }
@@ -360,8 +371,8 @@ public:
       return false;
   }
 
-  void setupPinSleep(bool maintainAssociation = false) {
-    if (!commandMode()) return;  // Return immediately
+  bool sleepEnable(bool maintainAssociation = false) {
+    if (!commandMode()) return false;  // Return immediately
     sendAT(GF("SM"),1);  // Pin sleep
     waitResponse();
     if (beeType == XBEE_S6B_WIFI && !maintainAssociation) {
@@ -375,13 +386,12 @@ public:
     }
     writeChanges();
     exitCommand();
+    return true;
   }
 
   bool poweroff() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
   bool radioOff() TINY_GSM_ATTR_NOT_IMPLEMENTED;
-
-  bool sleepEnable(bool enable = true) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
   /*
    * SIM card functions

@@ -204,7 +204,7 @@ public:
 
 class GsmClient : public Client
 {
-  friend class TinyGsmXBee;
+  friend class TinyGsmMasterModem;
 };
 
 
@@ -222,50 +222,78 @@ public:
    * Basic functions
    */
 
-  virtual bool begin() = 0;
-  virtual bool init() = 0;
+  // Prepare the modem for further functionality
+  virtual bool init(const char* pin = NULL) = 0;
+  // Begin is redundant with init
+  virtual bool begin(const char* pin = NULL) {
+    return init(pin);
+  }
+  // Returns a string with the chip name
+  virtual String getModemName() = 0;
+  // Sets the serial communication baud rate
   virtual void setBaud(unsigned long baud) = 0;
+  // Checks that the modem is responding to standard AT commands
   virtual bool testAT(unsigned long timeout = 10000L) = 0;
+  // Holds open communication with the modem waiting for data to come in
   virtual void maintain() = 0;
+  // Resets all modem chip settings to factor defaults
   virtual bool factoryDefault() = 0;
+  // Returns the response to a get info request.  The format varies by modem.
   virtual String getModemInfo() = 0;
+  // Answers whether secure communication is available on this modem
   virtual bool hasSSL() = 0;
+  virtual bool hasWifi() = 0;
+  virtual bool hasGPRS() = 0;
 
   /*
    * Power functions
    */
 
   virtual bool restart() = 0;
+  virtual bool poweroff() { return false; }
+  virtual bool radioOff() { return false; }
+  virtual bool sleepEnable(bool enable = true) { return false; }
 
   /*
    * SIM card functions
    */
 
-  virtual bool simUnlock(const char *pin) = 0;
-  virtual String getSimCCID() = 0;
-  virtual String getIMEI() = 0;
-  virtual String getOperator() = 0;
+  virtual bool simUnlock(const char *pin) { return false; }
+  virtual String getSimCCID() { return ""; }
+  virtual String getIMEI() { return ""; }
+  virtual String getOperator() { return ""; }
 
  /*
   * Generic network functions
   */
 
   virtual int getSignalQuality() = 0;
+  // NOTE:  this returns whether the modem is registered on the cellular or WiFi
+  // network NOT whether GPRS or other internet connections are available
   virtual bool isNetworkConnected() = 0;
+  virtual bool waitForNetwork(unsigned long timeout = 60000L) {
+    for (unsigned long start = millis(); millis() - start < timeout; ) {
+      if (isNetworkConnected()) {
+        return true;
+      }
+      delay(250);
+    }
+    return false;
+  }
 
   /*
    * WiFi functions
    */
 
-  virtual bool networkConnect(const char* ssid, const char* pwd) = 0;
-  virtual bool networkDisconnect() = 0;
+  virtual bool networkConnect(const char* ssid, const char* pwd) { return false; }
+  virtual bool networkDisconnect() { return false; }
 
   /*
    * GPRS functions
    */
-  virtual bool gprsConnect(const char* apn, const char* user = NULL, const char* pwd = NULL) = 0;
-  virtual bool gprsDisconnect() = 0;
-  virtual bool isGprsConnected() = 0;
+
+  virtual bool gprsConnect(const char* apn, const char* user = NULL, const char* pwd = NULL) { return false; }
+  virtual bool gprsDisconnect() { return false; }
 
   /*
    * IP Address functions
@@ -275,12 +303,6 @@ public:
   virtual IPAddress localIP() {
     return TinyGsmIpFromString(getLocalIP());
   }
-
-  /*
-   * Messaging functions
-   */
-
-  virtual bool sendSMS(const String& number, const String& text) = 0;
 
 public:
   Stream&       stream;

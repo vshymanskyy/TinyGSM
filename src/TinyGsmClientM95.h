@@ -194,11 +194,8 @@ public:
   /*
    * Basic functions
    */
-  bool begin() {
-    return init();
-  }
 
-  bool init() {
+  bool init(const char* pin = NULL) {
     if (!testAT()) {
       return false;
     }
@@ -213,6 +210,10 @@ public:
 
     getSimStatus();
     return true;
+  }
+
+  String getModemName() {
+    return "Quectel M95";
   }
 
   void setBaud(unsigned long baud) {
@@ -271,6 +272,14 @@ public:
 
   bool hasSSL() {
     return false;  // TODO: For now
+  }
+
+  bool hasWifi() {
+    return false;
+  }
+
+  bool hasGPRS() {
+    return true;
   }
 
   /*
@@ -415,12 +424,6 @@ public:
     }
     waitResponse();
   }
-
-  /*
-   * WiFi functions
-   */
-  bool networkConnect(const char* ssid, const char* pwd) TINY_GSM_ATTR_NOT_AVAILABLE;
-  bool networkDisconnect() TINY_GSM_ATTR_NOT_AVAILABLE;
 
   /*
    * GPRS functions

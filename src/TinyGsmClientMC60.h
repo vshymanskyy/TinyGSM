@@ -221,11 +221,8 @@ public:
   /*
    * Basic functions
    */
-  bool begin() {
-    return init();
-  }
 
-  bool init() {
+  bool init(const char* pin = NULL) {
     if (!testAT()) {
       return false;
     }
@@ -238,6 +235,17 @@ public:
     getSimStatus();
     return true;
   }
+
+  String getModemName() {
+    #if defined(TINY_GSM_MODEM_MC60)
+      return "Quectel MC60";
+    #elif defined(TINY_GSM_MODEM_MC60E)
+      return "Quectel MC60E";
+    #endif
+      return "Quectel MC60";
+  }
+
+  void setBaud(unsigned long baud) { return false; };
 
   bool testAT(unsigned long timeout = 10000L) {
     //streamWrite(GF("AAAAA" GSM_NL));  // TODO: extra A's to help detect the baud rate
@@ -294,15 +302,25 @@ public:
 
   /*
   * under development
-  *
-  bool hasSSL() {
-    sendAT(GF("+QIPSSL=?"));
-    if (waitResponse(GF(GSM_NL "+CIPSSL:")) != 1) {
-      return false;
-    }
-    return waitResponse() == 1;
+  */
+  // bool hasSSL() {
+  //   sendAT(GF("+QIPSSL=?"));
+  //   if (waitResponse(GF(GSM_NL "+CIPSSL:")) != 1) {
+  //     return false;
+  //   }
+  //   return waitResponse() == 1;
+  // }
+
+  bool hasSSL() { return false; }
+
+  bool hasWifi() {
+    return false;
   }
-*/
+
+  bool hasGPRS() {
+    return true;
+  }
+
   /*
    * Power functions
    */
@@ -432,22 +450,6 @@ public:
     RegStatus s = getRegistrationStatus();
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
   }
-
-  bool waitForNetwork(unsigned long timeout = 60000L) {
-    for (unsigned long start = millis(); millis() - start < timeout; ) {
-      if (isNetworkConnected()) {
-        return true;
-      }
-      delay(250);
-    }
-    return false;
-  }
-
-  /*
-   * WiFi functions
-   */
-  bool networkConnect(const char* ssid, const char* pwd) TINY_GSM_ATTR_NOT_AVAILABLE;
-  bool networkDisconnect() TINY_GSM_ATTR_NOT_AVAILABLE;
 
   /*
    * GPRS functions

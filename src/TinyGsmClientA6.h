@@ -190,11 +190,8 @@ public:
   /*
    * Basic functions
    */
-  bool begin() {
-    return init();
-  }
 
-  bool init() {
+  bool init(const char* pin = NULL) {
     if (!testAT()) {
       return false;
     }
@@ -210,6 +207,15 @@ public:
 
     getSimStatus();
     return true;
+  }
+
+  String getModemName() {
+    #if defined(TINY_GSM_MODEM_A6)
+      return "AI-Thinker A6";
+    #elif defined(TINY_GSM_MODEM_A7)
+      return "AI-Thinker A7";
+    #endif
+    return "AI-Thinker A6";
   }
 
   void setBaud(unsigned long baud) {
@@ -253,6 +259,14 @@ public:
 
   bool hasSSL() {
     return false;
+  }
+
+  bool hasWifi() {
+    return false;
+  }
+
+  bool hasGPRS() {
+    return true;
   }
 
   /*
@@ -370,22 +384,6 @@ public:
     RegStatus s = getRegistrationStatus();
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
   }
-
-  bool waitForNetwork(unsigned long timeout = 60000L) {
-    for (unsigned long start = millis(); millis() - start < timeout; ) {
-      if (isNetworkConnected()) {
-        return true;
-      }
-      delay(250);
-    }
-    return false;
-  }
-
-  /*
-   * WiFi functions
-   */
-  bool networkConnect(const char* ssid, const char* pwd) TINY_GSM_ATTR_NOT_AVAILABLE;
-  bool networkDisconnect() TINY_GSM_ATTR_NOT_AVAILABLE;
 
   /*
    * GPRS functions

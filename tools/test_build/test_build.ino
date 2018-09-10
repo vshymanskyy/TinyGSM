@@ -3,6 +3,12 @@
  *  DO NOT USE THIS - this is just a compilation test!
  *
  **************************************************************/
+// #define TINY_GSM_MODEM_SIM800  // Select for a SIM800, SIM900, or variant thereof
+// #define TINY_GSM_MODEM_A6  // Select for a AI-Thinker A6 or A7 chip
+// #define TINY_GSM_MODEM_M590  // Select for a Neoway M590
+// #define TINY_GSM_MODEM_UBLOX  // Select for most u-blox cellular modems
+// #define TINY_GSM_MODEM_ESP8266  // Select for an ESP8266 using the DEFAULT AT COMMAND FIRMWARE
+// #define TINY_GSM_MODEM_XBEE  // Select for Digi brand WiFi or Cellular XBee's
 
 #include <TinyGsmClient.h>
 
@@ -77,4 +83,3 @@ void loop() {
     modem.networkDisconnect();
   #endif
 }
-
