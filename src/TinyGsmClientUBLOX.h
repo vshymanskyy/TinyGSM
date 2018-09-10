@@ -320,7 +320,8 @@ public:
     return true;
   }
 
-  bool sleepEnable(bool enable = true) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool sleepEnable(bool enable = true) { return false; }
+  // TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
   /*
    * SIM card functions

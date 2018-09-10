@@ -250,8 +250,6 @@ public:
    */
 
   virtual bool restart() = 0;
-  virtual bool poweroff() { return false; }
-  virtual bool radioOff() { return false; }
   virtual bool sleepEnable(bool enable = true) { return false; }
 
   /*
