@@ -69,6 +69,7 @@ namespace {
   }
 }
 #else
+  #define DBG_PLAIN(...)
   #define DBG(...)
 #endif
 
@@ -223,52 +224,104 @@ public:
    */
 
   // Prepare the modem for further functionality
-  virtual bool init(const char* pin = NULL) = 0;
+  virtual bool init(const char* pin = NULL) {
+    DBG_PLAIN("init function not implemented");
+    return false;
+  }
   // Begin is redundant with init
   virtual bool begin(const char* pin = NULL) {
     return init(pin);
   }
   // Returns a string with the chip name
-  virtual String getModemName() = 0;
+  virtual String getModemName() {
+    DBG_PLAIN("getModemName function not implemented");
+    return "";
+  }
   // Sets the serial communication baud rate
-  virtual void setBaud(unsigned long baud) = 0;
+  virtual void setBaud(unsigned long baud) {
+    DBG_PLAIN("setBaud function not implemented");
+  }
   // Checks that the modem is responding to standard AT commands
-  virtual bool testAT(unsigned long timeout = 10000L) = 0;
+  virtual bool testAT(unsigned long timeout = 10000L) {
+    DBG_PLAIN("testAT function not implemented");
+    return false;
+  }
   // Holds open communication with the modem waiting for data to come in
-  virtual void maintain() = 0;
+  virtual void maintain() {
+    DBG_PLAIN("maintain function not implemented");
+  }
   // Resets all modem chip settings to factor defaults
-  virtual bool factoryDefault() = 0;
+  virtual bool factoryDefault() {
+    DBG_PLAIN("factoryDefault function not implemented");
+    return false;
+  }
   // Returns the response to a get info request.  The format varies by modem.
-  virtual String getModemInfo() = 0;
+  virtual String getModemInfo() {
+    DBG_PLAIN("getModemInfo function not implemented");
+    return "";
+  }
   // Answers whether secure communication is available on this modem
-  virtual bool hasSSL() = 0;
-  virtual bool hasWifi() = 0;
-  virtual bool hasGPRS() = 0;
+  virtual bool hasSSL() {
+    DBG_PLAIN("hasSSL function not implemented");
+    return false;
+  }
+  virtual bool hasWifi() {
+    DBG_PLAIN("hasWifi function not implemented");
+    return false;
+  }
+  virtual bool hasGPRS() {
+    DBG_PLAIN("hasGPRS function not implemented");
+    return false;
+  }
 
   /*
    * Power functions
    */
 
-  virtual bool restart() = 0;
-  virtual bool sleepEnable(bool enable = true) { return false; }
+  virtual bool restart() {
+    DBG_PLAIN("restart function not implemented");
+    return false;
+  }
+  virtual bool sleepEnable(bool enable = true) {
+    DBG_PLAIN("sleepEnable function not implemented");
+    return false;
+  }
 
   /*
    * SIM card functions
    */
 
-  virtual bool simUnlock(const char *pin) { return false; }
-  virtual String getSimCCID() { return ""; }
-  virtual String getIMEI() { return ""; }
-  virtual String getOperator() { return ""; }
+  virtual bool simUnlock(const char *pin) {
+    DBG_PLAIN("simUnlock function not implemented");
+    return false;
+  }
+  virtual String getSimCCID() {
+    DBG_PLAIN("getSimCCID function not implemented");
+    return "";
+  }
+  virtual String getIMEI() {
+    DBG_PLAIN("getIMEI function not implemented");
+    return "";
+  }
+  virtual String getOperator() {
+    DBG_PLAIN("getOperator function not implemented");
+    return "";
+  }
 
  /*
   * Generic network functions
   */
 
-  virtual int getSignalQuality() = 0;
+  virtual int getSignalQuality() {
+    DBG_PLAIN("getSignalQuality function not implemented");
+    return 0;
+  }
   // NOTE:  this returns whether the modem is registered on the cellular or WiFi
   // network NOT whether GPRS or other internet connections are available
-  virtual bool isNetworkConnected() = 0;
+  virtual bool isNetworkConnected() {
+    DBG_PLAIN("isNetworkConnected function not implemented");
+    return false;
+  }
   virtual bool waitForNetwork(unsigned long timeout = 60000L) {
     for (unsigned long start = millis(); millis() - start < timeout; ) {
       if (isNetworkConnected()) {
@@ -283,21 +336,36 @@ public:
    * WiFi functions
    */
 
-  virtual bool networkConnect(const char* ssid, const char* pwd) { return false; }
-  virtual bool networkDisconnect() { return false; }
+  virtual bool networkConnect(const char* ssid, const char* pwd) {
+    DBG_PLAIN("networkConnect function not implemented");
+    return false;
+  }
+  virtual bool networkDisconnect() {
+    DBG_PLAIN("networkDisconnect function not implemented");
+    return false;
+  }
 
   /*
    * GPRS functions
    */
 
-  virtual bool gprsConnect(const char* apn, const char* user = NULL, const char* pwd = NULL) { return false; }
-  virtual bool gprsDisconnect() { return false; }
+  virtual bool gprsConnect(const char* apn, const char* user = NULL, const char* pwd = NULL) {
+    DBG_PLAIN("gprsConnect function not implemented");
+    return false;
+  }
+  virtual bool gprsDisconnect() {
+    DBG_PLAIN("gprsDisconnect function not implemented");
+    return false;
+  }
 
   /*
    * IP Address functions
    */
 
-  virtual String getLocalIP() = 0;
+  virtual String getLocalIP() {
+    DBG_PLAIN("getLocalIP function not implemented");
+    return "";
+  }
   virtual IPAddress localIP() {
     return TinyGsmIpFromString(getLocalIP());
   }
