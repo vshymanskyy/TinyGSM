@@ -332,6 +332,7 @@ public:
       case XBEE3_LTE1_ATT: return "Digi XBee3™ Cellular LTE CAT 1";
       case XBEE3_LTEM_ATT: return "Digi XBee3™ Cellular LTE-M";
       case XBEE3_LTENB: return "Digi XBee3™ Cellular NB-IoT";
+      default:  return "Digi XBee®";
     }
   }
 
@@ -367,8 +368,8 @@ public:
       return false;
   }
 
-  bool sleepEnable(bool maintainAssociation = false) {
-    if (!commandMode()) return false;  // Return immediately
+  void setupPinSleep(bool maintainAssociation = false) {
+    if (!commandMode()) return;  // Return immediately
     sendAT(GF("SM"),1);  // Pin sleep
     waitResponse();
     if (beeType == XBEE_S6B_WIFI && !maintainAssociation) {
@@ -382,12 +383,13 @@ public:
     }
     writeChanges();
     exitCommand();
-    return true;
   }
 
   bool poweroff() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
   bool radioOff() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
+  bool sleepEnable(bool enable = true) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
   /*
    * SIM card functions
