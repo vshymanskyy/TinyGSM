@@ -45,7 +45,7 @@ enum XBeeType {
 };
 
 
-class TinyGsmXBee
+class TinyGsmXBee : public TinyGsmModem
 {
 
 public:
@@ -206,22 +206,15 @@ public:
 
 public:
 
-#ifdef GSM_DEFAULT_STREAM
-  TinyGsmXBee(Stream& stream = GSM_DEFAULT_STREAM)
-#else
   TinyGsmXBee(Stream& stream)
-#endif
-    : stream(stream)
+    : TinyGsmModem(stream), stream(stream)
   {}
 
   /*
    * Basic functions
    */
-  bool begin() {
-    return init();
-  }
 
-  bool init() {
+  bool init(const char* pin = NULL) {
     guardTime = 1100;  // Start with a default guard time of 1 second
 
     if (!commandMode(10)) return false;  // Try up to 10 times for the init
@@ -244,6 +237,10 @@ public:
 
     exitCommand();
     return ret_val;
+  }
+
+  String getModemName() {
+    return getBeeName();
   }
 
   void setBaud(unsigned long baud) {
@@ -313,6 +310,16 @@ public:
     else return true;
   }
 
+  bool hasWifi() {
+    if (beeType == XBEE_S6B_WIFI) return true;
+    else return false;
+  }
+
+  bool hasGPRS() {
+    if (beeType == XBEE_S6B_WIFI) return false;
+    else return true;
+  }
+
   XBeeType getBeeType() {
     return beeType;
   }
@@ -325,6 +332,7 @@ public:
       case XBEE3_LTE1_ATT: return "Digi XBee3™ Cellular LTE CAT 1";
       case XBEE3_LTEM_ATT: return "Digi XBee3™ Cellular LTE-M";
       case XBEE3_LTENB: return "Digi XBee3™ Cellular NB-IoT";
+      default:  return "Digi XBee®";
     }
   }
 
@@ -559,6 +567,10 @@ fail:
     return res;
   }
 
+  /*
+   * IP Address functions
+   */
+
   String getLocalIP() {
     if (!commandMode()) return "";  // Return immediately
     sendAT(GF("MY"));
@@ -568,10 +580,6 @@ fail:
     exitCommand();
     IPaddr.trim();
     return IPaddr;
-  }
-
-  IPAddress localIP() {
-    return TinyGsmIpFromString(getLocalIP());
   }
 
   /*

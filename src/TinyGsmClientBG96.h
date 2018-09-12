@@ -40,7 +40,7 @@ enum RegStatus {
 };
 
 
-class TinyGsmBG96
+class TinyGsmBG96 : public TinyGsmModem
 {
 
 public:
@@ -201,12 +201,8 @@ public:
 
 public:
 
-#ifdef GSM_DEFAULT_STREAM
-  TinyGsmBG96(Stream& stream = GSM_DEFAULT_STREAM)
-#else
   TinyGsmBG96(Stream& stream)
-#endif
-    : stream(stream)
+    : TinyGsmModem(stream), stream(stream)
   {
     memset(sockets, 0, sizeof(sockets));
   }
@@ -214,11 +210,8 @@ public:
   /*
    * Basic functions
    */
-  bool begin() {
-    return init();
-  }
 
-  bool init() {
+  bool init(const char* pin = NULL) {
     if (!testAT()) {
       return false;
     }
@@ -228,6 +221,10 @@ public:
     }
     getSimStatus();
     return true;
+  }
+
+  String getModemName() {
+    return "Quectel BG96";
   }
 
   void setBaud(unsigned long baud) {
@@ -282,6 +279,14 @@ public:
 
   bool hasSSL() {
     return false;  // TODO: For now
+  }
+
+  bool hasWifi() {
+    return false;
+  }
+
+  bool hasGPRS() {
+    return true;
   }
 
   /*
@@ -405,22 +410,6 @@ public:
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
   }
 
-  bool waitForNetwork(unsigned long timeout = 60000L) {
-    for (unsigned long start = millis(); millis() - start < timeout; ) {
-      if (isNetworkConnected()) {
-        return true;
-      }
-      delay(250);
-    }
-    return false;
-  }
-
-  /*
-   * WiFi functions
-   */
-  bool networkConnect(const char* ssid, const char* pwd) TINY_GSM_ATTR_NOT_AVAILABLE;
-  bool networkDisconnect() TINY_GSM_ATTR_NOT_AVAILABLE;
-
   /*
    * GPRS functions
    */
@@ -467,6 +456,10 @@ public:
     return localIP() != 0;
   }
 
+  /*
+   * IP Address functions
+   */
+
   String getLocalIP() {
     sendAT(GF("+CGPADDR=1"));
     if (waitResponse(10000L, GF(GSM_NL "+CGPADDR:")) != 1) {
@@ -478,10 +471,6 @@ public:
       return "";
     }
     return res;
-  }
-
-  IPAddress localIP() {
-    return TinyGsmIpFromString(getLocalIP());
   }
 
   /*

@@ -69,6 +69,7 @@ namespace {
   }
 }
 #else
+  #define DBG_PLAIN(...)
   #define DBG(...)
 #endif
 
@@ -193,5 +194,109 @@ String TinyGsmDecodeHex16bit(String &instr) {
   }
   return result;
 }
+
+
+
+
+class TinyGsmModem
+{
+
+public:
+
+  TinyGsmModem(Stream& stream)
+    : stream(stream)
+  {}
+
+  /*
+   * Basic functions
+   */
+
+  // Prepare the modem for further functionality
+  virtual bool init(const char* pin = NULL) = 0;
+  // Begin is redundant with init
+  virtual bool begin(const char* pin = NULL) {
+    return init(pin);
+  }
+  // Returns a string with the chip name
+  virtual String getModemName() = 0;
+  // Sets the serial communication baud rate
+  virtual void setBaud(unsigned long baud) = 0;
+  // Checks that the modem is responding to standard AT commands
+  virtual bool testAT(unsigned long timeout = 10000L) = 0;
+  // Holds open communication with the modem waiting for data to come in
+  virtual void maintain() = 0;
+  // Resets all modem chip settings to factor defaults
+  virtual bool factoryDefault() = 0;
+  // Returns the response to a get info request.  The format varies by modem.
+  virtual String getModemInfo() = 0;
+  // Answers whether types of communication are available on this modem
+  virtual bool hasSSL() = 0;
+  virtual bool hasWifi() = 0;
+  virtual bool hasGPRS() = 0;
+
+  /*
+   * Power functions
+   */
+
+  virtual bool restart() = 0;
+
+  /*
+   * SIM card functions - only apply to cellular modems
+   */
+
+  virtual bool simUnlock(const char *pin) { return false; }
+  virtual String getSimCCID() { return ""; }
+  virtual String getIMEI() { return ""; }
+  virtual String getOperator() { return ""; }
+
+ /*
+  * Generic network functions
+  */
+
+  virtual int getSignalQuality() = 0;
+  // NOTE:  this returns whether the modem is registered on the cellular or WiFi
+  // network NOT whether GPRS or other internet connections are available
+  virtual bool isNetworkConnected() = 0;
+  virtual bool waitForNetwork(unsigned long timeout = 60000L) {
+    for (unsigned long start = millis(); millis() - start < timeout; ) {
+      if (isNetworkConnected()) {
+        return true;
+      }
+      delay(250);
+    }
+    return false;
+  }
+
+  /*
+   * WiFi functions - only apply to WiFi modems
+   */
+
+  virtual bool networkConnect(const char* ssid, const char* pwd) { return false; }
+  virtual bool networkDisconnect() { return false; }
+
+  /*
+   * GPRS functions - only apply to cellular modems
+   */
+
+  virtual bool gprsConnect(const char* apn, const char* user = NULL, const char* pwd = NULL) {
+    return false;
+  }
+  virtual bool gprsDisconnect() { return false; }
+
+  /*
+   * IP Address functions
+   */
+
+  virtual String getLocalIP() = 0;
+  virtual IPAddress localIP() {
+    return TinyGsmIpFromString(getLocalIP());
+  }
+
+public:
+  Stream&       stream;
+};
+
+
+
 
 #endif

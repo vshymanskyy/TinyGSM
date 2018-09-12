@@ -39,7 +39,7 @@ enum RegStatus {
 
 
 
-class TinyGsmESP8266
+class TinyGsmESP8266 : public TinyGsmModem
 {
 
 public:
@@ -193,12 +193,8 @@ public:
 
 public:
 
-#ifdef GSM_DEFAULT_STREAM
-  TinyGsmESP8266(Stream& stream = GSM_DEFAULT_STREAM)
-#else
   TinyGsmESP8266(Stream& stream)
-#endif
-    : stream(stream)
+    : TinyGsmModem(stream), stream(stream)
   {
     memset(sockets, 0, sizeof(sockets));
   }
@@ -206,11 +202,8 @@ public:
   /*
    * Basic functions
    */
-  bool begin() {
-    return init();
-  }
 
-  bool init() {
+  bool init(const char* pin = NULL) {
     if (!testAT()) {
       return false;
     }
@@ -227,6 +220,10 @@ public:
       return false;
     }
     return true;
+  }
+
+  String getModemName() {
+    return "ESP8266";
   }
 
   void setBaud(unsigned long baud) {
@@ -268,6 +265,14 @@ public:
 
   bool hasSSL() {
     return true;
+  }
+
+  bool hasWifi() {
+    return true;
+  }
+
+  bool hasGPRS() {
+    return false;
   }
 
   /*
@@ -366,6 +371,10 @@ public:
     return retVal;
   }
 
+  /*
+   * IP Address functions
+   */
+
   String getLocalIP() {
     sendAT(GF("+CIPSTA_CUR??"));
     int res1 = waitResponse(GF("ERROR"), GF("+CWJAP_CUR:"));
@@ -376,34 +385,6 @@ public:
     waitResponse();
     return res2;
   }
-
-  IPAddress localIP() {
-    return TinyGsmIpFromString(getLocalIP());
-  }
-
-  /*
-   * GPRS functions
-   */
-  bool gprsConnect(const char* apn, const char* user = NULL, const char* pwd = NULL) TINY_GSM_ATTR_NOT_AVAILABLE;
-  bool gprsDisconnect() TINY_GSM_ATTR_NOT_AVAILABLE;
-
-  /*
-   * Messaging functions
-   */
-
-  /*
-   * Location functions
-   */
-
-  String getGsmLocation() TINY_GSM_ATTR_NOT_AVAILABLE;
-
-  /*
-   * Battery functions
-   */
-
-  uint16_t getBattVoltage() TINY_GSM_ATTR_NOT_AVAILABLE;
-
-  int getBattPercent() TINY_GSM_ATTR_NOT_AVAILABLE;
 
 protected:
 

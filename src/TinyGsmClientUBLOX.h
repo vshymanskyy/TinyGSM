@@ -40,7 +40,7 @@ enum RegStatus {
 };
 
 
-class TinyGsmUBLOX
+class TinyGsmUBLOX : public TinyGsmModem
 {
 
 public:
@@ -200,12 +200,8 @@ public:
 
 public:
 
-#ifdef GSM_DEFAULT_STREAM
-  TinyGsmUBLOX(Stream& stream = GSM_DEFAULT_STREAM)
-#else
   TinyGsmUBLOX(Stream& stream)
-#endif
-    : stream(stream)
+    : TinyGsmModem(stream), stream(stream)
   {
     memset(sockets, 0, sizeof(sockets));
   }
@@ -213,9 +209,6 @@ public:
   /*
    * Basic functions
    */
-  bool begin(const char* pin = NULL) {
-    return init(pin);
-  }
 
   bool init(const char* pin = NULL) {
     if (!testAT()) {
@@ -230,6 +223,10 @@ public:
       simUnlock(pin);
     }
     return (getSimStatus() == SIM_READY);
+  }
+
+  String getModemName() {
+    return "ESP8266";
   }
 
   void setBaud(unsigned long baud) {
@@ -281,6 +278,14 @@ public:
   }
 
   bool hasSSL() {
+    return true;
+  }
+
+  bool hasWifi() {
+    return false;
+  }
+
+  bool hasGPRS() {
     return true;
   }
 
@@ -404,22 +409,6 @@ public:
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
   }
 
-  bool waitForNetwork(unsigned long timeout = 60000L) {
-    for (unsigned long start = millis(); millis() - start < timeout; ) {
-      if (isNetworkConnected()) {
-        return true;
-      }
-      delay(250);
-    }
-    return false;
-  }
-
-  /*
-   * WiFi functions
-   */
-  bool networkConnect(const char* ssid, const char* pwd) TINY_GSM_ATTR_NOT_AVAILABLE;
-  bool networkDisconnect() TINY_GSM_ATTR_NOT_AVAILABLE;
-
   /*
    * GPRS functions
    */
@@ -485,6 +474,10 @@ public:
     return localIP() != 0;
   }
 
+  /*
+   * IP Address functions
+   */
+
   String getLocalIP() {
     sendAT(GF("+UPSND=0,0"));
     if (waitResponse(GF(GSM_NL "+UPSND:")) != 1) {
@@ -497,10 +490,6 @@ public:
       return "";
     }
     return res;
-  }
-
-  IPAddress localIP() {
-    return TinyGsmIpFromString(getLocalIP());
   }
 
   /*
