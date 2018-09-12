@@ -223,11 +223,7 @@ public:
 
 public:
 
-#ifdef GSM_DEFAULT_STREAM
-  TinyGsmSim800(Stream& stream = GSM_DEFAULT_STREAM)
-#else
   TinyGsmSim800(Stream& stream)
-#endif
     : TinyGsmModem(stream), stream(stream)
   {
     memset(sockets, 0, sizeof(sockets));

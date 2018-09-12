@@ -181,11 +181,7 @@ private:
 
 public:
 
-#ifdef GSM_DEFAULT_STREAM
-  TinyGsmM95(Stream& stream = GSM_DEFAULT_STREAM)
-#else
   TinyGsmM95(Stream& stream)
-#endif
     : TinyGsmModem(stream), stream(stream)
   {
     memset(sockets, 0, sizeof(sockets));

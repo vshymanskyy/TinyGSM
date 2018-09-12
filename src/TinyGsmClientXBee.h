@@ -206,11 +206,7 @@ public:
 
 public:
 
-#ifdef GSM_DEFAULT_STREAM
-  TinyGsmXBee(Stream& stream = GSM_DEFAULT_STREAM)
-#else
   TinyGsmXBee(Stream& stream)
-#endif
     : TinyGsmModem(stream), stream(stream)
   {}
 

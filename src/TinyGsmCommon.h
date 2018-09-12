@@ -203,19 +203,7 @@ class TinyGsmModem
 
 public:
 
-class GsmClient : public Client
-{
-  friend class TinyGsmModem;
-};
-
-
-public:
-
-#ifdef GSM_DEFAULT_STREAM
-  TinyGsmModem(Stream& stream = GSM_DEFAULT_STREAM)
-#else
   TinyGsmModem(Stream& stream)
-#endif
     : stream(stream)
   {}
 
