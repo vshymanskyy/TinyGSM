@@ -201,11 +201,7 @@ public:
 
 public:
 
-#ifdef GSM_DEFAULT_STREAM
-  TinyGsmBG96(Stream& stream = GSM_DEFAULT_STREAM)
-#else
   TinyGsmBG96(Stream& stream)
-#endif
     : stream(stream)
   {
     memset(sockets, 0, sizeof(sockets));

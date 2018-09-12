@@ -200,11 +200,7 @@ public:
 
 public:
 
-#ifdef GSM_DEFAULT_STREAM
-  TinyGsmUBLOX(Stream& stream = GSM_DEFAULT_STREAM)
-#else
   TinyGsmUBLOX(Stream& stream)
-#endif
     : stream(stream)
   {
     memset(sockets, 0, sizeof(sockets));

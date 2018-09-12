@@ -193,11 +193,7 @@ public:
 
 public:
 
-#ifdef GSM_DEFAULT_STREAM
-  TinyGsmESP8266(Stream& stream = GSM_DEFAULT_STREAM)
-#else
   TinyGsmESP8266(Stream& stream)
-#endif
     : stream(stream)
   {
     memset(sockets, 0, sizeof(sockets));
