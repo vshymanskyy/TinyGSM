@@ -226,7 +226,7 @@ public:
   }
 
   String getModemName() {
-    return "ESP8266";
+    return "u-blox Cellular Modem";
   }
 
   void setBaud(unsigned long baud) {
