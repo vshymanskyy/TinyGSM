@@ -11,15 +11,19 @@
 
 // Select your modem:
 #define TINY_GSM_MODEM_SIM800
-// #define TINY_GSM_MODEM_SIM808
 // #define TINY_GSM_MODEM_SIM900
+// #define TINY_GSM_MODEM_SIM808
+// #define TINY_GSM_MODEM_SIM868
 // #define TINY_GSM_MODEM_UBLOX
+// #define TINY_GSM_MODEM_M95
 // #define TINY_GSM_MODEM_BG96
 // #define TINY_GSM_MODEM_A6
 // #define TINY_GSM_MODEM_A7
 // #define TINY_GSM_MODEM_M590
 // #define TINY_GSM_MODEM_MC60
 // #define TINY_GSM_MODEM_MC60E
+// #define TINY_GSM_MODEM_ESP8266
+// #define TINY_GSM_MODEM_XBEE
 
 // Set serial for debug console (to the Serial Monitor, speed 115200)
 #define SerialMon Serial
@@ -91,7 +95,7 @@ void loop() {
   // To skip it, call init() instead of restart()
   DBG("Initializing modem...");
   if (!modem.restart()) {
-    DBG("Failed to restart modem, delayin 10s and retring");
+    DBG("Failed to restart modem, delaying 10s and retrying");
     delay(3000);
     // restart autobaud in case GSM just rebooted
     TinyGsmAutoBaud(SerialAT,GSM_AUTOBAUD_MIN,GSM_AUTOBAUD_MAX);
@@ -103,7 +107,7 @@ void loop() {
   DBG("Modem:", modemInfo);
 
   // Unlock your SIM card with a PIN if needed
-  if ( GSM_PIN && modem.getSimStatus() != 3 ) { 
+  if ( GSM_PIN && modem.getSimStatus() != 3 ) {
     modem.simUnlock(GSM_PIN);
   }
 
@@ -123,7 +127,6 @@ void loop() {
     delay(10000);
     return;
   }
-#endif
 
   bool res = modem.isGprsConnected();
   DBG("GPRS status:", res ? "connected" : "not connected");
@@ -139,7 +142,6 @@ void loop() {
 
   IPAddress local = modem.localIP();
   DBG("Local IP:", local);
-#endif
 
   int csq = modem.getSignalQuality();
   DBG("Signal quality:", csq);
@@ -157,10 +159,10 @@ void loop() {
   DBG("GSM location:", gsmLoc);
 
   // This is only supported on SIMxxx series
-  String gsmTime = modem.getGSMDateTime(DATE_TIME);
-  DBG("GSM Time:", gsmTime);
-  String gsmDate = modem.getGSMDateTime(DATE_DATE);
-  DBG("GSM Date:", gsmDate);
+  // String gsmTime = modem.getGSMDateTime(DATE_TIME);
+  // DBG("GSM Time:", gsmTime);
+  // String gsmDate = modem.getGSMDateTime(DATE_DATE);
+  // DBG("GSM Date:", gsmDate);
 
   String ussd_balance = modem.sendUSSD("*111#");
   DBG("Balance (USSD):", ussd_balance);
@@ -219,7 +221,7 @@ void loop() {
   }
 #endif
 
-#if TINY_GSM_POWERDOWN 
+#if TINY_GSM_POWERDOWN
   // Try to power-off (modem may decide to restart automatically)
   // To turn off modem completely, please use Reset/Enable pins
   modem.poweroff();
