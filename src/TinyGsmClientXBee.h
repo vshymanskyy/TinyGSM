@@ -724,6 +724,11 @@ public:
    Utilities
    */
 
+   void streamClear(void) {
+     TINY_GSM_YIELD();
+     while (stream.available()) { stream.read(); }
+   }
+
   template<typename T>
   void streamWrite(T last) {
     stream.print(last);
@@ -733,50 +738,6 @@ public:
   void streamWrite(T head, Args... tail) {
     stream.print(head);
     streamWrite(tail...);
-  }
-
-  void streamClear(void) {
-    TINY_GSM_YIELD();
-    while (stream.available()) { stream.read(); }
-  }
-
-  bool commandMode(int retries = 2) {
-    int triesMade = 0;
-    bool success = false;
-    streamClear();  // Empty everything in the buffer before starting
-    while (!success and triesMade < retries) {
-      // Cannot send anything for 1 "guard time" before entering command mode
-      // Default guard time is 1s, but the init fxn decreases it to 250 ms
-      delay(guardTime);
-      streamWrite(GF("+++"));  // enter command mode
-      DBG("+++");
-      success = (1 == waitResponse(guardTime*2));
-      triesMade ++;
-    }
-    return success;
-  }
-
-  bool writeChanges(void) {
-    sendAT(GF("WR"));  // Write changes to flash
-    if (1 != waitResponse()) return false;
-    sendAT(GF("AC"));  // Apply changes
-    if (1 != waitResponse()) return false;
-    return true;
-  }
-
-  void exitCommand(void) {
-    sendAT(GF("CN"));  // Exit command mode
-    waitResponse();
-  }
-
-  String readResponse(uint32_t timeout = 1000) {
-    TINY_GSM_YIELD();
-    unsigned long startMillis = millis();
-    while (!stream.available() && millis() - startMillis < timeout) {};
-    String res = stream.readStringUntil('\r');  // lines end with carriage returns
-    res.trim();
-    DBG("<<< ", res);
-    return res;
   }
 
   template<typename... Args>
@@ -843,6 +804,7 @@ finish:
         DBG("<<< ", data);
       }
     }
+    DBG('<', index, '>');
     return index;
   }
 
@@ -858,6 +820,45 @@ finish:
                        GsmConstStr r3=NULL, GsmConstStr r4=NULL, GsmConstStr r5=NULL)
   {
     return waitResponse(1000, r1, r2, r3, r4, r5);
+  }
+
+  bool commandMode(int retries = 2) {
+    int triesMade = 0;
+    bool success = false;
+    streamClear();  // Empty everything in the buffer before starting
+    while (!success and triesMade < retries) {
+      // Cannot send anything for 1 "guard time" before entering command mode
+      // Default guard time is 1s, but the init fxn decreases it to 250 ms
+      delay(guardTime);
+      streamWrite(GF("+++"));  // enter command mode
+      DBG("+++");
+      success = (1 == waitResponse(guardTime*2));
+      triesMade ++;
+    }
+    return success;
+  }
+
+  bool writeChanges(void) {
+    sendAT(GF("WR"));  // Write changes to flash
+    if (1 != waitResponse()) return false;
+    sendAT(GF("AC"));  // Apply changes
+    if (1 != waitResponse()) return false;
+    return true;
+  }
+
+  void exitCommand(void) {
+    sendAT(GF("CN"));  // Exit command mode
+    waitResponse();
+  }
+
+  String readResponse(uint32_t timeout = 1000) {
+    TINY_GSM_YIELD();
+    unsigned long startMillis = millis();
+    while (!stream.available() && millis() - startMillis < timeout) {};
+    String res = stream.readStringUntil('\r');  // lines end with carriage returns
+    res.trim();
+    DBG("<<< ", res);
+    return res;
   }
 
 public:
