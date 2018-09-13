@@ -179,24 +179,24 @@ private:
 };
 
 
-class GsmClientSecure : public GsmClient
-{
-public:
-  GsmClientSecure() {}
-
-  GsmClientSecure(TinyGsmBG96& modem, uint8_t mux = 1)
-    : GsmClient(modem, mux)
-  {}
-
-public:
-  virtual int connect(const char *host, uint16_t port) {
-    stop();
-    TINY_GSM_YIELD();
-    rx.clear();
-    sock_connected = at->modemConnect(host, port, mux, true);
-    return sock_connected;
-  }
-};
+// class GsmClientSecure : public GsmClient
+// {
+// public:
+//   GsmClientSecure() {}
+//
+//   GsmClientSecure(TinyGsmBG96& modem, uint8_t mux = 1)
+//     : GsmClient(modem, mux)
+//   {}
+//
+// public:
+//   virtual int connect(const char *host, uint16_t port) {
+//     stop();
+//     TINY_GSM_YIELD();
+//     rx.clear();
+//     sock_connected = at->modemConnect(host, port, mux, true);
+//     return sock_connected;
+//   }
+// };
 
 
 public:
@@ -416,21 +416,23 @@ public:
   bool gprsConnect(const char* apn, const char* user = NULL, const char* pwd = NULL) {
     gprsDisconnect();
 
+    //Configure the TCPIP Context
     sendAT(GF("+QICSGP=1,1,\""), apn, GF("\",\""), user, GF("\",\""), pwd, GF("\""));
     if (waitResponse() != 1) {
       return false;
     }
 
+    //Activate GPRS/CSD Context
     sendAT(GF("+QIACT=1"));
     if (waitResponse(150000L) != 1) {
       return false;
     }
 
+    //Attach to Packet Domain service - is this necessary?
     sendAT(GF("+CGATT=1"));
     if (waitResponse(60000L) != 1) {
       return false;
     }
-
 
     return true;
   }
@@ -461,11 +463,8 @@ public:
    */
 
   String getLocalIP() {
-    sendAT(GF("+CGPADDR=1"));
-    if (waitResponse(10000L, GF(GSM_NL "+CGPADDR:")) != 1) {
-      return "";
-    }
-    streamSkipUntil(',');
+    sendAT(GF("+QILOCIP"));
+    stream.readStringUntil('\n');
     String res = stream.readStringUntil('\n');
     if (waitResponse() != 1) {
       return "";
@@ -497,6 +496,8 @@ public:
 
   bool sendSMS_UTF16(const String& number, const void* text, size_t len) {
     sendAT(GF("+CMGF=1"));
+    waitResponse();
+    sendAT(GF("+CSCS=\"HEX\""));
     waitResponse();
     sendAT(GF("+CSMP=17,167,0,8"));
     waitResponse();
@@ -530,7 +531,31 @@ public:
   /*
    * Battery functions
    */
-  uint16_t getBattVoltage() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
+  // Use: float vBatt = modem.getBattVoltage() / 1000.0;
+  uint16_t getBattVoltage() {
+    sendAT(GF("+CBC"));
+    if (waitResponse(GF(GSM_NL "+CBC:")) != 1) {
+      return 0;
+    }
+    streamSkipUntil(','); // Skip
+    streamSkipUntil(','); // Skip
+
+    uint16_t res = stream.readStringUntil(',').toInt();
+    waitResponse();
+    return res;
+  }
+
+  int getBattPercent() {
+    sendAT(GF("+CBC"));
+    if (waitResponse(GF(GSM_NL "+CBC:")) != 1) {
+      return false;
+    }
+    stream.readStringUntil(',');
+    int res = stream.readStringUntil(',').toInt();
+    waitResponse();
+    return res;
+  }
 
   int getBattPercent() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
@@ -542,6 +567,8 @@ protected:
 
   bool modemConnect(const char* host, uint16_t port, uint8_t mux, bool ssl = false) {
     int rsp;
+    // <PDPcontextID>(1-16), <connectID>(0-11),"TCP/UDP/TCP LISTENER/UDP SERVICE",
+    // "<IP_address>/<domain_name>",<remote_port>,<local_port>,<access_mode>(0-2 0=buffer)
     sendAT(GF("+QIOPEN=1,"), mux, ',', GF("\"TCP"), GF("\",\""), host, GF("\","), port, GF(",0,0"));
     rsp = waitResponse();
 
