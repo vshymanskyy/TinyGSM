@@ -115,7 +115,7 @@ public:
 
   virtual int available() {
     TINY_GSM_YIELD();
-    if (!rx.size()) {
+    if (!rx.size() && sock_connected) {
       at->maintain();
     }
     return rx.size() + sock_available;
@@ -125,7 +125,7 @@ public:
     TINY_GSM_YIELD();
     at->maintain();
     size_t cnt = 0;
-    while (cnt < size) {
+    while (cnt < size && sock_connected) {
       size_t chunk = TinyGsmMin(size-cnt, rx.size());
       if (chunk > 0) {
         rx.get(buf, chunk);

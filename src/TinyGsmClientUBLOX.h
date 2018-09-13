@@ -123,7 +123,7 @@ public:
     TINY_GSM_YIELD();
     at->maintain();
     size_t cnt = 0;
-    while (cnt < size) {
+    while (cnt < size && sock_connected) {
       size_t chunk = TinyGsmMin(size-cnt, rx.size());
       if (chunk > 0) {
         rx.get(buf, chunk);
