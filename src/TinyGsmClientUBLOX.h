@@ -547,6 +547,10 @@ public:
     return res;
   }
 
+  /*
+   * Client related functions
+   */
+
 protected:
 
   bool modemConnect(const char* host, uint16_t port, uint8_t* mux, bool ssl = false) {
@@ -640,7 +644,9 @@ protected:
 
 public:
 
-  /* Utilities */
+  /*
+   Utilities
+   */
 
   template<typename T>
   void streamWrite(T last) {

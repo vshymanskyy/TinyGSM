@@ -39,6 +39,7 @@ enum RegStatus {
   REG_UNKNOWN      = 4,
 };
 
+
 class TinyGsmSim800 : public TinyGsmModem
 {
 
@@ -694,6 +695,7 @@ public:
   /*
    * Battery functions
    */
+
   // Use: float vBatt = modem.getBattVoltage() / 1000.0;
   uint16_t getBattVoltage() {
     sendAT(GF("+CBC"));
@@ -718,6 +720,10 @@ public:
     waitResponse();
     return res;
   }
+
+  /*
+   * Client related functions
+   */
 
 protected:
 
@@ -813,7 +819,9 @@ protected:
 
 public:
 
-  /* Utilities */
+  /*
+   Utilities
+   */
 
   template<typename T>
   void streamWrite(T last) {
