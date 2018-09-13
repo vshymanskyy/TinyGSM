@@ -66,7 +66,6 @@
   #include <TinyGsmClientMC60.h>
   typedef TinyGsmMC60 TinyGsm;
   typedef TinyGsmMC60::GsmClient TinyGsmClient;
-  typedef TinyGsmMC60::GsmClientSecure TinyGsmClientSecure;
 
 #elif defined(TINY_GSM_MODEM_ESP8266)
   #define TINY_GSM_MODEM_HAS_WIFI
