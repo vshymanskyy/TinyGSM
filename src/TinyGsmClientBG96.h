@@ -557,8 +557,6 @@ public:
     return res;
   }
 
-  int getBattPercent() TINY_GSM_ATTR_NOT_IMPLEMENTED;
-
   /*
    * Client related functions
    */
