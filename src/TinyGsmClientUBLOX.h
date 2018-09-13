@@ -40,7 +40,7 @@ enum RegStatus {
 };
 
 
-class TinyGsmUBLOX
+class TinyGsmUBLOX : public TinyGsmModem
 {
 
 public:
@@ -123,7 +123,7 @@ public:
     TINY_GSM_YIELD();
     at->maintain();
     size_t cnt = 0;
-    while (cnt < size) {
+    while (cnt < size && sock_connected) {
       size_t chunk = TinyGsmMin(size-cnt, rx.size());
       if (chunk > 0) {
         rx.get(buf, chunk);
@@ -201,7 +201,7 @@ public:
 public:
 
   TinyGsmUBLOX(Stream& stream)
-    : stream(stream)
+    : TinyGsmModem(stream), stream(stream)
   {
     memset(sockets, 0, sizeof(sockets));
   }
@@ -209,9 +209,6 @@ public:
   /*
    * Basic functions
    */
-  bool begin(const char* pin = NULL) {
-    return init(pin);
-  }
 
   bool init(const char* pin = NULL) {
     if (!testAT()) {
@@ -226,6 +223,10 @@ public:
       simUnlock(pin);
     }
     return (getSimStatus() == SIM_READY);
+  }
+
+  String getModemName() {
+    return "u-blox Cellular Modem";
   }
 
   void setBaud(unsigned long baud) {
@@ -277,6 +278,14 @@ public:
   }
 
   bool hasSSL() {
+    return true;
+  }
+
+  bool hasWifi() {
+    return false;
+  }
+
+  bool hasGPRS() {
     return true;
   }
 
@@ -400,22 +409,6 @@ public:
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
   }
 
-  bool waitForNetwork(unsigned long timeout = 60000L) {
-    for (unsigned long start = millis(); millis() - start < timeout; ) {
-      if (isNetworkConnected()) {
-        return true;
-      }
-      delay(250);
-    }
-    return false;
-  }
-
-  /*
-   * WiFi functions
-   */
-  bool networkConnect(const char* ssid, const char* pwd) TINY_GSM_ATTR_NOT_AVAILABLE;
-  bool networkDisconnect() TINY_GSM_ATTR_NOT_AVAILABLE;
-
   /*
    * GPRS functions
    */
@@ -481,6 +474,10 @@ public:
     return localIP() != 0;
   }
 
+  /*
+   * IP Address functions
+   */
+
   String getLocalIP() {
     sendAT(GF("+UPSND=0,0"));
     if (waitResponse(GF(GSM_NL "+UPSND:")) != 1) {
@@ -493,10 +490,6 @@ public:
       return "";
     }
     return res;
-  }
-
-  IPAddress localIP() {
-    return TinyGsmIpFromString(getLocalIP());
   }
 
   /*
@@ -565,6 +558,10 @@ public:
     waitResponse();
     return res;
   }
+
+  /*
+   * Client related functions
+   */
 
 protected:
 
@@ -659,30 +656,9 @@ protected:
 
 public:
 
-  /* Utilities */
-
-  template<typename T>
-  void streamWrite(T last) {
-    stream.print(last);
-  }
-
-  template<typename T, typename... Args>
-  void streamWrite(T head, Args... tail) {
-    stream.print(head);
-    streamWrite(tail...);
-  }
-
-  bool streamSkipUntil(char c, const unsigned long timeout = 1000L) {
-    unsigned long startMillis = millis();
-    while (millis() - startMillis < timeout) {
-      while (millis() - startMillis < timeout && !stream.available()) {
-        TINY_GSM_YIELD();
-      }
-      if (stream.read() == c)
-        return true;
-    }
-    return false;
-  }
+  /*
+   Utilities
+   */
 
   template<typename... Args>
   void sendAT(Args... cmd) {

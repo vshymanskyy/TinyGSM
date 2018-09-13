@@ -45,7 +45,7 @@ enum XBeeType {
 };
 
 
-class TinyGsmXBee
+class TinyGsmXBee : public TinyGsmModem
 {
 
 public:
@@ -207,17 +207,14 @@ public:
 public:
 
   TinyGsmXBee(Stream& stream)
-    : stream(stream)
+    : TinyGsmModem(stream), stream(stream)
   {}
 
   /*
    * Basic functions
    */
-  bool begin() {
-    return init();
-  }
 
-  bool init() {
+  bool init(const char* pin = NULL) {
     guardTime = 1100;  // Start with a default guard time of 1 second
 
     if (!commandMode(10)) return false;  // Try up to 10 times for the init
@@ -240,6 +237,10 @@ public:
 
     exitCommand();
     return ret_val;
+  }
+
+  String getModemName() {
+    return getBeeName();
   }
 
   void setBaud(unsigned long baud) {
@@ -309,6 +310,16 @@ public:
     else return true;
   }
 
+  bool hasWifi() {
+    if (beeType == XBEE_S6B_WIFI) return true;
+    else return false;
+  }
+
+  bool hasGPRS() {
+    if (beeType == XBEE_S6B_WIFI) return false;
+    else return true;
+  }
+
   XBeeType getBeeType() {
     return beeType;
   }
@@ -321,6 +332,7 @@ public:
       case XBEE3_LTE1_ATT: return "Digi XBee3™ Cellular LTE CAT 1";
       case XBEE3_LTEM_ATT: return "Digi XBee3™ Cellular LTE-M";
       case XBEE3_LTENB: return "Digi XBee3™ Cellular NB-IoT";
+      default:  return "Digi XBee®";
     }
   }
 
@@ -555,6 +567,10 @@ fail:
     return res;
   }
 
+  /*
+   * IP Address functions
+   */
+
   String getLocalIP() {
     if (!commandMode()) return "";  // Return immediately
     sendAT(GF("MY"));
@@ -564,10 +580,6 @@ fail:
     exitCommand();
     IPaddr.trim();
     return IPaddr;
-  }
-
-  IPAddress localIP() {
-    return TinyGsmIpFromString(getLocalIP());
   }
 
   /*
@@ -639,6 +651,10 @@ fail:
 
   int getBattPercent() TINY_GSM_ATTR_NOT_AVAILABLE;
 
+  /*
+   * Client related functions
+   */
+
 protected:
 
   bool modemConnect(const char* host, uint16_t port, uint8_t mux = 0, bool ssl = false) {
@@ -704,61 +720,13 @@ protected:
 
 public:
 
-  /* Utilities */
-
-  template<typename T>
-  void streamWrite(T last) {
-    stream.print(last);
-  }
-
-  template<typename T, typename... Args>
-  void streamWrite(T head, Args... tail) {
-    stream.print(head);
-    streamWrite(tail...);
-  }
+  /*
+   Utilities
+   */
 
   void streamClear(void) {
     TINY_GSM_YIELD();
     while (stream.available()) { stream.read(); }
-  }
-
-  bool commandMode(int retries = 2) {
-    int triesMade = 0;
-    bool success = false;
-    streamClear();  // Empty everything in the buffer before starting
-    while (!success and triesMade < retries) {
-      // Cannot send anything for 1 "guard time" before entering command mode
-      // Default guard time is 1s, but the init fxn decreases it to 250 ms
-      delay(guardTime);
-      streamWrite(GF("+++"));  // enter command mode
-      DBG("+++");
-      success = (1 == waitResponse(guardTime*2));
-      triesMade ++;
-    }
-    return success;
-  }
-
-  bool writeChanges(void) {
-    sendAT(GF("WR"));  // Write changes to flash
-    if (1 != waitResponse()) return false;
-    sendAT(GF("AC"));  // Apply changes
-    if (1 != waitResponse()) return false;
-    return true;
-  }
-
-  void exitCommand(void) {
-    sendAT(GF("CN"));  // Exit command mode
-    waitResponse();
-  }
-
-  String readResponse(uint32_t timeout = 1000) {
-    TINY_GSM_YIELD();
-    unsigned long startMillis = millis();
-    while (!stream.available() && millis() - startMillis < timeout) {};
-    String res = stream.readStringUntil('\r');  // lines end with carriage returns
-    res.trim();
-    DBG("<<< ", res);
-    return res;
   }
 
   template<typename... Args>
@@ -825,6 +793,7 @@ finish:
         // DBG("<<< ", data);
       }
     }
+    //DBG('<', index, '>');
     return index;
   }
 
@@ -840,6 +809,45 @@ finish:
                        GsmConstStr r3=NULL, GsmConstStr r4=NULL, GsmConstStr r5=NULL)
   {
     return waitResponse(1000, r1, r2, r3, r4, r5);
+  }
+
+  bool commandMode(int retries = 2) {
+    int triesMade = 0;
+    bool success = false;
+    streamClear();  // Empty everything in the buffer before starting
+    while (!success and triesMade < retries) {
+      // Cannot send anything for 1 "guard time" before entering command mode
+      // Default guard time is 1s, but the init fxn decreases it to 250 ms
+      delay(guardTime);
+      streamWrite(GF("+++"));  // enter command mode
+      DBG("+++");
+      success = (1 == waitResponse(guardTime*2));
+      triesMade ++;
+    }
+    return success;
+  }
+
+  bool writeChanges(void) {
+    sendAT(GF("WR"));  // Write changes to flash
+    if (1 != waitResponse()) return false;
+    sendAT(GF("AC"));  // Apply changes
+    if (1 != waitResponse()) return false;
+    return true;
+  }
+
+  void exitCommand(void) {
+    sendAT(GF("CN"));  // Exit command mode
+    waitResponse();
+  }
+
+  String readResponse(uint32_t timeout = 1000) {
+    TINY_GSM_YIELD();
+    unsigned long startMillis = millis();
+    while (!stream.available() && millis() - startMillis < timeout) {};
+    String res = stream.readStringUntil('\r');  // lines end with carriage returns
+    res.trim();
+    DBG("<<< ", res);
+    return res;
   }
 
 public:

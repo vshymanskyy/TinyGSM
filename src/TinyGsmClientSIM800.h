@@ -45,8 +45,7 @@ enum TinyGSMDateTimeFormat {
   DATE_DATE = 2
 };
 
-
-class TinyGsmSim800
+class TinyGsmSim800 : public TinyGsmModem
 {
 
 public:
@@ -217,7 +216,7 @@ public:
 public:
 
   TinyGsmSim800(Stream& stream)
-    : stream(stream)
+    : TinyGsmModem(stream), stream(stream)
   {
     memset(sockets, 0, sizeof(sockets));
   }
@@ -225,11 +224,8 @@ public:
   /*
    * Basic functions
    */
-  bool begin() {
-    return init();
-  }
 
-  bool init() {
+  bool init(const char* pin = NULL) {
     if (!testAT()) {
       return false;
     }
@@ -241,6 +237,19 @@ public:
     }
     getSimStatus();
     return true;
+  }
+
+  String getModemName() {
+    #if defined(TINY_GSM_MODEM_SIM800)
+      return "SIMCom SIM800";
+    #elif defined(TINY_GSM_MODEM_SIM808)
+      return "SIMCom SIM808";
+    #elif defined(TINY_GSM_MODEM_SIM868)
+      return "SIMCom SIM868";
+    #elif defined(TINY_GSM_MODEM_SIM900)
+      return "SIMCom SIM900";
+    #endif
+    return "SIMCom SIM800";
   }
 
   void setBaud(unsigned long baud) {
@@ -310,6 +319,14 @@ public:
     }
     return waitResponse() == 1;
 #endif
+  }
+
+  bool hasWifi() {
+    return false;
+  }
+
+  bool hasGPRS() {
+    return true;
   }
 
   /*
@@ -455,22 +472,6 @@ public:
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
   }
 
-  bool waitForNetwork(unsigned long timeout = 60000L) {
-    for (unsigned long start = millis(); millis() - start < timeout; ) {
-      if (isNetworkConnected()) {
-        return true;
-      }
-      delay(250);
-    }
-    return false;
-  }
-
-  /*
-   * WiFi functions
-   */
-  bool networkConnect(const char* ssid, const char* pwd) TINY_GSM_ATTR_NOT_AVAILABLE;
-  bool networkDisconnect() TINY_GSM_ATTR_NOT_AVAILABLE;
-
   /*
    * GPRS functions
    */
@@ -591,6 +592,10 @@ public:
     return true;
   }
 
+  /*
+   * IP Address functions
+   */
+
   String getLocalIP() {
     sendAT(GF("+CIFSR;E0"));
     String res;
@@ -603,9 +608,6 @@ public:
     return res;
   }
 
-  IPAddress localIP() {
-    return TinyGsmIpFromString(getLocalIP());
-  }
 
   /*
    * Phone Call functions
@@ -800,6 +802,10 @@ public:
     return res;
   }
 
+  /*
+   * Client related functions
+   */
+
 protected:
 
   bool modemConnect(const char* host, uint16_t port, uint8_t mux, bool ssl = false) {
@@ -894,30 +900,9 @@ protected:
 
 public:
 
-  /* Utilities */
-
-  template<typename T>
-  void streamWrite(T last) {
-    stream.print(last);
-  }
-
-  template<typename T, typename... Args>
-  void streamWrite(T head, Args... tail) {
-    stream.print(head);
-    streamWrite(tail...);
-  }
-
-  bool streamSkipUntil(const char c, const unsigned long timeout = 3000L) {
-    unsigned long startMillis = millis();
-    while (millis() - startMillis < timeout) {
-      while (millis() - startMillis < timeout && !stream.available()) {
-        TINY_GSM_YIELD();
-      }
-      if (stream.read() == c)
-        return true;
-    }
-    return false;
-  }
+  /*
+   Utilities
+   */
 
   template<typename... Args>
   void sendAT(Args... cmd) {

@@ -35,29 +35,29 @@ TinyGSM also pulls data gently from the modem (whenever possible), so it can ope
 
 ## Features
 
-Feature \ Modem              | SIM8xx | u-Blox | A6/A7/A20 | M590 | ESP8266 | XBee
----                          | ---    | ---    | ---       | ---  | ---     | ---
+Feature \ Modem              | SIM8xx | u-Blox | A6/A7/A20 | M590 | ESP8266 | XBee | Quectel M95 |
+---                          | ---    | ---    | ---       | ---  | ---     | ---  | ----------- |
 **Data connections**
-TCP (HTTP, MQTT, Blynk, ...) | ✔      | ✔      | ✔         | ✔    | ✔       | ✔
-UDP                          | ◌      | ◌      |           |      |         | ◌
-SSL/TLS (HTTPS)              | ✔¹     | ✔      | 🅧        | 🅧    | ✔¹      | ✔¹
+TCP (HTTP, MQTT, Blynk, ...) | ✔      | ✔      | ✔         | ✔    | ✔       | ✔    | ✔           |
+UDP                          | ◌      | ◌      |           |      |         | ◌    | ◌           |
+SSL/TLS (HTTPS)              | ✔¹     | ✔      | 🅧        | 🅧    | ✔¹      | ✔¹    |             |
 **USSD**
-Sending USSD requests        | ✔      |        | ✔         | ✔    | 🅧       |
-Decoding 7,8,16-bit response | ✔      |        | ✔         | ✔    | 🅧      |
+Sending USSD requests        | ✔      |        | ✔         | ✔    | 🅧       |      |             |
+Decoding 7,8,16-bit response | ✔      |        | ✔         | ✔    | 🅧      |      |             |
 **SMS**
-Sending                      | ✔      | ✔      | ✔         | ✔    | 🅧      | ✔
-Sending Unicode              | ✔      |        | ◌         | 🅧   | 🅧      |
-Reading                      |        |        |           |      | 🅧      |
-Incoming message event       |        |        |           | ?    | 🅧      |
+Sending                      | ✔      | ✔      | ✔         | ✔    | 🅧      | ✔    | ✔           |
+Sending Unicode              | ✔      |        | ◌         | 🅧   | 🅧      |       | ?           |
+Reading                      |        |        |           |      | 🅧      |      | ?           |
+Incoming message event       |        |        |           | ?    | 🅧      |      |             |
 **Calls**
-Dial, hangup                 | ✔      |        | ✔         | 🅧   | 🅧      | 🅧
-Receiving calls              | ✔      |        | ✔         | 🅧   | 🅧      | 🅧
-Incoming event (RING)        | ◌      |        | ◌         | 🅧   | 🅧      | 🅧
-DTMF sending                 | ✔      |        | ✔         | 🅧   | 🅧      | 🅧
-DTMF decoding                | ◌      |        | 🅧        | 🅧   | 🅧      | 🅧
+Dial, hangup                 | ✔      |        | ✔         | 🅧   | 🅧      | 🅧     | ?           |
+Receiving calls              | ✔      |        | ✔         | 🅧   | 🅧      | 🅧     | ?           |
+Incoming event (RING)        | ◌      |        | ◌         | 🅧   | 🅧      | 🅧     | ?           |
+DTMF sending                 | ✔      |        | ✔         | 🅧   | 🅧      | 🅧     | ?           |
+DTMF decoding                | ◌      |        | 🅧        | 🅧   | 🅧      | 🅧     | ?           |
 **Location**
-GSM location service         | ✔      | ✔      | 🅧        | 🅧   | 🅧      | ✔
-GPS/GNSS                     | ✔¹     | 🅧     | ◌¹        | 🅧   | 🅧      | 🅧
+GSM location service         | ✔      | ✔      | 🅧        | 🅧   | 🅧      | ✔ | 🅧 |
+GPS/GNSS                     | ✔¹     | 🅧     | ◌¹        | 🅧   | 🅧      | 🅧 | 🅧 |
 
 ✔ - implemented  ◌ - planned  🅧 - not available on this modem  
 ¹ - only some device models or firmware revisions have this feature (SIM8xx R14.18, A7, etc.)  
@@ -72,6 +72,8 @@ GPS/GNSS                     | ✔¹     | 🅧     | ◌¹        | 🅧   | �
 - Neoway M590
 - u-blox Cellular Modems (LEON-G100, LISA-U2xx, SARA-G3xx, SARA-U2xx, TOBY-L2xx, LARA-R2xx, MPCI-L2xx)
 - Quectel BG96 ***(alpha)***
+- Quectel M95 ***(alpha)***
+- Quectel MC60 ***(alpha)***
 
 ### Supported boards/modules
 - Arduino MKR GSM 1400
@@ -84,8 +86,8 @@ GPS/GNSS                     | ✔¹     | 🅧     | ◌¹        | 🅧   | �
 - ... other modules, based on supported modems. Some boards require [**special configuration**](https://github.com/vshymanskyy/TinyGSM/wiki/Board-configuration).
 
 More modems may be supported later:
-- [ ] Quectel M10, M35, M95, UG95, EC21
 - [ ] Sequans Monarch LTE Cat M1/NB1
+- [ ] Quectel M10, UG95
 - [ ] SIMCom SIM5320, SIM5360, SIM5216, SIM7xxx
 - [ ] Telit GL865
 - [ ] ZTE MG2639

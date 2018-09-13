@@ -39,7 +39,7 @@ enum RegStatus {
 };
 
 
-class TinyGsmA6
+class TinyGsmA6 : public TinyGsmModem
 {
 
 public:
@@ -178,7 +178,7 @@ private:
 public:
 
   TinyGsmA6(Stream& stream)
-    : stream(stream)
+    : TinyGsmModem(stream), stream(stream)
   {
     memset(sockets, 0, sizeof(sockets));
   }
@@ -186,11 +186,8 @@ public:
   /*
    * Basic functions
    */
-  bool begin() {
-    return init();
-  }
 
-  bool init() {
+  bool init(const char* pin = NULL) {
     if (!testAT()) {
       return false;
     }
@@ -206,6 +203,15 @@ public:
 
     getSimStatus();
     return true;
+  }
+
+  String getModemName() {
+    #if defined(TINY_GSM_MODEM_A6)
+      return "AI-Thinker A6";
+    #elif defined(TINY_GSM_MODEM_A7)
+      return "AI-Thinker A7";
+    #endif
+    return "AI-Thinker A6";
   }
 
   void setBaud(unsigned long baud) {
@@ -249,6 +255,14 @@ public:
 
   bool hasSSL() {
     return false;
+  }
+
+  bool hasWifi() {
+    return false;
+  }
+
+  bool hasGPRS() {
+    return true;
   }
 
   /*
@@ -367,22 +381,6 @@ public:
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
   }
 
-  bool waitForNetwork(unsigned long timeout = 60000L) {
-    for (unsigned long start = millis(); millis() - start < timeout; ) {
-      if (isNetworkConnected()) {
-        return true;
-      }
-      delay(250);
-    }
-    return false;
-  }
-
-  /*
-   * WiFi functions
-   */
-  bool networkConnect(const char* ssid, const char* pwd) TINY_GSM_ATTR_NOT_AVAILABLE;
-  bool networkDisconnect() TINY_GSM_ATTR_NOT_AVAILABLE;
-
   /*
    * GPRS functions
    */
@@ -441,6 +439,10 @@ public:
     return (res == 1);
   }
 
+  /*
+   * IP Address functions
+   */
+
   String getLocalIP() {
     sendAT(GF("+CIFSR"));
     String res;
@@ -451,10 +453,6 @@ public:
     res.replace(GSM_NL, "");
     res.trim();
     return res;
-  }
-
-  IPAddress localIP() {
-    return TinyGsmIpFromString(getLocalIP());
   }
 
   /*
@@ -606,6 +604,10 @@ public:
     return res;
   }
 
+  /*
+   * Client related functions
+   */
+
 protected:
 
   bool modemConnect(const char* host, uint16_t port, uint8_t* mux) {
@@ -650,30 +652,9 @@ protected:
 
 public:
 
-  /* Utilities */
-
-  template<typename T>
-  void streamWrite(T last) {
-    stream.print(last);
-  }
-
-  template<typename T, typename... Args>
-  void streamWrite(T head, Args... tail) {
-    stream.print(head);
-    streamWrite(tail...);
-  }
-
-  bool streamSkipUntil(char c, const unsigned long timeout = 1000L) {
-    unsigned long startMillis = millis();
-    while (millis() - startMillis < timeout) {
-      while (millis() - startMillis < timeout && !stream.available()) {
-        TINY_GSM_YIELD();
-      }
-      if (stream.read() == c)
-        return true;
-    }
-    return false;
-  }
+  /*
+   Utilities
+   */
 
   template<typename... Args>
   void sendAT(Args... cmd) {

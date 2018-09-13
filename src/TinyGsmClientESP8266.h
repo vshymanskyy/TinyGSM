@@ -39,7 +39,7 @@ enum RegStatus {
 
 
 
-class TinyGsmESP8266
+class TinyGsmESP8266 : public TinyGsmModem
 {
 
 public:
@@ -191,10 +191,11 @@ public:
   }
 };
 
+
 public:
 
   TinyGsmESP8266(Stream& stream)
-    : stream(stream)
+    : TinyGsmModem(stream), stream(stream)
   {
     memset(sockets, 0, sizeof(sockets));
   }
@@ -202,11 +203,8 @@ public:
   /*
    * Basic functions
    */
-  bool begin() {
-    return init();
-  }
 
-  bool init() {
+  bool init(const char* pin = NULL) {
     if (!testAT()) {
       return false;
     }
@@ -223,6 +221,10 @@ public:
       return false;
     }
     return true;
+  }
+
+  String getModemName() {
+    return "ESP8266";
   }
 
   void setBaud(unsigned long baud) {
@@ -264,6 +266,14 @@ public:
 
   bool hasSSL() {
     return true;
+  }
+
+  bool hasWifi() {
+    return true;
+  }
+
+  bool hasGPRS() {
+    return false;
   }
 
   /*
@@ -362,6 +372,10 @@ public:
     return retVal;
   }
 
+  /*
+   * IP Address functions
+   */
+
   String getLocalIP() {
     sendAT(GF("+CIPSTA_CUR??"));
     int res1 = waitResponse(GF("ERROR"), GF("+CWJAP_CUR:"));
@@ -373,33 +387,9 @@ public:
     return res2;
   }
 
-  IPAddress localIP() {
-    return TinyGsmIpFromString(getLocalIP());
-  }
-
   /*
-   * GPRS functions
+   * Client related functions
    */
-  bool gprsConnect(const char* apn, const char* user = NULL, const char* pwd = NULL) TINY_GSM_ATTR_NOT_AVAILABLE;
-  bool gprsDisconnect() TINY_GSM_ATTR_NOT_AVAILABLE;
-
-  /*
-   * Messaging functions
-   */
-
-  /*
-   * Location functions
-   */
-
-  String getGsmLocation() TINY_GSM_ATTR_NOT_AVAILABLE;
-
-  /*
-   * Battery functions
-   */
-
-  uint16_t getBattVoltage() TINY_GSM_ATTR_NOT_AVAILABLE;
-
-  int getBattPercent() TINY_GSM_ATTR_NOT_AVAILABLE;
 
 protected:
 
@@ -438,30 +428,9 @@ protected:
 
 public:
 
-  /* Utilities */
-
-  template<typename T>
-  void streamWrite(T last) {
-    stream.print(last);
-  }
-
-  template<typename T, typename... Args>
-  void streamWrite(T head, Args... tail) {
-    stream.print(head);
-    streamWrite(tail...);
-  }
-
-  bool streamSkipUntil(char c, const unsigned long timeout = 1000L) {
-    unsigned long startMillis = millis();
-    while (millis() - startMillis < timeout) {
-      while (millis() - startMillis < timeout && !stream.available()) {
-        TINY_GSM_YIELD();
-      }
-      if (stream.read() == c)
-        return true;
-    }
-    return false;
-  }
+  /*
+   Utilities
+   */
 
   template<typename... Args>
   void sendAT(Args... cmd) {
