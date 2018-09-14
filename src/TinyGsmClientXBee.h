@@ -669,7 +669,7 @@ protected:
       while (stream.available() < 4) {};  // wait for any response
       strIP = stream.readStringUntil('\r');  // read result
       strIP.trim();
-      DBG("<<< ", strIP);
+      //DBG("<<< ", strIP);
       if (!strIP.endsWith(GF("ERROR"))) gotIP = true;
       delay(100);  // short wait before trying again
     }
@@ -783,14 +783,14 @@ finish:
       if (data.length()) {
         DBG("### Unhandled:", data, "\r\n");
       } else {
-        DBG("### NO RESPONSE!\r\n");
+        DBG("### NO RESPONSE FROM MODEM!\r\n");
       }
     } else {
       data.trim();
       data.replace(GSM_NL GSM_NL, GSM_NL);
       data.replace(GSM_NL, "\r\n    ");
       if (data.length()) {
-        // DBG("<<< ", data);
+        //DBG("<<< ", data);
       }
     }
     //DBG('<', index, '>');
@@ -820,7 +820,7 @@ finish:
       // Default guard time is 1s, but the init fxn decreases it to 250 ms
       delay(guardTime);
       streamWrite(GF("+++"));  // enter command mode
-      DBG("+++");
+      //DBG("+++");
       success = (1 == waitResponse(guardTime*2));
       triesMade ++;
     }
@@ -846,7 +846,7 @@ finish:
     while (!stream.available() && millis() - startMillis < timeout) {};
     String res = stream.readStringUntil('\r');  // lines end with carriage returns
     res.trim();
-    DBG("<<< ", res);
+    //DBG("<<< ", res);
     return res;
   }
 
