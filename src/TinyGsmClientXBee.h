@@ -39,8 +39,8 @@ enum XBeeType {
   XBEE_S6B_WIFI  = 0x601,  // Digi XBee® Wi-Fi
   XBEE_LTE1_VZN  = 0xB01,  // Digi XBee® Cellular LTE Cat 1
   XBEE_3G        = 0xB02,  // Digi XBee® Cellular 3G
-  XBEE3_LTE1_ATT = 1,  // Digi XBee3™ Cellular LTE CAT 1  -- HS unknown to SRGD
-  XBEE3_LTEM_ATT = 2,  // Digi XBee3™ Cellular LTE-M  -- HS unknown to SRGD
+  XBEE3_LTE1_ATT = 0xB06,  // Digi XBee3™ Cellular LTE CAT 1
+  XBEE3_LTEM_ATT = 0xB08,  // Digi XBee3™ Cellular LTE-M
   XBEE3_LTENB    = 3,  // Digi XBee3™ Cellular NB-IoT  -- HS unknown to SRGD
 };
 
