@@ -8,6 +8,7 @@
 
 #ifndef TinyGsmClientXBee_h
 #define TinyGsmClientXBee_h
+//#pragma message("TinyGSM:  TinyGsmClientXBee")
 
 //#define TINY_GSM_DEBUG Serial
 
@@ -215,6 +216,7 @@ public:
    */
 
   bool init(const char* pin = NULL) {
+    DBG(GF("### Modem Defined:"), getModemName());
     guardTime = 1100;  // Start with a default guard time of 1 second
 
     if (!commandMode(10)) return false;  // Try up to 10 times for the init
