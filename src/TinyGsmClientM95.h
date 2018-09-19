@@ -593,6 +593,14 @@ public:
     return false;
   }
 
+  /*
+   * Phone Call functions
+   */
+
+  bool setGsmBusy(bool busy = true) TINY_GSM_ATTR_NOT_AVAILABLE;
+  bool callAnswer() TINY_GSM_ATTR_NOT_AVAILABLE;
+  bool callNumber(const String& number) TINY_GSM_ATTR_NOT_AVAILABLE;
+  bool callHangup() TINY_GSM_ATTR_NOT_AVAILABLE;
 
   /*
    * Location functions

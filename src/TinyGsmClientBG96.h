@@ -475,6 +475,36 @@ public:
   }
 
   /*
+   * Phone Call functions
+   */
+
+  bool setGsmBusy(bool busy = true) TINY_GSM_ATTR_NOT_AVAILABLE;
+
+  bool callAnswer() {
+    sendAT(GF("A"));
+    return waitResponse() == 1;
+  }
+
+  // Returns true on pick-up, false on error/busy
+  bool callNumber(const String& number) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
+  bool callHangup() {
+    sendAT(GF("H"));
+    return waitResponse() == 1;
+  }
+
+  // 0-9,*,#,A,B,C,D
+  bool dtmfSend(char cmd, int duration_ms = 100) { // TODO: check
+    duration_ms = constrain(duration_ms, 100, 1000);
+
+    sendAT(GF("+VTD="), duration_ms / 100); // VTD accepts in 1/10 of a second
+    waitResponse();
+
+    sendAT(GF("+VTS="), cmd);
+    return waitResponse(10000L) == 1;
+  }
+
+  /*
    * Messaging functions
    */
 

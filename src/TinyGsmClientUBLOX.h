@@ -495,6 +495,18 @@ public:
   }
 
   /*
+   * Phone Call functions
+   */
+
+  bool setGsmBusy(bool busy = true) TINY_GSM_ATTR_NOT_AVAILABLE;
+
+  bool callAnswer() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
+  bool callNumber(const String& number) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
+  bool callHangup() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
+  /*
    * Messaging functions
    */
 

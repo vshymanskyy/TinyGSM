@@ -40,6 +40,11 @@ enum RegStatus {
   REG_UNKNOWN      = 4,
 };
 
+enum TinyGSMDateTimeFormat {
+  DATE_FULL = 0,
+  DATE_TIME = 1,
+  DATE_DATE = 2
+};
 
 class TinyGsmSim800 : public TinyGsmModem
 {
@@ -605,6 +610,57 @@ public:
     return res;
   }
 
+
+  /*
+   * Phone Call functions
+   */
+
+  bool setGsmBusy(bool busy = true) {
+    sendAT(GF("+GSMBUSY="), busy ? 1 : 0);
+    return waitResponse() == 1;
+  }
+
+  bool callAnswer() {
+    sendAT(GF("A"));
+    return waitResponse() == 1;
+  }
+
+  // Returns true on pick-up, false on error/busy
+  bool callNumber(const String& number) {
+    if (number == GF("last")) {
+      sendAT(GF("DL"));
+    } else {
+      sendAT(GF("D"), number, ";");
+    }
+    int status = waitResponse(60000L,
+                              GFP(GSM_OK),
+                              GF("BUSY" GSM_NL),
+                              GF("NO ANSWER" GSM_NL),
+                              GF("NO CARRIER" GSM_NL));
+    switch (status) {
+    case 1:  return true;
+    case 2:
+    case 3:  return false;
+    default: return false;
+    }
+  }
+
+  bool callHangup() {
+    sendAT(GF("H"));
+    return waitResponse() == 1;
+  }
+
+  // 0-9,*,#,A,B,C,D
+  bool dtmfSend(char cmd, int duration_ms = 100) {
+    duration_ms = constrain(duration_ms, 100, 1000);
+
+    sendAT(GF("+VTD="), duration_ms / 100); // VTD accepts in 1/10 of a second
+    waitResponse();
+
+    sendAT(GF("+VTS="), cmd);
+    return waitResponse(10000L) == 1;
+  }
+
   /*
    * Messaging functions
    */
@@ -691,6 +747,32 @@ public:
     String res = stream.readStringUntil('\n');
     waitResponse();
     res.trim();
+    return res;
+  }
+
+  /*
+   * Time functions
+   */
+  String getGSMDateTime(TinyGSMDateTimeFormat format) {
+    sendAT(GF("+CCLK?"));
+    if (waitResponse(2000L, GF(GSM_NL "+CCLK: \"")) != 1) {
+      return "";
+    }
+
+    String res;
+
+    switch(format) {
+      case DATE_FULL:
+        res = stream.readStringUntil('"');
+      break;
+      case DATE_TIME:
+        streamSkipUntil(',');
+        res = stream.readStringUntil('"');
+      break;
+      case DATE_DATE:
+        res = stream.readStringUntil(',');
+      break;
+    }
     return res;
   }
 
