@@ -8,6 +8,7 @@
 
 #ifndef TinyGsmClientUBLOX_h
 #define TinyGsmClientUBLOX_h
+//#pragma message("TinyGSM:  TinyGsmClientUBLOX")
 
 //#define TINY_GSM_DEBUG Serial
 
@@ -211,6 +212,7 @@ public:
    */
 
   bool init(const char* pin = NULL) {
+    DBG(GF("### Modem Defined:"), getModemName());
     if (!testAT()) {
       return false;
     }

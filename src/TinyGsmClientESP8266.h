@@ -8,6 +8,7 @@
 
 #ifndef TinyGsmClientESP8266_h
 #define TinyGsmClientESP8266_h
+//#pragma message("TinyGSM:  TinyGsmClientESP8266")
 
 //#define TINY_GSM_DEBUG Serial
 
@@ -205,6 +206,7 @@ public:
    */
 
   bool init(const char* pin = NULL) {
+    DBG(GF("### Modem Defined:"), getModemName());
     if (!testAT()) {
       return false;
     }

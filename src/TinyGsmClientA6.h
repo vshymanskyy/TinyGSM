@@ -8,6 +8,7 @@
 
 #ifndef TinyGsmClientA6_h
 #define TinyGsmClientA6_h
+//#pragma message("TinyGSM:  TinyGsmClientA6")
 
 //#define TINY_GSM_DEBUG Serial
 
@@ -188,6 +189,7 @@ public:
    */
 
   bool init(const char* pin = NULL) {
+    DBG(GF("### Modem Defined:"), getModemName());
     if (!testAT()) {
       return false;
     }

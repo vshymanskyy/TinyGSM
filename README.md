@@ -35,31 +35,31 @@ TinyGSM also pulls data gently from the modem (whenever possible), so it can ope
 
 ## Features
 
-Feature \ Modem              | SIM8xx | u-Blox | A6/A7/A20 | M590 | ESP8266 | XBee | Quectel M95 |
----                          | ---    | ---    | ---       | ---  | ---     | ---  | ----------- |
+Feature \ Modem              | SIM8xx | u-Blox | A6/A7/A20 | M590 | ESP8266 | XBee | BG96 | M95 | MC60 |
+---                          | ---    | ---    | ---       | ---  | ---     | ---  | ---  | ---  | ---  |
 **Data connections**
-TCP (HTTP, MQTT, Blynk, ...) | ✔      | ✔      | ✔         | ✔    | ✔       | ✔    | ✔           |
-UDP                          | ◌      | ◌      |           |      |         | ◌    | ◌           |
-SSL/TLS (HTTPS)              | ✔¹     | ✔      | 🅧        | 🅧    | ✔¹      | ✔¹    |             |
+TCP (HTTP, MQTT, Blynk, ...) | ✔      | ✔      | ✔         | ✔    | ✔       | ✔    | ✔    | ✔    | ✔    |
+UDP                          | ◌      | ◌      |           |      |         | ◌     | ◌    |       |       |
+SSL/TLS (HTTPS)              | ✔¹     | ✔      | x         | x    | ✔       | ✔    | ◌    |      |       |
 **USSD**
-Sending USSD requests        | ✔      |        | ✔         | ✔    | 🅧       |      |             |
-Decoding 7,8,16-bit response | ✔      |        | ✔         | ✔    | 🅧      |      |             |
+Sending USSD requests        | ✔      |        | ✔         | ✔    | x      |      |       |       |       |
+Decoding 7,8,16-bit response | ✔      |        | ✔         | ✔    | x      |      |       |       |       |
 **SMS**
-Sending                      | ✔      | ✔      | ✔         | ✔    | 🅧      | ✔    | ✔           |
-Sending Unicode              | ✔      |        | ◌         | 🅧   | 🅧      |       | ?           |
-Reading                      |        |        |           |      | 🅧      |      | ?           |
-Incoming message event       |        |        |           | ?    | 🅧      |      |             |
+Sending                      | ✔      | ✔      | ✔         | ✔    | x      | ✔    | ✔    | ✔    | ✔    |
+Sending Unicode              | ✔      |        | ◌         | x    | x      |      | ✔     | ✔    | ✔    |
+Reading                      |        |        |           |      | x      |      |       |      |       |
+Incoming message event       |        |        |           | ?    | x      |      |       |      |       |
 **Calls**
-Dial, hangup                 | ✔      |        | ✔         | 🅧   | 🅧      | 🅧     | ?           |
-Receiving calls              | ✔      |        | ✔         | 🅧   | 🅧      | 🅧     | ?           |
-Incoming event (RING)        | ◌      |        | ◌         | 🅧   | 🅧      | 🅧     | ?           |
-DTMF sending                 | ✔      |        | ✔         | 🅧   | 🅧      | 🅧     | ?           |
-DTMF decoding                | ◌      |        | 🅧        | 🅧   | 🅧      | 🅧     | ?           |
+Dial, hangup                 | ✔      |        | ✔         | x   | x      | x     |       |      |       |
+Receiving calls              | ✔      |        | ✔         | x   | x      | x     |       |      |       |
+Incoming event (RING)        | ◌      |        | ◌         | x   | x      | x     |       |      |       |
+DTMF sending                 | ✔      |        | ✔         | x   | x      | x     |       |      |       |
+DTMF decoding                | ◌      |        | x         | x   | x      | x     |       |      |       |
 **Location**
-GSM location service         | ✔      | ✔      | 🅧        | 🅧   | 🅧      | ✔ | 🅧 |
-GPS/GNSS                     | ✔¹     | 🅧     | ◌¹        | 🅧   | 🅧      | 🅧 | 🅧 |
+GSM location service         | ✔      | ✔      | x         | x   | x      | x     |       | x     | ✔    |
+GPS/GNSS                     | ✔¹     | x      | ◌¹        | x   | x      | x     |       | x     |       |
 
-✔ - implemented  ◌ - planned  🅧 - not available on this modem  
+✔ - implemented  ◌ - planned  x - not available on this modem  
 ¹ - only some device models or firmware revisions have this feature (SIM8xx R14.18, A7, etc.)  
 
 ## Supported modems

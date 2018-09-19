@@ -8,6 +8,7 @@
 
 #ifndef TinyGsmClientXBee_h
 #define TinyGsmClientXBee_h
+//#pragma message("TinyGSM:  TinyGsmClientXBee")
 
 //#define TINY_GSM_DEBUG Serial
 
@@ -215,6 +216,7 @@ public:
    */
 
   bool init(const char* pin = NULL) {
+    DBG(GF("### Modem Defined:"), getModemName());
     guardTime = 1100;  // Start with a default guard time of 1 second
 
     if (!commandMode(10)) return false;  // Try up to 10 times for the init
@@ -229,10 +231,7 @@ public:
     if (ret_val) guardTime = 125;
 
     sendAT(GF("HS"));  // Get the "Hardware Series";
-    String res = readResponse();
-    char buf[4] = {0,};  // Set up buffer for response
-    res.toCharArray(buf, 4);
-    int intRes = strtol(buf, 0, 16);
+    int intRes = readResponseInt();
     beeType = (XBeeType)intRes;
 
     exitCommand();
@@ -299,7 +298,7 @@ public:
     if (!commandMode()) return modemInf;  // Try up to 10 times for the init
 
     sendAT(GF("HS"));  // Get the "Hardware Series"
-    modemInf += readResponse();
+    modemInf += readResponseString();
 
     exitCommand();
     return modemInf;
@@ -402,7 +401,7 @@ public:
   String getSimCCID() {
     if (!commandMode()) return "";  // Return immediately
     sendAT(GF("S#"));
-    String res = readResponse();
+    String res = readResponseString();
     exitCommand();
     return res;
   }
@@ -410,7 +409,7 @@ public:
   String getIMEI() {
     if (!commandMode()) return "";  // Return immediately
     sendAT(GF("IM"));
-    String res = readResponse();
+    String res = readResponseString();
     exitCommand();
     return res;
   }
@@ -423,10 +422,7 @@ public:
     if (!commandMode()) return REG_UNKNOWN;  // Return immediately
 
     sendAT(GF("AI"));
-    String res = readResponse();
-    char buf[3] = {0,};  // Set up buffer for response
-    res.toCharArray(buf, 3);
-    int intRes = strtol(buf, 0, 16);
+    int intRes = readResponseInt();
     RegStatus stat = REG_UNKNOWN;
 
     switch (beeType){
@@ -475,13 +471,18 @@ public:
           writeChanges();
           stat = REG_UNKNOWN;
         }
+        else if(intRes == 0x2B) {  // 0x2B USB Direct active.
+          stat = REG_UNKNOWN;
+        }
+        else if(intRes == 0x2C)  // 0x2C Cellular component is in PSM (power save mode).
+          stat = REG_UNKNOWN;
         else if(intRes == 0x2F) {  // 0x2F Bypass mode active.
           sendAT(GF("AP0"));  // Set back to transparent mode
           waitResponse();
           writeChanges();
           stat = REG_UNKNOWN;
         }
-        else if(intRes == 0xFF)  // 0xFF Device is currently scanning for the configured SSID.
+        else if(intRes == 0xFF)  // 0xFF Initializing.
           stat = REG_SEARCHING;
         else stat = REG_UNKNOWN;
           break;
@@ -495,7 +496,7 @@ public:
   String getOperator() {
     if (!commandMode()) return "";  // Return immediately
     sendAT(GF("MN"));
-    String res = readResponse();
+    String res = readResponseString();
     exitCommand();
     return res;
   }
@@ -508,11 +509,8 @@ public:
     if (!commandMode()) return 0;  // Return immediately
     if (beeType == XBEE_S6B_WIFI) sendAT(GF("LM"));  // ask for the "link margin" - the dB above sensitivity
     else sendAT(GF("DB"));  // ask for the cell strength in dBm
-    String res = readResponse();  // it works better if we read in as a string
+    int intRes = readResponseInt();
     exitCommand();
-    char buf[3] = {0,};  // Set up buffer for response
-    res.toCharArray(buf, 3);
-    int intRes = strtol(buf, 0, 16);
     if (beeType == XBEE_S6B_WIFI) return -93 + intRes;  // the maximum sensitivity is -93dBm
     else return -1*intRes; // need to convert to negative number
   }
@@ -576,7 +574,7 @@ fail:
     sendAT(GF("MY"));
     String IPaddr; IPaddr.reserve(16);
     // wait for the response - this response can be very slow
-    IPaddr = readResponse(30000);
+    IPaddr = readResponseString(30000);
     exitCommand();
     IPaddr.trim();
     return IPaddr;
@@ -840,7 +838,7 @@ finish:
     waitResponse();
   }
 
-  String readResponse(uint32_t timeout = 1000) {
+  String readResponseString(uint32_t timeout = 1000) {
     TINY_GSM_YIELD();
     unsigned long startMillis = millis();
     while (!stream.available() && millis() - startMillis < timeout) {};
@@ -848,6 +846,14 @@ finish:
     res.trim();
     //DBG("<<< ", res);
     return res;
+  }
+
+  int readResponseInt(uint32_t timeout = 1000) {
+    String res = readResponseString(timeout);
+    char buf[3] = {0,};  // Set up buffer for response
+    res.toCharArray(buf, 3);
+    int intRes = strtol(buf, 0, 16);
+    return intRes;
   }
 
 public:

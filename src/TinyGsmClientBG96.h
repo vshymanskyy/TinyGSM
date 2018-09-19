@@ -8,6 +8,7 @@
 
 #ifndef TinyGsmClientBG96_h
 #define TinyGsmClientBG96_h
+//#pragma message("TinyGSM:  TinyGsmClientBG96")
 
 //#define TINY_GSM_DEBUG Serial
 //#define TINY_GSM_USE_HEX
@@ -212,6 +213,7 @@ public:
    */
 
   bool init(const char* pin = NULL) {
+    DBG(GF("### Modem Defined:"), getModemName());
     if (!testAT()) {
       return false;
     }
