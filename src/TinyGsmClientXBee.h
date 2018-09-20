@@ -2,7 +2,7 @@
  * @file       TinyGsmClientXBee.h
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0
- * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
+ * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy, XBee module by Sara Damiano
  * @date       Nov 2016
  */
 
@@ -849,9 +849,9 @@ finish:
   }
 
   int readResponseInt(uint32_t timeout = 1000) {
-    String res = readResponseString(timeout);
-    char buf[3] = {0,};  // Set up buffer for response
-    res.toCharArray(buf, 3);
+    String res = readResponseString(timeout);  // it just works better reading a string first
+    char buf[5] = {0,};
+    res.toCharArray(buf, 5);
     int intRes = strtol(buf, 0, 16);
     return intRes;
   }
