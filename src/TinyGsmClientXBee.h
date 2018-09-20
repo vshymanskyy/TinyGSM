@@ -12,8 +12,11 @@
 
 //#define TINY_GSM_DEBUG Serial
 
-
-#define TINY_GSM_MUX_COUNT 1  // Multi-plexing isn't supported using command mode
+// XBee's do not support multi-plexing in transparent/command mode
+// The much more complicated API mode is needed for multi-plexing
+#define TINY_GSM_MUX_COUNT 1
+// XBee's have a default guard time of 1 second (1000ms, 10 extra for safety here)
+#define TINY_GSM_XBEE_GUARD_TIME 1010
 
 #include <TinyGsmCommon.h>
 
@@ -37,6 +40,7 @@ enum RegStatus {
 
 // These are responses to the HS command to get "hardware series"
 enum XBeeType {
+  XBEE_UNKNOWN  = 0,
   XBEE_S6B_WIFI  = 0x601,  // Digi XBee® Wi-Fi
   XBEE_LTE1_VZN  = 0xB01,  // Digi XBee® Cellular LTE Cat 1
   XBEE_3G        = 0xB02,  // Digi XBee® Cellular 3G
@@ -209,15 +213,16 @@ public:
 
   TinyGsmXBee(Stream& stream)
     : TinyGsmModem(stream), stream(stream)
-  {}
+  {
+      beeType = XBEE_UNKNOWN;  // Start not knowing what kind of bee it is
+      guardTime = TINY_GSM_XBEE_GUARD_TIME;  // Start with the default guard time of 1 second
+  }
 
   /*
    * Basic functions
    */
 
   bool init(const char* pin = NULL) {
-    DBG(GF("### Modem Defined:"), getModemName());
-    guardTime = 1100;  // Start with a default guard time of 1 second
 
     if (!commandMode(10)) return false;  // Try up to 10 times for the init
 
@@ -228,11 +233,9 @@ public:
     sendAT(GF("GT64")); // shorten the guard time to 100ms
     ret_val &= waitResponse();
     ret_val &= writeChanges();
-    if (ret_val) guardTime = 125;
+    if (ret_val) guardTime = 110;
 
-    sendAT(GF("HS"));  // Get the "Hardware Series";
-    int intRes = readResponseInt();
-    beeType = (XBeeType)intRes;
+    getSeries();  // Get the "Hardware Series";
 
     exitCommand();
     return ret_val;
@@ -290,6 +293,9 @@ public:
     bool ret_val = waitResponse() == 1;
     ret_val &= writeChanges();
     exitCommand();
+    // Make sure the guard time for the modem object is set back to default
+    // otherwise communication would fail after the reset
+    guardTime = 1010;
     return ret_val;
   }
 
@@ -341,45 +347,57 @@ public:
 
   bool restart() {
     if (!commandMode()) return false;  // Return immediately
-    sendAT(GF("AM1"));  // Digi suggests putting into airplane mode before restarting
-                       // This allows the sockets and connections to close cleanly
-    writeChanges();
-    if (waitResponse() != 1) goto fail;
-    sendAT(GF("FR"));
-    if (waitResponse() != 1) goto fail;
+    if (beeType == XBEE_UNKNOWN) getSeries();  // how we restart depends on this
 
-    delay (2000);  // Actually resets about 2 seconds later
+    if (beeType != XBEE_S6B_WIFI) {
+      sendAT(GF("AM1"));  // Digi suggests putting cellular modules into airplane mode before restarting
+                          // This allows the sockets and connections to close cleanly
+      if (waitResponse() != 1) return exitAndFail();
+      if (!writeChanges()) return exitAndFail();
+    }
+
+    sendAT(GF("FR"));
+    if (waitResponse() != 1) return exitAndFail();
+
+    if (beeType == XBEE_S6B_WIFI) delay(2000);  // Wifi module actually resets about 2 seconds later
+    else delay(100);  // cellular modules wait 100ms before reset happes
 
     // Wait until reboot complete and responds to command mode call again
     for (unsigned long start = millis(); millis() - start < 60000L; ) {
-      if (commandMode(1)) {
-        sendAT(GF("AM0"));  // Turn off airplane mode
-        writeChanges();
-        exitCommand();
-        delay(250);  // wait a litle before trying again
-      }
+      if (commandMode(1)) break;
+      delay(250);  // wait a litle before trying again
     }
+
+    if (beeType != XBEE_S6B_WIFI) {
+      sendAT(GF("AM1"));  // Turn of airplane mode
+      if (waitResponse() != 1) return exitAndFail();
+      if (!writeChanges()) return exitAndFail();
+    }
+
+    exitCommand();
+
     return true;
-
-
-    fail:
-      exitCommand();
-      return false;
   }
 
   void setupPinSleep(bool maintainAssociation = false) {
     if (!commandMode()) return;  // Return immediately
+
+    if (beeType == XBEE_UNKNOWN) getSeries();  // Command depends on series
+
     sendAT(GF("SM"),1);  // Pin sleep
     waitResponse();
+
     if (beeType == XBEE_S6B_WIFI && !maintainAssociation) {
         sendAT(GF("SO"),200);  // For lowest power, dissassociated deep sleep
         waitResponse();
     }
+
     else if (!maintainAssociation){
         sendAT(GF("SO"),1);  // For lowest power, dissassociated deep sleep
                              // Not supported by all modules, will return "ERROR"
         waitResponse();
     }
+
     writeChanges();
     exitCommand();
   }
@@ -420,6 +438,8 @@ public:
 
   RegStatus getRegistrationStatus() {
     if (!commandMode()) return REG_UNKNOWN;  // Return immediately
+
+    if (beeType == XBEE_UNKNOWN) getSeries();  // Need to know the bee type to interpret response
 
     sendAT(GF("AI"));
     int intRes = readResponseInt();
@@ -507,6 +527,7 @@ public:
 
   int getSignalQuality() {
     if (!commandMode()) return 0;  // Return immediately
+    if (beeType == XBEE_UNKNOWN) getSeries();  // Need to know what type of bee so we know how to ask
     if (beeType == XBEE_S6B_WIFI) sendAT(GF("LM"));  // ask for the "link margin" - the dB above sensitivity
     else sendAT(GF("DB"));  // ask for the cell strength in dBm
     int intRes = readResponseInt();
@@ -538,22 +559,18 @@ public:
     if (!commandMode()) return false;  // return immediately
 
     sendAT(GF("EE"), 2);  // Set security to WPA2
-    if (waitResponse() != 1) goto fail;
+    if (waitResponse() != 1) return exitAndFail();
 
     sendAT(GF("ID"), ssid);
-    if (waitResponse() != 1) goto fail;
+    if (waitResponse() != 1) return exitAndFail();
 
     sendAT(GF("PK"), pwd);
-    if (waitResponse() != 1) goto fail;
+    if (waitResponse() != 1) return exitAndFail();
 
-    writeChanges();
+    if (!writeChanges()) return exitAndFail();
     exitCommand();
 
     return true;
-
-fail:
-    exitCommand();
-    return false;
   }
 
   bool networkDisconnect() {
@@ -618,21 +635,17 @@ fail:
     if (!commandMode()) return false;  // Return immediately
 
     sendAT(GF("IP"), 2);  // Put in text messaging mode
-    if (waitResponse() !=1) goto fail;
+    if (waitResponse() !=1) return exitAndFail();
     sendAT(GF("PH"), number);  // Set the phone number
-    if (waitResponse() !=1) goto fail;
+    if (waitResponse() !=1) return exitAndFail();
     sendAT(GF("TDD"));  // Set the text delimiter to the standard 0x0D (carriage return)
-    if (waitResponse() !=1) goto fail;
-    if (!writeChanges()) goto fail;
+    if (waitResponse() !=1) return exitAndFail();
+    if (!writeChanges()) return exitAndFail();
 
     exitCommand();
     streamWrite(text);
     stream.write((char)0x0D);  // close off with the carriage return
     return true;
-
-    fail:
-      exitCommand();
-      return false;
   }
 
   /*
@@ -667,7 +680,6 @@ protected:
       while (stream.available() < 4) {};  // wait for any response
       strIP = stream.readStringUntil('\r');  // read result
       strIP.trim();
-      //DBG("<<< ", strIP);
       if (!strIP.endsWith(GF("ERROR"))) gotIP = true;
       delay(100);  // short wait before trying again
     }
@@ -788,7 +800,6 @@ finish:
       data.replace(GSM_NL GSM_NL, GSM_NL);
       data.replace(GSM_NL, "\r\n    ");
       if (data.length()) {
-        //DBG("<<< ", data);
       }
     }
     //DBG('<', index, '>');
@@ -818,7 +829,6 @@ finish:
       // Default guard time is 1s, but the init fxn decreases it to 250 ms
       delay(guardTime);
       streamWrite(GF("+++"));  // enter command mode
-      //DBG("+++");
       success = (1 == waitResponse(guardTime*2));
       triesMade ++;
     }
@@ -838,13 +848,24 @@ finish:
     waitResponse();
   }
 
+  bool exitAndFail(void) {
+    exitCommand();  // Exit command mode
+    return false;
+  }
+
+  void getSeries(void) {
+    sendAT(GF("HS"));  // Get the "Hardware Series";
+    int intRes = readResponseInt();
+    beeType = (XBeeType)intRes;
+    DBG(GF("### Modem: "), getModemName());
+  }
+
   String readResponseString(uint32_t timeout = 1000) {
     TINY_GSM_YIELD();
     unsigned long startMillis = millis();
     while (!stream.available() && millis() - startMillis < timeout) {};
     String res = stream.readStringUntil('\r');  // lines end with carriage returns
     res.trim();
-    //DBG("<<< ", res);
     return res;
   }
 
