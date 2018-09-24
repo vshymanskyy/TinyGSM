@@ -186,7 +186,6 @@ public:
    */
 
   bool init(const char* pin = NULL) {
-    DBG(GF("### Modem Defined:"), getModemName());
     if (!testAT()) {
       return false;
     }
@@ -198,7 +197,7 @@ public:
     sendAT(GF("+CMEE=2"));
     waitResponse();
 #endif
-
+    DBG(GF("### Modem:"), getModemName());
     getSimStatus();
     return true;
   }

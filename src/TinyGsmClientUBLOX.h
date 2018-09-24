@@ -212,7 +212,6 @@ public:
    */
 
   bool init(const char* pin = NULL) {
-    DBG(GF("### Modem Defined:"), getModemName());
     if (!testAT()) {
       return false;
     }
@@ -220,6 +219,7 @@ public:
     if (waitResponse() != 1) {
       return false;
     }
+    DBG(GF("### Modem:"), getModemName());
     int ret = getSimStatus();
     if (ret != SIM_READY && pin != NULL && strlen(pin) > 0) {
       simUnlock(pin);
@@ -228,7 +228,7 @@ public:
   }
 
   String getModemName() {
-    sendAT(GF("CGMI"));
+    sendAT(GF("+CGMI"));
     String res1;
     if (waitResponse(1000L, res1) != 1) {
       return "u-blox Cellular Modem";
@@ -237,7 +237,7 @@ public:
     res1.replace(GSM_NL, " ");
     res1.trim();
 
-    sendAT(GF("GMM"));
+    sendAT(GF("+GMM"));
     String res2;
     if (waitResponse(1000L, res1) != 1) {
       return "u-blox Cellular Modem";
@@ -589,8 +589,8 @@ public:
 protected:
 
   bool modemConnect(const char* host, uint16_t port, uint8_t* mux, bool ssl = false) {
-    sendAT(GF("+USOCR=6"));
-    if (waitResponse(GF(GSM_NL "+USOCR:")) != 1) {
+    sendAT(GF("+USOCR=6"));  // create a socket
+    if (waitResponse(GF(GSM_NL "+USOCR:")) != 1) {  // reply is +USOCR: ## of socket created
       return false;
     }
     *mux = stream.readStringUntil('\n').toInt();
@@ -609,7 +609,7 @@ protected:
     //sendAT(GF("+USOSO="), *mux, GF(",6,2,30000"));
     //waitResponse();
 
-    sendAT(GF("+USOCO="), *mux, ",\"", host, "\",", port);
+    sendAT(GF("+USOCO="), *mux, ",\"", host, "\",", port);  // connect on socket
     int rsp = waitResponse(75000L);
     return (1 == rsp);
   }
