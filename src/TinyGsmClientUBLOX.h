@@ -8,13 +8,9 @@
 
 #ifndef TinyGsmClientUBLOX_h
 #define TinyGsmClientUBLOX_h
-#pragma message("TinyGSM:  TinyGsmClientUBLOX")
+//#pragma message("TinyGSM:  TinyGsmClientUBLOX")
 
 //#define TINY_GSM_DEBUG Serial
-
-#if !defined(TINY_GSM_RX_BUFFER)
-  #define TINY_GSM_RX_BUFFER 64
-#endif
 
 #define TINY_GSM_MUX_COUNT 5
 

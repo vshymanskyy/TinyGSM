@@ -8,13 +8,9 @@
 
 #ifndef TinyGsmClientESP8266_h
 #define TinyGsmClientESP8266_h
-#pragma message("TinyGSM:  TinyGsmClientESP8266")
+//#pragma message("TinyGSM:  TinyGsmClientESP8266")
 
 //#define TINY_GSM_DEBUG Serial
-
-#if !defined(TINY_GSM_RX_BUFFER)
-  #define TINY_GSM_RX_BUFFER 512
-#endif
 
 #define TINY_GSM_MUX_COUNT 5
 

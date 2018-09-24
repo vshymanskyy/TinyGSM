@@ -8,13 +8,9 @@
 
 #ifndef TinyGsmClientA6_h
 #define TinyGsmClientA6_h
-#pragma message("TinyGSM:  TinyGsmClientA6")
+//#pragma message("TinyGSM:  TinyGsmClientA6")
 
 //#define TINY_GSM_DEBUG Serial
-
-#if !defined(TINY_GSM_RX_BUFFER)
-  #define TINY_GSM_RX_BUFFER 256
-#endif
 
 #define TINY_GSM_MUX_COUNT 8
 
