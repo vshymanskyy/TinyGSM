@@ -122,8 +122,7 @@ public:
   virtual int read(uint8_t *buf, size_t size) {
     TINY_GSM_YIELD();
     size_t cnt = 0;
-    uint32_t _startMillis = millis();
-    while (cnt < size && millis() - _startMillis < _timeout) {
+    while (cnt < size && sock_connected) {
       size_t chunk = TinyGsmMin(size-cnt, rx.size());
       if (chunk > 0) {
         rx.get(buf, chunk);
@@ -132,9 +131,8 @@ public:
         continue;
       }
       // TODO: Read directly into user buffer?
-      if (!rx.size() && sock_connected) {
+      if (!rx.size()) {
         at->maintain();
-        //break;
       }
     }
     return cnt;
