@@ -8,7 +8,7 @@
 
 #ifndef TinyGsmClientA6_h
 #define TinyGsmClientA6_h
-//#pragma message("TinyGSM:  TinyGsmClientA6")
+#pragma message("TinyGSM:  TinyGsmClientA6")
 
 //#define TINY_GSM_DEBUG Serial
 

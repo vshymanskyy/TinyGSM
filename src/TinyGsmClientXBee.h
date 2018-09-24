@@ -8,7 +8,7 @@
 
 #ifndef TinyGsmClientXBee_h
 #define TinyGsmClientXBee_h
-//#pragma message("TinyGSM:  TinyGsmClientXBee")
+#pragma message("TinyGSM:  TinyGsmClientXBee")
 
 //#define TINY_GSM_DEBUG Serial
 

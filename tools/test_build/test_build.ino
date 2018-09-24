@@ -3,7 +3,7 @@
  *  DO NOT USE THIS - this is just a compilation test!
  *
  **************************************************************/
-#define TINY_GSM_MODEM_SIM800
+// #define TINY_GSM_MODEM_SIM800
 
 #include <TinyGsmClient.h>
 

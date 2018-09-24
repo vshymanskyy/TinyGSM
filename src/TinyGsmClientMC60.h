@@ -11,7 +11,7 @@
 
 #ifndef TinyGsmClientMC60_h
 #define TinyGsmClientMC60_h
-//#pragma message("TinyGSM:  TinyGsmClientMC60")
+#pragma message("TinyGSM:  TinyGsmClientMC60")
 
 //#define TINY_GSM_DEBUG Serial
 //#define TINY_GSM_USE_HEX

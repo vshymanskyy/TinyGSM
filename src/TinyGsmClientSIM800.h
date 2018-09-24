@@ -8,7 +8,7 @@
 
 #ifndef TinyGsmClientSIM800_h
 #define TinyGsmClientSIM800_h
-//#pragma message("TinyGSM:  TinyGsmClientSIM800")
+#pragma message("TinyGSM:  TinyGsmClientSIM800")
 
 //#define TINY_GSM_DEBUG Serial
 //#define TINY_GSM_USE_HEX
