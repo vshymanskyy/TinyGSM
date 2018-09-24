@@ -316,8 +316,8 @@ public:
   }
 
   bool poweroff() {
-    sendAT(GF("+QPOWD"));
-    return waitResponse(GF("POWERED DOWN")) == 1; // TODO
+    sendAT(GF("+QPOWD=1"));
+    return waitResponse(300, GF("NORMAL POWER DOWN")) == 1;
   }
 
   bool radioOff() {

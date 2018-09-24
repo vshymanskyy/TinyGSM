@@ -239,6 +239,7 @@ public:
    */
 
   virtual bool restart() = 0;
+  virtual bool poweroff() = 0;
 
   /*
    * SIM card functions - only apply to cellular modems
@@ -282,6 +283,7 @@ public:
     return false;
   }
   virtual bool gprsDisconnect() { return false; }
+  virtual bool isGprsConnected() { return false; }
 
   /*
    * IP Address functions

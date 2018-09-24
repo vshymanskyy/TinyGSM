@@ -325,7 +325,10 @@ public:
     return init();
   }
 
-  bool poweroff() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool poweroff() {
+    sendAT(GF("+CPWROFF"));
+    return waitResponse(40000L) == 1;
+  }
 
   bool radioOff() {
     sendAT(GF("+CFUN=0"));

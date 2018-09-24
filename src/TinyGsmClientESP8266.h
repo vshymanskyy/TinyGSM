@@ -297,7 +297,10 @@ public:
     return init();
   }
 
-  bool poweroff() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool poweroff() {
+    sendAT(GF("+GSLP=0"));  // Power down indefinitely - until manually reset!
+    return waitResponse() == 1;
+  }
 
   bool radioOff() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
