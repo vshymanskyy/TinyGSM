@@ -235,14 +235,14 @@ public:
 
     sendAT(GF("+GMM"));
     String res2;
-    if (waitResponse(1000L, res1) != 1) {
+    if (waitResponse(1000L, res2) != 1) {
       return "u-blox Cellular Modem";
     }
     res2.replace(GSM_NL "OK" GSM_NL, "");
     res2.replace(GSM_NL, " ");
     res2.trim();
 
-    return res1 + res2;
+    return res1 + String(' ') + res2;
   }
 
   void setBaud(unsigned long baud) {
