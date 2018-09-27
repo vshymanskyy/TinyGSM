@@ -276,9 +276,9 @@ public:
       {
           sendAT();
           if (waitResponse(200) == 1) {
+              exitCommand();
               return true;
           }
-          exitCommand();
       }
       delay(100);
     }

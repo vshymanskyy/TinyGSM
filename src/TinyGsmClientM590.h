@@ -207,10 +207,7 @@ public:
   bool testAT(unsigned long timeout = 10000L) {
     for (unsigned long start = millis(); millis() - start < timeout; ) {
       sendAT(GF(""));
-      if (waitResponse(200) == 1) {
-        delay(100);
-        return true;
-      }
+      if (waitResponse(200) == 1) return true;
       delay(100);
     }
     return false;
