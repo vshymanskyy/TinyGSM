@@ -276,9 +276,9 @@ public:
       {
           sendAT();
           if (waitResponse(200) == 1) {
+              exitCommand();
               return true;
           }
-          exitCommand();
       }
       delay(100);
     }
@@ -402,7 +402,9 @@ public:
     exitCommand();
   }
 
-  bool poweroff() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool poweroff() {  // Not supported
+    return false;
+  }
 
   bool radioOff() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 

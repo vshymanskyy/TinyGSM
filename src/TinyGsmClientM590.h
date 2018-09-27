@@ -12,10 +12,6 @@
 
 //#define TINY_GSM_DEBUG Serial
 
-#if !defined(TINY_GSM_RX_BUFFER)
-  #define TINY_GSM_RX_BUFFER 256
-#endif
-
 #define TINY_GSM_MUX_COUNT 2
 
 #include <TinyGsmCommon.h>
@@ -122,8 +118,7 @@ public:
   virtual int read(uint8_t *buf, size_t size) {
     TINY_GSM_YIELD();
     size_t cnt = 0;
-    uint32_t _startMillis = millis();
-    while (cnt < size && millis() - _startMillis < _timeout) {
+    while (cnt < size && sock_connected) {
       size_t chunk = TinyGsmMin(size-cnt, rx.size());
       if (chunk > 0) {
         rx.get(buf, chunk);
@@ -132,9 +127,8 @@ public:
         continue;
       }
       // TODO: Read directly into user buffer?
-      if (!rx.size() && sock_connected) {
+      if (!rx.size()) {
         at->maintain();
-        //break;
       }
     }
     return cnt;
@@ -186,7 +180,6 @@ public:
    */
 
   bool init(const char* pin = NULL) {
-    DBG(GF("### Modem Defined:"), getModemName());
     if (!testAT()) {
       return false;
     }
@@ -198,7 +191,7 @@ public:
     sendAT(GF("+CMEE=2"));
     waitResponse();
 #endif
-
+    DBG(GF("### Modem:"), getModemName());
     getSimStatus();
     return true;
   }
@@ -214,10 +207,7 @@ public:
   bool testAT(unsigned long timeout = 10000L) {
     for (unsigned long start = millis(); millis() - start < timeout; ) {
       sendAT(GF(""));
-      if (waitResponse(200) == 1) {
-        delay(100);
-        return true;
-      }
+      if (waitResponse(200) == 1) return true;
       delay(100);
     }
     return false;

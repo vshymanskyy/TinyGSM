@@ -13,10 +13,6 @@
 //#define TINY_GSM_DEBUG Serial
 //#define TINY_GSM_USE_HEX
 
-#if !defined(TINY_GSM_RX_BUFFER)
-  #define TINY_GSM_RX_BUFFER 64
-#endif
-
 #define TINY_GSM_MUX_COUNT 12
 
 #include <TinyGsmCommon.h>
@@ -213,7 +209,6 @@ public:
    */
 
   bool init(const char* pin = NULL) {
-    DBG(GF("### Modem Defined:"), getModemName());
     if (!testAT()) {
       return false;
     }
@@ -221,6 +216,7 @@ public:
     if (waitResponse() != 1) {
       return false;
     }
+    DBG(GF("### Modem:"), getModemName());
     getSimStatus();
     return true;
   }
@@ -236,10 +232,7 @@ public:
   bool testAT(unsigned long timeout = 10000L) {
     for (unsigned long start = millis(); millis() - start < timeout; ) {
       sendAT(GF(""));
-      if (waitResponse(200) == 1) {
-        delay(100);
-        return true;
-      }
+      if (waitResponse(200) == 1) return true;
       delay(100);
     }
     return false;
@@ -308,8 +301,9 @@ public:
   }
 
   bool poweroff() {
-    sendAT(GF("+QPOWD"));
-    return waitResponse(GF("POWERED DOWN")) == 1; // TODO
+    sendAT(GF("+QPOWD=1"));
+    waitResponse(300);  // returns OK first
+    return waitResponse(300, GF("POWERED DOWN")) == 1;
   }
 
   bool radioOff() {

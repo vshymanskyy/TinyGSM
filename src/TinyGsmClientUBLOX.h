@@ -12,10 +12,6 @@
 
 //#define TINY_GSM_DEBUG Serial
 
-#if !defined(TINY_GSM_RX_BUFFER)
-  #define TINY_GSM_RX_BUFFER 64
-#endif
-
 #define TINY_GSM_MUX_COUNT 5
 
 #include <TinyGsmCommon.h>
@@ -212,7 +208,6 @@ public:
    */
 
   bool init(const char* pin = NULL) {
-    DBG(GF("### Modem Defined:"), getModemName());
     if (!testAT()) {
       return false;
     }
@@ -220,6 +215,7 @@ public:
     if (waitResponse() != 1) {
       return false;
     }
+    DBG(GF("### Modem:"), getModemName());
     int ret = getSimStatus();
     if (ret != SIM_READY && pin != NULL && strlen(pin) > 0) {
       simUnlock(pin);
@@ -228,7 +224,25 @@ public:
   }
 
   String getModemName() {
-    return "u-blox Cellular Modem";
+    sendAT(GF("+CGMI"));
+    String res1;
+    if (waitResponse(1000L, res1) != 1) {
+      return "u-blox Cellular Modem";
+    }
+    res1.replace(GSM_NL "OK" GSM_NL, "");
+    res1.replace(GSM_NL, " ");
+    res1.trim();
+
+    sendAT(GF("+GMM"));
+    String res2;
+    if (waitResponse(1000L, res2) != 1) {
+      return "u-blox Cellular Modem";
+    }
+    res2.replace(GSM_NL "OK" GSM_NL, "");
+    res2.replace(GSM_NL, " ");
+    res2.trim();
+
+    return res1 + String(' ') + res2;
   }
 
   void setBaud(unsigned long baud) {
@@ -238,10 +252,7 @@ public:
   bool testAT(unsigned long timeout = 10000L) {
     for (unsigned long start = millis(); millis() - start < timeout; ) {
       sendAT(GF(""));
-      if (waitResponse(200) == 1) {
-        delay(100);
-        return true;
-      }
+      if (waitResponse(200) == 1) return true;
       delay(100);
     }
     return false;
@@ -307,7 +318,10 @@ public:
     return init();
   }
 
-  bool poweroff() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool poweroff() {
+    sendAT(GF("+CPWROFF"));
+    return waitResponse(40000L) == 1;
+  }
 
   bool radioOff() {
     sendAT(GF("+CFUN=0"));
@@ -568,8 +582,8 @@ public:
 protected:
 
   bool modemConnect(const char* host, uint16_t port, uint8_t* mux, bool ssl = false) {
-    sendAT(GF("+USOCR=6"));
-    if (waitResponse(GF(GSM_NL "+USOCR:")) != 1) {
+    sendAT(GF("+USOCR=6"));  // create a socket
+    if (waitResponse(GF(GSM_NL "+USOCR:")) != 1) {  // reply is +USOCR: ## of socket created
       return false;
     }
     *mux = stream.readStringUntil('\n').toInt();
@@ -588,7 +602,7 @@ protected:
     //sendAT(GF("+USOSO="), *mux, GF(",6,2,30000"));
     //waitResponse();
 
-    sendAT(GF("+USOCO="), *mux, ",\"", host, "\",", port);
+    sendAT(GF("+USOCO="), *mux, ",\"", host, "\",", port);  // connect on socket
     int rsp = waitResponse(75000L);
     return (1 == rsp);
   }

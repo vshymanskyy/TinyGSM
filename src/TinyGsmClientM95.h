@@ -13,10 +13,6 @@
 //#define TINY_GSM_DEBUG Serial
 //#define TINY_GSM_USE_HEX
 
-#if !defined(TINY_GSM_RX_BUFFER)
-  #define TINY_GSM_RX_BUFFER 64
-#endif
-
 #define TINY_GSM_MUX_COUNT 6
 
 #include <TinyGsmCommon.h>
@@ -137,7 +133,7 @@ public:
       // TODO: Read directly into user buffer?
       at->maintain();
       if (sock_available > 0) {
-        at->modemRead(rx.free(), mux);
+        sock_available -= at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available), mux);
       } else {
         break;
       }
@@ -213,7 +209,6 @@ public:
    */
 
   bool init(const char* pin = NULL) {
-    DBG(GF("### Modem Defined:"), getModemName());
     if (!testAT()) {
       return false;
     }
@@ -225,7 +220,7 @@ public:
     sendAT(GF("+CMEE=2"));
     waitResponse();
 #endif
-
+    DBG(GF("### Modem:"), getModemName());
     getSimStatus();
     return true;
   }
@@ -241,10 +236,7 @@ public:
   bool testAT(unsigned long timeout = 10000L) {
     for (unsigned long start = millis(); millis() - start < timeout; ) {
       sendAT(GF(""));
-      if (waitResponse(200) == 1) {
-        delay(100);
-        return true;
-      }
+      if (waitResponse(200) == 1) return true;
       delay(100);
     }
     return false;
@@ -316,8 +308,8 @@ public:
   }
 
   bool poweroff() {
-    sendAT(GF("+QPOWD"));
-    return waitResponse(GF("POWERED DOWN")) == 1; // TODO
+    sendAT(GF("+QPOWD=1"));
+    return waitResponse(300, GF("NORMAL POWER DOWN")) == 1;
   }
 
   bool radioOff() {
@@ -328,6 +320,8 @@ public:
     delay(3000);
     return true;
   }
+
+  bool sleepEnable(bool enable = true) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
   /*
    * SIM card functions
@@ -644,14 +638,11 @@ public:
 protected:
 
   bool modemConnect(const char* host, uint16_t port, uint8_t mux, bool ssl = false) {
-    sendAT(GF("+QIOPEN="), GF("\"TCP"), GF("\",\""), host, GF("\","), port);
+    sendAT(GF("+QIOPEN="), mux, GF("\"TCP"), GF("\",\""), host, GF("\","), port);
     int rsp = waitResponse(75000L,
                            GF("CONNECT OK" GSM_NL),
                            GF("CONNECT FAIL" GSM_NL),
                            GF("ALREADY CONNECT" GSM_NL));
-    if ( rsp != 1 ) {
-      return false;
-    }
     return (1 == rsp);
   }
 

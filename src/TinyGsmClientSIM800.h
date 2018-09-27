@@ -13,10 +13,6 @@
 //#define TINY_GSM_DEBUG Serial
 //#define TINY_GSM_USE_HEX
 
-#if !defined(TINY_GSM_RX_BUFFER)
-  #define TINY_GSM_RX_BUFFER 64
-#endif
-
 #define TINY_GSM_MUX_COUNT 5
 
 #include <TinyGsmCommon.h>
@@ -150,7 +146,7 @@ public:
       // TODO: Read directly into user buffer?
       at->maintain();
       if (sock_available > 0) {
-        at->modemRead(rx.free(), mux);
+        sock_available -= at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available), mux);
       } else {
         break;
       }
@@ -227,7 +223,6 @@ public:
    */
 
   bool init(const char* pin = NULL) {
-    DBG(GF("### Modem Defined:"), getModemName());
     if (!testAT()) {
       return false;
     }
@@ -237,6 +232,7 @@ public:
     if (waitResponse() != 1) {
       return false;
     }
+    DBG(GF("### Modem:"), getModemName());
     getSimStatus();
     return true;
   }
@@ -262,10 +258,7 @@ public:
     //streamWrite(GF("AAAAA" GSM_NL));  // TODO: extra A's to help detect the baud rate
     for (unsigned long start = millis(); millis() - start < timeout; ) {
       sendAT(GF(""));
-      if (waitResponse(200) == 1) {
-        delay(100);
-        return true;
-      }
+      if (waitResponse(200) == 1) return true;
       delay(100);
     }
     return false;

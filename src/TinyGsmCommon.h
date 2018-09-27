@@ -31,6 +31,10 @@
   #define TINY_GSM_YIELD() { delay(0); }
 #endif
 
+#if !defined(TINY_GSM_RX_BUFFER)
+  #define TINY_GSM_RX_BUFFER 256
+#endif
+
 #define TINY_GSM_ATTR_NOT_AVAILABLE __attribute__((error("Not available on this modem type")))
 #define TINY_GSM_ATTR_NOT_IMPLEMENTED __attribute__((error("Not implemented")))
 
@@ -239,6 +243,7 @@ public:
    */
 
   virtual bool restart() = 0;
+  virtual bool poweroff() = 0;
 
   /*
    * SIM card functions - only apply to cellular modems
@@ -282,6 +287,7 @@ public:
     return false;
   }
   virtual bool gprsDisconnect() { return false; }
+  virtual bool isGprsConnected() { return false; }
 
   /*
    * IP Address functions
