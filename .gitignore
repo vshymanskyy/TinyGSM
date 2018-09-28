@@ -14,16 +14,16 @@
 .cproject
 .project
 .settings
-
-# Markers
-.development
-
-# Extras
-extras/docs/*
-
 .pioenvs
 .piolibdeps
 .clang_complete
 .gcc-flags.json
 platformio.ini
 lib/readme.txt
+.vscode
+
+# Markers
+.development
+
+# Extras
+extras/docs/*
