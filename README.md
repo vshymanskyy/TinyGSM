@@ -54,7 +54,13 @@ Decoding 7,8,16-bit response | ✔      |        | ✔         | ✔    | ✘   
 Sending                      | ✔      |        | ✔         | ✔    | ✘       | ✔
 Sending Unicode              | ✔      |        | ◌         | ✘    | ✘       |
 Reading                      | ✔      |        |           |      | ✘       |
+Reading Unicode              | ✔      |        |           |      | ✘       |
 Incoming message event       | ✔      |        |           | ?    | ✘       |
+**Phonebook**
+Add entry                    | ✔      |        |           |      |         |
+Delete entry                 | ✔      |        |           |      |         |
+Read entry                   | ✔      |        |           |      |         |
+Find entries                 | ✔      |        |           |      |         |
 **Calls**
 Dial, hangup                 | ✔      |        | ✔         | ✘    | ✘       | ✘
 Receiving calls              | ✔      |        | ✔         | ✘    | ✘       | ✘
