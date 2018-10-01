@@ -2,7 +2,7 @@ This is a fork of [vshymanskyy's](https://github.com/vshymanskyy/TinyGSM) reposi
 
 **Minimum required Arduino IDE version: 1.8.6.**
 
-C++14 compatibility is required: replace `gnu++11` to `gnu++14` in your <Arduino IDE directory>/hardware/arduino/avr/platform.txt.
+C++14 compatibility is required: replace `gnu++11` to `gnu++14` in your `<Arduino IDE directory>/hardware/arduino/avr/platform.txt`.
 
 ![TinyGSM logo](https://cdn.rawgit.com/vshymanskyy/TinyGSM/d18e93dc51fe988a0b175aac647185457ef640b5/extras/logo.svg)
 
