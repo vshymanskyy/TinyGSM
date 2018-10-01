@@ -8,16 +8,8 @@
  *
  **************************************************************/
 
-// Select your modem:
-#define TINY_GSM_MODEM_SIM800
-// #define TINY_GSM_MODEM_SIM808
-// #define TINY_GSM_MODEM_SIM900
-// #define TINY_GSM_MODEM_UBLOX
-// #define TINY_GSM_MODEM_BG96
-// #define TINY_GSM_MODEM_A6
-// #define TINY_GSM_MODEM_A7
-// #define TINY_GSM_MODEM_M590
-// #define TINY_GSM_MODEM_ESP8266
+// Hologram Dash uses UBLOX U2 modems
+#define TINY_GSM_MODEM_UBLOX
 
 // Increase RX buffer if needed
 //#define TINY_GSM_RX_BUFFER 512
@@ -30,16 +22,11 @@
 // Uncomment this if you want to use SSL
 //#define USE_SSL
 
-// Set serial for debug console (to the Serial Monitor, default speed 115200)
+// Set serial for debug console (to the Serial Monitor, speed 115200)
 #define SerialMon Serial
 
-// Use Hardware Serial on Mega, Leonardo, Micro
-#define SerialAT Serial1
-
-// or Software Serial on Uno, Nano
-//#include <SoftwareSerial.h>
-//SoftwareSerial SerialAT(2, 3); // RX, TX
-
+// We'll be using SerialSystem in Passthrough mode
+#define SerialAT SerialSystem
 
 // Your GPRS credentials
 // Leave empty, if missing user or pass
@@ -54,16 +41,16 @@ const char resource[] = "/TinyGSM/logo.txt";
 #ifdef DUMP_AT_COMMANDS
   #include <StreamDebugger.h>
   StreamDebugger debugger(SerialAT, SerialMon);
-  TinyGsm modem(debugger);
+  TinyGsm mdm(debugger);
 #else
-  TinyGsm modem(SerialAT);
+  TinyGsm mdm(SerialAT);
 #endif
 
 #ifdef USE_SSL
-  TinyGsmClientSecure client(modem);
+  TinyGsmClientSecure client(mdm);
   const int  port = 443;
 #else
-  TinyGsmClient client(modem);
+  TinyGsmClient client(mdm);
   const int  port = 80;
 #endif
 
@@ -72,26 +59,26 @@ void setup() {
   SerialMon.begin(115200);
   delay(10);
 
-  // Set GSM module baud rate
-  SerialAT.begin(115200);
+  // Set up Passthrough
+  HologramCloud.enterPassthrough();
   delay(3000);
 
   // Restart takes quite some time
   // To skip it, call init() instead of restart()
   SerialMon.println(F("Initializing modem..."));
-  modem.restart();
+  mdm.restart();
 
-  String modemInfo = modem.getModemInfo();
+  String modemInfo = mdm.getModemInfo();
   SerialMon.print(F("Modem: "));
   SerialMon.println(modemInfo);
 
   // Unlock your SIM card with a PIN
-  //modem.simUnlock("1234");
+  //mdm.simUnlock("1234");
 }
 
 void loop() {
   SerialMon.print(F("Waiting for network..."));
-  if (!modem.waitForNetwork()) {
+  if (!mdm.waitForNetwork()) {
     SerialMon.println(" fail");
     delay(10000);
     return;
@@ -100,7 +87,7 @@ void loop() {
 
   SerialMon.print(F("Connecting to "));
   SerialMon.print(apn);
-  if (!modem.gprsConnect(apn, user, pass)) {
+  if (!mdm.gprsConnect(apn, user, pass)) {
     SerialMon.println(" fail");
     delay(10000);
     return;
@@ -137,7 +124,7 @@ void loop() {
   client.stop();
   SerialMon.println(F("Server disconnected"));
 
-  modem.gprsDisconnect();
+  mdm.gprsDisconnect();
   SerialMon.println(F("GPRS disconnected"));
 
   // Do nothing forevermore

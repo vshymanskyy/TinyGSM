@@ -13,6 +13,8 @@
 #define TINY_GSM_MODEM_SIM800
 // #define TINY_GSM_MODEM_SIM808
 // #define TINY_GSM_MODEM_SIM900
+// #define TINY_GSM_MODEM_UBLOX
+// #define TINY_GSM_MODEM_BG96
 // #define TINY_GSM_MODEM_A6
 // #define TINY_GSM_MODEM_A7
 // #define TINY_GSM_MODEM_M590
@@ -97,7 +99,8 @@ void loop() {
     return;
   }
 
-  bool res;
+  bool res = modem.isGprsConnected();
+  DBG("GPRS status:", res ? "connected" : "not connected");
 
   String ccid = modem.getSimCCID();
   DBG("CCID:", ccid);
@@ -125,6 +128,12 @@ void loop() {
   // This is only supported on SIMxxx series
   String gsmLoc = modem.getGsmLocation();
   DBG("GSM location:", gsmLoc);
+
+  // This is only supported on SIMxxx series
+  String gsmTime = modem.getGSMDateTime(DATE_TIME);
+  DBG("GSM Time:", gsmTime);
+  String gsmDate = modem.getGSMDateTime(DATE_DATE);
+  DBG("GSM Date:", gsmDate);
 
   String ussd_balance = modem.sendUSSD("*111#");
   DBG("Balance (USSD):", ussd_balance);
