@@ -712,7 +712,7 @@ public:
 
   bool callHangup() {
     sendAT(GF("H"));
-    return waitResponse() == 1;
+    return waitResponse(20000L) == 1;
   }
 
   bool receiveCallerIdentification(const bool receive) {
