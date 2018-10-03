@@ -691,13 +691,13 @@ public:
   }
 
   // Returns true on pick-up, false on error/busy
-  bool callNumber(const String& number) {
+  bool callNumber(const String& number, const uint32_t &waitMs = 60000UL) {
     if (number == GF("last")) {
       sendAT(GF("DL"));
     } else {
       sendAT(GF("D"), number, ";");
     }
-    int status = waitResponse(60000L,
+    int status = waitResponse(waitMs,
                               GFP(GSM_OK),
                               GF("BUSY" GSM_NL),
                               GF("NO ANSWER" GSM_NL),
