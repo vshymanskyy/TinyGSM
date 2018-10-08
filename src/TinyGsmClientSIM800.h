@@ -118,11 +118,11 @@ public:
 
   virtual int available() {
     TINY_GSM_YIELD();
-    if (!rx.size() && sock_connected) {
+    if (!rx.size()) {
       // Workaround: sometimes SIM800 forgets to notify about data arrival.
       // TODO: Currently we ping the module periodically,
       // but maybe there's a better indicator that we need to poll
-      if (millis() - prev_check > 500) {
+      if (millis() - prev_check > 250) {
         got_data = true;
         prev_check = millis();
       }
@@ -147,7 +147,7 @@ public:
       // Workaround: sometimes SIM800 forgets to notify about data arrival.
       // TODO: Currently we ping the module periodically,
       // but maybe there's a better indicator that we need to poll
-      if (millis() - prev_check > 500)  {
+      if (millis() - prev_check > 250) {
         got_data = true;
         prev_check = millis();
       }

@@ -112,7 +112,7 @@ public:
 
   virtual int available() {
     TINY_GSM_YIELD();
-    if (!rx.size() && sock_connected) {
+    if (!rx.size()) {
       at->maintain();
     }
     return rx.size();
@@ -191,7 +191,7 @@ public:
     if (waitResponse() != 1) {
       return false;
     }
-    sendAT(GF("+CMEE=0"));  // Turn of verbose errors
+    sendAT(GF("+CMEE=0"));  // Turn off verbose errors
     waitResponse();
     sendAT(GF("+CMER=3,0,0,2"));  // Set unsolicited result code output destination
     waitResponse();
