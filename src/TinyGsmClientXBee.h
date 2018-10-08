@@ -578,6 +578,8 @@ public:
   bool networkDisconnect() {
     if (!commandMode()) return false;  // return immediately
     sendAT(GF("NR0"));  // Do a network reset in order to disconnect
+    // NOTE:  On wifi modules, using a network reset will not
+    // allow the same ssid to re-join without rebooting the module.
     int res = (1 == waitResponse(5000));
     writeChanges();
     exitCommand();

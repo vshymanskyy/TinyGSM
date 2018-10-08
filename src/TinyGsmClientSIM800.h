@@ -135,7 +135,7 @@ public:
     TINY_GSM_YIELD();
     at->maintain();
     size_t cnt = 0;
-    while (cnt < size && sock_connected) {
+    while (cnt < size) {
       size_t chunk = TinyGsmMin(size-cnt, rx.size());
       if (chunk > 0) {
         rx.get(buf, chunk);
@@ -144,6 +144,13 @@ public:
         continue;
       }
       // TODO: Read directly into user buffer?
+      // Workaround: sometimes SIM800 forgets to notify about data arrival.
+      // TODO: Currently we ping the module periodically,
+      // but maybe there's a better indicator that we need to poll
+      if (millis() - prev_check > 500)  {
+        got_data = true;
+        prev_check = millis();
+      }
       at->maintain();
       if (sock_available > 0) {
         sock_available -= at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available), mux);
