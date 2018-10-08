@@ -116,7 +116,7 @@ public:
 
   virtual int available() {
     TINY_GSM_YIELD();
-    if (!rx.size() && sock_connected) {
+    if (!rx.size()) {
       at->maintain();
     }
     return rx.size() + sock_available;
