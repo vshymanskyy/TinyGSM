@@ -58,6 +58,7 @@ public:
 class GsmClient : public Client
 {
   friend class TinyGsmXBee;
+  // typedef TinyGsmFifo<uint8_t, TINY_GSM_RX_BUFFER> RxFifo;
 
 public:
   GsmClient() {}
@@ -137,19 +138,45 @@ public:
   virtual int available() {
     TINY_GSM_YIELD();
     return at->stream.available();
+    // if (!rx.size() || at->stream.available()) {
+    //   at->maintain();
+    // }
+    // return at->stream.available() + rx.size();
   }
 
   virtual int read(uint8_t *buf, size_t size) {
     TINY_GSM_YIELD();
     return at->stream.readBytes((char *)buf, size);
+    // size_t cnt = 0;
+    // uint32_t _startMillis = millis();
+    // while (cnt < size && millis() - _startMillis < _timeout) {
+    //   size_t chunk = TinyGsmMin(size-cnt, rx.size());
+    //   if (chunk > 0) {
+    //     rx.get(buf, chunk);
+    //     buf += chunk;
+    //     cnt += chunk;
+    //     continue;
+    //   }
+    //   // TODO: Read directly into user buffer?
+    //   if (!rx.size() || at->stream.available()) {
+    //     at->maintain();
+    //   }
+    // }
+    // return cnt;
   }
 
   virtual int read() {
     TINY_GSM_YIELD();
     return at->stream.read();
+    // uint8_t c;
+    // if (read(&c, 1) == 1) {
+    //   return c;
+    // }
+    // return -1;
   }
 
   virtual int peek() { return at->stream.peek(); }
+  // virtual int peek() { return -1; } //TODO
   virtual void flush() { at->stream.flush(); }
 
   virtual uint8_t connected() {
@@ -170,6 +197,7 @@ private:
   TinyGsmXBee*  at;
   uint8_t       mux;
   bool          sock_connected;
+  // RxFifo        rx;
 };
 
 
@@ -286,7 +314,16 @@ public:
     return false;
   }
 
-  void maintain() {}
+  void maintain() {
+    // this only happens OUTSIDE command mode, so if we're getting characters
+    // they should be data received from the TCP connection
+    // TINY_GSM_YIELD();
+    // uint32_t _startMillis = millis();
+    // while (stream.available() || millis() - _startMillis < 10) {
+    //   char c = stream.read();
+    //   if (c > 0) sockets[0]->rx.put(c);
+    // }
+  }
 
   bool factoryDefault() {
     if (!commandMode()) return false;  // Return immediately
