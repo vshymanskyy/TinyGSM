@@ -464,7 +464,7 @@ public:
       waitResponse();
     }
 
-	// 20181016 https://kmpelectronics.eu/ Plamen Kovandjiev - We added command to set authentication in Auto. 
+	// 20181016 https://kmpelectronics.eu/ Plamen Kovandjiev - We added command to set authentication module in Auto.
 	// This helps the module connecting to network if it wants some authentication: none, CHAP or PAP.
 	// Command help:
 	// 6: authentication - the <param_val> parameter selects the authentication type:
