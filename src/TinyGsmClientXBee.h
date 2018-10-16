@@ -78,45 +78,45 @@ public:
 
 public:
   virtual int connect(const char *host, uint16_t port) {
-    at->streamClear();  // Empty anything remaining in the buffer;
-    bool sock_connected = false;
+    at->streamClear();  // Empty anything in the buffer before starting
     if (at->commandMode())  {  // Don't try if we didn't successfully get into command mode
       sock_connected = at->modemConnect(host, port, mux, false);
       at->writeChanges();
       at->exitCommand();
     }
-    at->streamClear();  // Empty anything remaining in the buffer;
+    else
+      sock_connected = false;
     return sock_connected;
   }
 
   virtual int connect(IPAddress ip, uint16_t port) {
-    at->streamClear();  // Empty anything remaining in the buffer;
-    bool sock_connected = false;
+    at->streamClear();  // Empty anything in the buffer before starting
     if (at->commandMode())  {  // Don't try if we didn't successfully get into command mode
       sock_connected = at->modemConnect(ip, port, mux, false);
       at->writeChanges();
       at->exitCommand();
     }
-    at->streamClear();  // Empty anything remaining in the buffer;
+    else
+      sock_connected = false;
     return sock_connected;
   }
 
   // This is a hack to shut the socket by setting the timeout to zero and
-  //  then sending an empty line to the server.
+  // then sending an empty line to the server.
   virtual void stop() {
-    at->streamClear();  // Empty anything remaining in the buffer;
+    at->streamClear();  // Empty anything in the buffer
     at->commandMode();
     at->sendAT(GF("TM0"));  // Set socket timeout to 0;
     at->waitResponse();
     at->writeChanges();
     at->exitCommand();
-    at->modemSend("", 1, mux);
+    at->streamWrite("");
     at->commandMode();
     at->sendAT(GF("TM64"));  // Set socket timeout back to 10 seconds;
     at->waitResponse();
     at->writeChanges();
     at->exitCommand();
-    at->streamClear();  // Empty anything remaining in the buffer;
+    at->streamClear();  // Empty anything remaining in the buffer
     sock_connected = false;
   }
 
@@ -141,7 +141,7 @@ public:
 
   virtual int read(uint8_t *buf, size_t size) {
     TINY_GSM_YIELD();
-    return at->stream.readBytes((char*)buf, size);
+    return at->stream.readBytes((char *)buf, size);
   }
 
   virtual int read() {
@@ -178,32 +178,32 @@ class GsmClientSecure : public GsmClient
 public:
   GsmClientSecure() {}
 
-  GsmClientSecure(TinyGsmXBee& modem, uint8_t mux = 1)
+  GsmClientSecure(TinyGsmXBee& modem, uint8_t mux = 0)
     : GsmClient(modem, mux)
   {}
 
 public:
   virtual int connect(const char *host, uint16_t port) {
-    at->streamClear();  // Empty anything remaining in the buffer;
-    bool sock_connected = false;
+    at->streamClear();  // Empty anything in the buffer before starting
     if (at->commandMode())  {  // Don't try if we didn't successfully get into command mode
       sock_connected = at->modemConnect(host, port, mux, true);
       at->writeChanges();
       at->exitCommand();
     }
-    at->streamClear();  // Empty anything remaining in the buffer;
+    else
+      sock_connected = false;
     return sock_connected;
   }
 
   virtual int connect(IPAddress ip, uint16_t port) {
-    at->streamClear();  // Empty anything remaining in the buffer;
-    bool sock_connected = false;
+    at->streamClear();  // Empty anything in the buffer before starting
     if (at->commandMode())  {  // Don't try if we didn't successfully get into command mode
       sock_connected = at->modemConnect(ip, port, mux, true);
       at->writeChanges();
       at->exitCommand();
     }
-    at->streamClear();  // Empty anything remaining in the buffer;
+    else
+      sock_connected = false;
     return sock_connected;
   }
 };
@@ -216,6 +216,7 @@ public:
   {
       beeType = XBEE_UNKNOWN;  // Start not knowing what kind of bee it is
       guardTime = TINY_GSM_XBEE_GUARD_TIME;  // Start with the default guard time of 1 second
+      memset(sockets, 0, sizeof(sockets));
   }
 
   /*
@@ -369,7 +370,7 @@ public:
     }
 
     if (beeType != XBEE_S6B_WIFI) {
-      sendAT(GF("AM1"));  // Turn of airplane mode
+      sendAT(GF("AM0"));  // Turn off airplane mode
       if (waitResponse() != 1) return exitAndFail();
       if (!writeChanges()) return exitAndFail();
     }
@@ -681,7 +682,7 @@ protected:
     while (!gotIP && millis() - startMillis < 45000L)  // the lookup can take a while
     {
       sendAT(GF("LA"), host);
-      while (stream.available() < 4) {};  // wait for any response
+      while (stream.available() < 4 && millis() - startMillis < 45000L) {};  // wait for any response
       strIP = stream.readStringUntil('\r');  // read result
       strIP.trim();
       if (!strIP.endsWith(GF("ERROR"))) gotIP = true;
@@ -740,7 +741,7 @@ public:
 
   void streamClear(void) {
     TINY_GSM_YIELD();
-    while (stream.available()) { stream.read(); }
+    while (stream.available()) { stream.read();}
   }
 
   template<typename... Args>
