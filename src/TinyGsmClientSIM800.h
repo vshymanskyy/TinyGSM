@@ -439,6 +439,16 @@ public:
     return waitResponse() == 1;
   }
 
+  bool netlightEnable(bool enable = true) {
+      sendAT(GF("+CNETLIGHT="), enable);
+      bool ok = waitResponse() == 1;
+
+      sendAT(GF("+CSGS="), enable);
+      ok &= waitResponse() == 1;
+
+      return ok;
+  }
+
   /*
    * SIM card functions
    */

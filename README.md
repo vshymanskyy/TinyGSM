@@ -70,6 +70,8 @@ DTMF decoding                | ◌      |        | ✘         | ✘    | ✘   
 **Location**
 GSM location service         | ✔      | ✔      | ✘         | ✘    | ✘       | ✔
 GPS/GNSS                     | ✔¹     | ✘      | ◌¹        | ✘    | ✘       | ✘
+**Misc**
+NETLIGHT (LED) control       | ✔      |        |           |      |         |
 
 ✔ - implemented  ◌ - planned  ✘ - not available on this modem
 ¹ - only some device models or firmware revisions have this feature (SIM8xx R14.18, A7, etc.)
