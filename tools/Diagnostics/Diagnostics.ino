@@ -14,6 +14,7 @@
 // #define TINY_GSM_MODEM_SIM808
 // #define TINY_GSM_MODEM_SIM900
 // #define TINY_GSM_MODEM_UBLOX
+// #define TINY_GSM_MODEM_BG96
 // #define TINY_GSM_MODEM_A6
 // #define TINY_GSM_MODEM_A7
 // #define TINY_GSM_MODEM_M590
@@ -56,6 +57,7 @@ const char resource[] = "/TinyGSM/logo.txt";
 const int  port = 80;
 TinyGsmClient client(modem);
 
+// For SSL:
 //const int  port = 443;
 //TinyGsmClientSecure client(modem);
 
@@ -155,7 +157,7 @@ void loop() {
   while (client.connected() && millis() - timeout < 10000L) {
     while (client.available()) {
       char c = client.read();
-      SerialMon.print(c);
+      //SerialMon.print(c);
       bytesReceived += 1;
       timeout = millis();
     }
