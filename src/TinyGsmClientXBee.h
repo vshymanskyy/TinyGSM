@@ -597,14 +597,20 @@ public:
   bool networkConnect(const char* ssid, const char* pwd) {
 
     if (!commandMode()) return false;  // return immediately
+    //nh For no pwd don't set setscurity or pwd
+    if (NULL == ssid ) return exitAndFail(); 
 
-    sendAT(GF("EE"), 2);  // Set security to WPA2
+    if (NULL != pwd) 
+    {
+      sendAT(GF("EE"), 2);  // Set security to WPA2
+      if (waitResponse() != 1) return exitAndFail();
+      sendAT(GF("PK"), pwd);
+    } else {
+      sendAT(GF("EE"), 0);  // Set No security 
+    }
     if (waitResponse() != 1) return exitAndFail();
 
     sendAT(GF("ID"), ssid);
-    if (waitResponse() != 1) return exitAndFail();
-
-    sendAT(GF("PK"), pwd);
     if (waitResponse() != 1) return exitAndFail();
 
     if (!writeChanges()) return exitAndFail();
