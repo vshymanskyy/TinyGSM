@@ -431,7 +431,7 @@ public:
     }
 
     else if (!maintainAssociation){
-        sendAT(GF("SO"),1);  // For lowest power, dissassociated deep sleep
+        sendAT(GF("SO"),1);  // For supported cellular modules, maintain association
                              // Not supported by all modules, will return "ERROR"
         waitResponse();
     }
