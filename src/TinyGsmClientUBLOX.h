@@ -65,7 +65,7 @@ public:
 
 public:
   virtual int connect(const char *host, uint16_t port) {
-    stop();
+    if (sock_connected) stop();
     TINY_GSM_YIELD();
     rx.clear();
     sock_connected = at->modemConnect(host, port, &mux);
