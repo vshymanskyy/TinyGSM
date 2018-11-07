@@ -422,7 +422,11 @@ public:
 
   bool isNetworkConnected() {
     RegStatus s = getRegistrationStatus();
-    return (s == REG_OK_HOME || s == REG_OK_ROAMING);
+    if (s == REG_OK_HOME || s == REG_OK_ROAMING)
+      return true;
+    else if (s == REG_UNKNOWN)  // for some reason, it can hang at unknown..
+      return isGprsConnected();
+    else return false;
   }
 
   /*
@@ -431,47 +435,75 @@ public:
   bool gprsConnect(const char* apn, const char* user = NULL, const char* pwd = NULL) {
     gprsDisconnect();
 
-    sendAT(GF("+CGATT=1"));
-    if (waitResponse(60000L) != 1) {
+    sendAT(GF("+CGATT=1"));  // attach to GPRS
+    if (waitResponse(360000L) != 1) {
       return false;
     }
 
-    sendAT(GF("+UPSD=0,1,\""), apn, '"');
+    // NOTE:  Setting up the PSD profile/PDP context with the UPSD commands
+    // sets up an "internal" PDP context, i.e. a data connection using the
+    // internal IP stack and related AT commands for sockets.
+
+    // Using CGDCONT would set up an "external" PCP context, i.e. a data
+    // connection using the external IP stack (e.g. Windows dial up) and PPP
+    // link over the serial interface.
+
+    sendAT(GF("+UPSD=0,1,\""), apn, '"');  // Set APN for PSD profile 0
     waitResponse();
 
     if (user && strlen(user) > 0) {
-      sendAT(GF("+UPSD=0,2,\""), user, '"');
+      sendAT(GF("+UPSD=0,2,\""), user, '"');  // Set user for PSD profile 0
       waitResponse();
     }
     if (pwd && strlen(pwd) > 0) {
-      sendAT(GF("+UPSD=0,3,\""), pwd, '"');
+      sendAT(GF("+UPSD=0,3,\""), pwd, '"');  // Set password for PSD profile 0
       waitResponse();
     }
 
-    sendAT(GF("+UPSD=0,7,\"0.0.0.0\"")); // Dynamic IP
+    sendAT(GF("+UPSD=0,7,\"0.0.0.0\"")); // Dynamic IP on PSD profile 0
     waitResponse();
 
-    sendAT(GF("+UPSDA=0,3"));
-    if (waitResponse(60000L) != 1) {
-      return false;
+    // LTE modules do not support UPSDA and UPSND commands, even for "internal" contexts
+    if (getModemName().startsWith(GF("SARA-R")) or getModemName().startsWith(GF("SARA-N")))
+      sendAT(GF("+CGACT=0,1"));  // activate PDP profile/context 0
+      if (waitResponse(150000L) != 1) {
+        return false;
+      }
+
+    else {
+      sendAT(GF("+UPSDA=0,3")); // Activate the PDP context associated with profile 0
+      if (waitResponse(360000L) != 1) {
+        return false;
+      }
+
+      sendAT(GF("+UPSND=0,8")); // Activate PSD profile 0
+      if (waitResponse(GF(",8,1")) != 1) {
+        return false;
+      }
+      waitResponse();
+      return true;
     }
 
-    // Open a GPRS context
-    sendAT(GF("+UPSND=0,8"));
-    if (waitResponse(GF(",8,1")) != 1) {
-      return false;
-    }
-    waitResponse();
     return true;
   }
 
   bool gprsDisconnect() {
-    sendAT(GF("+UPSDA=0,4"));
-    if (waitResponse(60000L) != 1)
-      return false;
 
-    sendAT(GF("+CGATT=0"));
-    if (waitResponse(60000L) != 1)
+    // LTE modules do not support UPSDA and UPSND commands, even for "internal" contexts
+    if (getModemName().startsWith(GF("SARA-R")) or getModemName().startsWith(GF("SARA-N")))
+      sendAT(GF("+CGACT=0,0"));  // activate PDP profile/context 0
+      if (waitResponse(40000L) != 1) {
+        return false;
+    }
+
+    else {
+      sendAT(GF("+UPSDA=0,4"));  // Deactivate the PDP context associated with profile 0
+      if (waitResponse(360000L) != 1)
+        return false;
+    }
+
+    sendAT(GF("+CGATT=0"));  // detach from GPRS
+    if (waitResponse(360000L) != 1)
       return false;
 
     return true;
@@ -495,17 +527,32 @@ public:
    */
 
   String getLocalIP() {
-    sendAT(GF("+UPSND=0,0"));
-    if (waitResponse(GF(GSM_NL "+UPSND:")) != 1) {
-      return "";
+    // LTE modules do not support UPSDA and UPSND commands, even for "internal" contexts
+    if (getModemName().startsWith(GF("SARA-R")) or getModemName().startsWith(GF("SARA-N"))) {
+      sendAT(GF("+CGPADDR?"));
+      if (waitResponse(GF(GSM_NL "+CGPADDR:")) != 1) {
+        return "";
+      }
+      streamSkipUntil('\"');  // Skip context id
+      String res = stream.readStringUntil('\"');
+      if (waitResponse() != 1) {
+        return "";
+      }
+      return res;
     }
-    streamSkipUntil(',');  // Skip PSD profile
-    streamSkipUntil('\"'); // Skip request type
-    String res = stream.readStringUntil('\"');
-    if (waitResponse() != 1) {
-      return "";
+    else {
+      sendAT(GF("+UPSND=0,0"));
+      if (waitResponse(GF(GSM_NL "+UPSND:")) != 1) {
+        return "";
+      }
+      streamSkipUntil(',');  // Skip PSD profile
+      streamSkipUntil('\"'); // Skip request type
+      String res = stream.readStringUntil('\"');
+      if (waitResponse() != 1) {
+        return "";
+      }
+      return res;
     }
-    return res;
   }
 
   /*
