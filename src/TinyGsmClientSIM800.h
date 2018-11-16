@@ -103,6 +103,13 @@ public:
     at->waitResponse();
     rx.clear();
   }
+  
+  #ifdef ESP8266
+  virtual bool stop(__attribute__((unused)) unsigned int maxWaitMs) {
+	  stop();
+	  return true;
+  }
+  #endif
 
   virtual size_t write(const uint8_t *buf, size_t size) {
     TINY_GSM_YIELD();
@@ -167,6 +174,13 @@ public:
 
   virtual int peek() { return -1; } //TODO
   virtual void flush() { at->stream.flush(); }
+  
+#ifdef ESP8266
+  virtual bool flush(__attribute__((unused)) unsigned int maxWaitMs) {
+	  flush();
+	  return true;
+  }
+#endif
 
   virtual uint8_t connected() {
     if (available()) {
