@@ -249,6 +249,14 @@ public:
     if (waitResponse() != 1) {
       return false;
     }
+    sendAT(GF("+QIMODE=0"));
+    if (waitResponse() != 1) {
+      return false;
+    }
+    sendAT(GF("+QIMUX=1"));
+    if (waitResponse() != 1) {
+      return false;
+    }
     getSimStatus();
     return true;
   }
@@ -602,20 +610,14 @@ protected:
 
   bool modemConnect(const char* host, uint16_t port, uint8_t mux, bool ssl = false) {
     int rsp;
-    sendAT(GF("+QIOPEN=1,"), mux, ',', GF("\"TCP"), GF("\",\""), host, GF("\","), port, GF(",0,0"));
-    rsp = waitResponse();
+    String connectOKResponse;
+    sendAT(GF("+QIOPEN=1,"), mux, ',', GF("\"TCP"), GF("\",\""), host, GF("\","), port);
+    if (waitResponse() != 1) return false;
 
-    if (waitResponse(20000L, GF(GSM_NL "+QIOPEN:")) != 1) {
-      return false;
-    }
+    connectOKResponse = mux + "";
+    rsp = waitResponse(75000L, GF(GSM_NL "ALREADY CONNECT"), GF(GSM_NL "CONNECT OK")); // Fix this. Need to account for the right MUX.
 
-    if (stream.readStringUntil(',').toInt() != mux) {
-      return false;
-    }
-    // Read status
-    rsp = stream.readStringUntil('\n').toInt();
-
-    return (0 == rsp);
+    return (1 <= rsp <= 2);
   }
 
   int modemSend(const void* buff, size_t len, uint8_t mux) {
@@ -633,10 +635,13 @@ protected:
   }
 
   size_t modemRead(size_t size, uint8_t mux) {
-    sendAT(GF("+QIRD="), mux, ',', size);
+    sendAT(GF("+QIRD="), 0, ',', 1, ',', mux, ',', size);
     if (waitResponse(GF("+QIRD:")) != 1) {
       return 0;
     }
+    streamSkipUntil(','); // Skip addr + port
+    streamSkipUntil(','); // Skip type
+
     size_t len = stream.readStringUntil('\n').toInt();
 
     for (size_t i=0; i<len; i++) {
@@ -649,7 +654,7 @@ protected:
     return len;
   }
 
-  size_t modemGetAvailable(uint8_t mux) {
+  size_t modemGetAvailable(uint8_t mux) { // TODO No idea how to handle this
     sendAT(GF("+QIRD="), mux, GF(",0"));
     size_t result = 0;
     if (waitResponse(GF("+QIRD:")) == 1) {
@@ -666,9 +671,10 @@ protected:
   }
 
   bool modemGetConnected(uint8_t mux) {
-    sendAT(GF("+QISTATE=1,"), mux);
-    //+QISTATE: 0,"TCP","151.139.237.11",80,5087,4,1,0,0,"uart1"
+    sendAT(GF("+QISTATE"));
 
+    waitResponse();
+    waitResponse();
     if (waitResponse(GF("+QISTATE:")))
       return false;
 
@@ -676,13 +682,12 @@ protected:
     streamSkipUntil(','); // Skip socket type
     streamSkipUntil(','); // Skip remote ip
     streamSkipUntil(','); // Skip remote port
-    streamSkipUntil(','); // Skip local port
-    int res = stream.readStringUntil(',').toInt(); // socket state
+    String res = stream.readStringUntil('\n'); // socket state
 
     waitResponse();
 
     // 0 Initial, 1 Opening, 2 Connected, 3 Listening, 4 Closing
-    return 2 == res;
+    return "CONNECTED" == res;
   }
 
 public:
