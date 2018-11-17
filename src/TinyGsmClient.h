@@ -13,7 +13,7 @@
   #define TINY_GSM_MODEM_HAS_SSL
 #endif
 
-#if defined(TINY_GSM_MODEM_SIM808) || defined(TINY_GSM_MODEM_SIM868) || defined(TINY_GSM_MODEM_A7)
+#if defined(TINY_GSM_MODEM_SIM808) || defined(TINY_GSM_MODEM_SIM868) || defined(TINY_GSM_MODEM_A7) || defined(TINY_GSM_MODEM_MC20)
   #define TINY_GSM_MODEM_HAS_GPS
 #endif
 
@@ -43,6 +43,12 @@
   #include <TinyGsmClientBG96.h>
   typedef TinyGsmBG96 TinyGsm;
   typedef TinyGsmBG96::GsmClient TinyGsmClient;
+
+#elif defined(TINY_GSM_MODEM_MC20)
+  #define TINY_GSM_MODEM_HAS_GPRS
+  #include <TinyGsmClientMC20.h>
+  typedef TinyGsmMC20 TinyGsm;
+  typedef TinyGsmMC20::GsmClient TinyGsmClient;
 
 #elif defined(TINY_GSM_MODEM_A6) || defined(TINY_GSM_MODEM_A7)
   #define TINY_GSM_MODEM_HAS_GPRS
