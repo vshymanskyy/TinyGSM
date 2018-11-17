@@ -17,6 +17,8 @@
 #endif
 
 #define TINY_GSM_MUX_COUNT 6
+#define MC20_PWR_PIN 7
+#define GSM_PWR_PIN 13
 
 #include <TinyGsmCommon.h>
 
@@ -83,7 +85,7 @@ public:
 
 public:
   virtual int connect(const char *host, uint16_t port) {
-    stop();
+    // stop();
     TINY_GSM_YIELD();
     rx.clear();
     sock_connected = at->modemConnect(host, port, mux);
@@ -249,6 +251,10 @@ public:
     if (waitResponse() != 1) {
       return false;
     }
+    sendAT(GF("+QIFGCNT=0"));
+    if (waitResponse() != 1) {
+      return false;
+    }
     sendAT(GF("+QIMODE=0"));
     if (waitResponse() != 1) {
       return false;
@@ -257,6 +263,11 @@ public:
     if (waitResponse() != 1) {
       return false;
     }
+    sendAT(GF("+QIDNSIP=1"));
+    if (waitResponse() != 1) {
+      return false;
+    }
+
     getSimStatus();
     return true;
   }
@@ -318,6 +329,22 @@ public:
   /*
    * Power functions
    */
+
+  void powerOn()
+  {
+    if(testAT()){
+      return;
+    }
+
+    pinMode(MC20_PWR_PIN, OUTPUT);
+    pinMode(GSM_PWR_PIN, OUTPUT);
+
+    digitalWrite(MC20_PWR_PIN, HIGH);
+    digitalWrite(GSM_PWR_PIN, HIGH); 
+    delay(2000);
+    digitalWrite(GSM_PWR_PIN, LOW);
+    // delay(2000);
+  }
 
   bool restart() {
     if (!testAT()) {
@@ -458,21 +485,16 @@ public:
    */
   bool gprsConnect(const char* apn, const char* user = NULL, const char* pwd = NULL) {
     gprsDisconnect();
-
-    sendAT(GF("+QICSGP=1,("), apn, GF(","), user, GF(","), pwd, GF(")"));
+    
+    sendAT(GF("+QICSGP=1,"), "\"", apn, GF("\",\""), user, GF("\",\""), pwd, "\"");
     if (waitResponse() != 1) {
       return false;
     }
 
-    sendAT(GF("+QIACT"));
-    if (waitResponse(150000L) != 1) {
-      return false;
-    }
-
-    sendAT(GF("+CGATT=1"));
-    if (waitResponse(75000L) != 1) {
-      return false;
-    }
+    // sendAT(GF("+CGATT=1"));
+    // if (waitResponse(75000L) != 1) {
+    //   return false;
+    // }
 
     return true;
   }
@@ -611,7 +633,7 @@ protected:
   bool modemConnect(const char* host, uint16_t port, uint8_t mux, bool ssl = false) {
     int rsp;
     String connectOKResponse;
-    sendAT(GF("+QIOPEN=1,"), mux, ',', GF("\"TCP"), GF("\",\""), host, GF("\","), port);
+    sendAT(GF("+QIOPEN="), mux, ',', GF("\"TCP"), GF("\",\""), host, GF("\","), port);
     if (waitResponse() != 1) return false;
 
     connectOKResponse = mux + "";
@@ -686,8 +708,10 @@ protected:
 
     waitResponse();
 
+    char resChar[res.length()+1];
+    strcpy(resChar, res.c_str());
     // 0 Initial, 1 Opening, 2 Connected, 3 Listening, 4 Closing
-    return "CONNECTED" == res;
+    return strcmp(resChar, "CONNECTED");
   }
 
 public:
