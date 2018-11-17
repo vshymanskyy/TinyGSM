@@ -451,28 +451,27 @@ public:
   bool gprsConnect(const char* apn, const char* user = NULL, const char* pwd = NULL) {
     gprsDisconnect();
 
-    sendAT(GF("+QICSGP=1,1,\""), apn, GF("\",\""), user, GF("\",\""), pwd, GF("\""));
+    sendAT(GF("+QICSGP=1,("), apn, GF(","), user, GF(","), pwd, GF(")"));
     if (waitResponse() != 1) {
       return false;
     }
 
-    sendAT(GF("+QIACT=1"));
+    sendAT(GF("+QIACT"));
     if (waitResponse(150000L) != 1) {
       return false;
     }
 
     sendAT(GF("+CGATT=1"));
-    if (waitResponse(60000L) != 1) {
+    if (waitResponse(75000L) != 1) {
       return false;
     }
-
 
     return true;
   }
 
   bool gprsDisconnect() {
-    sendAT(GF("+QIDEACT=1"));  // Deactivate the bearer context
-    if (waitResponse(40000L) != 1)
+    sendAT(GF("+QIDEACT"));  // Deactivate the bearer context
+    if (waitResponse(40000L, GF(GSM_NL "DEACT OK")) != 1)
       return false;
 
     return true;
