@@ -247,28 +247,54 @@ public:
     if (!testAT()) {
       return false;
     }
+
     sendAT(GF("&FZE0"));  // Factory + Reset + Echo Off
     if (waitResponse() != 1) {
       return false;
     }
+
+    return true;
+  }
+
+  bool gprsConnect(const char* apn, const char* user = NULL, const char* pwd = NULL) {
+    gprsDisconnect();
+
+    // if (!testAT()) {
+    //   SerialUSB.println("Modem seems to be off. Turn on and try again.");
+    //   return false;
+    // }
+
+    // sendAT(GF("&FZE0"));  // Factory + Reset + Echo Off
+    // if (waitResponse() != 1) {
+    //   return false;
+    // }
+
+    // Select the foreground context 0 (out of two possible contexts in Quectel modules)
     sendAT(GF("+QIFGCNT=0"));
     if (waitResponse() != 1) {
       return false;
     }
-    sendAT(GF("+QIMODE=0"));
+
+    sendAT(GF("+QICSGP=1,"), "\"", apn, GF("\",\""), user, GF("\",\""), pwd, "\"");
     if (waitResponse() != 1) {
       return false;
     }
+
     sendAT(GF("+QIMUX=1"));
     if (waitResponse() != 1) {
       return false;
     }
+
+    sendAT(GF("+QIMODE=0"));
+    if (waitResponse() != 1) {
+      return false;
+    }
+
     sendAT(GF("+QIDNSIP=1"));
     if (waitResponse() != 1) {
       return false;
     }
 
-    getSimStatus();
     return true;
   }
 
@@ -346,8 +372,12 @@ public:
     // delay(2000);
   }
 
+  /**
+   * Init must be called after restarting to reconfigure the modem.
+   */
   bool restart() {
     if (!testAT()) {
+      SerialUSB.println("Modem seems to be off. Turn on and try again.");
       return false;
     }
     sendAT(GF("+CFUN=1,1"));
@@ -355,7 +385,7 @@ public:
       return false;
     }
     delay(3000);
-    return init();
+    return true;
   }
 
   bool poweroff(bool emergency = true) {
@@ -466,7 +496,7 @@ public:
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
   }
 
-  bool waitForNetwork(unsigned long timeout = 60000L) {
+  bool checkNetworkConnected(unsigned long timeout = 60000L) {
     for (unsigned long start = millis(); millis() - start < timeout; ) {
       if (isNetworkConnected()) {
         return true;
@@ -483,21 +513,6 @@ public:
   /*
    * GPRS functions
    */
-  bool gprsConnect(const char* apn, const char* user = NULL, const char* pwd = NULL) {
-    gprsDisconnect();
-    
-    sendAT(GF("+QICSGP=1,"), "\"", apn, GF("\",\""), user, GF("\",\""), pwd, "\"");
-    if (waitResponse() != 1) {
-      return false;
-    }
-
-    // sendAT(GF("+CGATT=1"));
-    // if (waitResponse(75000L) != 1) {
-    //   return false;
-    // }
-
-    return true;
-  }
 
   bool gprsDisconnect() {
     sendAT(GF("+QIDEACT"));  // Deactivate the bearer context
@@ -632,12 +647,10 @@ protected:
 
   bool modemConnect(const char* host, uint16_t port, uint8_t mux, bool ssl = false) {
     int rsp;
-    String connectOKResponse;
     sendAT(GF("+QIOPEN="), mux, ',', GF("\"TCP"), GF("\",\""), host, GF("\","), port);
     if (waitResponse() != 1) return false;
 
-    connectOKResponse = mux + "";
-    rsp = waitResponse(75000L, GF(GSM_NL "ALREADY CONNECT"), GF(GSM_NL "CONNECT OK")); // Fix this. Need to account for the right MUX.
+    rsp = waitResponse(75000L, GF(GSM_NL "ALREADY CONNECT"), GF(", CONNECT OK")); // Fix this. Need to account for the right MUX in the response.
 
     return (1 <= rsp <= 2);
   }
