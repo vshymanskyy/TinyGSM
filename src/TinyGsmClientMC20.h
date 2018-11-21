@@ -9,7 +9,7 @@
 #ifndef TinyGsmClientMC20_h
 #define TinyGsmClientMC20_h
 
-//#define TINY_GSM_DEBUG Serial
+#define TINY_GSM_DEBUG SerialUSB
 //#define TINY_GSM_USE_HEX
 
 #if !defined(TINY_GSM_RX_BUFFER)
@@ -89,6 +89,7 @@ public:
     TINY_GSM_YIELD();
     rx.clear();
     sock_connected = at->modemConnect(host, port, mux);
+
     return sock_connected;
   }
 
@@ -108,7 +109,7 @@ public:
     TINY_GSM_YIELD();
     at->sendAT(GF("+QICLOSE="), mux);
     sock_connected = false;
-    at->waitResponse();
+    at->waitResponse(GF(", CLOSE OK"));
     rx.clear();
   }
 
@@ -173,6 +174,7 @@ public:
     if (available()) {
       return true;
     }
+    
     return sock_connected;
   }
   virtual operator bool() { return connected(); }
@@ -239,61 +241,31 @@ public:
   /*
    * Basic functions
    */
-  bool begin() {
-    return init();
+  bool begin(const char* apn, const char* user = NULL, const char* pwd = NULL, unsigned long baudRate = 0) {
+    return init(apn, user, pwd, baudRate);
   }
 
-  bool init() {
-    if (!testAT()) {
-      return false;
-    }
+  bool init(const char* apn, const char* user = NULL, const char* pwd = NULL, unsigned long baudRate = 0) {
+    // Initialization as suggested in the GSM TCIP Recommended Process Document from Quectel
+    if (!testAT()) return false;
 
-    sendAT(GF("&FZE0"));  // Factory + Reset + Echo Off
-    if (waitResponse() != 1) {
-      return false;
-    }
+    // sendAT(GF("&FZE0"));  // Factory Reset + Set to user defined params + Echo Off
+    // if (waitResponse() != 1) return false;
 
-    return true;
-  }
-
-  bool gprsConnect(const char* apn, const char* user = NULL, const char* pwd = NULL) {
-    gprsDisconnect();
-
-    // if (!testAT()) {
-    //   SerialUSB.println("Modem seems to be off. Turn on and try again.");
-    //   return false;
-    // }
-
-    // sendAT(GF("&FZE0"));  // Factory + Reset + Echo Off
-    // if (waitResponse() != 1) {
-    //   return false;
-    // }
+    sendAT(GF("+IPR="), baudRate, GF("&W"));
+    waitResponse();
 
     // Select the foreground context 0 (out of two possible contexts in Quectel modules)
     sendAT(GF("+QIFGCNT=0"));
-    if (waitResponse() != 1) {
-      return false;
-    }
+    if (waitResponse() != 1) return false;
 
     sendAT(GF("+QICSGP=1,"), "\"", apn, GF("\",\""), user, GF("\",\""), pwd, "\"");
-    if (waitResponse() != 1) {
-      return false;
-    }
+    if (waitResponse() != 1) return false;
 
     sendAT(GF("+QIMUX=1"));
-    if (waitResponse() != 1) {
-      return false;
-    }
-
-    sendAT(GF("+QIMODE=0"));
-    if (waitResponse() != 1) {
-      return false;
-    }
+    if (waitResponse() != 1) return false;
 
     sendAT(GF("+QIDNSIP=1"));
-    if (waitResponse() != 1) {
-      return false;
-    }
 
     return true;
   }
@@ -369,7 +341,7 @@ public:
     digitalWrite(GSM_PWR_PIN, HIGH); 
     delay(2000);
     digitalWrite(GSM_PWR_PIN, LOW);
-    // delay(2000);
+    delay(5000);
   }
 
   /**
@@ -377,7 +349,7 @@ public:
    */
   bool restart() {
     if (!testAT()) {
-      SerialUSB.println("Modem seems to be off. Turn on and try again.");
+      TINY_GSM_DEBUG.println("Modem seems to be off. Turn on and try again.");
       return false;
     }
     sendAT(GF("+CFUN=1,1"));
@@ -455,9 +427,20 @@ public:
     return SIM_ERROR;
   }
 
-  RegStatus getRegistrationStatus() {
+  RegStatus getGSMRegistrationStatus() {
     sendAT(GF("+CREG?"));
     if (waitResponse(GF(GSM_NL "+CREG:")) != 1) {
+      return REG_UNKNOWN;
+    }
+    streamSkipUntil(','); // Skip format (0)
+    int status = stream.readStringUntil('\n').toInt();
+    waitResponse();
+    return (RegStatus)status;
+  }
+
+  RegStatus getGPRSRegistrationStatus() {
+    sendAT(GF("+CGREG?"));
+    if (waitResponse(GF(GSM_NL "+CGREG:")) != 1) {
       return REG_UNKNOWN;
     }
     streamSkipUntil(','); // Skip format (0)
@@ -491,14 +474,29 @@ public:
     return res;
   }
 
-  bool isNetworkConnected() {
-    RegStatus s = getRegistrationStatus();
+  bool isGSMNetworkConnected() {
+    RegStatus s = getGSMRegistrationStatus();
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
   }
 
-  bool checkNetworkConnected(unsigned long timeout = 60000L) {
+  bool isGPRSNetworkConnected() {
+    RegStatus s = getGPRSRegistrationStatus();
+    return (s == REG_OK_HOME || s == REG_OK_ROAMING);
+  }
+
+  bool checkGSMNetworkConnected(unsigned long timeout = 30000L) {
     for (unsigned long start = millis(); millis() - start < timeout; ) {
-      if (isNetworkConnected()) {
+      if (isGSMNetworkConnected()) {
+        return true;
+      }
+      delay(250);
+    }
+    return false;
+  }
+
+  bool checkGPRSNetworkConnected(unsigned long timeout = 30000L) {
+    for (unsigned long start = millis(); millis() - start < timeout; ) {
+      if (isGPRSNetworkConnected()) {
         return true;
       }
       delay(250);
@@ -513,6 +511,30 @@ public:
   /*
    * GPRS functions
    */
+
+  bool gprsConnect(const char* apn, const char* user = NULL, const char* pwd = NULL) {
+    gprsDisconnect();
+
+    SimStatus simStatus = getSimStatus();
+    if (simStatus != 1) return false;
+
+    if (!checkGSMNetworkConnected()) return false;
+    checkGPRSNetworkConnected(); // Continue to the next step regardless of registration status
+    
+    sendAT(GF("+QIREGAPP"));
+    if (waitResponse() != 1) return false;
+    
+    sendAT(GF("+QIACT"));
+    if (waitResponse(150000L) != 1) {
+      return false;
+    }
+
+    sendAT(GF("+QILOCIP"));
+    waitResponse(GF(GSM_NL));
+    streamSkipUntil('\n');
+
+    return true;
+  }
 
   bool gprsDisconnect() {
     sendAT(GF("+QIDEACT"));  // Deactivate the bearer context
@@ -650,9 +672,9 @@ protected:
     sendAT(GF("+QIOPEN="), mux, ',', GF("\"TCP"), GF("\",\""), host, GF("\","), port);
     if (waitResponse() != 1) return false;
 
-    rsp = waitResponse(75000L, GF(GSM_NL "ALREADY CONNECT"), GF(", CONNECT OK")); // Fix this. Need to account for the right MUX in the response.
-
-    return (1 <= rsp <= 2);
+    if(waitResponse(75000L, GF(", CONNECT OK")) != 1) return false; // Fix this. Need to account for the right MUX in the response.
+  
+    return true;
   }
 
   int modemSend(const void* buff, size_t len, uint8_t mux) {
@@ -660,12 +682,32 @@ protected:
     if (waitResponse(GF(">")) != 1) {
       return 0;
     }
+
     stream.write((uint8_t*)buff, len);
     stream.flush();
     if (waitResponse(GF(GSM_NL "SEND OK")) != 1) {
       return 0;
     }
-    // TODO: Wait for ACK? AT+QISEND=id,0
+    waitResponse(GF(GSM_NL "+RECEIVE:"));
+    streamSkipUntil('\n');
+
+    // for (int cycles = 0; cycles < 24; cycles++) {
+    //   sendAT(GF("+QISACK="), mux);
+    //   if (waitResponse(GF(GSM_NL "+QISACK:")) != 1) {
+    //     return 0;
+    //   }
+      
+    //   streamSkipUntil(',');
+    //   streamSkipUntil(',');
+    //   int unackData = stream.readStringUntil('\n').toInt();
+    //   waitResponse();
+    //   streamSkipUntil('\n');
+
+    //   if (unackData == 0) break;
+      
+    //   delay(5000);
+    // }
+
     return len;
   }
 
@@ -674,6 +716,7 @@ protected:
     if (waitResponse(GF("+QIRD:")) != 1) {
       return 0;
     }
+    
     streamSkipUntil(','); // Skip addr + port
     streamSkipUntil(','); // Skip type
 
@@ -689,12 +732,12 @@ protected:
     return len;
   }
 
-  size_t modemGetAvailable(uint8_t mux) { // TODO No idea how to handle this
-    sendAT(GF("+QIRD="), mux, GF(",0"));
+  size_t modemGetAvailable(uint8_t mux) {
+    sendAT(GF("+QIRD="), 0, ',', 1, ',', mux, ',', 0);
     size_t result = 0;
     if (waitResponse(GF("+QIRD:")) == 1) {
-      streamSkipUntil(','); // Skip total received
-      streamSkipUntil(','); // Skip have read
+      streamSkipUntil(','); // Skip addr + port
+      streamSkipUntil(','); // Skip type
       result = stream.readStringUntil('\n').toInt();
       DBG("### STILL:", mux, "has", result);
       waitResponse();
