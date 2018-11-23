@@ -137,7 +137,7 @@ public:
   virtual int read(uint8_t *buf, size_t size) {
     TINY_GSM_YIELD();
     at->maintain();
-    size_t cnt = 0;
+    size_t cnt = 0;  
     while (cnt < size) {
       size_t chunk = TinyGsmMin(size-cnt, rx.size());
       if (chunk > 0) {
@@ -649,8 +649,10 @@ protected:
   }
 
   size_t modemRead(size_t size, uint8_t mux) {
+  SerialUSB.print("Second");
+
     sendAT(GF("+QIRD="), 0, ',', 1, ',', mux, ',', size);
-    if (waitResponse(GF("+QIRD:")) != 1) {
+    if (waitResponse(GF("+QIRD:"), GF("OK"), GF("ERROR")) != 1) {
       return 0;
     }
     
@@ -664,7 +666,9 @@ protected:
       char c = stream.read();
       sockets[mux]->rx.put(c);
     }
+
     waitResponse();
+    
     DBG("### READ:", mux, ",", len);
     return len;
   }
@@ -672,13 +676,14 @@ protected:
   size_t modemGetAvailable(uint8_t mux) {
     sendAT(GF("+QIRD="), 0, ',', 1, ',', mux, ',', 0);
     size_t result = 0;
-    if (waitResponse(GF("+QIRD:")) == 1) {
+    if (waitResponse(GF("+QIRD:"), GF("OK"), GF("ERROR")) == 1) {
       streamSkipUntil(','); // Skip addr + port
       streamSkipUntil(','); // Skip type
       result = stream.readStringUntil('\n').toInt();
       DBG("### STILL:", mux, "has", result);
       waitResponse();
     }
+    
     if (!result) {
       sockets[mux]->sock_connected = modemGetConnected(mux);
     }
