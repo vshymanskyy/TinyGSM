@@ -9,7 +9,7 @@
 #ifndef TinyGsmClientMC20_h
 #define TinyGsmClientMC20_h
 
-#define TINY_GSM_DEBUG SerialUSB
+// #define TINY_GSM_DEBUG Serial
 //#define TINY_GSM_USE_HEX
 
 #if !defined(TINY_GSM_RX_BUFFER)
@@ -17,8 +17,6 @@
 #endif
 
 #define TINY_GSM_MUX_COUNT 6
-#define MC20_PWR_PIN 7
-#define GSM_PWR_PIN 13
 
 #include <TinyGsmCommon.h>
 
@@ -67,11 +65,11 @@ class GsmClient : public Client
 public:
   GsmClient() {}
 
-  GsmClient(TinyGsmMC20& modem, uint8_t mux = 1) {
+  GsmClient(TinyGsmMC20& modem, uint8_t mux = 0) {
     init(&modem, mux);
   }
 
-  bool init(TinyGsmMC20* modem, uint8_t mux = 1) {
+  bool init(TinyGsmMC20* modem, uint8_t mux = 0) {
     this->at = modem;
     this->mux = mux;
     sock_available = 0;
@@ -241,12 +239,11 @@ public:
   /*
    * Basic functions
    */
-  bool begin(const char* apn, const char* user = NULL, const char* pwd = NULL, unsigned long baudRate = 0) {
-    return init(apn, user, pwd, baudRate);
+  bool begin(unsigned long baudRate = 0) {
+    return init(baudRate);
   }
 
-  bool init(const char* apn, const char* user = NULL, const char* pwd = NULL, unsigned long baudRate = 0) {
-    // Initialization as suggested in the GSM TCIP Recommended Process Document from Quectel
+  bool init(unsigned long baudRate = 0) {
     if (!testAT()) return false;
 
     // sendAT(GF("&FZE0"));  // Factory Reset + Set to user defined params + Echo Off
@@ -255,17 +252,18 @@ public:
     sendAT(GF("+IPR="), baudRate, GF("&W"));
     waitResponse();
 
-    // Select the foreground context 0 (out of two possible contexts in Quectel modules)
+    // Select foreground context (MC20 provides 2 of them)
     sendAT(GF("+QIFGCNT=0"));
-    if (waitResponse() != 1) return false;
-
-    sendAT(GF("+QICSGP=1,"), "\"", apn, GF("\",\""), user, GF("\",\""), pwd, "\"");
     if (waitResponse() != 1) return false;
 
     sendAT(GF("+QIMUX=1"));
     if (waitResponse() != 1) return false;
 
+    // Use domain names instead of IPs for connection
     sendAT(GF("+QIDNSIP=1"));
+    if (waitResponse() != 1) return false;
+
+    sendAT(GF("+QINDI=1"));
 
     return true;
   }
@@ -328,25 +326,6 @@ public:
    * Power functions
    */
 
-  void powerOn()
-  {
-    if(testAT()){
-      return;
-    }
-
-    pinMode(MC20_PWR_PIN, OUTPUT);
-    pinMode(GSM_PWR_PIN, OUTPUT);
-
-    digitalWrite(MC20_PWR_PIN, HIGH);
-    digitalWrite(GSM_PWR_PIN, HIGH); 
-    delay(2000);
-    digitalWrite(GSM_PWR_PIN, LOW);
-    delay(5000);
-  }
-
-  /**
-   * Init must be called after restarting to reconfigure the modem.
-   */
   bool restart() {
     if (!testAT()) {
       TINY_GSM_DEBUG.println("Modem seems to be off. Turn on and try again.");
@@ -357,7 +336,7 @@ public:
       return false;
     }
     delay(3000);
-    return true;
+    return init();
   }
 
   bool poweroff(bool emergency = true) {
@@ -427,20 +406,9 @@ public:
     return SIM_ERROR;
   }
 
-  RegStatus getGSMRegistrationStatus() {
+  RegStatus getRegistrationStatus() {
     sendAT(GF("+CREG?"));
     if (waitResponse(GF(GSM_NL "+CREG:")) != 1) {
-      return REG_UNKNOWN;
-    }
-    streamSkipUntil(','); // Skip format (0)
-    int status = stream.readStringUntil('\n').toInt();
-    waitResponse();
-    return (RegStatus)status;
-  }
-
-  RegStatus getGPRSRegistrationStatus() {
-    sendAT(GF("+CGREG?"));
-    if (waitResponse(GF(GSM_NL "+CGREG:")) != 1) {
       return REG_UNKNOWN;
     }
     streamSkipUntil(','); // Skip format (0)
@@ -474,29 +442,15 @@ public:
     return res;
   }
 
-  bool isGSMNetworkConnected() {
-    RegStatus s = getGSMRegistrationStatus();
-    return (s == REG_OK_HOME || s == REG_OK_ROAMING);
+  bool isNetworkConnected() {
+    RegStatus gsmStatus = getRegistrationStatus();
+
+    return (gsmStatus == REG_OK_HOME || gsmStatus == REG_OK_ROAMING);
   }
 
-  bool isGPRSNetworkConnected() {
-    RegStatus s = getGPRSRegistrationStatus();
-    return (s == REG_OK_HOME || s == REG_OK_ROAMING);
-  }
-
-  bool checkGSMNetworkConnected(unsigned long timeout = 30000L) {
+  bool waitForNetwork(unsigned long timeout = 115000L) {
     for (unsigned long start = millis(); millis() - start < timeout; ) {
-      if (isGSMNetworkConnected()) {
-        return true;
-      }
-      delay(250);
-    }
-    return false;
-  }
-
-  bool checkGPRSNetworkConnected(unsigned long timeout = 30000L) {
-    for (unsigned long start = millis(); millis() - start < timeout; ) {
-      if (isGPRSNetworkConnected()) {
+      if (isNetworkConnected()) {
         return true;
       }
       delay(250);
@@ -513,14 +467,15 @@ public:
    */
 
   bool gprsConnect(const char* apn, const char* user = NULL, const char* pwd = NULL) {
-    gprsDisconnect();
+    // Select GPRS as the bearer service for the connections
+    sendAT(GF("+QICSGP=1,"), "\"", apn, GF("\",\""), user, GF("\",\""), pwd, "\"");
+    if (waitResponse() != 1) return false;
 
-    SimStatus simStatus = getSimStatus();
-    if (simStatus != 1) return false;
+    if (getSimStatus() != 1) return false;
 
-    if (!checkGSMNetworkConnected()) return false;
-    checkGPRSNetworkConnected(); // Continue to the next step regardless of registration status
+    if (!waitForNetwork()) return false;
     
+    // Activate PDP context (Next 3 steps; must be executed in order and together)
     sendAT(GF("+QIREGAPP"));
     if (waitResponse() != 1) return false;
     
@@ -537,7 +492,8 @@ public:
   }
 
   bool gprsDisconnect() {
-    sendAT(GF("+QIDEACT"));  // Deactivate the bearer context
+    // Deactivate PDP context
+    sendAT(GF("+QIDEACT"));
     if (waitResponse(40000L, GF(GSM_NL "DEACT OK")) != 1)
       return false;
 
@@ -688,27 +644,8 @@ protected:
     if (waitResponse(GF(GSM_NL "SEND OK")) != 1) {
       return 0;
     }
-    waitResponse(GF(GSM_NL "+RECEIVE:"));
-    streamSkipUntil('\n');
-
-    // for (int cycles = 0; cycles < 24; cycles++) {
-    //   sendAT(GF("+QISACK="), mux);
-    //   if (waitResponse(GF(GSM_NL "+QISACK:")) != 1) {
-    //     return 0;
-    //   }
-      
-    //   streamSkipUntil(',');
-    //   streamSkipUntil(',');
-    //   int unackData = stream.readStringUntil('\n').toInt();
-    //   waitResponse();
-    //   streamSkipUntil('\n');
-
-    //   if (unackData == 0) break;
-      
-    //   delay(5000);
-    // }
-
-    return len;
+    // TODO: Wait for ACK? AT+QISEND=id,0
+    return len; 
   }
 
   size_t modemRead(size_t size, uint8_t mux) {
@@ -845,13 +782,7 @@ public:
           stream.readStringUntil('\"');
           String urc = stream.readStringUntil('\"');
           stream.readStringUntil(',');
-          if (urc == "recv") {
-            int mux = stream.readStringUntil('\n').toInt();
-            DBG("### URC RECV:", mux);
-            if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
-              sockets[mux]->got_data = true;
-            }
-          } else if (urc == "closed") {
+          if (urc == "closed") {
             int mux = stream.readStringUntil('\n').toInt();
             DBG("### URC CLOSE:", mux);
             if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
@@ -861,6 +792,15 @@ public:
             stream.readStringUntil('\n');
           }
           data = "";
+        } else if (data.endsWith(GF(GSM_NL "+QIRDI:"))) {
+          int context = stream.readStringUntil(',').toInt();
+          streamSkipUntil(','); // Skip device role (client/server)
+          int mux = stream.readStringUntil(',').toInt();
+          streamSkipUntil('\n');
+          // DBG("### URC QIRDI:", mux);
+          if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+            sockets[mux]->got_data = true;
+          }
         }
       }
     } while (millis() - startMillis < timeout);
