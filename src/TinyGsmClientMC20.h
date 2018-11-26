@@ -319,7 +319,7 @@ public:
   }
 
   bool hasSSL() {
-    return false;  // TODO: For now
+    return true; // TODO Use an AT command to verify?
   }
 
   /*
@@ -366,7 +366,7 @@ public:
   }
 
   String getSimCCID() {
-    sendAT(GF("+QCCID"));
+    sendAT(GF("+QCCID?"));
     if (waitResponse(GF(GSM_NL)) != 1) {
       return "";
     }
@@ -644,13 +644,22 @@ protected:
     if (waitResponse(GF(GSM_NL "SEND OK")) != 1) {
       return 0;
     }
-    // TODO: Wait for ACK? AT+QISEND=id,0
+
+    while(true) {
+      sendAT(GF("+QISACK="), mux);
+      waitResponse(GF("+QISACK:"));
+      streamSkipUntil(',');
+      streamSkipUntil(',');
+      int unAckData = stream.readStringUntil('\n').toInt();
+      waitResponse();
+      if (unAckData == 0) break;
+      delay(200);
+    }
+
     return len; 
   }
 
   size_t modemRead(size_t size, uint8_t mux) {
-  SerialUSB.print("Second");
-
     sendAT(GF("+QIRD="), 0, ',', 1, ',', mux, ',', size);
     if (waitResponse(GF("+QIRD:"), GF("OK"), GF("ERROR")) != 1) {
       return 0;
