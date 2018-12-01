@@ -98,7 +98,9 @@ uint32_t TinyGsmAutoBaud(T& SerialAT, uint32_t minimum = 9600, uint32_t maximum 
     delay(10);
     for (int i=0; i<3; i++) {
       SerialAT.print("AT\r\n");
+	  delay(10);
       String input = SerialAT.readString();
+	  DBG("Data received:", input);
       if (input.indexOf("OK") >= 0) {
         DBG("Modem responded at rate", rate);
         return rate;

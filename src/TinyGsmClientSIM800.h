@@ -83,6 +83,21 @@ public:
     sock_connected = at->modemConnect(host, port, mux);
     return sock_connected;
   }
+  
+#ifdef ESP8266
+  virtual int connect(CONST IPAddress& ip, uint16_t port)
+  {
+	String host; host.reserve(16);
+    host += ip[0];
+    host += ".";
+    host += ip[1];
+    host += ".";
+    host += ip[2];
+    host += ".";
+    host += ip[3];
+    return connect(host.c_str(), port);
+  }  
+#endif
 
   virtual int connect(IPAddress ip, uint16_t port) {
     String host; host.reserve(16);
