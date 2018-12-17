@@ -105,19 +105,19 @@ public:
   // This is a hack to shut the socket by setting the timeout to zero and
   // then sending an empty line to the server.
   virtual void stop() {
-    at->streamClear();  // Empty anything in the buffer
-    at->commandMode();
-    at->sendAT(GF("TM0"));  // Set socket timeout to 0;
-    at->waitResponse();
-    at->writeChanges();
-    at->exitCommand();
-    at->streamWrite("");
-    at->commandMode();
-    at->sendAT(GF("TM64"));  // Set socket timeout back to 10 seconds;
-    at->waitResponse();
-    at->writeChanges();
-    at->exitCommand();
-    at->streamClear();  // Empty anything remaining in the buffer
+    // at->streamClear();  // Empty anything in the buffer
+    // at->commandMode();
+    // at->sendAT(GF("TM0"));  // Set socket timeout to 0;
+    // at->waitResponse();
+    // at->writeChanges();
+    // at->exitCommand();
+    // at->streamWrite("");
+    // at->commandMode();
+    // at->sendAT(GF("TM64"));  // Set socket timeout back to 10 seconds;
+    // at->waitResponse();
+    // at->writeChanges();
+    // at->exitCommand();
+    // at->streamClear();  // Empty anything remaining in the buffer
     sock_connected = false;
   }
 
@@ -318,8 +318,7 @@ public:
     // this only happens OUTSIDE command mode, so if we're getting characters
     // they should be data received from the TCP connection
     // TINY_GSM_YIELD();
-    // uint32_t _startMillis = millis();
-    // while (stream.available() || millis() - _startMillis < 10) {
+    // while (stream.available()) {
     //   char c = stream.read();
     //   if (c > 0) sockets[0]->rx.put(c);
     // }
@@ -598,15 +597,15 @@ public:
 
     if (!commandMode()) return false;  // return immediately
     //nh For no pwd don't set setscurity or pwd
-    if (NULL == ssid ) return exitAndFail(); 
+    if (NULL == ssid ) return exitAndFail();
 
-    if (NULL != pwd) 
+    if (NULL != pwd)
     {
       sendAT(GF("EE"), 2);  // Set security to WPA2
       if (waitResponse() != 1) return exitAndFail();
       sendAT(GF("PK"), pwd);
     } else {
-      sendAT(GF("EE"), 0);  // Set No security 
+      sendAT(GF("EE"), 0);  // Set No security
     }
     if (waitResponse() != 1) return exitAndFail();
 
@@ -796,6 +795,9 @@ public:
   }
 
   // TODO: Optimize this!
+  // NOTE:  This function is used while INSIDE command mode, so we're only
+  // waiting for requested responses.  The XBee has no unsoliliced responses
+  // (URC's) when in command mode.
   uint8_t waitResponse(uint32_t timeout, String& data,
                        GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),
                        GsmConstStr r3=NULL, GsmConstStr r4=NULL, GsmConstStr r5=NULL)
