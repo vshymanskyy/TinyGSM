@@ -783,8 +783,10 @@ public:
    */
 
   void streamClear(void) {
-    TINY_GSM_YIELD();
-    while (stream.available()) { stream.read();}
+    while (stream.available()) {
+      stream.read();
+      TINY_GSM_YIELD();
+    }
   }
 
   template<typename... Args>
