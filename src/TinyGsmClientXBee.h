@@ -105,19 +105,20 @@ public:
   // This is a hack to shut the socket by setting the timeout to zero and
   // then sending an empty line to the server.
   virtual void stop() {
-    // at->streamClear();  // Empty anything in the buffer
-    // at->commandMode();
-    // at->sendAT(GF("TM0"));  // Set socket timeout to 0;
-    // at->waitResponse();
-    // at->writeChanges();
-    // at->exitCommand();
-    // at->streamWrite("");
-    // at->commandMode();
-    // at->sendAT(GF("TM64"));  // Set socket timeout back to 10 seconds;
-    // at->waitResponse();
-    // at->writeChanges();
-    // at->exitCommand();
-    // at->streamClear();  // Empty anything remaining in the buffer
+    at->streamClear();  // Empty anything in the buffer
+    at->commandMode();
+    at->sendAT(GF("TM0"));  // Set socket timeout to 0;
+    // Per documentation: If you change the TM value while in Transparent Mode,
+    // the current connection is immediately closed.
+    // NOTE:  Above applies to all cellular models, uncertain if it applies
+    // to the WiFi models.
+    at->waitResponse();
+    at->writeChanges();
+    at->sendAT(GF("TM64"));  // Set socket timeout back to 10 seconds;
+    at->waitResponse();
+    at->writeChanges();
+    at->exitCommand();
+    at->streamClear();  // Empty anything remaining in the buffer
     sock_connected = false;
   }
 
