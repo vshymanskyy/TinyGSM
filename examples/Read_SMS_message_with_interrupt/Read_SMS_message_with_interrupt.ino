@@ -1,5 +1,5 @@
 #define RI 2 //connect RI pin of sim 800 to interrupt pin 0 of arduino
-#define mode HIGH
+#define Mode HIGH
 #define TINY_GSM_MODEM_SIM800
 #include <TinyGsmClient.h>
 #include <SoftwareSerial.h>
@@ -14,7 +14,7 @@ void setup() {
   pinMode(txPin, OUTPUT);
   NETWORK_PORT.begin(9600);
   Serial.begin(9600);
-  attachInterrupt(digitalPinToInterrupt(RI), ISR_NEW_SMS, mode);
+  attachInterrupt(digitalPinToInterrupt(RI), ISR_NEW_SMS, Mode);
 
 }
 
@@ -46,7 +46,7 @@ void ISR_NEW_SMS(){
       if(timerEnd - timerStart > 1500)break;
     }
   if(interrupt.indexOf("CMTI:") > 0){
-    i=modem.newMessageIndex(interrupt);
+    int i=modem.newMessageIndex(interrupt);
     Serial.println(i);
     String SMS=modem.readSMS(i);
     String ID=modem.getSenderID(i);
