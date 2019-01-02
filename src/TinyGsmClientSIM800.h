@@ -236,7 +236,20 @@ public:
     if (waitResponse() != 1) {
       return false;
     }
+    sendAT(GF("+CLTS=1"));
+    if (waitResponse(10000L) != 1) {
+      return false;
+    }
+    sendAT(GF("&W"));
+    waitResponse();
+    sendAT(GF("+CFUN=1,1"));
+    waitResponse();
     getSimStatus();
+    #if HARDWAREFLOWCONTROL
+    sendAT(GF("+IFC=2,2")); //Harware Flow Control
+    #endif
+    // sendAT(GF("+CMGF=1"));
+    waitResponse();
     return true;
   }
 
@@ -693,7 +706,39 @@ public:
     stream.flush();
     return waitResponse(60000L) == 1;
   }
-
+  int newMessageIndex(String interrupt){
+    int Start=interrupt.indexOf(',');
+    int Stop=interrupt.indexOf('\n',Start);
+    int index=interrupt.substring(Start+1,Stop-1).toInt();
+    return index;
+  }
+  String readSMS(int index, const bool changeStatusToRead = true){
+    sendAT(GF("+CMGF=1"));
+    waitResponse();  
+    sendAT(GF("+CMGR="), index, GF(","), static_cast<const uint8_t>(!changeStatusToRead)); 
+    String h="";
+    streamSkipUntil('\n');
+    streamSkipUntil('\n');
+    h=stream.readStringUntil('\n');
+    return h;
+  }
+  bool emptySMSBuffer(){
+    sendAT(GF("+CMGF=1"));
+    waitResponse(); 
+    sendAT(GF("+CMGDA=\"DEL ALL\""));
+    return waitResponse(60000L) == 1;
+  }
+  String getSenderID(int index, const bool changeStatusToRead = true){
+    sendAT(GF("+CMGF=1"));
+    waitResponse(); 
+    sendAT(GF("+CMGR="), index, GF(","), static_cast<const uint8_t>(!changeStatusToRead)); 
+    String h="";
+    streamSkipUntil('"');
+    streamSkipUntil('"');
+    streamSkipUntil('"');
+    h=stream.readStringUntil('"');
+    return h;
+  }
   bool sendSMS_UTF16(const String& number, const void* text, size_t len) {
     sendAT(GF("+CMGF=1"));
     waitResponse();
@@ -878,7 +923,7 @@ protected:
 
   bool modemGetConnected(uint8_t mux) {
     sendAT(GF("+CIPSTATUS="), mux);
-    int res = waitResponse(GF(",\"CONNECTED\""), GF(",\"CLOSED\""), GF(",\"CLOSING\""), GF(",\"INITIAL\""));
+    int res = waitResponse(GF(",\"CONNECTED\""), GF(",\"CLOSED\""), GF(",\"CLOSING\""), GF(",\"INITIAL\""), GF(",\"ERROR\""));
     waitResponse();
     return 1 == res;
   }
@@ -912,6 +957,14 @@ public:
 
   template<typename... Args>
   void sendAT(Args... cmd) {
+    #if HARDWAREFLOWCONTROL
+    // DBG("Changes UPDATED");
+    unsigned long StartMillis =millis();
+    while(digitalRead(UART2_CTS)==HIGH){
+      DBG("Waiting==");
+      if(millis()-StartMillis>HARDWAREFLOWCONTROLWAITTIME)break;
+    }
+    #endif
     streamWrite("AT", cmd..., GSM_NL);
     stream.flush();
     TINY_GSM_YIELD();
