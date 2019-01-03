@@ -606,6 +606,12 @@ public:
     res.trim();
     return res;
   }
+  bool isIPconnected(){
+    sendAT(GF("+CIPSTATUS"));
+    String h=stream.readString();
+    if(h.indexOf("CONNECT")>0)return 1;
+    return 0;
+  }
 
   IPAddress localIP() {
     return TinyGsmIpFromString(getLocalIP());
