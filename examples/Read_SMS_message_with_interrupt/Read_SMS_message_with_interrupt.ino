@@ -46,7 +46,7 @@ void ISR_NEW_SMS(){
       if(timerEnd - timerStart > 1500)break;
     }
   if(interrupt.indexOf("CMTI:") > 0){
-    int i=modem.newMessageIndex(interrupt);
+    int i=modem.newMessageInterrupt(interrupt);
     Serial.println(i);
     String SMS=modem.readSMS(i);
     String ID=modem.getSenderID(i);
