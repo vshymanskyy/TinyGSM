@@ -712,7 +712,7 @@ public:
     stream.flush();
     return waitResponse(60000L) == 1;
   }
-  int newMessageIndex(String interrupt){
+  int newMessageInterrupt(String interrupt){
     int Start=interrupt.indexOf(',');
     int Stop=interrupt.indexOf('\n',Start);
     int index=interrupt.substring(Start+1,Stop-1).toInt();
@@ -728,6 +728,22 @@ public:
     h=stream.readStringUntil('\n');
     return h;
   }
+  int newMessageIndex(bool mode){
+    sendAT(GF("+CMGL=\"REC UNREAD\",1"));
+    String h = stream.readString();
+    int i;
+    if(mode){
+       i  = h.indexOf("+CMGL: ");
+    }else{
+       i  = h.lastIndexOf("+CMGL: ");
+    }
+    
+    int index=h.substring(i+7,i+9).toInt();
+    if(index<=0)return 0;
+    return index;
+ 
+ 
+  }
   bool emptySMSBuffer(){
     sendAT(GF("+CMGF=1"));
     waitResponse(); 
@@ -737,12 +753,13 @@ public:
   String getSenderID(int index, const bool changeStatusToRead = true){
     sendAT(GF("+CMGF=1"));
     waitResponse(); 
-    sendAT(GF("+CMGR="), index, GF(","), static_cast<const uint8_t>(!changeStatusToRead)); 
+    sendAT(GF("+CMGR="), index, GF(","), static_cast<const uint8_t>(changeStatusToRead)); 
     String h="";
     streamSkipUntil('"');
     streamSkipUntil('"');
     streamSkipUntil('"');
     h=stream.readStringUntil('"');
+    stream.readString();
     return h;
   }
   bool sendSMS_UTF16(const String& number, const void* text, size_t len) {
