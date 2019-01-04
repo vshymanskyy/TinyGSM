@@ -729,6 +729,8 @@ public:
     return h;
   }
   int newMessageIndex(bool mode){
+    sendAT(GF("+CMGF=1"));
+    waitResponse();  
     sendAT(GF("+CMGL=\"REC UNREAD\",1"));
     String h = stream.readString();
     int i;
