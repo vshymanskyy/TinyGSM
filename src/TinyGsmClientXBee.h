@@ -572,6 +572,7 @@ public:
     else sendAT(GF("DB"));  // ask for the cell strength in dBm
     int16_t intRes = readResponseInt();
     exitCommand();
+    if (beeType == XBEE3_LTEM_ATT && intRes == 105) intRes = 0;  // tends to reply with "69" when signal is unknown
     if (beeType == XBEE_S6B_WIFI) return -93 + intRes;  // the maximum sensitivity is -93dBm
     else return -1*intRes; // need to convert to negative number
   }
