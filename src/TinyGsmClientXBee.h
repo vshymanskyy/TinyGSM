@@ -586,7 +586,7 @@ public:
       if (isNetworkConnected()) {
         return true;
       }
-      // delay(250);  // Enough delay going in and out of command mode
+      delay(250);  // per Neil H. - more stable with delay
     }
     return false;
   }
@@ -722,14 +722,14 @@ protected:
     bool gotIP = false;
     // XBee's require a numeric IP address for connection, but do provide the
     // functionality to look up the IP address from a fully qualified domain name
-    while (!gotIP && millis() - startMillis < 45000L)  // the lookup can take a while
+    while (!gotIP && (millis() - startMillis < 45000L))  // the lookup can take a while
     {
       sendAT(GF("LA"), host);
-      while (stream.available() < 4 && millis() - startMillis < 45000L) {};  // wait for any response
+      while (stream.available() < 4 && (millis() - startMillis < 45000L)) {};  // wait for any response
       strIP = stream.readStringUntil('\r');  // read result
       strIP.trim();
       if (!strIP.endsWith(GF("ERROR"))) gotIP = true;
-      delay(100);  // short wait before trying again
+      delay(250);  // short wait before trying again
     }
     if (gotIP) {  // No reason to continue if we don't know the IP address
       IPAddress ip = TinyGsmIpFromString(strIP);
