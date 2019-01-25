@@ -421,7 +421,7 @@ public:
    * Generic network functions
    */
 
-  int getSignalQuality() {
+  int16_t getSignalQuality() {
     sendAT(GF("+CSQ"));
     if (waitResponse(GF(GSM_NL "+CSQ:")) != 1) {
       return 99;
@@ -634,7 +634,7 @@ public:
    */
   uint16_t getBattVoltage() TINY_GSM_ATTR_NOT_AVAILABLE;
 
-  int getBattPercent() {
+  int8_t getBattPercent() {
     sendAT(GF("+CIND?"));
     if (waitResponse(GF(GSM_NL "+CIND:")) != 1) {
       return 0;
@@ -677,7 +677,7 @@ protected:
     return (1 == rsp);
   }
 
-  int modemSend(const void* buff, size_t len, uint8_t mux) {
+  int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
     sendAT(GF("+USOWR="), mux, ',', len);
     if (waitResponse(GF("@")) != 1) {
       return 0;

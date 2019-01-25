@@ -314,7 +314,7 @@ public:
    * Generic network functions
    */
 
-  int getSignalQuality() {
+  int16_t getSignalQuality() {
     sendAT(GF("+CWJAP_CUR?"));
     int res1 = waitResponse(GF("No AP"), GF("+CWJAP_CUR:"));
     if (res1 != 2) {
@@ -405,7 +405,7 @@ protected:
     return (1 == rsp);
   }
 
-  int modemSend(const void* buff, size_t len, uint8_t mux) {
+  int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
     sendAT(GF("+CIPSEND="), mux, ',', len);
     if (waitResponse(GF(">")) != 1) {
       return 0;

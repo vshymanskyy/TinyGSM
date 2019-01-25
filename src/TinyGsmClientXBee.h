@@ -482,7 +482,7 @@ public:
     if (beeType == XBEE_UNKNOWN) getSeries();  // Need to know the bee type to interpret response
 
     sendAT(GF("AI"));
-    int intRes = readResponseInt();
+    int16_t intRes = readResponseInt();
     RegStatus stat = REG_UNKNOWN;
 
     switch (beeType){
@@ -565,12 +565,12 @@ public:
   * Generic network functions
   */
 
-  int getSignalQuality() {
+  int16_t getSignalQuality() {
     if (!commandMode()) return 0;  // Return immediately
     if (beeType == XBEE_UNKNOWN) getSeries();  // Need to know what type of bee so we know how to ask
     if (beeType == XBEE_S6B_WIFI) sendAT(GF("LM"));  // ask for the "link margin" - the dB above sensitivity
     else sendAT(GF("DB"));  // ask for the cell strength in dBm
-    int intRes = readResponseInt();
+    int16_t intRes = readResponseInt();
     exitCommand();
     if (beeType == XBEE_S6B_WIFI) return -93 + intRes;  // the maximum sensitivity is -93dBm
     else return -1*intRes; // need to convert to negative number
@@ -624,7 +624,7 @@ public:
     sendAT(GF("NR0"));  // Do a network reset in order to disconnect
     // NOTE:  On wifi modules, using a network reset will not
     // allow the same ssid to re-join without rebooting the module.
-    int res = (1 == waitResponse(5000));
+    int8_t res = (1 == waitResponse(5000));
     writeChanges();
     exitCommand();
     return res;
@@ -660,7 +660,7 @@ public:
   bool gprsDisconnect() {
     if (!commandMode()) return false;  // return immediately
     sendAT(GF("AM1"));  // Cheating and disconnecting by turning on airplane mode
-    int res = (1 == waitResponse(5000));
+    int8_t res = (1 == waitResponse(5000));
     writeChanges();
     sendAT(GF("AM0"));  // Airplane mode off
     waitResponse(5000);
@@ -708,7 +708,7 @@ public:
 
   uint16_t getBattVoltage() TINY_GSM_ATTR_NOT_AVAILABLE;
 
-  int getBattPercent() TINY_GSM_ATTR_NOT_AVAILABLE;
+  int8_t getBattPercent() TINY_GSM_ATTR_NOT_AVAILABLE;
 
   /*
    * Client related functions
@@ -762,7 +762,7 @@ protected:
     return success;
   }
 
-  int modemSend(const void* buff, size_t len, uint8_t mux = 0) {
+  int16_t modemSend(const void* buff, size_t len, uint8_t mux = 0) {
     stream.write((uint8_t*)buff, len);
     stream.flush();
     return len;
@@ -771,7 +771,7 @@ protected:
   bool modemGetConnected(uint8_t mux = 0) {
     if (!commandMode()) return false;
     sendAT(GF("AI"));
-    int res = waitResponse(GF("0"));
+    int16_t res = waitResponse(GF("0"));
     exitCommand();
     return 1 == res;
   }
@@ -812,7 +812,7 @@ public:
     String r5s(r5); r5s.trim();
     DBG("### ..:", r1s, ",", r2s, ",", r3s, ",", r4s, ",", r5s);*/
     data.reserve(16);  // Should never be getting much here for the XBee
-    int index = 0;
+    int8_t index = 0;
     unsigned long startMillis = millis();
     do {
       TINY_GSM_YIELD();
@@ -873,8 +873,8 @@ finish:
     return waitResponse(1000, r1, r2, r3, r4, r5);
   }
 
-  bool commandMode(int retries = 2) {
-    int triesMade = 0;
+  bool commandMode(uint8_t retries = 2) {
+    uint8_t triesMade = 0;
     bool success = false;
     streamClear();  // Empty everything in the buffer before starting
     while (!success and triesMade < retries) {
@@ -908,7 +908,7 @@ finish:
 
   void getSeries(void) {
     sendAT(GF("HS"));  // Get the "Hardware Series";
-    int intRes = readResponseInt();
+    int16_t intRes = readResponseInt();
     beeType = (XBeeType)intRes;
     DBG(GF("### Modem: "), getModemName());
   }
@@ -922,11 +922,11 @@ finish:
     return res;
   }
 
-  int readResponseInt(uint32_t timeout = 1000) {
+  int16_t readResponseInt(uint32_t timeout = 1000) {
     String res = readResponseString(timeout);  // it just works better reading a string first
     char buf[5] = {0,};
     res.toCharArray(buf, 5);
-    int intRes = strtol(buf, 0, 16);
+    int16_t intRes = strtol(buf, 0, 16);
     return intRes;
   }
 
@@ -934,7 +934,7 @@ public:
   Stream&       stream;
 
 protected:
-  int           guardTime;
+  int16_t       guardTime;
   XBeeType      beeType;
   GsmClient*    sockets[TINY_GSM_MUX_COUNT];
 };
