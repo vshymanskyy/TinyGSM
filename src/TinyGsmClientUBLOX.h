@@ -88,8 +88,8 @@ public:
   virtual void stop() {
     TINY_GSM_YIELD();
     at->sendAT(GF("+USOCL="), mux);
+    at->waitResponse(120000L);
     sock_connected = false;
-    at->waitResponse();
     rx.clear();
   }
 
