@@ -86,7 +86,6 @@ public:
   }
 
   virtual void stop() {
-    at->modemDisconnect(mux);
     // Read and dump anything remaining in the u-blox buffer
     // The socket will appear open in response to connected() even after it
     // closes until all data is read from the buffer.
@@ -96,6 +95,7 @@ public:
       rx.clear();
       at->maintain();
     }
+    at->modemDisconnect(mux);
     sock_connected = false;
   }
 
