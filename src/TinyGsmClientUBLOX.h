@@ -86,9 +86,11 @@ public:
   }
 
   virtual void stop() {
-    // Read and dump anything remaining in the u-blox buffer
+    // Read and dump anything remaining in the modem's internal buffer.
     // The socket will appear open in response to connected() even after it
     // closes until all data is read from the buffer.
+    // Doing it this way allows the external mcu to find and get all of the data
+    // that it wants from the socket even if it was closed externally.
     at->maintain();
     while (sock_available > 0) {
       sock_available -= at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available), mux);
