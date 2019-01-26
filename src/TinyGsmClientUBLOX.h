@@ -86,11 +86,17 @@ public:
   }
 
   virtual void stop() {
-    TINY_GSM_YIELD();
-    at->sendAT(GF("+USOCL="), mux);
-    at->waitResponse(120000L);
+    at->modemDisconnect(mux);
+    // Read and dump anything remaining in the u-blox buffer
+    // The socket will appear open in response to connected() even after it
+    // closes until all data is read from the buffer.
+    at->maintain();
+    while (sock_available > 0) {
+      sock_available -= at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available), mux);
+      rx.clear();
+      at->maintain();
+    }
     sock_connected = false;
-    rx.clear();
   }
 
   virtual size_t write(const uint8_t *buf, size_t size) {
@@ -201,7 +207,7 @@ public:
     : TinyGsmModem(stream), stream(stream)
   {
     memset(sockets, 0, sizeof(sockets));
-    isCatM_NBIoT = false;
+    isCatM = false;  // For SARA R4 and N4 series
   }
 
   /*
@@ -226,8 +232,11 @@ public:
 
     String name = getModemName();
     DBG(GF("### Modem:"), name);
-    if (name.startsWith("u-blox SARA-R") or name.startsWith("u-blox SARA-N")) {
-      isCatM_NBIoT = true;
+    if (name.startsWith("u-blox SARA-R4") or name.startsWith("u-blox SARA-N4")) {
+      isCatM = true;
+    }
+    else if (name.startsWith("u-blox SARA-N2")) {
+      DBG(GF("### SARA N2 NB-IoT modems not supported!"), name);
     }
     int ret = getSimStatus();
     if (ret != SIM_READY && pin != NULL && strlen(pin) > 0) {
@@ -283,10 +292,13 @@ public:
   }
 
   bool factoryDefault() {
-    sendAT(GF("+UFACTORY=0,1"));  // Factory + Reset + Echo Off
-    waitResponse();
-    sendAT(GF("+CFUN=16"));   // Auto-baud
-    return waitResponse() == 1;
+    if (!isCatM) {
+      sendAT(GF("+UFACTORY=0,1"));  // Factory + Reset + Echo Off
+      waitResponse();
+      sendAT(GF("+CFUN=16"));   // Auto-baud
+      return waitResponse() == 1;
+    }
+    else return false;
   }
 
   String getModemInfo() {
@@ -461,7 +473,7 @@ public:
     // stack and related AT commands for sockets. This is what we're using for
     // all of the other modules.
 
-    if (isCatM_NBIoT) {
+    if (isCatM) {
       if (user && strlen(user) > 0) {
         sendAT(GF("+CGAUTH=1,0,\""), user, GF("\",\""), pwd, '"');  // Set the authentication
         waitResponse();
@@ -512,7 +524,7 @@ public:
   bool gprsDisconnect() {
 
     // LTE-M and NB-IoT modules do not support UPSx commands
-    if (isCatM_NBIoT) {
+    if (isCatM) {
       sendAT(GF("+CGACT=1,0"));  // Deactivate PDP context 0
       if (waitResponse(40000L) != 1) {
         return false;
@@ -551,7 +563,7 @@ public:
 
   String getLocalIP() {
     // LTE-M and NB-IoT modules do not support UPSx commands
-    if (isCatM_NBIoT) {
+    if (isCatM) {
       sendAT(GF("+CGPADDR"));
       if (waitResponse(GF(GSM_NL "+CGPADDR:")) != 1) {
         return "";
@@ -675,6 +687,18 @@ protected:
     sendAT(GF("+USOCO="), *mux, ",\"", host, "\",", port);  // connect on socket
     int rsp = waitResponse(75000L);
     return (1 == rsp);
+  }
+
+  bool modemDisconnect(uint8_t mux) {
+    TINY_GSM_YIELD();
+    if (isCatM) {  //  These modems allow a faster "asynchronous" close
+      sendAT(GF("+USOCL="), mux, GF(",1"));
+      return (1 == waitResponse(120000L));  // but it can take up to 120s to get a response
+    }
+    else {  // no async close
+      sendAT(GF("+USOCL="), mux);
+      return (1 == waitResponse());  // but response should be within 1 second
+    }
   }
 
   int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
@@ -838,7 +862,7 @@ public:
 
 protected:
   GsmClient*    sockets[TINY_GSM_MUX_COUNT];
-  bool          isCatM_NBIoT;
+  bool          isCatM;
 };
 
 #endif
