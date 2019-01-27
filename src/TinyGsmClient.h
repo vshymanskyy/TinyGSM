@@ -76,8 +76,8 @@
   #define TINY_GSM_MODEM_HAS_SSL
   #include <TinyGsmClientSequansMonarchCatM1.h>
   typedef TinyGsmSequansMonarchCatM1 TinyGsm;
-  typedef TinyGsm::GsmClient TinyGsmClient;
-  typedef TinyGsm::GsmClientSecure TinyGsmClientSecure;
+  typedef TinyGsmSequansMonarchCatM1::GsmClient TinyGsmClient;
+  typedef TinyGsmSequansMonarchCatM1::GsmClientSecure TinyGsmClientSecure;
 
 
 #else
