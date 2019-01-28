@@ -12,7 +12,7 @@
 
 //#define TINY_GSM_DEBUG Serial
 
-#define TINY_GSM_MUX_COUNT 5
+#define TINY_GSM_MUX_COUNT 7
 
 #include <TinyGsmCommon.h>
 
@@ -50,14 +50,15 @@ class GsmClient : public Client
 public:
   GsmClient() {}
 
-  GsmClient(TinyGsmUBLOX& modem, uint8_t mux = 1) {
+  GsmClient(TinyGsmUBLOX& modem, uint8_t mux = 0) {
     init(&modem, mux);
   }
 
-  bool init(TinyGsmUBLOX* modem, uint8_t mux = 1) {
+  bool init(TinyGsmUBLOX* modem, uint8_t mux = 0) {
     this->at = modem;
     this->mux = mux;
     sock_available = 0;
+    prev_check = 0;
     sock_connected = false;
     got_data = false;
     return true;
@@ -481,7 +482,7 @@ public:
         waitResponse();
       }
 
-      sendAT(GF("+CGDCONT=1,\"IP\",\""), apn, '"');  // Define the PDP context
+      sendAT(GF("+CGDCONT=1,\"IP\",\""), apn, '"');  // Define PDP context 1
       waitResponse();
 
       sendAT(GF("+CGACT=1,1"));  // activate PDP profile/context 1
@@ -527,7 +528,7 @@ public:
 
     // LTE-M and NB-IoT modules do not support UPSx commands
     if (isCatM) {
-      sendAT(GF("+CGACT=1,0"));  // Deactivate PDP context 0
+      sendAT(GF("+CGACT=1,0"));  // Deactivate PDP context 1
       if (waitResponse(40000L) != 1) {
         return false;
       }
@@ -686,8 +687,11 @@ protected:
     //sendAT(GF("+USOSO="), *mux, GF(",6,2,30000"));
     //waitResponse();
 
-    sendAT(GF("+USOCO="), *mux, ",\"", host, "\",", port);  // connect on socket
-    int rsp = waitResponse(75000L);
+    // connect on socket
+    // TODO:  Use async connection?  Would return OK right away, but we would
+    // have to wait for the +UUSOCO URC to verify connection
+    sendAT(GF("+USOCO="), *mux, ",\"", host, "\",", port);
+    int rsp = waitResponse(120000L);
     return (1 == rsp);
   }
 
@@ -695,7 +699,7 @@ protected:
     TINY_GSM_YIELD();
     if (isCatM) {  //  These modems allow a faster "asynchronous" close
       sendAT(GF("+USOCL="), mux, GF(",1"));
-      return (1 == waitResponse(120000L));  // but it can take up to 120s to get a response
+      return (1 == waitResponse(120000L));  // but it still can take up to 120s to get a response
     }
     else {  // no async close
       sendAT(GF("+USOCL="), mux);
@@ -718,6 +722,7 @@ protected:
     streamSkipUntil(','); // Skip mux
     int sent = stream.readStringUntil('\n').toInt();
     waitResponse();
+    maintain();  // look for a very quick response
     return sent;
   }
 
@@ -743,7 +748,8 @@ protected:
   size_t modemGetAvailable(uint8_t mux) {
     sendAT(GF("+USORD="), mux, ",0");
     size_t result = 0;
-    if (waitResponse(GF(GSM_NL "+USORD:")) == 1) {
+    uint8_t res = waitResponse(GF(GSM_NL "+USORD:"), GF(GSM_NL "ERROR"), GF(GSM_NL "+CME ERROR: Operation not allowed"));
+    if (res == 1) {
       streamSkipUntil(','); // Skip mux
       result = stream.readStringUntil('\n').toInt();
       waitResponse();
@@ -756,7 +762,8 @@ protected:
 
   bool modemGetConnected(uint8_t mux) {
     sendAT(GF("+USOCTL="), mux, ",10");
-    if (waitResponse(GF(GSM_NL "+USOCTL:")) != 1)
+    uint8_t res = waitResponse(GF(GSM_NL "+USOCTL:"), GF(GSM_NL "ERROR"), GF(GSM_NL "+CME ERROR: Operation not allowed"));
+    if (res != 1)
       return false;
 
     streamSkipUntil(','); // Skip mux
