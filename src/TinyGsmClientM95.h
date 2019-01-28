@@ -94,6 +94,7 @@ public:
     // closes until all data is read from the buffer.
     // Doing it this way allows the external mcu to find and get all of the data
     // that it wants from the socket even if it was closed externally.
+    rx.clear();
     at->maintain();
     while (sock_available > 0) {
       sock_available -= at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available), mux);

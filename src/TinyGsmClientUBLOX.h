@@ -71,6 +71,7 @@ public:
     rx.clear();
     sock_connected = at->modemConnect(host, port, &mux);
     at->sockets[mux] = this;
+    at->maintain();
     return sock_connected;
   }
 
@@ -87,11 +88,13 @@ public:
   }
 
   virtual void stop() {
+    TINY_GSM_YIELD();
     // Read and dump anything remaining in the modem's internal buffer.
     // The socket will appear open in response to connected() even after it
     // closes until all data is read from the buffer.
     // Doing it this way allows the external mcu to find and get all of the data
     // that it wants from the socket even if it was closed externally.
+    rx.clear();
     at->maintain();
     while (sock_available > 0) {
       sock_available -= at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available), mux);
@@ -120,6 +123,13 @@ public:
   virtual int available() {
     TINY_GSM_YIELD();
     if (!rx.size()) {
+      // Workaround: sometimes SARA R410 forgets to notify about data arrival.
+      // TODO: Currently we ping the module periodically,
+      // but maybe there's a better indicator that we need to poll
+      if (millis() - prev_check > 250) {
+        got_data = true;
+        prev_check = millis();
+      }
       at->maintain();
     }
     return rx.size() + sock_available;
@@ -137,8 +147,15 @@ public:
         cnt += chunk;
         continue;
       }
-      // TODO: Read directly into user buffer?
+      // Workaround: sometimes SARA R410 forgets to notify about data arrival.
+      // TODO: Currently we ping the module periodically,
+      // but maybe there's a better indicator that we need to poll
+      if (millis() - prev_check > 250) {
+        got_data = true;
+        prev_check = millis();
+      }
       at->maintain();
+      // TODO: Read directly into user buffer?
       if (sock_available > 0) {
         sock_available -= at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available), mux);
       } else {
@@ -177,6 +194,7 @@ private:
   TinyGsmUBLOX* at;
   uint8_t       mux;
   uint16_t      sock_available;
+  uint32_t      prev_check;
   bool          sock_connected;
   bool          got_data;
   RxFifo        rx;
@@ -199,6 +217,7 @@ public:
     rx.clear();
     sock_connected = at->modemConnect(host, port, &mux, true);
     at->sockets[mux] = this;
+    at->maintain();
     return sock_connected;
   }
 };
@@ -687,9 +706,9 @@ protected:
     //sendAT(GF("+USOSO="), *mux, GF(",6,2,30000"));
     //waitResponse();
 
-    // connect on socket
-    // TODO:  Use async connection?  Would return OK right away, but we would
-    // have to wait for the +UUSOCO URC to verify connection
+    // connect on the allocated socket
+    // TODO:  Use faster "asynchronous" connection?
+    // We would have to wait for the +UUSOCO URC to verify connection
     sendAT(GF("+USOCO="), *mux, ",\"", host, "\",", port);
     int rsp = waitResponse(120000L);
     return (1 == rsp);
@@ -697,14 +716,19 @@ protected:
 
   bool modemDisconnect(uint8_t mux) {
     TINY_GSM_YIELD();
-    if (isCatM) {  //  These modems allow a faster "asynchronous" close
+    // TODO:  Use faster "asynchronous" close for LTE-M modems?
+    // We would have to wait for the +UUSOCL URC to verify dis-connection
+    // This also can create a nightmare if attempting to use a single client object
+    // because the modem automatically reallocates a new client if the previous
+    // close hasn't finished.
+    /*if (isCatM) {  //  These modems allow a faster "asynchronous" close
       sendAT(GF("+USOCL="), mux, GF(",1"));
       return (1 == waitResponse(120000L));  // but it still can take up to 120s to get a response
     }
-    else {  // no async close
+    else {*/  // no async close
       sendAT(GF("+USOCL="), mux);
-      return (1 == waitResponse());  // but response should be within 1 second
-    }
+      return (1 == waitResponse(120000L));  // it can take up to 120s to get a response on LTE-M models
+    /*}*/
   }
 
   int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
@@ -769,8 +793,20 @@ protected:
     streamSkipUntil(','); // Skip mux
     streamSkipUntil(','); // Skip type
     int result = stream.readStringUntil('\n').toInt();
+    // 0: the socket is in INACTIVE status (it corresponds to CLOSED status
+    // defined in RFC793 "TCP Protocol Specification" [112])
+    // 1: the socket is in LISTEN status
+    // 2: the socket is in SYN_SENT status
+    // 3: the socket is in SYN_RCVD status
+    // 4: the socket is in ESTABILISHED status
+    // 5: the socket is in FIN_WAIT_1 status
+    // 6: the socket is in FIN_WAIT_2 status
+    // 7: the sokcet is in CLOSE_WAIT status
+    // 8: the socket is in CLOSING status
+    // 9: the socket is in LAST_ACK status
+    // 10: the socket is in TIME_WAIT status
     waitResponse();
-    return result != 0;
+    return (result != 0 && result != 7 && result != 8);
   }
 
 public:
