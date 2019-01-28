@@ -66,7 +66,19 @@ public:
 
 public:
   virtual int connect(const char *host, uint16_t port) {
-    if (sock_connected) stop();
+    if (sock_connected) {
+      stop();
+      // If we're creating a new connection on the same client, we need to wait
+      // until the async close has finished on Cat-M modems.
+      // After close has completed, the +UUSOCL should appear.
+      if (at->isCatM) {
+        DBG("Waiting for +UUSOCL URC on", mux);
+        for (unsigned long start = millis(); millis() - start < 120000L; ) {
+          at->maintain();
+          if (!sock_connected) break;
+        }
+      }
+    }
     TINY_GSM_YIELD();
     rx.clear();
     sock_connected = at->modemConnect(host, port, &mux);
@@ -102,7 +114,9 @@ public:
       at->maintain();
     }
     at->modemDisconnect(mux);
-    sock_connected = false;
+    // We don't actually know if the CatM modem has finished closing because
+    // we're using an "asynchronous" close
+    if (!at->isCatM) sock_connected = false;
   }
 
   virtual size_t write(const uint8_t *buf, size_t size) {
@@ -309,7 +323,7 @@ public:
       }
     }
     while (stream.available()) {
-      waitResponse(10, NULL, NULL);
+      waitResponse(15, NULL, NULL);
     }
   }
 
@@ -716,19 +730,15 @@ protected:
 
   bool modemDisconnect(uint8_t mux) {
     TINY_GSM_YIELD();
-    // TODO:  Use faster "asynchronous" close for LTE-M modems?
-    // We would have to wait for the +UUSOCL URC to verify dis-connection
-    // This also can create a nightmare if attempting to use a single client object
-    // because the modem automatically reallocates a new client if the previous
-    // close hasn't finished.
-    /*if (isCatM) {  //  These modems allow a faster "asynchronous" close
+    if (isCatM) {  //  These modems allow a faster "asynchronous" close
       sendAT(GF("+USOCL="), mux, GF(",1"));
-      return (1 == waitResponse(120000L));  // but it still can take up to 120s to get a response
+      int rsp = waitResponse(120000L);
+      return (1 == rsp);  // but it still can take up to 120s to get a response
     }
-    else {*/  // no async close
+    else {  // no async close
       sendAT(GF("+USOCL="), mux);
-      return (1 == waitResponse(120000L));  // it can take up to 120s to get a response on LTE-M models
-    /*}*/
+      return (1 == waitResponse());
+    }
   }
 
   int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
@@ -772,13 +782,15 @@ protected:
   size_t modemGetAvailable(uint8_t mux) {
     sendAT(GF("+USORD="), mux, ",0");
     size_t result = 0;
-    uint8_t res = waitResponse(GF(GSM_NL "+USORD:"), GF(GSM_NL "ERROR"), GF(GSM_NL "+CME ERROR: Operation not allowed"));
+    uint8_t res = waitResponse(GF(GSM_NL "+USORD:"));
+    // Will give error "operation not allowed" when attempting to read a socket
+    // that you have already told to close
     if (res == 1) {
       streamSkipUntil(','); // Skip mux
       result = stream.readStringUntil('\n').toInt();
       waitResponse();
     }
-    if (!result) {
+    if (!result && res != 2 && res != 3) {  // Don't check modemGetConnected after an error
       sockets[mux]->sock_connected = modemGetConnected(mux);
     }
     return result;
@@ -786,7 +798,7 @@ protected:
 
   bool modemGetConnected(uint8_t mux) {
     sendAT(GF("+USOCTL="), mux, ",10");
-    uint8_t res = waitResponse(GF(GSM_NL "+USOCTL:"), GF(GSM_NL "ERROR"), GF(GSM_NL "+CME ERROR: Operation not allowed"));
+    uint8_t res = waitResponse(GF(GSM_NL "+USOCTL:"));
     if (res != 1)
       return false;
 
@@ -806,7 +818,7 @@ protected:
     // 9: the socket is in LAST_ACK status
     // 10: the socket is in TIME_WAIT status
     waitResponse();
-    return (result != 0 && result != 7 && result != 8);
+    return (result != 0);
   }
 
 public:
