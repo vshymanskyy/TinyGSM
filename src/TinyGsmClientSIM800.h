@@ -107,7 +107,7 @@ public:
       rx.clear();
       at->maintain();
     }
-    at->sendAT(GF("+CIPCLOSE="), mux);
+    at->sendAT(GF("+CIPCLOSE="), mux, GF(",1"));  // Quick close
     sock_connected = false;
     at->waitResponse();
   }
