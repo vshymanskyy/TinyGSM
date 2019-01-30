@@ -78,6 +78,12 @@ public:
   }
 
 public:
+  // NOTE:  The XBee saves all paramter information in flash.  When you turn it
+  // on it immediately begins to re-connect to whatever was last connected to.
+  // All the modemConnect() function does is tell it the paramters to put into
+  // flash.  The connection itself happens automatically after that.
+  // Because everything is saved, it is possible (or likely) that you will be
+  // connected even if you haven't "made" any connection
   virtual int connect(const char *host, uint16_t port) {
     at->streamClear();  // Empty anything in the buffer before starting
     if (at->commandMode())  {  // Don't try if we didn't successfully get into command mode
@@ -85,8 +91,8 @@ public:
       at->writeChanges();
       at->exitCommand();
     }
-    else
-      sock_connected = false;
+    // After setting connection information, check if we're actually connected
+    sock_connected = at->modemGetConnected();
     return sock_connected;
   }
 
@@ -97,8 +103,8 @@ public:
       at->writeChanges();
       at->exitCommand();
     }
-    else
-      sock_connected = false;
+    // After setting connection information, check if we're actually connected
+    sock_connected = at->modemGetConnected();
     return sock_connected;
   }
 
@@ -119,7 +125,8 @@ public:
     at->writeChanges();
     at->exitCommand();
     at->streamClear();  // Empty anything remaining in the buffer
-    sock_connected = false;
+    // sock_connected = false;
+    // Note:  because settings are saved in flash, the XBEE may immediately attempt to reconnect
   }
 
   virtual size_t write(const uint8_t *buf, size_t size) {
@@ -139,51 +146,57 @@ public:
   virtual int available() {
     TINY_GSM_YIELD();
     return at->stream.available();
-    // if (!rx.size() || at->stream.available()) {
-    //   at->maintain();
-    // }
-    // return at->stream.available() + rx.size();
+    /*
+    if (!rx.size() || at->stream.available()) {
+      at->maintain();
+    }
+    return at->stream.available() + rx.size();
+    */
   }
 
   virtual int read(uint8_t *buf, size_t size) {
     TINY_GSM_YIELD();
     return at->stream.readBytes((char *)buf, size);
-    // size_t cnt = 0;
-    // uint32_t _startMillis = millis();
-    // while (cnt < size && millis() - _startMillis < _timeout) {
-    //   size_t chunk = TinyGsmMin(size-cnt, rx.size());
-    //   if (chunk > 0) {
-    //     rx.get(buf, chunk);
-    //     buf += chunk;
-    //     cnt += chunk;
-    //     continue;
-    //   }
-    //   // TODO: Read directly into user buffer?
-    //   if (!rx.size() || at->stream.available()) {
-    //     at->maintain();
-    //   }
-    // }
-    // return cnt;
+    /*
+    size_t cnt = 0;
+    uint32_t _startMillis = millis();
+    while (cnt < size && millis() - _startMillis < _timeout) {
+      size_t chunk = TinyGsmMin(size-cnt, rx.size());
+      if (chunk > 0) {
+        rx.get(buf, chunk);
+        buf += chunk;
+        cnt += chunk;
+        continue;
+      }
+      // TODO: Read directly into user buffer?
+      if (!rx.size() || at->stream.available()) {
+        at->maintain();
+      }
+    }
+    return cnt;
+    */
   }
 
   virtual int read() {
     TINY_GSM_YIELD();
     return at->stream.read();
-    // uint8_t c;
-    // if (read(&c, 1) == 1) {
-    //   return c;
-    // }
-    // return -1;
+    /*
+    uint8_t c;
+    if (read(&c, 1) == 1) {
+      return c;
+    }
+    return -1;
+    */
   }
 
   virtual int peek() { return at->stream.peek(); }
-  // virtual int peek() { return -1; } //TODO
   virtual void flush() { at->stream.flush(); }
 
   virtual uint8_t connected() {
     if (available()) {
       return true;
     }
+    sock_connected = at->modemGetConnected();
     return sock_connected;
   }
   virtual operator bool() { return connected(); }
@@ -219,8 +232,8 @@ public:
       at->writeChanges();
       at->exitCommand();
     }
-    else
-      sock_connected = false;
+    // After setting connection information, check if we're actually connected
+    sock_connected = at->modemGetConnected();
     return sock_connected;
   }
 
@@ -231,8 +244,8 @@ public:
       at->writeChanges();
       at->exitCommand();
     }
-    else
-      sock_connected = false;
+    // After setting connection information, check if we're actually connected
+    sock_connected = at->modemGetConnected();
     return sock_connected;
   }
 };
@@ -246,6 +259,8 @@ public:
       beeType = XBEE_UNKNOWN;  // Start not knowing what kind of bee it is
       guardTime = TINY_GSM_XBEE_GUARD_TIME;  // Start with the default guard time of 1 second
       resetPin = -1;
+      ipAddr = IPAddress(0,0,0,0);
+      host = "";
       memset(sockets, 0, sizeof(sockets));
   }
 
@@ -255,6 +270,8 @@ public:
       beeType = XBEE_UNKNOWN;  // Start not knowing what kind of bee it is
       guardTime = TINY_GSM_XBEE_GUARD_TIME;  // Start with the default guard time of 1 second
       this->resetPin = resetPin;
+      ipAddr = IPAddress(0,0,0,0);
+      host = "";
       memset(sockets, 0, sizeof(sockets));
   }
 
@@ -742,7 +759,7 @@ public:
 
 protected:
 
-  bool modemConnect(const char* host, uint16_t port, uint8_t mux = 0, bool ssl = false) {
+  IPAddress getHostIP(const char* host) {
     String strIP; strIP.reserve(16);
     unsigned long startMillis = millis();
     bool gotIP = false;
@@ -758,13 +775,31 @@ protected:
       delay(2500);  // wait a bit before trying again
     }
     if (gotIP) {  // No reason to continue if we don't know the IP address
-      IPAddress ip = TinyGsmIpFromString(strIP);
-      return modemConnect(ip, port, mux, ssl);
+      return TinyGsmIpFromString(strIP);
+    }
+    else return IPAddress(0,0,0,0);
+  }
+
+  bool modemConnect(const char* host, uint16_t port, uint8_t mux = 0, bool ssl = false) {
+    // If requested host is the same as the previous one and we already
+    // have a valid IP address, we don't have to do anything.
+    if (this->host == String(host) && ipAddr != IPAddress(0,0,0,0)) {
+      return true;
+    }
+
+    // Otherwise, set the new host and mark the IP as invalid
+    this->host = String(host);
+    ipAddr == getHostIP(host);  // This will return 0.0.0.0 if lookup fails
+
+    // If we now have a valid IP address, use it to connect
+    if (ipAddr != IPAddress(0,0,0,0)) {  // Only re-set connection information if we have an IP address
+      return modemConnect(ipAddr, port, mux, ssl);
     }
     else return false;
   }
 
   bool modemConnect(IPAddress ip, uint16_t port, uint8_t mux = 0, bool ssl = false) {
+    ipAddr = ip;  // Set the newly requested IP address
     bool success = true;
     String host; host.reserve(16);
     host += ip[0];
@@ -794,12 +829,41 @@ protected:
     return len;
   }
 
-  bool modemGetConnected(uint8_t mux = 0) {
-    if (!commandMode()) return false;
-    sendAT(GF("AI"));
-    int16_t res = waitResponse(GF("0"));
-    exitCommand();
-    return 1 == res;
+  bool modemGetConnected() {
+
+    if (!commandMode()) return false;  // Return immediately
+
+    // If the IP address is 0, it's not valid so we can't be connected
+    if (ipAddr == IPAddress(0,0,0,0)) return false;
+
+    // Verify that we're connected to the *right* IP address
+    // We might be connected - but to the wrong thing
+    // NOTE:  In transparent mode, there is only one connection possible - no multiplex
+    String strIP; strIP.reserve(16);
+    sendAT(GF("DL"));
+    strIP = stream.readStringUntil('\r');  // read result
+    if (TinyGsmIpFromString(strIP) != ipAddr) return exitAndFail();
+
+    if (beeType == XBEE_UNKNOWN) getSeries();  // Need to know the bee type to interpret response
+
+    switch (beeType){  // The wifi be can only say if it's connected to the netowrk
+      case XBEE_S6B_WIFI: {
+        RegStatus s = getRegistrationStatus();
+        if (s != REG_OK) {
+          sockets[0]->sock_connected = false;
+        }
+        return (s == REG_OK);  // if it's connected, we hope the sockets are too
+      }
+      default: {
+        sendAT(GF("CI"));
+        int16_t intRes = readResponseInt();
+        exitCommand();
+        if (intRes != 0) {
+          sockets[0]->sock_connected = false;
+        }
+        return (0 == intRes);
+      }
+    }
   }
 
 public:
@@ -968,6 +1032,8 @@ protected:
   int16_t       guardTime;
   int8_t        resetPin;
   XBeeType      beeType;
+  IPAddress     ipAddr;
+  String        host;
   GsmClient*    sockets[TINY_GSM_MUX_COUNT];
 };
 
