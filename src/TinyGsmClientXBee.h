@@ -245,6 +245,16 @@ public:
   {
       beeType = XBEE_UNKNOWN;  // Start not knowing what kind of bee it is
       guardTime = TINY_GSM_XBEE_GUARD_TIME;  // Start with the default guard time of 1 second
+      resetPin = -1;
+      memset(sockets, 0, sizeof(sockets));
+  }
+
+  TinyGsmXBee(Stream& stream, int8_t resetPin)
+    : TinyGsmModem(stream), stream(stream)
+  {
+      beeType = XBEE_UNKNOWN;  // Start not knowing what kind of bee it is
+      guardTime = TINY_GSM_XBEE_GUARD_TIME;  // Start with the default guard time of 1 second
+      this->resetPin = resetPin;
       memset(sockets, 0, sizeof(sockets));
   }
 
@@ -253,6 +263,11 @@ public:
    */
 
   bool init(const char* pin = NULL) {
+
+    if (resetPin >= 0) {
+      pinMode(resetPin, OUTPUT);
+      digitalWrite(resetPin, HIGH);
+    }
 
     if (!commandMode(10)) return false;  // Try up to 10 times for the init
 
@@ -382,6 +397,16 @@ public:
   /*
    * Power functions
    */
+
+  // The XBee's have a bad habit of getting into an unresponsive funk
+  // This uses the board's hardware reset pin to force it to reset
+  void pinReset() {
+    if (resetPin >= 0) {
+      digitalWrite(resetPin, LOW);
+      delay(1);
+      digitalWrite(resetPin, HIGH);
+    }
+  }
 
   bool restart() {
     if (!commandMode()) return false;  // Return immediately
@@ -874,7 +899,7 @@ finish:
     return waitResponse(1000, r1, r2, r3, r4, r5);
   }
 
-  bool commandMode(uint8_t retries = 2) {
+  bool commandMode(uint8_t retries = 3) {
     uint8_t triesMade = 0;
     bool success = false;
     streamClear();  // Empty everything in the buffer before starting
@@ -883,7 +908,12 @@ finish:
       // Default guard time is 1s, but the init fxn decreases it to 250 ms
       delay(guardTime);
       streamWrite(GF("+++"));  // enter command mode
-      success = (1 == waitResponse(guardTime*2));
+      int res = waitResponse(guardTime*2);
+      success = (1 == res);
+      if (0 == res && triesMade > 2) {
+        pinReset();  // if it's unresponsive, reset
+        delay(100);  // a short delay to allow it to come back up TODO-optimize this
+      }
       triesMade ++;
     }
     return success;
@@ -936,6 +966,7 @@ public:
 
 protected:
   int16_t       guardTime;
+  int8_t        resetPin;
   XBeeType      beeType;
   GsmClient*    sockets[TINY_GSM_MUX_COUNT];
 };
