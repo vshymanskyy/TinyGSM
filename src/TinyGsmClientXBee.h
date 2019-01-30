@@ -419,6 +419,7 @@ public:
   // This uses the board's hardware reset pin to force it to reset
   void pinReset() {
     if (resetPin >= 0) {
+      DBG("### Forcing a modem reset!\r\n");
       digitalWrite(resetPin, LOW);
       delay(1);
       digitalWrite(resetPin, HIGH);
