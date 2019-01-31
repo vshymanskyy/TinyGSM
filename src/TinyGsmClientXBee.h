@@ -81,21 +81,15 @@ public:
   // NOTE:  The XBee saves all paramter information in flash.  When you turn it
   // on it immediately begins to re-connect to whatever was last connected to.
   // All the modemConnect() function does is tell it the paramters to put into
-  // flash.  The connection itself happens automatically after that.
-  // Because everything is saved, it is possible (or likely) that you will be
-  // connected even if you haven't "made" any connection
+  // flash.  The connection itself is not opened until you attempt to send data.
+  // Because all settings are saved to flash, it is possible (or likely) that
+  // you could send out data even if you haven't "made" any connection.
   virtual int connect(const char *host, uint16_t port) {
     at->streamClear();  // Empty anything in the buffer before starting
     if (at->commandMode())  {  // Don't try if we didn't successfully get into command mode
-      at->modemConnect(host, port, mux, false);
+      sock_connected = at->modemConnect(host, port, mux, false);
       at->writeChanges();
       at->exitCommand();
-    }
-    // After setting connection information, wait until we're at least not defintiely disconnected
-    uint32_t _startMillis = millis();
-    while (millis() - _startMillis < 10000 && !sock_connected) {
-      sock_connected = at->modemGetConnected();
-      if (at->savedIP == IPAddress(0,0,0,0)) break;  // if we never got an IP, give up
     }
     return sock_connected;
   }
@@ -103,14 +97,9 @@ public:
   virtual int connect(IPAddress ip, uint16_t port) {
     at->streamClear();  // Empty anything in the buffer before starting
     if (at->commandMode())  {  // Don't try if we didn't successfully get into command mode
-      at->modemConnect(ip, port, mux, false);
+      sock_connected = at->modemConnect(ip, port, mux, false);
       at->writeChanges();
       at->exitCommand();
-    }
-    // After setting connection information, wait until we're at least not defintiely disconnected
-    uint32_t _startMillis = millis();
-    while (millis() - _startMillis < 10000 && !sock_connected) {
-      sock_connected = at->modemGetConnected();
     }
     return sock_connected;
   }
@@ -245,15 +234,9 @@ public:
   virtual int connect(const char *host, uint16_t port) {
     at->streamClear();  // Empty anything in the buffer before starting
     if (at->commandMode())  {  // Don't try if we didn't successfully get into command mode
-      at->modemConnect(host, port, mux, true);
+      sock_connected = at->modemConnect(host, port, mux, true);
       at->writeChanges();
       at->exitCommand();
-    }
-    // After setting connection information, wait until we're at least not defintiely disconnected
-    uint32_t _startMillis = millis();
-    while (millis() - _startMillis < 10000 && !sock_connected) {
-      sock_connected = at->modemGetConnected();
-      if (at->savedIP == IPAddress(0,0,0,0)) break;  // if we never got an IP, give up
     }
     return sock_connected;
   }
@@ -261,14 +244,9 @@ public:
   virtual int connect(IPAddress ip, uint16_t port) {
     at->streamClear();  // Empty anything in the buffer before starting
     if (at->commandMode())  {  // Don't try if we didn't successfully get into command mode
-      at->modemConnect(ip, port, mux, false);
+      sock_connected = at->modemConnect(ip, port, mux, false);
       at->writeChanges();
       at->exitCommand();
-    }
-    // After setting connection information, wait until we're at least not defintiely disconnected
-    uint32_t _startMillis = millis();
-    while (millis() - _startMillis < 10000 && !sock_connected) {
-      sock_connected = at->modemGetConnected();
     }
     return sock_connected;
   }
