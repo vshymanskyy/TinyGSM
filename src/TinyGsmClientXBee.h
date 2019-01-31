@@ -87,24 +87,31 @@ public:
   virtual int connect(const char *host, uint16_t port) {
     at->streamClear();  // Empty anything in the buffer before starting
     if (at->commandMode())  {  // Don't try if we didn't successfully get into command mode
-      sock_connected = at->modemConnect(host, port, mux, false);
+      at->modemConnect(host, port, mux, false);
       at->writeChanges();
       at->exitCommand();
     }
-    // After setting connection information, check if we're actually connected
-    sock_connected = at->modemGetConnected();
+    // After setting connection information, wait until we're at least not defintiely disconnected
+    uint32_t _startMillis = millis();
+    while (millis() - _startMillis < 10000 && !sock_connected) {
+      sock_connected = at->modemGetConnected();
+      if (at->savedIP == IPAddress(0,0,0,0)) break;  // if we never got an IP, give up
+    }
     return sock_connected;
   }
 
   virtual int connect(IPAddress ip, uint16_t port) {
     at->streamClear();  // Empty anything in the buffer before starting
     if (at->commandMode())  {  // Don't try if we didn't successfully get into command mode
-      sock_connected = at->modemConnect(ip, port, mux, false);
+      at->modemConnect(ip, port, mux, false);
       at->writeChanges();
       at->exitCommand();
     }
-    // After setting connection information, check if we're actually connected
-    sock_connected = at->modemGetConnected();
+    // After setting connection information, wait until we're at least not defintiely disconnected
+    uint32_t _startMillis = millis();
+    while (millis() - _startMillis < 10000 && !sock_connected) {
+      sock_connected = at->modemGetConnected();
+    }
     return sock_connected;
   }
 
@@ -113,20 +120,21 @@ public:
   virtual void stop() {
     at->streamClear();  // Empty anything in the buffer
     at->commandMode();
-    at->sendAT(GF("TM0"));  // Set socket timeout to 0;
-    // Per documentation: If you change the TM value while in Transparent Mode,
-    // the current connection is immediately closed.
+    // Per documentation: If you change the TM (socket timeout) value while in
+    // Transparent Mode, the current connection is immediately closed.
     // NOTE:  Above applies to all cellular models, uncertain if it applies
     // to the WiFi models.
-    at->waitResponse();
-    at->writeChanges();
-    at->sendAT(GF("TM64"));  // Set socket timeout back to 10 seconds;
-    at->waitResponse();
+    at->sendAT(GF("TM64"));  // Set socket timeout (using Digi default of 10 seconds)
+    at->waitResponse(5000);  // This response can be slow
     at->writeChanges();
     at->exitCommand();
     at->streamClear();  // Empty anything remaining in the buffer
-    // sock_connected = false;
-    // Note:  because settings are saved in flash, the XBEE may immediately attempt to reconnect
+    sock_connected = false;
+    // Note:  because settings are saved in flash, the XBEE will attempt to
+    // reconnect to the previous socket if it receives any outgoing data.
+    // Setting sock_connected to false after the stop ensures that connected()
+    // will return false after a stop has been ordered.  This makes it play
+    // much more nicely with libraries like PubSubClient.
   }
 
   virtual size_t write(const uint8_t *buf, size_t size) {
@@ -196,7 +204,12 @@ public:
     if (available()) {
       return true;
     }
-    sock_connected = at->modemGetConnected();
+    // Double check that we don't know it's closed
+    // NOTE:  modemGetConnected() is likely to return a "false" true because
+    // it will return unknown until after data is sent over the connection.
+    // If the socket is definitely closed, modemGetConnected() will set
+    // sock_connected to false;
+    at->modemGetConnected();
     return sock_connected;
   }
   virtual operator bool() { return connected(); }
@@ -228,24 +241,31 @@ public:
   virtual int connect(const char *host, uint16_t port) {
     at->streamClear();  // Empty anything in the buffer before starting
     if (at->commandMode())  {  // Don't try if we didn't successfully get into command mode
-      sock_connected = at->modemConnect(host, port, mux, true);
+      at->modemConnect(host, port, mux, true);
       at->writeChanges();
       at->exitCommand();
     }
-    // After setting connection information, check if we're actually connected
-    sock_connected = at->modemGetConnected();
+    // After setting connection information, wait until we're at least not defintiely disconnected
+    uint32_t _startMillis = millis();
+    while (millis() - _startMillis < 10000 && !sock_connected) {
+      sock_connected = at->modemGetConnected();
+      if (at->savedIP == IPAddress(0,0,0,0)) break;  // if we never got an IP, give up
+    }
     return sock_connected;
   }
 
   virtual int connect(IPAddress ip, uint16_t port) {
     at->streamClear();  // Empty anything in the buffer before starting
     if (at->commandMode())  {  // Don't try if we didn't successfully get into command mode
-      sock_connected = at->modemConnect(ip, port, mux, true);
+      at->modemConnect(ip, port, mux, false);
       at->writeChanges();
       at->exitCommand();
     }
-    // After setting connection information, check if we're actually connected
-    sock_connected = at->modemGetConnected();
+    // After setting connection information, wait until we're at least not defintiely disconnected
+    uint32_t _startMillis = millis();
+    while (millis() - _startMillis < 10000 && !sock_connected) {
+      sock_connected = at->modemGetConnected();
+    }
     return sock_connected;
   }
 };
@@ -259,8 +279,8 @@ public:
       beeType = XBEE_UNKNOWN;  // Start not knowing what kind of bee it is
       guardTime = TINY_GSM_XBEE_GUARD_TIME;  // Start with the default guard time of 1 second
       resetPin = -1;
-      ipAddr = IPAddress(0,0,0,0);
-      host = "";
+      savedIP = IPAddress(0,0,0,0);
+      savedHost = "";
       memset(sockets, 0, sizeof(sockets));
   }
 
@@ -270,8 +290,8 @@ public:
       beeType = XBEE_UNKNOWN;  // Start not knowing what kind of bee it is
       guardTime = TINY_GSM_XBEE_GUARD_TIME;  // Start with the default guard time of 1 second
       this->resetPin = resetPin;
-      ipAddr = IPAddress(0,0,0,0);
-      host = "";
+      savedIP = IPAddress(0,0,0,0);
+      savedHost = "";
       memset(sockets, 0, sizeof(sockets));
   }
 
@@ -784,23 +804,23 @@ protected:
   bool modemConnect(const char* host, uint16_t port, uint8_t mux = 0, bool ssl = false) {
     // If requested host is the same as the previous one and we already
     // have a valid IP address, we don't have to do anything.
-    if (this->host == String(host) && ipAddr != IPAddress(0,0,0,0)) {
+    if (this->savedHost == String(host) && savedIP != IPAddress(0,0,0,0)) {
       return true;
     }
 
     // Otherwise, set the new host and mark the IP as invalid
-    this->host = String(host);
-    ipAddr == getHostIP(host);  // This will return 0.0.0.0 if lookup fails
+    this->savedHost = String(host);
+    savedIP = getHostIP(host);  // This will return 0.0.0.0 if lookup fails
 
     // If we now have a valid IP address, use it to connect
-    if (ipAddr != IPAddress(0,0,0,0)) {  // Only re-set connection information if we have an IP address
-      return modemConnect(ipAddr, port, mux, ssl);
+    if (savedIP != IPAddress(0,0,0,0)) {  // Only re-set connection information if we have an IP address
+      return modemConnect(savedIP, port, mux, ssl);
     }
     else return false;
   }
 
   bool modemConnect(IPAddress ip, uint16_t port, uint8_t mux = 0, bool ssl = false) {
-    ipAddr = ip;  // Set the newly requested IP address
+    savedIP = ip;  // Set the newly requested IP address
     bool success = true;
     String host; host.reserve(16);
     host += ip[0];
@@ -830,12 +850,16 @@ protected:
     return len;
   }
 
+  // NOTE:  The CI command returns the status of the TCP connection as open only
+  // after data has been sent on the socket.  If it returns 0xFF the socket may
+  // really be open, but no data has yet been sent.  We return this unknown value
+  // as true so there's a possibility it's wrong.
   bool modemGetConnected() {
 
     if (!commandMode()) return false;  // Return immediately
 
     // If the IP address is 0, it's not valid so we can't be connected
-    if (ipAddr == IPAddress(0,0,0,0)) return false;
+    if (savedIP == IPAddress(0,0,0,0)) return false;
 
     // Verify that we're connected to the *right* IP address
     // We might be connected - but to the wrong thing
@@ -843,7 +867,7 @@ protected:
     String strIP; strIP.reserve(16);
     sendAT(GF("DL"));
     strIP = stream.readStringUntil('\r');  // read result
-    if (TinyGsmIpFromString(strIP) != ipAddr) return exitAndFail();
+    if (TinyGsmIpFromString(strIP) != savedIP) return exitAndFail();
 
     if (beeType == XBEE_UNKNOWN) getSeries();  // Need to know the bee type to interpret response
 
@@ -859,10 +883,10 @@ protected:
         sendAT(GF("CI"));
         int16_t intRes = readResponseInt();
         exitCommand();
-        if (intRes != 0) {
-          sockets[0]->sock_connected = false;
+        if (intRes != 0 && intRes != 0xFF) {  // If it's not one of these...
+          sockets[0]->sock_connected = false;  // ...it's definitely NOT connected
         }
-        return (0 == intRes);
+        return (0 == intRes || intRes == 0xFF);
       }
     }
   }
@@ -966,6 +990,7 @@ finish:
 
   bool commandMode(uint8_t retries = 3) {
     uint8_t triesMade = 0;
+    uint8_t triesUntilReset = 2;  // only reset after 2 failures
     bool success = false;
     streamClear();  // Empty everything in the buffer before starting
     while (!success and triesMade < retries) {
@@ -975,9 +1000,13 @@ finish:
       streamWrite(GF("+++"));  // enter command mode
       int res = waitResponse(guardTime*2);
       success = (1 == res);
-      if (0 == res && triesMade > 2) {
-        pinReset();  // if it's unresponsive, reset
-        delay(100);  // a short delay to allow it to come back up TODO-optimize this
+      if (0 == res) {
+        triesUntilReset--;
+        if (triesUntilReset == 0) {
+          triesUntilReset = 2;
+          pinReset();  // if it's unresponsive, reset
+          delay(250);  // a short delay to allow it to come back up TODO-optimize this
+        }
       }
       triesMade ++;
     }
@@ -1033,8 +1062,8 @@ protected:
   int16_t       guardTime;
   int8_t        resetPin;
   XBeeType      beeType;
-  IPAddress     ipAddr;
-  String        host;
+  IPAddress     savedIP;
+  String        savedHost;
   GsmClient*    sockets[TINY_GSM_MUX_COUNT];
 };
 
