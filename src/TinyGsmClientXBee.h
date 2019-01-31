@@ -550,66 +550,71 @@ public:
 
     switch (beeType){
       case XBEE_S6B_WIFI: {
-        if(intRes == 0x00)  // 0x00 Successfully joined an access point, established IP addresses and IP listening sockets
-          stat = REG_OK;
-        else if(intRes == 0x01)  // 0x01 Wi-Fi transceiver initialization in progress.
-          stat = REG_SEARCHING;
-        else if(intRes == 0x02)  // 0x02 Wi-Fi transceiver initialized, but not yet scanning for access point.
-          stat = REG_SEARCHING;
-        else if(intRes == 0x13) { // 0x13 Disconnecting from access point.
-          restart();  // Restart the device; the S6B tends to get stuck "disconnecting"
-          stat = REG_UNREGISTERED;
+        switch (intRes) {
+          case 0x00:  // 0x00 Successfully joined an access point, established IP addresses and IP listening sockets
+            stat = REG_OK;
+            break;
+          case 0x01:  // 0x01 Wi-Fi transceiver initialization in progress.
+          case 0x02:  // 0x02 Wi-Fi transceiver initialized, but not yet scanning for access point.
+          case 0x40:  // 0x40 Waiting for WPA or WPA2 Authentication.
+          case 0x41:  // 0x41 Device joined a network and is waiting for IP configuration to complete
+          case 0x42:  // 0x42 Device is joined, IP is configured, and listening sockets are being set up.
+          case 0xFF:  // 0xFF Device is currently scanning for the configured SSID.
+            stat = REG_SEARCHING;
+            break;
+          case 0x13:  // 0x13 Disconnecting from access point.
+            restart();  // Restart the device; the S6B tends to get stuck "disconnecting"
+            stat = REG_UNREGISTERED;
+            break;
+          case 0x23:  // 0x23 SSID not configured.
+            stat = REG_UNREGISTERED;
+            break;
+          case 0x24:  // 0x24 Encryption key invalid (either NULL or invalid length for WEP).
+          case 0x27:  // 0x27 SSID was found, but join failed.
+            stat = REG_DENIED;
+            break;
+          default:
+            stat = REG_UNKNOWN;
+            break;
         }
-        else if(intRes == 0x23)  // 0x23 SSID not configured.
-          stat = REG_UNREGISTERED;
-        else if(intRes == 0x24)  // 0x24 Encryption key invalid (either NULL or invalid length for WEP).
-          stat = REG_DENIED;
-        else if(intRes == 0x27)  // 0x27 SSID was found, but join failed.
-          stat = REG_DENIED;
-        else if(intRes == 0x40)  // 0x40 Waiting for WPA or WPA2 Authentication.
-          stat = REG_SEARCHING;
-        else if(intRes == 0x41)  // 0x41 Device joined a network and is waiting for IP configuration to complete
-          stat = REG_SEARCHING;
-        else if(intRes == 0x42)  // 0x42 Device is joined, IP is configured, and listening sockets are being set up.
-          stat = REG_SEARCHING;
-        else if(intRes == 0xFF)  // 0xFF Device is currently scanning for the configured SSID.
-          stat = REG_SEARCHING;
-        else stat = REG_UNKNOWN;
         break;
       }
-      default: {
-        if(intRes == 0x00)  // 0x00 Connected to the Internet.
-          stat = REG_OK;
-        else if(intRes == 0x22)  // 0x22 Registering to cellular network.
-          stat = REG_SEARCHING;
-        else if(intRes == 0x23)  // 0x23 Connecting to the Internet.
-          stat = REG_SEARCHING;
-        else if(intRes == 0x24)  // 0x24 The cellular component is missing, corrupt, or otherwise in error.
-          stat = REG_UNKNOWN;
-        else if(intRes == 0x25)  // 0x25 Cellular network registration denied.
-          stat = REG_DENIED;
-        else if(intRes == 0x2A) {  // 0x2A Airplane mode.
-          sendAT(GF("AM0"));  // Turn off airplane mode
-          waitResponse();
-          writeChanges();
-          stat = REG_UNKNOWN;
-        }
-        else if(intRes == 0x2B) {  // 0x2B USB Direct active.
-          stat = REG_UNKNOWN;
-        }
-        else if(intRes == 0x2C)  // 0x2C Cellular component is in PSM (power save mode).
-          stat = REG_UNKNOWN;
-        else if(intRes == 0x2F) {  // 0x2F Bypass mode active.
-          sendAT(GF("AP0"));  // Set back to transparent mode
-          waitResponse();
-          writeChanges();
-          stat = REG_UNKNOWN;
-        }
-        else if(intRes == 0xFF)  // 0xFF Initializing.
-          stat = REG_SEARCHING;
-        else stat = REG_UNKNOWN;
+      default: {  // Cellular XBee's
+        switch (intRes) {
+          case 0x00:  // 0x00 Connected to the Internet.
+            stat = REG_OK;
+            break;
+          case 0x22:  // 0x22 Registering to cellular network.
+          case 0x23:  // 0x23 Connecting to the Internet.
+          case 0xFF:  // 0xFF Initializing.
+            stat = REG_SEARCHING;
           break;
+          case 0x24:  // 0x24 The cellular component is missing, corrupt, or otherwise in error.
+          case 0x2B:  // 0x2B USB Direct active.
+          case 0x2C:  // 0x2C Cellular component is in PSM (power save mode).
+            stat = REG_UNKNOWN;
+            break;
+          case 0x25:  // 0x25 Cellular network registration denied.
+            stat = REG_DENIED;
+            break;
+          case  0x2A:  // 0x2A Airplane mode.
+            sendAT(GF("AM0"));  // Turn off airplane mode
+            waitResponse();
+            writeChanges();
+            stat = REG_UNKNOWN;
+            break;
+          case 0x2F:  // 0x2F Bypass mode active.
+            sendAT(GF("AP0"));  // Set back to transparent mode
+            waitResponse();
+            writeChanges();
+            stat = REG_UNKNOWN;
+            break;
+          default:
+            stat = REG_UNKNOWN;
+            break;
         }
+        break;
+      }
     }
 
     exitCommand();
@@ -879,14 +884,22 @@ protected:
         }
         return (s == REG_OK);  // if it's connected, we hope the sockets are too
       }
-      default: {
+      default: {  // Cellular XBee's
         sendAT(GF("CI"));
         int16_t intRes = readResponseInt();
         exitCommand();
-        if (intRes != 0 && intRes != 0xFF) {  // If it's not one of these...
-          sockets[0]->sock_connected = false;  // ...it's definitely NOT connected
+        switch(intRes) {
+          case 0x00:  // 0x00 = The socket is definitely open
+          case 0xFF:  // 0xFF = No known status - this is always returned prior to sending data
+            return true;
+          case 0x02:  // 0x02 = Invalid parameters (bad IP/host)
+          case 0x12:  // 0x12 = DNS query lookup failure
+          case 0x25:  // 0x25 = Unknown server - DNS lookup failed (0x22 for UDP socket!)
+            savedIP = IPAddress(0,0,0,0);  // force a lookup next time!
+          default:  // If it's anything else (inc 0x02, 0x12, and 0x25)...
+            sockets[0]->sock_connected = false;  // ...it's definitely NOT connected
+            return false;
         }
-        return (0 == intRes || intRes == 0xFF);
       }
     }
   }
