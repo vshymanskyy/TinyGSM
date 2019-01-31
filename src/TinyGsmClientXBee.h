@@ -115,15 +115,19 @@ public:
     return sock_connected;
   }
 
-  // This is a hack to shut the socket by setting the timeout to zero and
-  // then sending an empty line to the server.
   virtual void stop() {
     at->streamClear();  // Empty anything in the buffer
     at->commandMode();
-    // Per documentation: If you change the TM (socket timeout) value while in
-    // Transparent Mode, the current connection is immediately closed.
-    // NOTE:  Above applies to all cellular models, uncertain if it applies
-    // to the WiFi models.
+    // For WiFi models, there's no direct way to close the socket.  This is a
+    // hack to shut the socket by setting the timeout to zero.
+    if (at->beeType == XBEE_S6B_WIFI) {
+      at->sendAT(GF("TM0"));  // Set socket timeout (using Digi default of 10 seconds)
+      at->waitResponse(5000);  // This response can be slow
+      at->writeChanges();
+    }
+    // For cellular models, per documentation: If you change the TM (socket
+    // timeout) value while in Transparent Mode, the current connection is
+    // immediately closed.
     at->sendAT(GF("TM64"));  // Set socket timeout (using Digi default of 10 seconds)
     at->waitResponse(5000);  // This response can be slow
     at->writeChanges();
