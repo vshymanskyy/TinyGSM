@@ -5,7 +5,7 @@
  *   or from http://librarymanager/all#StreamDebugger
  *
  * TinyGSM Getting Started guide:
- *   http://tiny.cc/tiny-gsm-readme
+ *   https://tiny.cc/tinygsm-readme
  *
  **************************************************************/
 
