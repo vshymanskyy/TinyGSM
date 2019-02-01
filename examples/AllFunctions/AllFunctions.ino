@@ -1,7 +1,7 @@
 /**************************************************************
  *
  * TinyGSM Getting Started guide:
- *   http://tiny.cc/tiny-gsm-readme
+ *   https://tiny.cc/tinygsm-readme
  *
  * NOTE:
  * Some of the functions may be unavailable for your modem.

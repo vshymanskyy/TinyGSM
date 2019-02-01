@@ -4,7 +4,7 @@
  * It can be used to perform HTTP/RESTful API calls.
  *
  * TinyGSM Getting Started guide:
- *   http://tiny.cc/tiny-gsm-readme
+ *   https://tiny.cc/tinygsm-readme
  *
  **************************************************************/
 

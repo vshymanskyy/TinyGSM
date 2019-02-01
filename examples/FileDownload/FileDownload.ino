@@ -5,7 +5,7 @@
  *   or from http://librarymanager/all#CRC32+checksum
  *
  * TinyGSM Getting Started guide:
- *   http://tiny.cc/tiny-gsm-readme
+ *   https://tiny.cc/tinygsm-readme
  *
  * ATTENTION! Downloading big files requires of knowledge of
  * the TinyGSM internals and some modem specifics,

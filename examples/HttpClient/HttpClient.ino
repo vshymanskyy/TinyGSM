@@ -8,7 +8,7 @@
  *   or from http://librarymanager/all#ArduinoHttpClient
  *
  * TinyGSM Getting Started guide:
- *   http://tiny.cc/tiny-gsm-readme
+ *   https://tiny.cc/tinygsm-readme
  *
  * For more HTTP API examples, see ArduinoHttpClient library
  *

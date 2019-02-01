@@ -8,7 +8,7 @@
  *   or from http://librarymanager/all#ArduinoHttpClient
  *
  * TinyGSM Getting Started guide:
- *   http://tiny.cc/tiny-gsm-readme
+ *   https://tiny.cc/tinygsm-readme
  *
  * SSL/TLS is currently supported only with: SIM8xx, uBlox
  *
