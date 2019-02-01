@@ -71,13 +71,13 @@
   typedef TinyGsmXBee::GsmClient TinyGsmClient;
   typedef TinyGsmXBee::GsmClientSecure TinyGsmClientSecure;
 
-#elif defined(TINY_GSM_MODEM_SEQUANS_MONARCH_CATM1)
+#elif defined(TINY_GSM_MODEM_SEQUANS_MONARCH)
   #define TINY_GSM_MODEM_HAS_GPRS
   #define TINY_GSM_MODEM_HAS_SSL
-  #include <TinyGsmClientSequansMonarchCatM1.h>
-  typedef TinyGsmSequansMonarchCatM1 TinyGsm;
-  typedef TinyGsmSequansMonarchCatM1::GsmClient TinyGsmClient;
-  typedef TinyGsmSequansMonarchCatM1::GsmClientSecure TinyGsmClientSecure;
+  #include <TinyGsmClientSequansMonarch.h>
+  typedef TinyGsmSequansMonarch TinyGsm;
+  typedef TinyGsmSequansMonarch::GsmClient TinyGsmClient;
+  typedef TinyGsmSequansMonarch::GsmClientSecure TinyGsmClientSecure;
 
 
 #else
