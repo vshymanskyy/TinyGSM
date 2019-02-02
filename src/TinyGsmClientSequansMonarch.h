@@ -9,7 +9,7 @@
 #ifndef TinyGsmClientSequansMonarch_h
 #define TinyGsmClientSequansMonarch_h
 
-#define TINY_GSM_DEBUG Serial
+//#define TINY_GSM_DEBUG Serial
 //#define TINY_GSM_USE_HEX
 
 #if !defined(TINY_GSM_RX_BUFFER)
@@ -233,8 +233,6 @@ public:
     if (!testAT()) {
       return false;
     }
-    //sendAT(GF("&FZ"));  // Factory + Reset
-    //waitResponse();
     sendAT(GF("E0"));   // Echo Off
     if (waitResponse() != 1) {
       return false;
@@ -248,7 +246,6 @@ public:
   }
 
   bool testAT(unsigned long timeout = 10000L) {
-    //streamWrite(GF("AAAAA" GSM_NL));  // TODO: extra A's to help detect the baud rate
     for (unsigned long start = millis(); millis() - start < timeout; ) {
       sendAT(GF(""));
       if (waitResponse(200) == 1) {
@@ -301,16 +298,14 @@ public:
     return res;
   }
 
-  // TODO
-  /*
   bool hasSSL() {
-    sendAT(GF("+CIPSSL=?"));
-    if (waitResponse(GF(GSM_NL "+CIPSSL:")) != 1) {
+    sendAT(GF("+SQNSPCFG=1"));
+    if (waitResponse(GFP(GSM_OK), GF(GSM_NL "+SQNSPCFG:")) != 2) {
       return false;
     }
     return waitResponse() == 1;
   }
-*/
+
   /*
    * Power functions
    */
@@ -326,7 +321,7 @@ public:
     }
 
     sendAT(GF("+CFUN=1,1"));
-    if (waitResponse(10000L) != 1) {
+    if (waitResponse(60000L, GF("+SYSSTART")) != 1) {
       return false;
     }
     delay(1000);
@@ -480,7 +475,7 @@ public:
     }
 
     // Activate the PDP context
-    sendAT(GF("+CGACT=3,1"));
+    sendAT(GF("+CGACT=1,3"));
     waitResponse(60000L);
 
     // Attach to GPRS
@@ -532,92 +527,23 @@ public:
    * Phone Call functions
    */
 
-  // TODO
-  bool setGsmBusy(bool busy = true) {
-    sendAT(GF("+GSMBUSY="), busy ? 1 : 0);
-    return waitResponse() == 1;
-  }
+  bool setGsmBusy(bool busy = true) TINY_GSM_ATTR_NOT_AVAILABLE;
 
-  bool callAnswer() {
-    sendAT(GF("A"));
-    return waitResponse() == 1;
-  }
+  bool callAnswer() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
-  // Returns true on pick-up, false on error/busy
-  // TODO
-  bool callNumber(const String& number) {
-    if (number == GF("last")) {
-      sendAT(GF("DL"));
-    } else {
-      sendAT(GF("D"), number, ";");
-    }
-    int status = waitResponse(60000L,
-                              GFP(GSM_OK),
-                              GF("BUSY" GSM_NL),
-                              GF("NO ANSWER" GSM_NL),
-                              GF("NO CARRIER" GSM_NL));
-    switch (status) {
-    case 1:  return true;
-    case 2:
-    case 3:  return false;
-    default: return false;
-    }
-  }
+  bool callNumber(const String& number) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
-  bool callHangup() {
-    sendAT(GF("H"));
-    return waitResponse() == 1;
-  }
+  bool callHangup() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
-  // 0-9,*,#,A,B,C,D
-  // TODO
-  bool dtmfSend(char cmd, int duration_ms = 100) {
-    duration_ms = constrain(duration_ms, 100, 1000);
+  String sendUSSD(const String& code) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
-    sendAT(GF("+VTD="), duration_ms / 100); // VTD accepts in 1/10 of a second
-    waitResponse();
-
-    sendAT(GF("+VTS="), cmd);
-    return waitResponse(10000L) == 1;
-  }
-
-  /*
-   * Messaging functions
-   */
-  // TODO
-  String sendUSSD(const String& code) {
-    sendAT(GF("+CMGF=1"));
-    waitResponse();
-    sendAT(GF("+CSCS=\"HEX\""));
-    waitResponse();
-    sendAT(GF("+CUSD=1,\""), code, GF("\""));
-    if (waitResponse() != 1) {
-      return "";
-    }
-    if (waitResponse(10000L, GF(GSM_NL "+CUSD:")) != 1) {
-      return "";
-    }
-    stream.readStringUntil('"');
-    String hex = stream.readStringUntil('"');
-    stream.readStringUntil(',');
-    int dcs = stream.readStringUntil('\n').toInt();
-
-    if (dcs == 15) {
-      return TinyGsmDecodeHex8bit(hex);
-    } else if (dcs == 72) {
-      return TinyGsmDecodeHex16bit(hex);
-    } else {
-      return hex;
-    }
-  }
-
-  // TODO
   bool sendSMS(const String& number, const String& text) {
     sendAT(GF("+CMGF=1"));
     waitResponse();
     //Set GSM 7 bit default alphabet (3GPP TS 23.038)
     sendAT(GF("+CSCS=\"GSM\""));
     waitResponse();
+
     sendAT(GF("+CMGS=\""), number, GF("\""));
     if (waitResponse(GF(">")) != 1) {
       return false;
@@ -628,34 +554,7 @@ public:
     return waitResponse(60000L) == 1;
   }
 
-  // TODO
-  bool sendSMS_UTF16(const String& number, const void* text, size_t len) {
-    sendAT(GF("+CMGF=1"));
-    waitResponse();
-    sendAT(GF("+CSCS=\"HEX\""));
-    waitResponse();
-    sendAT(GF("+CSMP=17,167,0,8"));
-    waitResponse();
-
-    sendAT(GF("+CMGS=\""), number, GF("\""));
-    if (waitResponse(GF(">")) != 1) {
-      return false;
-    }
-
-    uint16_t* t = (uint16_t*)text;
-    for (size_t i=0; i<len; i++) {
-      uint8_t c = t[i] >> 8;
-      if (c < 0x10) { stream.print('0'); }
-      stream.print(c, HEX);
-      c = t[i] & 0xFF;
-      if (c < 0x10) { stream.print('0'); }
-      stream.print(c, HEX);
-    }
-    stream.write((char)0x1A);
-    stream.flush();
-    return waitResponse(60000L) == 1;
-  }
-
+  bool sendSMS_UTF16(const String& number, const void* text, size_t len) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
   /*
    * Location functions
@@ -708,19 +607,24 @@ protected:
   bool modemConnect(const char* host, uint16_t port, uint8_t mux, bool ssl = false) {
     int rsp;
 
-  // TODO
-/*
-    sendAT(GF("+CIPSSL="), ssl);
-    rsp = waitResponse();
-    if (ssl && rsp != 1) {
+    if ((ssl) && (!hasSSL())) {
+      DBG("SSL not configured. Use AT+SQNSPCFG to configure security profile 1");
       return false;
     }
-*/
+
     sendAT(GF("+SQNSCFG="), mux, GF(",3,300,90,600,50"));
     waitResponse();
 
     sendAT(GF("+SQNSCFGEXT="), mux, GF(",1,0,0,0,0"));
     waitResponse();
+
+    if (ssl) {
+      // enable SSl and use security profile 1
+      sendAT(GF("+SQNSSCFG="), mux, GF(",1,1"));
+      if (waitResponse() != 1) {
+        return false;
+      }
+    }
 
     sendAT(GF("+SQNSD="), mux, ",0,", port, ',', GF("\""), host, GF("\""), ",0,0,1");
     rsp = waitResponse(75000L,
@@ -751,25 +655,15 @@ protected:
 
 
   int modemSend(const void* buff, size_t len, uint8_t mux) {
-    bool success = false;
-    uint8_t retries = 0;
-    while ((!success) && (retries < 5)) {
-      sendAT(GF("+SQNSSENDEXT="), mux, ',', len);
-      if (waitResponse(5000, GF(GSM_NL "> ")) != 1) {
-        DBG("no prompt!");
-        retries++;
-        delay(50);
-      } else {
-        success = true;
-      }
+    sendAT(GF("+SQNSSENDEXT="), mux, ',', len);
+    if (waitResponse(5000, GF(GSM_NL "> ")) != 1) {
+      return 0;
     }
-    if (success) {
-      stream.write((uint8_t*)buff, len);
-      stream.flush();
-      if (waitResponse() != 1) {
-        DBG("no OK after send");
-        return 0;
-      }
+    stream.write((uint8_t*)buff, len);
+    stream.flush();
+    if (waitResponse() != 1) {
+      DBG("no OK after send");
+      return 0;
     }
     return len;
   }
@@ -782,7 +676,6 @@ protected:
     }
     streamSkipUntil(','); // Skip mux
     size_t len = stream.readStringUntil('\n').toInt();
-
     for (size_t i=0; i<len; i++) {
       while (!stream.available()) { TINY_GSM_YIELD(); }
       char c = stream.read();
@@ -905,6 +798,7 @@ public:
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
             sockets[mux]->got_data = true;
           }
+          stream.readStringUntil('\n');
           data = "";
         } else if (data.endsWith(GF("SQNSH: "))) {
           int mux = stream.readStringUntil('\n').toInt();
