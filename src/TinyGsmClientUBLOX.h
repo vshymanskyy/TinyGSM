@@ -464,6 +464,17 @@ public:
       waitResponse();
     }
 
+	// 20181016 https://kmpelectronics.eu/ Plamen Kovandjiev - We added command to set authentication module in Auto.
+	// This helps the module connecting to network if it wants some authentication: none, CHAP or PAP.
+	// Command help:
+	// 6: authentication - the <param_val> parameter selects the authentication type:
+	//  0 (factory - programmed value) : none
+	//  1 : PAP
+	//  2 : CHAP
+	//  3 : automatic selection of authentication type(none / CHAP / PAP)
+	sendAT(GF("+UPSD=0,6,3"));
+	waitResponse();
+
     sendAT(GF("+UPSD=0,7,\"0.0.0.0\"")); // Dynamic IP
     waitResponse();
 
