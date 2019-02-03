@@ -204,14 +204,40 @@ public:
     : GsmClient(modem, mux)
   {}
 
+protected:
+  bool          strictSSL = false;
+
 public:
   virtual int connect(const char *host, uint16_t port) {
     if (sock_connected) stop();
     TINY_GSM_YIELD();
     rx.clear();
+
+    // configure security profile 1 with parameters:
+    if (strictSSL) {
+      // require minimum of TLS 1.2 (3)
+      // only support cipher suite 0x3D: TLS_RSA_WITH_AES_256_CBC_SHA256
+      // verify server certificate against imported CA certs 0 and enforce validity period (3)
+      at->sendAT(GF("+SQNSPCFG=1,3,\"0x3D\",3,0,,,\"\",\"\""));
+    } else {
+      // use TLS 1.0 or higher (1)
+      // support wider variety of cipher suites
+      // do not verify server certificate (0)
+      at->sendAT(GF("+SQNSPCFG=1,1,\"0x2F;0x35;0x3C;0x3D\",0,,,,\"\",\"\""));
+    }
+    if (at->waitResponse() != 1) {
+      DBG("failed to configure security profile");
+      return false;
+    }
+
     sock_connected = at->modemConnect(host, port, mux, true);
     return sock_connected;
   }
+
+  void setStrictSSL(bool strict) {
+    strictSSL = strict;
+  }
+
 };
 
 public:
@@ -299,11 +325,7 @@ public:
   }
 
   bool hasSSL() {
-    sendAT(GF("+SQNSPCFG=1"));
-    if (waitResponse(GFP(GSM_OK), GF(GSM_NL "+SQNSPCFG:")) != 2) {
-      return false;
-    }
-    return waitResponse() == 1;
+    return true;
   }
 
   /*
@@ -559,57 +581,27 @@ public:
   /*
    * Location functions
    */
-
-  // TODO
-  String getGsmLocation() {
-    sendAT(GF("+CIPGSMLOC=1,1"));
-    if (waitResponse(10000L, GF(GSM_NL "+CIPGSMLOC:")) != 1) {
-      return "";
-    }
-    String res = stream.readStringUntil('\n');
-    waitResponse();
-    res.trim();
-    return res;
-  }
+  String getGsmLocation() TINY_GSM_ATTR_NOT_AVAILABLE;
 
   /*
    * Battery functions
    */
-  // Use: float vBatt = modem.getBattVoltage() / 1000.0;
-  // TODO
-  uint16_t getBattVoltage() {
-    sendAT(GF("+CBC"));
-    if (waitResponse(GF(GSM_NL "+CBC:")) != 1) {
-      return 0;
-    }
-    streamSkipUntil(','); // Skip
-    streamSkipUntil(','); // Skip
+  uint16_t getBattVoltage() TINY_GSM_ATTR_NOT_AVAILABLE;
 
-    uint16_t res = stream.readStringUntil(',').toInt();
-    waitResponse();
-    return res;
-  }
-
-  // TODO
-  int getBattPercent() {
-    sendAT(GF("+CBC"));
-    if (waitResponse(GF(GSM_NL "+CBC:")) != 1) {
-      return false;
-    }
-    stream.readStringUntil(',');
-    int res = stream.readStringUntil(',').toInt();
-    waitResponse();
-    return res;
-  }
+  int getBattPercent() TINY_GSM_ATTR_NOT_AVAILABLE;
 
 protected:
 
   bool modemConnect(const char* host, uint16_t port, uint8_t mux, bool ssl = false) {
     int rsp;
 
-    if ((ssl) && (!hasSSL())) {
-      DBG("SSL not configured. Use AT+SQNSPCFG to configure security profile 1");
-      return false;
+    if (ssl) {
+      // enable SSl and use security profile 1
+      sendAT(GF("+SQNSSCFG="), mux, GF(",1,1"));
+      if (waitResponse() != 1) {
+        DBG("failed to configure secure socket");
+        return false;
+      }
     }
 
     sendAT(GF("+SQNSCFG="), mux, GF(",3,300,90,600,50"));
@@ -617,14 +609,6 @@ protected:
 
     sendAT(GF("+SQNSCFGEXT="), mux, GF(",1,0,0,0,0"));
     waitResponse();
-
-    if (ssl) {
-      // enable SSl and use security profile 1
-      sendAT(GF("+SQNSSCFG="), mux, GF(",1,1"));
-      if (waitResponse() != 1) {
-        return false;
-      }
-    }
 
     sendAT(GF("+SQNSD="), mux, ",0,", port, ',', GF("\""), host, GF("\""), ",0,0,1");
     rsp = waitResponse(75000L,
