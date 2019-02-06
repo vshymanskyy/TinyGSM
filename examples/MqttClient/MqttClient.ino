@@ -5,7 +5,7 @@
  *   or from http://librarymanager/all#PubSubClient
  *
  * TinyGSM Getting Started guide:
- *   http://tiny.cc/tiny-gsm-readme
+ *   https://tiny.cc/tinygsm-readme
  *
  * For more MQTT examples, see PubSubClient library
  *
