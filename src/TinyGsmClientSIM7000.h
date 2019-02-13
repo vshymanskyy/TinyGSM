@@ -459,6 +459,126 @@ public:
   }
 
   /*
+   * GPS location functions
+   */
+
+  // enable GPS
+  bool enableGPS() {
+    uint16_t state;
+
+    sendAT(GF("+CGNSPWR=1"));
+    if (waitResponse() != 1) {
+      return false;
+    }
+
+    return true;
+  }
+
+  bool disableGPS() {
+    uint16_t state;
+
+    sendAT(GF("+CGNSPWR=0"));
+    if (waitResponse() != 1) {
+      return false;
+    }
+
+    return true;
+  }
+
+  // get the RAW GPS output
+  String getGPSraw() {
+    sendAT(GF("+CGNSINF"));
+    if (waitResponse(GF(GSM_NL "+CGNSINF:")) != 1) {
+      return "";
+    }
+    String res = stream.readStringUntil('\n');
+    waitResponse();
+    res.trim();
+    return res;
+  }
+
+  // get GPS informations
+  bool getGPS(float *lat, float *lon, float *speed=0, int *alt=0, int *vsat=0, int *usat=0) {
+    //String buffer = "";
+    char chr_buffer[12];
+    bool fix = false;
+
+    sendAT(GF("+CGNSINF"));
+    if (waitResponse(GF(GSM_NL "+CGNSINF:")) != 1) {
+      return false;
+    }
+
+    stream.readStringUntil(','); // mode
+    if ( stream.readStringUntil(',').toInt() == 1 ) fix = true;
+    stream.readStringUntil(','); //utctime
+    *lat =  stream.readStringUntil(',').toFloat(); //lat
+    *lon =  stream.readStringUntil(',').toFloat(); //lon
+    if (alt != NULL) *alt =  stream.readStringUntil(',').toFloat(); //lon
+    if (speed != NULL) *speed = stream.readStringUntil(',').toFloat(); //speed
+    stream.readStringUntil(',');
+    stream.readStringUntil(',');
+    stream.readStringUntil(',');
+    stream.readStringUntil(',');
+    stream.readStringUntil(',');
+    stream.readStringUntil(',');
+    stream.readStringUntil(',');
+    if (vsat != NULL) *vsat = stream.readStringUntil(',').toInt(); //viewed satelites
+    if (usat != NULL) *usat = stream.readStringUntil(',').toInt(); //used satelites
+    stream.readStringUntil('\n');
+
+    waitResponse();
+
+    return fix;
+  }
+
+  // get GPS time
+  bool getGPSTime(int *year, int *month, int *day, int *hour, int *minute, int *second) {
+    bool fix = false;
+    char chr_buffer[12];
+    sendAT(GF("+CGNSINF"));
+    if (waitResponse(GF(GSM_NL "+CGNSINF:")) != 1) {
+      return false;
+    }
+
+    for (int i = 0; i < 3; i++) {
+      String buffer = stream.readStringUntil(',');
+      buffer.toCharArray(chr_buffer, sizeof(chr_buffer));
+      switch (i) {
+        case 0:
+          //mode
+          break;
+        case 1:
+          //fixstatus
+          if ( buffer.toInt() == 1 ) {
+            fix = buffer.toInt();
+          }
+          break;
+        case 2:
+          *year = buffer.substring(0,4).toInt();
+          *month = buffer.substring(4,6).toInt();
+          *day = buffer.substring(6,8).toInt();
+          *hour = buffer.substring(8,10).toInt();
+          *minute = buffer.substring(10,12).toInt();
+          *second = buffer.substring(12,14).toInt();
+          break;
+
+        default:
+          // if nothing else matches, do the default
+          // default is optional
+          break;
+      }
+    }
+    String res = stream.readStringUntil('\n');
+    waitResponse();
+
+    if (fix) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  /*
    * GPRS functions
    */
   bool gprsConnect(const char* apn, const char* user = NULL, const char* pwd = NULL) {
@@ -598,51 +718,11 @@ public:
    * Phone Call functions
    */
 
-  bool setGsmBusy(bool busy = true) {
-    sendAT(GF("+GSMBUSY="), busy ? 1 : 0);
-    return waitResponse() == 1;
-  }
-
-  bool callAnswer() {
-    sendAT(GF("A"));
-    return waitResponse() == 1;
-  }
-
-  // Returns true on pick-up, false on error/busy
-  bool callNumber(const String& number) {
-    if (number == GF("last")) {
-      sendAT(GF("DL"));
-    } else {
-      sendAT(GF("D"), number, ";");
-    }
-    int status = waitResponse(60000L,
-                              GFP(GSM_OK),
-                              GF("BUSY" GSM_NL),
-                              GF("NO ANSWER" GSM_NL),
-                              GF("NO CARRIER" GSM_NL));
-    switch (status) {
-    case 1:  return true;
-    case 2:
-    case 3:  return false;
-    default: return false;
-    }
-  }
-
-  bool callHangup() {
-    sendAT(GF("H"));
-    return waitResponse() == 1;
-  }
-
-  // 0-9,*,#,A,B,C,D
-  bool dtmfSend(char cmd, int duration_ms = 100) {
-    duration_ms = constrain(duration_ms, 100, 1000);
-
-    sendAT(GF("+VTD="), duration_ms / 100); // VTD accepts in 1/10 of a second
-    waitResponse();
-
-    sendAT(GF("+VTS="), cmd);
-    return waitResponse(10000L) == 1;
-  }
+  bool setGsmBusy() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool callAnswer() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool callNumber() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool callHangup() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool dtmfSend() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
   /*
    * Messaging functions
@@ -675,6 +755,9 @@ public:
   }
 
   bool sendSMS(const String& number, const String& text) {
+
+    sendAT(GF("+AT+CSCA?"));
+    waitResponse();
     sendAT(GF("+CMGF=1"));
     waitResponse();
     //Set GSM 7 bit default alphabet (3GPP TS 23.038)
