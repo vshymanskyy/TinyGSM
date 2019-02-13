@@ -458,6 +458,62 @@ public:
     return false;
   }
 
+
+
+
+
+
+
+
+
+
+
+  String getNetworkModes() {
+    sendAT(GF("+CNMP=?"));
+    if (waitResponse(GF(GSM_NL "+CNMP:")) != 1) {
+      return "";
+    }
+    String res = stream.readStringUntil('\n');
+    waitResponse();
+    return res;
+  }
+
+  String setNetworkMode(uint8_t mode) {
+      sendAT(GF("+CNMP="), mode);
+      if (waitResponse(GF(GSM_NL "+CNMP:")) != 1) {
+        return "OK";
+      }
+    String res = stream.readStringUntil('\n');
+    waitResponse();
+    return res;
+  }
+
+  String getPreferredModes() {
+    sendAT(GF("+CMNB=?"));
+    if (waitResponse(GF(GSM_NL "+CMNB:")) != 1) {
+      return "";
+    }
+    String res = stream.readStringUntil('\n');
+    waitResponse();
+    return res;
+  }
+
+  String setPreferredMode(uint8_t mode) {
+    sendAT(GF("+CMNB="), mode);
+    if (waitResponse(GF(GSM_NL "+CMNB:")) != 1) {
+      return "OK";
+    }
+    String res = stream.readStringUntil('\n');
+    waitResponse();
+    return res;
+  }
+
+
+
+
+
+
+
   /*
    * GPS location functions
    */
@@ -697,6 +753,7 @@ public:
 
     return true;
   }
+
 
   String getLocalIP() {
     sendAT(GF("+CIFSR;E0"));
