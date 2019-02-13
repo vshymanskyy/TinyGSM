@@ -10,9 +10,10 @@
  **************************************************************/
 
 // Select your modem:
-#define TINY_GSM_MODEM_SIM800
+//#define TINY_GSM_MODEM_SIM800
 // #define TINY_GSM_MODEM_SIM808
 // #define TINY_GSM_MODEM_SIM900
+#define TINY_GSM_MODEM_SIM7000
 // #define TINY_GSM_MODEM_UBLOX
 // #define TINY_GSM_MODEM_BG96
 // #define TINY_GSM_MODEM_A6
@@ -110,7 +111,7 @@ void loop() {
 
   String cop = modem.getOperator();
   DBG("Operator:", cop);
-  
+
   IPAddress local = modem.localIP();
   DBG("Local IP:", local);
 
@@ -199,4 +200,3 @@ void loop() {
     modem.maintain();
   }
 }
-
