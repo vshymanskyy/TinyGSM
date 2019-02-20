@@ -225,7 +225,7 @@ public:
   }
 
   void setBaud(unsigned long baud) {
-    sendAT(GF("+IPR="), baud);
+    sendAT(GF("+UART_CUR="), baud, "8,1,0,0");
   }
 
   bool testAT(unsigned long timeout = 10000L) {
