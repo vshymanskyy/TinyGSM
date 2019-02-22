@@ -9,11 +9,11 @@
 #ifndef TinyGsmClient_h
 #define TinyGsmClient_h
 
-#if defined(TINY_GSM_MODEM_SIM800) || defined(TINY_GSM_MODEM_SIM868) || defined(TINY_GSM_MODEM_UBLOX) || defined(TINY_GSM_MODEM_ESP8266)
+#if defined(TINY_GSM_MODEM_SIM800) || defined(TINY_GSM_MODEM_SIM868) || defined(TINY_GSM_MODEM_UBLOX) || defined(TINY_GSM_MODEM_ESP8266) || defined(TINY_GSM_MODEM_SIM7000)
   #define TINY_GSM_MODEM_HAS_SSL
 #endif
 
-#if defined(TINY_GSM_MODEM_SIM808) || defined(TINY_GSM_MODEM_SIM868) || defined(TINY_GSM_MODEM_A7) || defined(TINY_GSM_MODEM_MC60) || defined(TINY_GSM_MODEM_MC60E)
+#if defined(TINY_GSM_MODEM_SIM808) || defined(TINY_GSM_MODEM_SIM868) || defined(TINY_GSM_MODEM_A7) || defined(TINY_GSM_MODEM_MC60) || defined(TINY_GSM_MODEM_MC60E) || defined(TINY_GSM_MODEM_SIM7000)
   #define TINY_GSM_MODEM_HAS_GPS
 #endif
 
@@ -23,6 +23,13 @@
   typedef TinyGsmSim800 TinyGsm;
   typedef TinyGsmSim800::GsmClient TinyGsmClient;
   typedef TinyGsmSim800::GsmClientSecure TinyGsmClientSecure;
+
+#elif   defined(TINY_GSM_MODEM_SIM7000)
+  #define TINY_GSM_MODEM_HAS_GPRS
+  #include <TinyGsmClientSIM7000.h>
+  typedef TinyGsmSim7000 TinyGsm;
+  typedef TinyGsmSim7000::GsmClient TinyGsmClient;
+  typedef TinyGsmSim7000::GsmClientSecure TinyGsmClientSecure;
 
 #elif defined(TINY_GSM_MODEM_SIM808) || defined(TINY_GSM_MODEM_SIM868)
   #define TINY_GSM_MODEM_HAS_GPRS

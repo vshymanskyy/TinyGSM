@@ -4,7 +4,7 @@
  *   https://github.com/blynkkk/blynk-library/releases/latest
  *
  * TinyGSM Getting Started guide:
- *   http://tiny.cc/tiny-gsm-readme
+ *   https://tiny.cc/tinygsm-readme
  *
  **************************************************************
  *

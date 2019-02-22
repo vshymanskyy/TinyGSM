@@ -10,18 +10,15 @@
  **************************************************************/
 
 // Select your modem:
-#define TINY_GSM_MODEM_SIM800
-// #define TINY_GSM_MODEM_SIM900
+//#define TINY_GSM_MODEM_SIM800
 // #define TINY_GSM_MODEM_SIM808
-// #define TINY_GSM_MODEM_SIM868
+// #define TINY_GSM_MODEM_SIM900
+#define TINY_GSM_MODEM_SIM7000
 // #define TINY_GSM_MODEM_UBLOX
-// #define TINY_GSM_MODEM_M95
 // #define TINY_GSM_MODEM_BG96
 // #define TINY_GSM_MODEM_A6
 // #define TINY_GSM_MODEM_A7
 // #define TINY_GSM_MODEM_M590
-// #define TINY_GSM_MODEM_MC60
-// #define TINY_GSM_MODEM_MC60E
 // #define TINY_GSM_MODEM_ESP8266
 // #define TINY_GSM_MODEM_XBEE
 
@@ -35,7 +32,7 @@
 
 // Your GPRS credentials
 // Leave empty, if missing user or pass
-const char apn[]  = "YourAPN";
+const char apn[]  = "drei.at";
 const char user[] = "";
 const char pass[] = "";
 
@@ -43,13 +40,13 @@ const char pass[] = "";
 #define SerialMon Serial
 
 // Set serial for AT commands (to the module)
-// Use Hardware Serial on Mega, Leonardo, Micro
-#define SerialAT Serial1
+// Use Hardware Serial on Mega, Leonardo, Micro, Esp32
+#include "HardwareSerial.h"
+#define SerialAT Serial2
 
 // or Software Serial on Uno, Nano
 //#include <SoftwareSerial.h>
 //SoftwareSerial SerialAT(2, 3); // RX, TX
-
 
 #include <StreamDebugger.h>
 StreamDebugger debugger(SerialAT, SerialMon);
@@ -67,11 +64,12 @@ TinyGsmClient client(modem);
 
 void setup() {
   // Set console baud rate
+  Serial.println("Starting Serial");
   SerialMon.begin(115200);
   delay(10);
 
   // Set GSM module baud rate
-  SerialAT.begin(115200);
+  SerialAT.begin(9600);
   delay(3000);
 }
 
