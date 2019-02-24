@@ -444,16 +444,17 @@ public:
   }
 
   RegStatus getRegistrationStatus() {
-
     if (isCatM) {  // Check EPS registration for LTE modules
       sendAT(GF("+CEREG?"));
       if (waitResponse(GF(GSM_NL "+CEREG:")) != 1) {
         return REG_UNKNOWN;
+      }
     }
     else {
       sendAT(GF("+CGREG?"));  // Check GPRS registration for others
       if (waitResponse(GF(GSM_NL "+CGREG:")) != 1) {
         return REG_UNKNOWN;
+      }
     }
     streamSkipUntil(','); // Skip format (0)
     int status = stream.readStringUntil('\n').toInt();
