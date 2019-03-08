@@ -36,7 +36,7 @@ TinyGSM also pulls data gently from the modem (whenever possible), so it can ope
 ## Features
 
 Feature \ Modem              | SIM8xx | u-Blox | A6/A7/A20 | M590 | ESP8266 | XBee | BG96 | M95 | MC60 | SIM7000 |
----                          | ---    | ---    | ---       | ---  | ---     | ---  | ---  | ---  | ---  |         |
+---                          | ---    | ---    | ---       | ---  | ---     | ---  | ---  | ---  | ---  | ---     |
 **Data connections**
 TCP (HTTP, MQTT, Blynk, ...) | ✔      | ✔      | ✔         | ✔    | ✔       | ✔    | ✔    | ✔    | ✔    |         |
 UDP                          | ◌      | ◌      |           |      |         | ◌     | ◌    |       |       | ◌       |
