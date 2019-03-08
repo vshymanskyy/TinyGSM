@@ -249,8 +249,6 @@ public:
     if (!testAT()) {
       return false;
     }
-    sendAT(GF("&FZ"));  // Factory + Reset
-    waitResponse();
     sendAT(GF("E0"));   // Echo Off
     if (waitResponse() != 1) {
       return false;
@@ -291,19 +289,8 @@ public:
     }
   }
 
-  bool factoryDefault() {
-    sendAT(GF("&FZE0&W"));  // Factory + Reset + Echo Off + Write
-    waitResponse();
-    sendAT(GF("+IPR=0"));   // Auto-baud
-    waitResponse();
-    sendAT(GF("+IFC=0,0")); // No Flow Control
-    waitResponse();
-    sendAT(GF("+ICF=3,3")); // 8 data 0 parity 1 stop
-    waitResponse();
-    sendAT(GF("+CSCLK=0")); // Disable Slow Clock
-    waitResponse();
-    sendAT(GF("&W"));       // Write configuration
-    return waitResponse() == 1;
+  bool factoryDefault() {  // these commands aren't supported
+    return false;
   }
 
   String getModemInfo() {
@@ -352,7 +339,7 @@ public:
     if (waitResponse(10000L) != 1) {
       return false;
     }
-    delay(3000);
+    delay(3000);  //TODO:  Test this delay
     return init();
   }
 
@@ -371,8 +358,9 @@ public:
   }
 
   /*
-    During sleep, the SIM7000 module has its serial communication disabled. In order to reestablish communication
-    pull the DRT-pin of the SIM7000 module LOW for at least 50ms. Then use this function to disable sleep mode.
+    During sleep, the SIM7000 module has its serial communication disabled.
+    In order to reestablish communication pull the DRT-pin of the SIM7000 module
+    LOW for at least 50ms. Then use this function to disable sleep mode.
     The DTR-pin can then be released again.
   */
   bool sleepEnable(bool enable = true) {
@@ -418,7 +406,7 @@ public:
         delay(1000);
         continue;
       }
-      int status = waitResponse(GF("READY"), GF("SIM PIN"), GF("SIM PUK"), GF("NOT INSERTED"));
+      int status = waitResponse(GF("READY"), GF("SIM PIN"), GF("SIM PUK"));
       waitResponse();
       switch (status) {
         case 2:
@@ -471,16 +459,6 @@ public:
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
   }
 
-
-
-
-
-
-
-
-
-
-
   String getNetworkModes() {
     sendAT(GF("+CNMP=?"));
     if (waitResponse(GF(GSM_NL "+CNMP:")) != 1) {
@@ -521,130 +499,6 @@ public:
     return res;
   }
 
-
-
-
-
-
-
-  /*
-   * GPS location functions
-   */
-
-  // enable GPS
-  bool enableGPS() {
-    uint16_t state;
-
-    sendAT(GF("+CGNSPWR=1"));
-    if (waitResponse() != 1) {
-      return false;
-    }
-
-    return true;
-  }
-
-  bool disableGPS() {
-    uint16_t state;
-
-    sendAT(GF("+CGNSPWR=0"));
-    if (waitResponse() != 1) {
-      return false;
-    }
-
-    return true;
-  }
-
-  // get the RAW GPS output
-  String getGPSraw() {
-    sendAT(GF("+CGNSINF"));
-    if (waitResponse(GF(GSM_NL "+CGNSINF:")) != 1) {
-      return "";
-    }
-    String res = stream.readStringUntil('\n');
-    waitResponse();
-    res.trim();
-    return res;
-  }
-
-  // get GPS informations
-  bool getGPS(float *lat, float *lon, float *speed=0, int *alt=0, int *vsat=0, int *usat=0) {
-    //String buffer = "";
-    bool fix = false;
-
-    sendAT(GF("+CGNSINF"));
-    if (waitResponse(GF(GSM_NL "+CGNSINF:")) != 1) {
-      return false;
-    }
-
-    stream.readStringUntil(','); // mode
-    if ( stream.readStringUntil(',').toInt() == 1 ) fix = true;
-    stream.readStringUntil(','); //utctime
-    *lat =  stream.readStringUntil(',').toFloat(); //lat
-    *lon =  stream.readStringUntil(',').toFloat(); //lon
-    if (alt != NULL) *alt =  stream.readStringUntil(',').toFloat(); //lon
-    if (speed != NULL) *speed = stream.readStringUntil(',').toFloat(); //speed
-    stream.readStringUntil(',');
-    stream.readStringUntil(',');
-    stream.readStringUntil(',');
-    stream.readStringUntil(',');
-    stream.readStringUntil(',');
-    stream.readStringUntil(',');
-    stream.readStringUntil(',');
-    if (vsat != NULL) *vsat = stream.readStringUntil(',').toInt(); //viewed satelites
-    if (usat != NULL) *usat = stream.readStringUntil(',').toInt(); //used satelites
-    stream.readStringUntil('\n');
-
-    waitResponse();
-
-    return fix;
-  }
-
-  // get GPS time
-  bool getGPSTime(int *year, int *month, int *day, int *hour, int *minute, int *second) {
-    bool fix = false;
-    char chr_buffer[12];
-    sendAT(GF("+CGNSINF"));
-    if (waitResponse(GF(GSM_NL "+CGNSINF:")) != 1) {
-      return false;
-    }
-
-    for (int i = 0; i < 3; i++) {
-      String buffer = stream.readStringUntil(',');
-      buffer.toCharArray(chr_buffer, sizeof(chr_buffer));
-      switch (i) {
-        case 0:
-          //mode
-          break;
-        case 1:
-          //fixstatus
-          if ( buffer.toInt() == 1 ) {
-            fix = buffer.toInt();
-          }
-          break;
-        case 2:
-          *year = buffer.substring(0,4).toInt();
-          *month = buffer.substring(4,6).toInt();
-          *day = buffer.substring(6,8).toInt();
-          *hour = buffer.substring(8,10).toInt();
-          *minute = buffer.substring(10,12).toInt();
-          *second = buffer.substring(12,14).toInt();
-          break;
-
-        default:
-          // if nothing else matches, do the default
-          // default is optional
-          break;
-      }
-    }
-    String res = stream.readStringUntil('\n');
-    waitResponse();
-
-    if (fix) {
-      return true;
-    } else {
-      return false;
-    }
-  }
 
   /*
    * GPRS functions
@@ -724,12 +578,6 @@ public:
     // Get Local IP Address, only assigned after connection
     sendAT(GF("+CIFSR;E0"));
     if (waitResponse(10000L) != 1) {
-      return false;
-    }
-
-    // Configure Domain Name Server (DNS)
-    sendAT(GF("+CDNSCFG=\"8.8.8.8\",\"8.8.4.4\""));
-    if (waitResponse() != 1) {
       return false;
     }
 
@@ -885,6 +733,73 @@ public:
     return res;
   }
 
+
+  /*
+   * GPS location functions
+   */
+
+  // enable GPS
+  bool enableGPS() {
+    sendAT(GF("+CGNSPWR=1"));
+    if (waitResponse() != 1) {
+      return false;
+    }
+    return true;
+  }
+
+  bool disableGPS() {
+    sendAT(GF("+CGNSPWR=0"));
+    if (waitResponse() != 1) {
+      return false;
+    }
+    return true;
+  }
+
+  // get the RAW GPS output
+  String getGPSraw() {
+    sendAT(GF("+CGNSINF"));
+    if (waitResponse(GF(GSM_NL "+CGNSINF:")) != 1) {
+      return "";
+    }
+    String res = stream.readStringUntil('\n');
+    waitResponse();
+    res.trim();
+    return res;
+  }
+
+  // get GPS informations
+  bool getGPS(float *lat, float *lon, float *speed=0, int *alt=0, int *vsat=0, int *usat=0) {
+    //String buffer = "";
+    bool fix = false;
+
+    sendAT(GF("+CGNSINF"));
+    if (waitResponse(GF(GSM_NL "+CGNSINF:")) != 1) {
+      return false;
+    }
+
+    stream.readStringUntil(','); // mode
+    if ( stream.readStringUntil(',').toInt() == 1 ) fix = true;
+    stream.readStringUntil(','); //utctime
+    *lat =  stream.readStringUntil(',').toFloat(); //lat
+    *lon =  stream.readStringUntil(',').toFloat(); //lon
+    if (alt != NULL) *alt =  stream.readStringUntil(',').toFloat(); //lon
+    if (speed != NULL) *speed = stream.readStringUntil(',').toFloat(); //speed
+    stream.readStringUntil(',');
+    stream.readStringUntil(',');
+    stream.readStringUntil(',');
+    stream.readStringUntil(',');
+    stream.readStringUntil(',');
+    stream.readStringUntil(',');
+    stream.readStringUntil(',');
+    if (vsat != NULL) *vsat = stream.readStringUntil(',').toInt(); //viewed satelites
+    if (usat != NULL) *usat = stream.readStringUntil(',').toInt(); //used satelites
+    stream.readStringUntil('\n');
+
+    waitResponse();
+
+    return fix;
+  }
+
   /*
    * Time functions
    */
@@ -909,6 +824,53 @@ public:
       break;
     }
     return res;
+  }
+
+  // get GPS time
+  bool getGPSTime(int *year, int *month, int *day, int *hour, int *minute, int *second) {
+    bool fix = false;
+    char chr_buffer[12];
+    sendAT(GF("+CGNSINF"));
+    if (waitResponse(GF(GSM_NL "+CGNSINF:")) != 1) {
+      return false;
+    }
+
+    for (int i = 0; i < 3; i++) {
+      String buffer = stream.readStringUntil(',');
+      buffer.toCharArray(chr_buffer, sizeof(chr_buffer));
+      switch (i) {
+        case 0:
+          //mode
+          break;
+        case 1:
+          //fixstatus
+          if ( buffer.toInt() == 1 ) {
+            fix = buffer.toInt();
+          }
+          break;
+        case 2:
+          *year = buffer.substring(0,4).toInt();
+          *month = buffer.substring(4,6).toInt();
+          *day = buffer.substring(6,8).toInt();
+          *hour = buffer.substring(8,10).toInt();
+          *minute = buffer.substring(10,12).toInt();
+          *second = buffer.substring(12,14).toInt();
+          break;
+
+        default:
+          // if nothing else matches, do the default
+          // default is optional
+          break;
+      }
+    }
+    String res = stream.readStringUntil('\n');
+    waitResponse();
+
+    if (fix) {
+      return true;
+    } else {
+      return false;
+    }
   }
 
   /*
