@@ -510,7 +510,7 @@ public:
     // Using CGDCONT sets up an "external" PCP context, i.e. a data connection
     // using the external IP stack (e.g. Windows dial up) and PPP link over the
     // serial interface.  This is the only command set supported by the LTE-M
-    // and LTE NB-IoT modules (SARA-R4x, SARA-N4X, SARA-N2x)
+    // and LTE NB-IoT modules (SARA-R4xx, SARA-N4xx)
 
     // Setting up the PSD profile/PDP context with the UPSD commands sets up an
     // "internal" PDP context, i.e. a data connection using the internal IP
