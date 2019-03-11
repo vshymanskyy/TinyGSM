@@ -306,7 +306,7 @@ public:
   }
 
   bool hasSSL() {
-    return true;
+    return false;  // TODO:  Module supports SSL, but not yet implemented
   }
 
   bool hasWifi() {
