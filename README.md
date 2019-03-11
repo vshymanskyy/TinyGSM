@@ -59,7 +59,7 @@ DTMF decoding                | ◌      |        | x         | x         | x    
 GSM location service         | ✔      | ✔      | x         | x         | x        | x        |             | x       | ✔             | ✔       |
 GPS/GNSS                     | ✔¹     | x      | ◌¹        | x         | x        | x        |             | x       |               | ✔       |
 **Credits**
-Primary Author/Contributor   |[vshymanskyy](https://github.com/vshymanskyy)|[vshymanskyy](https://github.com/vshymanskyy)|[vshymanskyy](https://github.com/vshymanskyy)|[vshymanskyy](https://github.com/vshymanskyy)|[vshymanskyy](https://github.com/vshymanskyy)|[SRGDamia1](https://github.com/SRGDamia1/)|[vshymanskyy](https://github.com/vshymanskyy)  |[replicadeltd](https://github.com/replicadeltd)| V1pr          |[captFuture](https://github.com/captFuture/)|
+Primary Author/Contributor   |[vshymanskyy](https://github.com/vshymanskyy)|[vshymanskyy](https://github.com/vshymanskyy)|[vshymanskyy](https://github.com/vshymanskyy)|[vshymanskyy](https://github.com/vshymanskyy)|[vshymanskyy](https://github.com/vshymanskyy)|[SRGDamia1](https://github.com/SRGDamia1/)|[vshymanskyy](https://github.com/vshymanskyy)  |[replicadeltd](https://github.com/replicadeltd)|[V1pr](https://github.com/V1pr)|[captFuture](https://github.com/captFuture/)|
 
 ✔ - implemented  ◌ - planned  x - not available on this modem
 ¹ - only some device models or firmware revisions have this feature (SIM8xx R14.18, A7, etc.)
