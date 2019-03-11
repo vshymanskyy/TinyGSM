@@ -35,29 +35,31 @@ TinyGSM also pulls data gently from the modem (whenever possible), so it can ope
 
 ## Features
 
-Feature \ Modem              | SIM8xx | u-Blox | A6/A7/A20 | M590 | ESP8266 | XBee | BG96 | M95 | MC60 | SIM7000 |
----                          | ---    | ---    | ---       | ---  | ---     | ---  | ---  | ---  | ---  | ---     |
+Feature \ Modem              | SIM8xx    | u-Blox    | A6/A7/A20 | Neoway M590| ESP8266  |Digi XBee|Quectel BG96|Quectel M95  |Quectel MC60(E)| SIM7000 |
+---                          | ---       | ---       | ---       | ---        | ---      | ---     | ---        | ---         | ---           | ---     |
 **Data connections**
-TCP (HTTP, MQTT, Blynk, ...) | ✔      | ✔      | ✔         | ✔    | ✔       | ✔    | ✔    | ✔    | ✔    |         |
-UDP                          | ◌      | ◌      |           |      |         | ◌     | ◌    |       |       | ◌       |
-SSL/TLS (HTTPS)              | ✔¹     | ✔      | x         | x    | ✔       | ✔    | ◌    |      |       | ◌       |
+TCP (HTTP, MQTT, Blynk, ...) | ✔         | ✔         | ✔         | ✔         | ✔         | ✔       | ✔          | ✔           | ✔             |         |
+UDP                          | ◌         | ◌         |           |           |           | ◌       | ◌          |             |               | ◌       |
+SSL/TLS (HTTPS)              | ✔¹        | ✔         | x         | x         | ✔         | ✔       | ◌          |             |               | ◌       |
 **USSD**
-Sending USSD requests        | ✔      |        | ✔         | ✔    | x      |      |       |       |       | ✔       |
-Decoding 7,8,16-bit response | ✔      |        | ✔         | ✔    | x      |      |       |       |       | ✔       |
+Sending USSD requests        | ✔         |           | ✔         | ✔         | x        |          |             |            |               | ✔       |
+Decoding 7,8,16-bit response | ✔         |           | ✔         | ✔         | x        |          |             |            |               | ✔       |
 **SMS**
-Sending                      | ✔      | ✔      | ✔         | ✔    | x      | ✔    | ✔    | ✔    | ✔    | ✔       |
-Sending Unicode              | ✔      |        | ◌         | x    | x      |      | ✔     | ✔    | ✔    | ✔       |
-Reading                      |        |        |           |      | x      |      |       |      |       |         |
-Incoming message event       |        |        |           | ?    | x      |      |       |      |       |         |
+Sending                      | ✔         | ✔         | ✔         | ✔         | x        | ✔        | ✔          | ✔           | ✔             | ✔       |
+Sending Unicode              | ✔         |           | ◌         | x         | x        |          | ✔           | ✔          | ✔             | ✔       |
+Reading                      |           |           |           |           | x        |          |             |            |               |         |
+Incoming message event       |           |           |           | ?         | x        |          |             |            |               |         |
 **Calls**
-Dial, hangup                 | ✔      |        | ✔         | x   | x      | x     |       |      |       |         |
-Receiving calls              | ✔      |        | ✔         | x   | x      | x     |       |      |       |         |
-Incoming event (RING)        | ◌      |        | ◌         | x   | x      | x     |       |      |       |         |
-DTMF sending                 | ✔      |        | ✔         | x   | x      | x     |       |      |       |         |
-DTMF decoding                | ◌      |        | x         | x   | x      | x     |       |      |       |         |
+Dial, hangup                 | ✔         |           | ✔         | x         | x        | x        |             |            |               |         |
+Receiving calls              | ✔         |           | ✔         | x         | x        | x        |             |            |               |         |
+Incoming event (RING)        | ◌         |           | ◌         | x         | x        | x        |             |            |               |         |
+DTMF sending                 | ✔         |           | ✔         | x         | x        | x        |             |            |               |         |
+DTMF decoding                | ◌         |           | x         | x         | x        | x        |             |            |               |         |
 **Location**
-GSM location service         | ✔      | ✔      | x         | x   | x      | x     |       | x     | ✔    | ✔       |
-GPS/GNSS                     | ✔¹     | x      | ◌¹        | x   | x      | x     |       | x     |       | ✔       |
+GSM location service         | ✔         | ✔         | x         | x         | x        | x        |             | x          | ✔             | ✔       |
+GPS/GNSS                     | ✔¹        | x         | ◌¹        | x         | x        | x        |             | x          |               | ✔       |
+**Credits**
+Primary Author/Contributor   |vshymanskyy|vshymanskyy|vshymanskyy|vshymanskyy|vshymanskyy|SRGDamia1|vshymanskyy  |replicadeltd| V1pr          |captFuture|
 
 ✔ - implemented  ◌ - planned  x - not available on this modem
 ¹ - only some device models or firmware revisions have this feature (SIM8xx R14.18, A7, etc.)
