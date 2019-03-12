@@ -6,14 +6,14 @@
   "authors":
   [
     {
+      "name":  "Volodymyr Shymanskyy",
+      "url":   "https://github.com/vshymanskyy"
+    },
+    {
         "name": "Sara Damiano",
         "email": "sdamiano@stroudcenter.org",
         "url": "https://envirodiy.org/",
         "maintainer": true
-    },
-    {
-      "name":  "Volodymyr Shymanskyy",
-      "url":   "https://github.com/vshymanskyy"
     }
   ],
   "repository":

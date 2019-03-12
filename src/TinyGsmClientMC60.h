@@ -528,7 +528,7 @@ public:
     if (res != 1)
       return false;
 
-    return localIP() != 0;
+    return localIP() != IPAddress(0,0,0,0);
   }
 
   /*

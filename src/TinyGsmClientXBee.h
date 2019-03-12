@@ -46,7 +46,6 @@ enum XBeeType {
   XBEE_3G        = 0xB02,  // Digi XBee® Cellular 3G
   XBEE3_LTE1_ATT = 0xB06,  // Digi XBee3™ Cellular LTE CAT 1
   XBEE3_LTEM_ATT = 0xB08,  // Digi XBee3™ Cellular LTE-M
-  XBEE3_LTENB    = 3,  // Digi XBee3™ Cellular NB-IoT  -- HS unknown to SRGD
 };
 
 
@@ -79,7 +78,7 @@ public:
 
 public:
   // NOTE:  The XBee saves all paramter information in flash.  When you turn it
-  // on it immediately begins to re-connect to whatever was last connected to.
+  // on it immediately prepares to re-connect to whatever was last connected to.
   // All the modemConnect() function does is tell it the paramters to put into
   // flash.  The connection itself is not opened until you attempt to send data.
   // Because all settings are saved to flash, it is possible (or likely) that
@@ -408,7 +407,6 @@ public:
       case XBEE_3G: return "Digi XBee® Cellular 3G";
       case XBEE3_LTE1_ATT: return "Digi XBee3™ Cellular LTE CAT 1";
       case XBEE3_LTEM_ATT: return "Digi XBee3™ Cellular LTE-M";
-      case XBEE3_LTENB: return "Digi XBee3™ Cellular NB-IoT";
       default:  return "Digi XBee®";
     }
   }
