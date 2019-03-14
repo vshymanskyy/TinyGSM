@@ -298,11 +298,7 @@ public:
   }
 
   bool hasSSL() {
-    sendAT(GF("+CIPSSL=?"));
-    if (waitResponse(GF(GSM_NL "+CIPSSL:")) != 1) {
-      return false;
-    }
-    return waitResponse() == 1;
+    return true;
   }
 
   /*
@@ -458,17 +454,7 @@ public:
     return false;
   }
 
-
-
-
-
-
-
-
-
-
-
-  String getNetworkModes() {
+  /*String getNetworkModes() {
     sendAT(GF("+CNMP=?"));
     if (waitResponse(GF(GSM_NL "+CNMP:")) != 1) {
       return "";
@@ -476,7 +462,7 @@ public:
     String res = stream.readStringUntil('\n');
     waitResponse();
     return res;
-  }
+  }*/
 
   String setNetworkMode(uint8_t mode) {
       sendAT(GF("+CNMP="), mode);
@@ -488,7 +474,7 @@ public:
     return res;
   }
 
-  String getPreferredModes() {
+  /*String getPreferredModes() {
     sendAT(GF("+CMNB=?"));
     if (waitResponse(GF(GSM_NL "+CMNB:")) != 1) {
       return "";
@@ -496,7 +482,7 @@ public:
     String res = stream.readStringUntil('\n');
     waitResponse();
     return res;
-  }
+  }*/
 
   String setPreferredMode(uint8_t mode) {
     sendAT(GF("+CMNB="), mode);
@@ -507,12 +493,6 @@ public:
     waitResponse();
     return res;
   }
-
-
-
-
-
-
 
   /*
    * GPS location functions
@@ -554,7 +534,7 @@ public:
   }
 
   // get GPS informations
-  bool getGPS(float *lat, float *lon, float *speed=0, int *alt=0, int *vsat=0, int *usat=0) {
+  bool getGPS(String *lat, String *lon, String *speed=0, String *alt=0, int *vsat=0, int *usat=0) {
     //String buffer = "";
     char chr_buffer[12];
     bool fix = false;
@@ -567,10 +547,10 @@ public:
     stream.readStringUntil(','); // mode
     if ( stream.readStringUntil(',').toInt() == 1 ) fix = true;
     stream.readStringUntil(','); //utctime
-    *lat =  stream.readStringUntil(',').toFloat(); //lat
-    *lon =  stream.readStringUntil(',').toFloat(); //lon
-    if (alt != NULL) *alt =  stream.readStringUntil(',').toFloat(); //lon
-    if (speed != NULL) *speed = stream.readStringUntil(',').toFloat(); //speed
+    *lat =  stream.readStringUntil(',');// //.toFloat(); //lat
+    *lon =  stream.readStringUntil(','); //.toFloat(); //lon
+    if (alt != NULL) *alt =  stream.readStringUntil(',');//.toFloat(); //lon
+    if (speed != NULL) *speed = stream.readStringUntil(','); //.toFloat(); //speed
     stream.readStringUntil(',');
     stream.readStringUntil(',');
     stream.readStringUntil(',');

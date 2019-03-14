@@ -32,7 +32,7 @@
 
 // Your GPRS credentials
 // Leave empty, if missing user or pass
-const char apn[]  = "drei.at";
+const char apn[]  = "YourAPN";
 const char user[] = "";
 const char pass[] = "";
 

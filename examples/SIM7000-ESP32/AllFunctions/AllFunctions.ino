@@ -37,12 +37,12 @@
 #define TINY_GSM_DEBUG SerialMon
 
 // Set phone numbers, if you want to test SMS and Calls
-//#define SMS_TARGET  "+4366066033403"
+//#define SMS_TARGET  "+43xxxxxx"
 //#define CALL_TARGET "+43xxxxxx"
 
 // Your GPRS credentials
 // Leave empty, if missing user or pass
-const char apn[]  = "drei.at";
+const char apn[]  = "YourAPN";
 const char user[] = "";
 const char pass[] = "";
 
@@ -90,15 +90,21 @@ void loop() {
 
 
   // Network modes for SIM7000 (2-Automatic),(13-GSM Only),(38-LTE Only),(51-GSM And LTE Only)
+  /*
   String NetworkModes = modem.getNetworkModes();
   DBG("Network Modes:", NetworkModes);
+  This is only for debugging purposes - function will be removed in future
+  */
 
   String NetworkMode = modem.setNetworkMode(0);
   DBG("Changed Network Mode:", NetworkMode);
 
   // Preferred LTE mode selection (1-Cat-M),(2-NB-IoT),(3-Cat-M And NB-IoT)
+  /*
   String PreferredModes = modem.getPreferredModes();
   DBG("Preferred Modes:", PreferredModes);
+  This is only for debugging purposes - function will be removed in future
+  */
 
   String PreferredMode = modem.setPreferredMode(3);
   DBG("Changed Preferred Mode:", PreferredMode);

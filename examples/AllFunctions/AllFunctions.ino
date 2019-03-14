@@ -46,6 +46,7 @@ const char user[] = "";
 const char pass[] = "";
 
 #include <TinyGsmClient.h>
+#include <M5stack.h>
 
 #ifdef DUMP_AT_COMMANDS
   #include <StreamDebugger.h>
@@ -56,6 +57,8 @@ const char pass[] = "";
 #endif
 
 void setup() {
+  M5.begin();
+  M5.Lcd.fillScreen(WHITE);
   // Set console baud rate
   SerialMon.begin(115200);
   delay(10);

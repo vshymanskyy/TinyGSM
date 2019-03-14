@@ -1,0 +1,177 @@
+NOT WORKING AT THE MOMENT
+
+/**************************************************************
+ *
+ * This sketch connects to a website and downloads a page.
+ * It can be used to perform HTTP/RESTful API calls.
+ *
+ * For this example, you need to install ArduinoHttpClient library:
+ *   https://github.com/arduino-libraries/ArduinoHttpClient
+ *   or from http://librarymanager/all#ArduinoHttpClient
+ *
+ * TinyGSM Getting Started guide:
+ *   https://tiny.cc/tinygsm-readme
+ *
+ * SSL/TLS is currently supported only with: SIM8xx, uBlox
+ *
+ * For more HTTP API examples, see ArduinoHttpClient library
+ *
+ **************************************************************/
+
+// Select your modem:
+//#define TINY_GSM_MODEM_SIM800
+// #define TINY_GSM_MODEM_SIM808
+#define TINY_GSM_MODEM_SIM7000
+// #define TINY_GSM_MODEM_UBLOX
+
+// Increase RX buffer if needed
+//#define TINY_GSM_RX_BUFFER 512
+
+#include <TinyGsmClient.h>
+#include <ArduinoHttpClient.h>
+
+// Uncomment this if you want to see all AT commands
+//#define DUMP_AT_COMMANDS
+
+// Set serial for debug console (to the Serial Monitor, speed 115200)
+#define SerialMon Serial
+
+// Set serial for AT commands (to the module)
+// Use Hardware Serial on Mega, Leonardo, Micro, ESP32
+#include "HardwareSerial.h"
+#define SerialAT Serial2
+
+// or Software Serial on Uno, Nano
+//#include <SoftwareSerial.h>
+//SoftwareSerial SerialAT(2, 3); // RX, TX
+
+// Your GPRS credentials
+// Leave empty, if missing user or pass
+const char apn[]  = "YourAPN";
+const char user[] = "";
+const char pass[] = "";
+
+// Server details
+const char server[] = "vsh.pp.ua";
+const char resource[] = "/TinyGSM/logo.txt";
+const int  port = 443;
+
+#ifdef DUMP_AT_COMMANDS
+  #include <StreamDebugger.h>
+  StreamDebugger debugger(SerialAT, SerialMon);
+  TinyGsm modem(debugger);
+#else
+  TinyGsm modem(SerialAT);
+#endif
+
+TinyGsmClientSecure client(modem);
+HttpClient http(client, server, port);
+
+void setup() {
+  // Set console baud rate
+  SerialMon.begin(115200);
+  delay(1000);
+
+  SerialAT.begin(9600);
+  delay(1000);
+  // Set GSM module baud rate
+  //TinyGsmAutoBaud(SerialAT);
+
+  // Restart takes quite some time
+  // To skip it, call init() instead of restart()
+  DBG("Initializing modem...");
+  if (!modem.restart()) {
+    delay(15000);
+    return;
+  }
+
+  // Network modes for SIM7000 (2-Automatic),(13-GSM Only),(38-LTE Only),(51-GSM And LTE Only)
+  String NetworkMode = modem.setNetworkMode(2);
+  DBG("Changed Network Mode:", NetworkMode);
+
+  // Preferred LTE mode selection (1-Cat-M),(2-NB-IoT),(3-Cat-M And NB-IoT)
+  String PreferredMode = modem.setPreferredMode(3);
+  DBG("Changed Preferred Mode:", PreferredMode);
+
+  String modemInfo = modem.getModemInfo();
+  SerialMon.print(F("Modem: "));
+  SerialMon.println(modemInfo);
+
+  // Unlock your SIM card with a PIN
+  //modem.simUnlock("1234");
+
+  if (!modem.hasSSL()) {
+    SerialMon.println(F("SSL is not supported by this modem"));
+    while(true) { delay(1000); }
+  }
+}
+
+void loop() {
+  SerialMon.print(F("Waiting for network..."));
+  if (!modem.waitForNetwork()) {
+    SerialMon.println(" fail");
+    delay(10000);
+    return;
+  }
+  SerialMon.println(" OK");
+
+  SerialMon.print(F("Connecting to "));
+  SerialMon.print(apn);
+  if (!modem.gprsConnect(apn, user, pass)) {
+    SerialMon.println(" fail");
+    delay(10000);
+    return;
+  }
+  SerialMon.println(" OK");
+
+  SerialMon.print(F("Performing HTTPS GET request... "));
+  http.connectionKeepAlive(); // Currently, this is needed for HTTPS
+  int err = http.get(resource);
+  if (err != 0) {
+    SerialMon.println(F("failed to connect"));
+    delay(10000);
+    return;
+  }
+
+  int status = http.responseStatusCode();
+  SerialMon.println(status);
+  if (!status) {
+    delay(10000);
+    return;
+  }
+
+  while (http.headerAvailable()) {
+    String headerName = http.readHeaderName();
+    String headerValue = http.readHeaderValue();
+    SerialMon.println(headerName + " : " + headerValue);
+  }
+
+  int length = http.contentLength();
+  if (length >= 0) {
+    SerialMon.print(F("Content length is: "));
+    SerialMon.println(length);
+  }
+  if (http.isResponseChunked()) {
+    SerialMon.println(F("The response is chunked"));
+  }
+
+  String body = http.responseBody();
+  SerialMon.println(F("Response:"));
+  SerialMon.println(body);
+
+  SerialMon.print(F("Body length is: "));
+  SerialMon.println(body.length());
+
+  // Shutdown
+
+  http.stop();
+  SerialMon.println(F("Server disconnected"));
+
+  modem.gprsDisconnect();
+  SerialMon.println(F("GPRS disconnected"));
+
+  // Do nothing forevermore
+  while (true) {
+    delay(1000);
+  }
+}
