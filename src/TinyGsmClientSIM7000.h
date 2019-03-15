@@ -334,6 +334,11 @@ public:
     return waitResponse(GF("NORMAL POWER DOWN")) == 1;
   }
 
+  bool powerSaveMode(bool onoff){
+    sendAT(GF("+CPSMS="), onoff);
+    return waitResponse(GF("Powersave Mode ON")) == 1;
+  }
+
   bool radioOff() {
     sendAT(GF("+CFUN=0"));
     if (waitResponse(10000L) != 1) {
@@ -487,6 +492,34 @@ public:
   String setPreferredMode(uint8_t mode) {
     sendAT(GF("+CMNB="), mode);
     if (waitResponse(GF(GSM_NL "+CMNB:")) != 1) {
+      return "OK";
+    }
+    String res = stream.readStringUntil('\n');
+    waitResponse();
+    return res;
+  }
+
+  String getBands(){
+    sendAT(GF("+CBANDCFG=?"));
+    if (waitResponse(GF(GSM_NL "+CBANDCFG:")) != 1) {
+      return "";
+    }
+    String res = stream.readStringUntil('\n');
+    waitResponse();
+    return res;
+  }
+
+  String setBands(uint8_t mode, const char* bands) {
+    if(mode == 1){
+      char* preferredmode = "CAT-M";
+      sendAT(GF("+CBANDCFG=\""), preferredmode, GF("\","), bands);
+    }else if(mode == 2){
+      char* preferredmode = "NB-IoT";
+      sendAT(GF("+CBANDCFG=\""), preferredmode, GF("\","), bands);
+    }else{
+      return "";
+    }
+    if (waitResponse(GF(GSM_NL "+CBANDCFG:")) != 1) {
       return "OK";
     }
     String res = stream.readStringUntil('\n');

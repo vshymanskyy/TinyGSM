@@ -109,6 +109,16 @@ void loop() {
   String PreferredMode = modem.setPreferredMode(3);
   DBG("Changed Preferred Mode:", PreferredMode);
 
+  // gets avaliable Bands for both CAT-M and NB-IoT
+  String AvaliableBands = modem.getBands();
+  DBG("AvaliableBands:", AvaliableBands);
+
+  // Set the preferred Bands for the selected mode (1-Cat-M),(2-NB-IoT)
+  String ToSetBandsM = modem.setBands(1,"3,5,8,20,28");
+  DBG("ToSetBands M:", ToSetBandsM);
+
+  String ToSetBandsN = modem.setBands(2,"3,5,8,20,28");
+  DBG("ToSetBands N:", ToSetBandsN);
 
 /*  DBG("Waiting for network...");
   if (!modem.waitForNetwork()) {
