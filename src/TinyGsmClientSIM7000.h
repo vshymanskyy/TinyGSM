@@ -16,7 +16,7 @@
   #define TINY_GSM_RX_BUFFER 64
 #endif
 
-#define TINY_GSM_MUX_COUNT 5
+#define TINY_GSM_MUX_COUNT 8
 
 #include <TinyGsmCommon.h>
 
@@ -45,7 +45,7 @@ enum TinyGSMDateTimeFormat {
   DATE_DATE = 2
 };
 
-class TinyGsmSim7000
+class TinyGsmSim7000 : public TinyGsmModem
 {
 
 public:
@@ -98,10 +98,21 @@ public:
 
   virtual void stop() {
     TINY_GSM_YIELD();
+    // Read and dump anything remaining in the modem's internal buffer.
+    // The socket will appear open in response to connected() even after it
+    // closes until all data is read from the buffer.
+    // Doing it this way allows the external mcu to find and get all of the data
+    // that it wants from the socket even if it was closed externally.
+    rx.clear();
+    at->maintain();
+    while (sock_available > 0) {
+      sock_available -= at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available), mux);
+      rx.clear();
+      at->maintain();
+    }
     at->sendAT(GF("+CIPCLOSE="), mux);
     sock_connected = false;
     at->waitResponse();
-    rx.clear();
   }
 
   virtual size_t write(const uint8_t *buf, size_t size) {
@@ -121,11 +132,12 @@ public:
 
   virtual int available() {
     TINY_GSM_YIELD();
-    if (!rx.size() && sock_connected) {
+    if (!rx.size()) {
+      // TODO:  Is this needed for SIM7000?
       // Workaround: sometimes SIM7000 forgets to notify about data arrival.
       // TODO: Currently we ping the module periodically,
       // but maybe there's a better indicator that we need to poll
-      if (millis() - prev_check > 500) {
+      if (millis() - prev_check > 250) {
         got_data = true;
         prev_check = millis();
       }
@@ -138,7 +150,7 @@ public:
     TINY_GSM_YIELD();
     at->maintain();
     size_t cnt = 0;
-    while (cnt < size && sock_connected) {
+    while (cnt < size) {
       size_t chunk = TinyGsmMin(size-cnt, rx.size());
       if (chunk > 0) {
         rx.get(buf, chunk);
@@ -146,10 +158,18 @@ public:
         cnt += chunk;
         continue;
       }
-      // TODO: Read directly into user buffer?
+      // TODO:  Is this needed for SIM7000?
+      // Workaround: sometimes SIM7000 forgets to notify about data arrival.
+      // TODO: Currently we ping the module periodically,
+      // but maybe there's a better indicator that we need to poll
+      if (millis() - prev_check > 250) {
+        got_data = true;
+        prev_check = millis();
+      }
       at->maintain();
+      // TODO: Read directly into user buffer?
       if (sock_available > 0) {
-        at->modemRead(rx.free(), mux);
+        sock_available -= at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available), mux);
       } else {
         break;
       }
@@ -192,6 +212,7 @@ private:
   RxFifo         rx;
 };
 
+
 class GsmClientSecure : public GsmClient
 {
 public:
@@ -211,10 +232,11 @@ public:
   }
 };
 
+
 public:
 
   TinyGsmSim7000(Stream& stream)
-    : stream(stream)
+    : TinyGsmModem(stream), stream(stream)
   {
     memset(sockets, 0, sizeof(sockets));
   }
@@ -222,22 +244,22 @@ public:
   /*
    * Basic functions
    */
-  bool begin() {
-    return init();
-  }
 
-  bool init() {
+  bool init(const char* pin = NULL) {
     if (!testAT()) {
       return false;
     }
-    sendAT(GF("&FZ"));  // Factory + Reset
-    waitResponse();
     sendAT(GF("E0"));   // Echo Off
     if (waitResponse() != 1) {
       return false;
     }
+    DBG(GF("### Modem:"), getModemName());
     getSimStatus();
     return true;
+  }
+
+  String getModemName() {
+    return "SIMCom SIM7000";
   }
 
   void setBaud(unsigned long baud) {
@@ -248,10 +270,7 @@ public:
     //streamWrite(GF("AAAAA" GSM_NL));  // TODO: extra A's to help detect the baud rate
     for (unsigned long start = millis(); millis() - start < timeout; ) {
       sendAT(GF(""));
-      if (waitResponse(200) == 1) {
-        delay(100);
-        return true;
-      }
+      if (waitResponse(200) == 1) return true;
       delay(100);
     }
     return false;
@@ -270,19 +289,8 @@ public:
     }
   }
 
-  bool factoryDefault() {
-    sendAT(GF("&FZE0&W"));  // Factory + Reset + Echo Off + Write
-    waitResponse();
-    sendAT(GF("+IPR=0"));   // Auto-baud
-    waitResponse();
-    sendAT(GF("+IFC=0,0")); // No Flow Control
-    waitResponse();
-    sendAT(GF("+ICF=3,3")); // 8 data 0 parity 1 stop
-    waitResponse();
-    sendAT(GF("+CSCLK=0")); // Disable Slow Clock
-    waitResponse();
-    sendAT(GF("&W"));       // Write configuration
-    return waitResponse() == 1;
+  bool factoryDefault() {  // these commands aren't supported
+    return false;
   }
 
   String getModemInfo() {
@@ -298,6 +306,14 @@ public:
   }
 
   bool hasSSL() {
+    return false;  // TODO:  Module supports SSL, but not yet implemented
+  }
+
+  bool hasWifi() {
+    return false;
+  }
+
+  bool hasGPRS() {
     return true;
   }
 
@@ -315,8 +331,6 @@ public:
     if (waitResponse(10000L) != 1) {
       return false;
     }
-    sendAT(GF("&W"));
-    waitResponse();
     sendAT(GF("+CFUN=0"));
     if (waitResponse(10000L) != 1) {
       return false;
@@ -325,7 +339,7 @@ public:
     if (waitResponse(10000L) != 1) {
       return false;
     }
-    delay(3000);
+    delay(3000);  //TODO:  Test this delay
     return init();
   }
 
@@ -349,8 +363,9 @@ public:
   }
 
   /*
-    During sleep, the SIM7000 module has its serial communication disabled. In order to reestablish communication
-    pull the DRT-pin of the SIM7000 module LOW for at least 50ms. Then use this function to disable sleep mode.
+    During sleep, the SIM7000 module has its serial communication disabled.
+    In order to reestablish communication pull the DRT-pin of the SIM7000 module
+    LOW for at least 50ms. Then use this function to disable sleep mode.
     The DTR-pin can then be released again.
   */
   bool sleepEnable(bool enable = true) {
@@ -396,21 +411,21 @@ public:
         delay(1000);
         continue;
       }
-      int status = waitResponse(GF("READY"), GF("SIM PIN"), GF("SIM PUK"), GF("NOT INSERTED"));
+      int status = waitResponse(GF("READY"), GF("SIM PIN"), GF("SIM PUK"));
       waitResponse();
       switch (status) {
-      case 2:
-      case 3:  return SIM_LOCKED;
-      case 1:  return SIM_READY;
-      default: return SIM_ERROR;
+        case 2:
+        case 3:  return SIM_LOCKED;
+        case 1:  return SIM_READY;
+        default: return SIM_ERROR;
       }
     }
     return SIM_ERROR;
   }
 
   RegStatus getRegistrationStatus() {
-    sendAT(GF("+CREG?"));
-    if (waitResponse(GF(GSM_NL "+CREG:")) != 1) {
+    sendAT(GF("+CGREG?"));
+    if (waitResponse(GF(GSM_NL "+CGREG:")) != 1) {
       return REG_UNKNOWN;
     }
     streamSkipUntil(','); // Skip format (0)
@@ -434,7 +449,7 @@ public:
    * Generic network functions
    */
 
-  int getSignalQuality() {
+  int16_t getSignalQuality() {
     sendAT(GF("+CSQ"));
     if (waitResponse(GF(GSM_NL "+CSQ:")) != 1) {
       return 99;
@@ -449,17 +464,7 @@ public:
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
   }
 
-  bool waitForNetwork(unsigned long timeout = 60000L) {
-    for (unsigned long start = millis(); millis() - start < timeout; ) {
-      if (isNetworkConnected()) {
-        return true;
-      }
-      delay(250);
-    }
-    return false;
-  }
-
-  /*String getNetworkModes() {
+  String getNetworkModes() {
     sendAT(GF("+CNMP=?"));
     if (waitResponse(GF(GSM_NL "+CNMP:")) != 1) {
       return "";
@@ -507,144 +512,6 @@ public:
     String res = stream.readStringUntil('\n');
     waitResponse();
     return res;
-  }
-
-  String setBands(uint8_t mode, const char* bands) {
-    if(mode == 1){
-      char* preferredmode = "CAT-M";
-      sendAT(GF("+CBANDCFG=\""), preferredmode, GF("\","), bands);
-    }else if(mode == 2){
-      char* preferredmode = "NB-IoT";
-      sendAT(GF("+CBANDCFG=\""), preferredmode, GF("\","), bands);
-    }else{
-      return "";
-    }
-    if (waitResponse(GF(GSM_NL "+CBANDCFG:")) != 1) {
-      return "OK";
-    }
-    String res = stream.readStringUntil('\n');
-    waitResponse();
-    return res;
-  }
-
-  /*
-   * GPS location functions
-   */
-
-  // enable GPS
-  bool enableGPS() {
-    uint16_t state;
-
-    sendAT(GF("+CGNSPWR=1"));
-    if (waitResponse() != 1) {
-      return false;
-    }
-
-    return true;
-  }
-
-  bool disableGPS() {
-    uint16_t state;
-
-    sendAT(GF("+CGNSPWR=0"));
-    if (waitResponse() != 1) {
-      return false;
-    }
-
-    return true;
-  }
-
-  // get the RAW GPS output
-  String getGPSraw() {
-    sendAT(GF("+CGNSINF"));
-    if (waitResponse(GF(GSM_NL "+CGNSINF:")) != 1) {
-      return "";
-    }
-    String res = stream.readStringUntil('\n');
-    waitResponse();
-    res.trim();
-    return res;
-  }
-
-  // get GPS informations
-  bool getGPS(String *lat, String *lon, String *speed=0, String *alt=0, int *vsat=0, int *usat=0) {
-    //String buffer = "";
-    char chr_buffer[12];
-    bool fix = false;
-
-    sendAT(GF("+CGNSINF"));
-    if (waitResponse(GF(GSM_NL "+CGNSINF:")) != 1) {
-      return false;
-    }
-
-    stream.readStringUntil(','); // mode
-    if ( stream.readStringUntil(',').toInt() == 1 ) fix = true;
-    stream.readStringUntil(','); //utctime
-    *lat =  stream.readStringUntil(',');// //.toFloat(); //lat
-    *lon =  stream.readStringUntil(','); //.toFloat(); //lon
-    if (alt != NULL) *alt =  stream.readStringUntil(',');//.toFloat(); //lon
-    if (speed != NULL) *speed = stream.readStringUntil(','); //.toFloat(); //speed
-    stream.readStringUntil(',');
-    stream.readStringUntil(',');
-    stream.readStringUntil(',');
-    stream.readStringUntil(',');
-    stream.readStringUntil(',');
-    stream.readStringUntil(',');
-    stream.readStringUntil(',');
-    if (vsat != NULL) *vsat = stream.readStringUntil(',').toInt(); //viewed satelites
-    if (usat != NULL) *usat = stream.readStringUntil(',').toInt(); //used satelites
-    stream.readStringUntil('\n');
-
-    waitResponse();
-
-    return fix;
-  }
-
-  // get GPS time
-  bool getGPSTime(int *year, int *month, int *day, int *hour, int *minute, int *second) {
-    bool fix = false;
-    char chr_buffer[12];
-    sendAT(GF("+CGNSINF"));
-    if (waitResponse(GF(GSM_NL "+CGNSINF:")) != 1) {
-      return false;
-    }
-
-    for (int i = 0; i < 3; i++) {
-      String buffer = stream.readStringUntil(',');
-      buffer.toCharArray(chr_buffer, sizeof(chr_buffer));
-      switch (i) {
-        case 0:
-          //mode
-          break;
-        case 1:
-          //fixstatus
-          if ( buffer.toInt() == 1 ) {
-            fix = buffer.toInt();
-          }
-          break;
-        case 2:
-          *year = buffer.substring(0,4).toInt();
-          *month = buffer.substring(4,6).toInt();
-          *day = buffer.substring(6,8).toInt();
-          *hour = buffer.substring(8,10).toInt();
-          *minute = buffer.substring(10,12).toInt();
-          *second = buffer.substring(12,14).toInt();
-          break;
-
-        default:
-          // if nothing else matches, do the default
-          // default is optional
-          break;
-      }
-    }
-    String res = stream.readStringUntil('\n');
-    waitResponse();
-
-    if (fix) {
-      return true;
-    } else {
-      return false;
-    }
   }
 
   /*
@@ -728,12 +595,6 @@ public:
       return false;
     }
 
-    // Configure Domain Name Server (DNS)
-    sendAT(GF("+CDNSCFG=\"8.8.8.8\",\"8.8.4.4\""));
-    if (waitResponse() != 1) {
-      return false;
-    }
-
     return true;
   }
 
@@ -767,6 +628,9 @@ public:
     return true;
   }
 
+  /*
+   * IP Address functions
+   */
 
   String getLocalIP() {
     sendAT(GF("+CIFSR;E0"));
@@ -780,9 +644,6 @@ public:
     return res;
   }
 
-  IPAddress localIP() {
-    return TinyGsmIpFromString(getLocalIP());
-  }
 
   /*
    * Phone Call functions
@@ -886,6 +747,73 @@ public:
     return res;
   }
 
+
+  /*
+   * GPS location functions
+   */
+
+  // enable GPS
+  bool enableGPS() {
+    sendAT(GF("+CGNSPWR=1"));
+    if (waitResponse() != 1) {
+      return false;
+    }
+    return true;
+  }
+
+  bool disableGPS() {
+    sendAT(GF("+CGNSPWR=0"));
+    if (waitResponse() != 1) {
+      return false;
+    }
+    return true;
+  }
+
+  // get the RAW GPS output
+  String getGPSraw() {
+    sendAT(GF("+CGNSINF"));
+    if (waitResponse(GF(GSM_NL "+CGNSINF:")) != 1) {
+      return "";
+    }
+    String res = stream.readStringUntil('\n');
+    waitResponse();
+    res.trim();
+    return res;
+  }
+
+  // get GPS informations
+  bool getGPS(float *lat, float *lon, float *speed=0, int *alt=0, int *vsat=0, int *usat=0) {
+    //String buffer = "";
+    bool fix = false;
+
+    sendAT(GF("+CGNSINF"));
+    if (waitResponse(GF(GSM_NL "+CGNSINF:")) != 1) {
+      return false;
+    }
+
+    stream.readStringUntil(','); // mode
+    if ( stream.readStringUntil(',').toInt() == 1 ) fix = true;
+    stream.readStringUntil(','); //utctime
+    *lat =  stream.readStringUntil(',').toFloat(); //lat
+    *lon =  stream.readStringUntil(',').toFloat(); //lon
+    if (alt != NULL) *alt =  stream.readStringUntil(',').toFloat(); //lon
+    if (speed != NULL) *speed = stream.readStringUntil(',').toFloat(); //speed
+    stream.readStringUntil(',');
+    stream.readStringUntil(',');
+    stream.readStringUntil(',');
+    stream.readStringUntil(',');
+    stream.readStringUntil(',');
+    stream.readStringUntil(',');
+    stream.readStringUntil(',');
+    if (vsat != NULL) *vsat = stream.readStringUntil(',').toInt(); //viewed satelites
+    if (usat != NULL) *usat = stream.readStringUntil(',').toInt(); //used satelites
+    stream.readStringUntil('\n');
+
+    waitResponse();
+
+    return fix;
+  }
+
   /*
    * Time functions
    */
@@ -912,6 +840,53 @@ public:
     return res;
   }
 
+  // get GPS time
+  bool getGPSTime(int *year, int *month, int *day, int *hour, int *minute, int *second) {
+    bool fix = false;
+    char chr_buffer[12];
+    sendAT(GF("+CGNSINF"));
+    if (waitResponse(GF(GSM_NL "+CGNSINF:")) != 1) {
+      return false;
+    }
+
+    for (int i = 0; i < 3; i++) {
+      String buffer = stream.readStringUntil(',');
+      buffer.toCharArray(chr_buffer, sizeof(chr_buffer));
+      switch (i) {
+        case 0:
+          //mode
+          break;
+        case 1:
+          //fixstatus
+          if ( buffer.toInt() == 1 ) {
+            fix = buffer.toInt();
+          }
+          break;
+        case 2:
+          *year = buffer.substring(0,4).toInt();
+          *month = buffer.substring(4,6).toInt();
+          *day = buffer.substring(6,8).toInt();
+          *hour = buffer.substring(8,10).toInt();
+          *minute = buffer.substring(10,12).toInt();
+          *second = buffer.substring(12,14).toInt();
+          break;
+
+        default:
+          // if nothing else matches, do the default
+          // default is optional
+          break;
+      }
+    }
+    String res = stream.readStringUntil('\n');
+    waitResponse();
+
+    if (fix) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
   /*
    * Battery functions
    */
@@ -929,7 +904,7 @@ public:
     return res;
   }
 
-  int getBattPercent() {
+  int8_t getBattPercent() {
     sendAT(GF("+CBC"));
     if (waitResponse(GF(GSM_NL "+CBC:")) != 1) {
       return false;
@@ -939,6 +914,10 @@ public:
     waitResponse();
     return res;
   }
+
+  /*
+   * Client related functions
+   */
 
 protected:
 
@@ -955,7 +934,7 @@ protected:
     return (1 == rsp);
   }
 
-  int modemSend(const void* buff, size_t len, uint8_t mux) {
+  int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
     sendAT(GF("+CIPSEND="), mux, ',', len);
     if (waitResponse(GF(">")) != 1) {
       return 0;
@@ -1027,30 +1006,9 @@ protected:
 
 public:
 
-  /* Utilities */
-
-  template<typename T>
-  void streamWrite(T last) {
-    stream.print(last);
-  }
-
-  template<typename T, typename... Args>
-  void streamWrite(T head, Args... tail) {
-    stream.print(head);
-    streamWrite(tail...);
-  }
-
-  bool streamSkipUntil(const char c, const unsigned long timeout = 3000L) {
-    unsigned long startMillis = millis();
-    while (millis() - startMillis < timeout) {
-      while (millis() - startMillis < timeout && !stream.available()) {
-        TINY_GSM_YIELD();
-      }
-      if (stream.read() == c)
-        return true;
-    }
-    return false;
-  }
+  /*
+   Utilities
+   */
 
   template<typename... Args>
   void sendAT(Args... cmd) {
@@ -1126,6 +1084,7 @@ finish:
       }
       data = "";
     }
+    //DBG('<', index, '>');
     return index;
   }
 

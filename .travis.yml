@@ -18,23 +18,30 @@ env:
     - PLATFORMIO_CI_SRC=tools/FactoryReset
 
     # Arduino test
-    - PLATFORMIO_CI_SRC=tools/test_build PLATFORMIO_CI_ARGS="--project-option='build_flags=-D TINY_GSM_MODEM_SIM800'  --project-option='framework=arduino' --board=uno --board=leonardo --board=yun --board=megaatmega2560 --board=genuino101 --board=mkr1000USB --board=zero --board=teensy31 --board=bluepill_f103c8 --board=uno_pic32 --board=esp01 --board=nodemcuv2 --board=esp32dev --board=mayfly"
-    - PLATFORMIO_CI_SRC=tools/test_build PLATFORMIO_CI_ARGS="--project-option='build_flags=-D TINY_GSM_MODEM_SIM900'  --project-option='framework=arduino' --board=uno --board=leonardo --board=yun --board=megaatmega2560 --board=genuino101 --board=mkr1000USB --board=zero --board=teensy31 --board=bluepill_f103c8 --board=uno_pic32 --board=esp01 --board=nodemcuv2 --board=esp32dev --board=mayfly"
     - PLATFORMIO_CI_SRC=tools/test_build PLATFORMIO_CI_ARGS="--project-option='build_flags=-D TINY_GSM_MODEM_A6'      --project-option='framework=arduino' --board=uno --board=leonardo --board=yun --board=megaatmega2560 --board=genuino101 --board=mkr1000USB --board=zero --board=teensy31 --board=bluepill_f103c8 --board=uno_pic32 --board=esp01 --board=nodemcuv2 --board=esp32dev --board=mayfly"
-    - PLATFORMIO_CI_SRC=tools/test_build PLATFORMIO_CI_ARGS="--project-option='build_flags=-D TINY_GSM_MODEM_M590'    --project-option='framework=arduino' --board=uno --board=leonardo --board=yun --board=megaatmega2560 --board=genuino101 --board=mkr1000USB --board=zero --board=teensy31 --board=bluepill_f103c8 --board=uno_pic32 --board=esp01 --board=nodemcuv2 --board=esp32dev --board=mayfly"
-    - PLATFORMIO_CI_SRC=tools/test_build PLATFORMIO_CI_ARGS="--project-option='build_flags=-D TINY_GSM_MODEM_ESP8266' --project-option='framework=arduino' --board=uno --board=leonardo --board=yun --board=megaatmega2560 --board=genuino101 --board=mkr1000USB --board=zero --board=teensy31 --board=bluepill_f103c8 --board=uno_pic32 --board=esp01 --board=nodemcuv2 --board=esp32dev --board=mayfly"
-    - PLATFORMIO_CI_SRC=tools/test_build PLATFORMIO_CI_ARGS="--project-option='build_flags=-D TINY_GSM_MODEM_UBLOX'    --project-option='framework=arduino' --board=uno --board=leonardo --board=yun --board=megaatmega2560 --board=genuino101 --board=mkr1000USB --board=zero --board=teensy31 --board=bluepill_f103c8 --board=uno_pic32 --board=esp01 --board=nodemcuv2 --board=esp32dev --board=mayfly"
     - PLATFORMIO_CI_SRC=tools/test_build PLATFORMIO_CI_ARGS="--project-option='build_flags=-D TINY_GSM_MODEM_BG96'    --project-option='framework=arduino' --board=uno --board=leonardo --board=yun --board=megaatmega2560 --board=genuino101 --board=mkr1000USB --board=zero --board=teensy31 --board=bluepill_f103c8 --board=uno_pic32 --board=esp01 --board=nodemcuv2 --board=esp32dev --board=mayfly"
+    - PLATFORMIO_CI_SRC=tools/test_build PLATFORMIO_CI_ARGS="--project-option='build_flags=-D TINY_GSM_MODEM_ESP8266' --project-option='framework=arduino' --board=uno --board=leonardo --board=yun --board=megaatmega2560 --board=genuino101 --board=mkr1000USB --board=zero --board=teensy31 --board=bluepill_f103c8 --board=uno_pic32 --board=esp01 --board=nodemcuv2 --board=esp32dev --board=mayfly"
+    - PLATFORMIO_CI_SRC=tools/test_build PLATFORMIO_CI_ARGS="--project-option='build_flags=-D TINY_GSM_MODEM_M95'     --project-option='framework=arduino' --board=uno --board=leonardo --board=yun --board=megaatmega2560 --board=genuino101 --board=mkr1000USB --board=zero --board=teensy31 --board=bluepill_f103c8 --board=uno_pic32 --board=esp01 --board=nodemcuv2 --board=esp32dev --board=mayfly"
+    - PLATFORMIO_CI_SRC=tools/test_build PLATFORMIO_CI_ARGS="--project-option='build_flags=-D TINY_GSM_MODEM_M590'    --project-option='framework=arduino' --board=uno --board=leonardo --board=yun --board=megaatmega2560 --board=genuino101 --board=mkr1000USB --board=zero --board=teensy31 --board=bluepill_f103c8 --board=uno_pic32 --board=esp01 --board=nodemcuv2 --board=esp32dev --board=mayfly"
+    - PLATFORMIO_CI_SRC=tools/test_build PLATFORMIO_CI_ARGS="--project-option='build_flags=-D TINY_GSM_MODEM_MC60'    --project-option='framework=arduino' --board=uno --board=leonardo --board=yun --board=megaatmega2560 --board=genuino101 --board=mkr1000USB --board=zero --board=teensy31 --board=bluepill_f103c8 --board=uno_pic32 --board=esp01 --board=nodemcuv2 --board=esp32dev --board=mayfly"
+    - PLATFORMIO_CI_SRC=tools/test_build PLATFORMIO_CI_ARGS="--project-option='build_flags=-D TINY_GSM_MODEM_SIM800'  --project-option='framework=arduino' --board=uno --board=leonardo --board=yun --board=megaatmega2560 --board=genuino101 --board=mkr1000USB --board=zero --board=teensy31 --board=bluepill_f103c8 --board=uno_pic32 --board=esp01 --board=nodemcuv2 --board=esp32dev --board=mayfly"
+    - PLATFORMIO_CI_SRC=tools/test_build PLATFORMIO_CI_ARGS="--project-option='build_flags=-D TINY_GSM_MODEM_SIM808'  --project-option='framework=arduino' --board=uno --board=leonardo --board=yun --board=megaatmega2560 --board=genuino101 --board=mkr1000USB --board=zero --board=teensy31 --board=bluepill_f103c8 --board=uno_pic32 --board=esp01 --board=nodemcuv2 --board=esp32dev --board=mayfly"
+    - PLATFORMIO_CI_SRC=tools/test_build PLATFORMIO_CI_ARGS="--project-option='build_flags=-D TINY_GSM_MODEM_SIM7000' --project-option='framework=arduino' --board=uno --board=leonardo --board=yun --board=megaatmega2560 --board=genuino101 --board=mkr1000USB --board=zero --board=teensy31 --board=bluepill_f103c8 --board=uno_pic32 --board=esp01 --board=nodemcuv2 --board=esp32dev --board=mayfly"
+    - PLATFORMIO_CI_SRC=tools/test_build PLATFORMIO_CI_ARGS="--project-option='build_flags=-D TINY_GSM_MODEM_UBLOX'   --project-option='framework=arduino' --board=uno --board=leonardo --board=yun --board=megaatmega2560 --board=genuino101 --board=mkr1000USB --board=zero --board=teensy31 --board=bluepill_f103c8 --board=uno_pic32 --board=esp01 --board=nodemcuv2 --board=esp32dev --board=mayfly"
     - PLATFORMIO_CI_SRC=tools/test_build PLATFORMIO_CI_ARGS="--project-option='build_flags=-D TINY_GSM_MODEM_XBEE'    --project-option='framework=arduino' --board=uno --board=leonardo --board=yun --board=megaatmega2560 --board=genuino101 --board=mkr1000USB --board=zero --board=teensy31 --board=bluepill_f103c8 --board=uno_pic32 --board=esp01 --board=nodemcuv2 --board=esp32dev --board=mayfly"
 
     # Energia test
-    - PLATFORMIO_CI_SRC=tools/test_build PLATFORMIO_CI_ARGS="--project-option='build_flags=-D TINY_GSM_MODEM_SIM800'  --project-option='framework=energia' --board=lplm4f120h5qr"
-    - PLATFORMIO_CI_SRC=tools/test_build PLATFORMIO_CI_ARGS="--project-option='build_flags=-D TINY_GSM_MODEM_SIM900'  --project-option='framework=energia' --board=lplm4f120h5qr"
     - PLATFORMIO_CI_SRC=tools/test_build PLATFORMIO_CI_ARGS="--project-option='build_flags=-D TINY_GSM_MODEM_A6'      --project-option='framework=energia' --board=lplm4f120h5qr"
-    - PLATFORMIO_CI_SRC=tools/test_build PLATFORMIO_CI_ARGS="--project-option='build_flags=-D TINY_GSM_MODEM_M590'    --project-option='framework=energia' --board=lplm4f120h5qr"
-    - PLATFORMIO_CI_SRC=tools/test_build PLATFORMIO_CI_ARGS="--project-option='build_flags=-D TINY_GSM_MODEM_ESP8266' --project-option='framework=energia' --board=lplm4f120h5qr"
-    - PLATFORMIO_CI_SRC=tools/test_build PLATFORMIO_CI_ARGS="--project-option='build_flags=-D TINY_GSM_MODEM_UBLOX'    --project-option='framework=energia' --board=lplm4f120h5qr"
     - PLATFORMIO_CI_SRC=tools/test_build PLATFORMIO_CI_ARGS="--project-option='build_flags=-D TINY_GSM_MODEM_BG96'    --project-option='framework=energia' --board=lplm4f120h5qr"
+    - PLATFORMIO_CI_SRC=tools/test_build PLATFORMIO_CI_ARGS="--project-option='build_flags=-D TINY_GSM_MODEM_ESP8266' --project-option='framework=energia' --board=lplm4f120h5qr"
+    - PLATFORMIO_CI_SRC=tools/test_build PLATFORMIO_CI_ARGS="--project-option='build_flags=-D TINY_GSM_MODEM_M95'     --project-option='framework=energia' --board=lplm4f120h5qr"
+    - PLATFORMIO_CI_SRC=tools/test_build PLATFORMIO_CI_ARGS="--project-option='build_flags=-D TINY_GSM_MODEM_M590'    --project-option='framework=energia' --board=lplm4f120h5qr"
+    - PLATFORMIO_CI_SRC=tools/test_build PLATFORMIO_CI_ARGS="--project-option='build_flags=-D TINY_GSM_MODEM_MC60'    --project-option='framework=energia' --board=lplm4f120h5qr"
+    - PLATFORMIO_CI_SRC=tools/test_build PLATFORMIO_CI_ARGS="--project-option='build_flags=-D TINY_GSM_MODEM_SIM800'  --project-option='framework=energia' --board=lplm4f120h5qr"
+    - PLATFORMIO_CI_SRC=tools/test_build PLATFORMIO_CI_ARGS="--project-option='build_flags=-D TINY_GSM_MODEM_SIM808'  --project-option='framework=energia' --board=lplm4f120h5qr"
+    - PLATFORMIO_CI_SRC=tools/test_build PLATFORMIO_CI_ARGS="--project-option='build_flags=-D TINY_GSM_MODEM_SIM7000' --project-option='framework=energia' --board=lplm4f120h5qr"
+    - PLATFORMIO_CI_SRC=tools/test_build PLATFORMIO_CI_ARGS="--project-option='build_flags=-D TINY_GSM_MODEM_UBLOX'   --project-option='framework=energia' --board=lplm4f120h5qr"
+    - PLATFORMIO_CI_SRC=tools/test_build PLATFORMIO_CI_ARGS="--project-option='build_flags=-D TINY_GSM_MODEM_XBEE'    --project-option='framework=energia' --board=lplm4f120h5qr"
 
     # Disabled due to a bug in Energia readBytes implementation
     #- PLATFORMIO_CI_SRC=tools/test_build PLATFORMIO_CI_ARGS="--project-option='build_flags=-D TINY_GSM_MODEM_XBEE'    --project-option='framework=energia' --board=lplm4f120h5qr"
@@ -58,5 +65,7 @@ install:
     - platformio lib -g install 89 415 1202 1286
     - platformio lib -g update
     - platformio lib update
+    - platformio lib list
+    - platformio lib -g list
 
 script: make travis-build
