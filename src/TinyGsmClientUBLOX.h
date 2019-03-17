@@ -510,7 +510,7 @@ public:
     if (waitResponse() != 1) {
       return false;
     }
-    sendAT(GF("+CGATT="), urat);  // Radio Access Technology (RAT) selection 
+    sendAT(GF("+URAT="), urat);  // Radio Access Technology (RAT) selection 
     if (waitResponse() != 1) {
       return false;
     }
