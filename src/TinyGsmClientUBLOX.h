@@ -329,12 +329,15 @@ public:
 
   bool factoryDefault() {
     if (!isCatM) {
-      sendAT(GF("+UFACTORY=0,1"));  // Factory + Reset + Echo Off
+      sendAT(GF("+UFACTORY=0,1"));  // No factory restore, erase NVM
       waitResponse();
-      sendAT(GF("+CFUN=16"));   // Auto-baud
+      sendAT(GF("+CFUN=16"));   // Reset
       return waitResponse() == 1;
     }
-    else return false;
+    else {
+      sendAT(GF("&F"));  // Resets the current profile, other NVM not affected
+      return waitResponse() == 1;
+    }
   }
 
   String getModemInfo() {
