@@ -372,7 +372,14 @@ public:
     if (!testAT()) {
       return false;
     }
-    sendAT(GF("+CFUN=16"));
+    if (!isCatM)
+    {
+      sendAT(GF("+CFUN=16"));
+    }
+    else
+    {
+      sendAT(GF("+CFUN=15"));
+    }
     if (waitResponse(10000L) != 1) {
       return false;
     }
@@ -497,6 +504,24 @@ public:
     else if (s == REG_UNKNOWN)  // for some reason, it can hang at unknown..
       return isGprsConnected();
     else return false;
+  }
+
+  bool setURAT( uint8_t urat ) {
+    // AT+URAT=<SelectedAcT>[,<PreferredAct>[,<2ndPreferredAct>]]
+
+    sendAT(GF("+COPS=2"));        // Deregister from network
+    if (waitResponse() != 1) {
+      return false;
+    }
+    sendAT(GF("+URAT="), urat);  // Radio Access Technology (RAT) selection 
+    if (waitResponse() != 1) {
+      return false;
+    }
+    sendAT(GF("+COPS=0"));        // Auto-register to the network
+    if (waitResponse() != 1) {
+      return false;
+    }
+    return restart();
   }
 
   /*
