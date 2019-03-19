@@ -251,6 +251,7 @@ public:
    */
 
   bool init(const char* pin = NULL) {
+    DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
     if (!testAT()) {
       return false;
     }
@@ -275,10 +276,15 @@ public:
       DBG(GF("### SARA N2 NB-IoT modems not supported!"), name);
     }
     int ret = getSimStatus();
+    // if the sim isn't ready and a pin has been provided, try to unlock the sim
     if (ret != SIM_READY && pin != NULL && strlen(pin) > 0) {
       simUnlock(pin);
+      return (getSimStatus() == SIM_READY);
     }
-    return (getSimStatus() == SIM_READY);
+    // if the sim is ready, or it's locked but no pin has been provided, return true
+    else {
+      return (ret == SIM_READY || ret == SIM_LOCKED);
+    }
   }
 
   String getModemName() {
@@ -383,7 +389,7 @@ public:
     if (waitResponse(10000L) != 1) {
       return false;
     }
-    delay(3000);
+    delay(3000);  // TODO:  Verify delay timing here
     return init();
   }
 
@@ -513,7 +519,7 @@ public:
     if (waitResponse() != 1) {
       return false;
     }
-    sendAT(GF("+URAT="), urat);  // Radio Access Technology (RAT) selection 
+    sendAT(GF("+URAT="), urat);  // Radio Access Technology (RAT) selection
     if (waitResponse() != 1) {
       return false;
     }

@@ -9,6 +9,9 @@
 #ifndef TinyGsmCommon_h
 #define TinyGsmCommon_h
 
+// The current library version number
+#define TINYGSM_VERSION "0.6.1"
+
 #if defined(SPARK) || defined(PARTICLE)
   #include "Particle.h"
 #elif defined(ARDUINO)
