@@ -281,6 +281,7 @@ public:
    */
 
   bool init(const char* pin = NULL) {
+    DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
 
     if (resetPin >= 0) {
       pinMode(resetPin, OUTPUT);
@@ -457,7 +458,7 @@ public:
 
     exitCommand();
 
-    return true;
+    return init();
   }
 
   void setupPinSleep(bool maintainAssociation = false) {
