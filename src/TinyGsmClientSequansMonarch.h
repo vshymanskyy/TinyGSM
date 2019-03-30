@@ -351,7 +351,7 @@ public:
   }
 
   bool poweroff() {
-    sendAT(GF("+SQNSSHDN=?"));
+    sendAT(GF("+SQNSSHDN"));
     return waitResponse();
   }
 
