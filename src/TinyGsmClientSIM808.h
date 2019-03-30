@@ -8,15 +8,10 @@
 
 #ifndef TinyGsmClientSIM808_h
 #define TinyGsmClientSIM808_h
+//#pragma message("TinyGSM:  TinyGsmClientSIM808")
 
 #include <TinyGsmClientSIM800.h>
 
-
-//============================================================================//
-//============================================================================//
-//              Declaration and Definitio of the TinyGsmSim808 Class
-//============================================================================//
-//============================================================================//
 
 class TinyGsmSim808: public TinyGsmSim800
 {
@@ -33,7 +28,7 @@ public:
 
   // enable GPS
   bool enableGPS() {
-    uint16_t state;
+    // uint16_t state;
 
     sendAT(GF("+CGNSPWR=1"));
     if (waitResponse() != 1) {
@@ -44,7 +39,7 @@ public:
   }
 
   bool disableGPS() {
-    uint16_t state;
+    // uint16_t state;
 
     sendAT(GF("+CGNSPWR=0"));
     if (waitResponse() != 1) {
@@ -71,7 +66,7 @@ public:
   // works only with ans SIM808 V2
   bool getGPS(float *lat, float *lon, float *speed=0, int *alt=0, int *vsat=0, int *usat=0) {
     //String buffer = "";
-    char chr_buffer[12];
+    // char chr_buffer[12];
     bool fix = false;
 
     sendAT(GF("+CGNSINF"));

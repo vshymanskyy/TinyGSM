@@ -8,12 +8,9 @@
 
 #ifndef TinyGsmClientESP8266_h
 #define TinyGsmClientESP8266_h
+//#pragma message("TinyGSM:  TinyGsmClientESP8266")
 
 //#define TINY_GSM_DEBUG Serial
-
-#if !defined(TINY_GSM_RX_BUFFER)
-  #define TINY_GSM_RX_BUFFER 512
-#endif
 
 #define TINY_GSM_MUX_COUNT 5
 
@@ -38,21 +35,9 @@ enum RegStatus {
 };
 
 
-//============================================================================//
-//============================================================================//
-//                     Declaration of the TinyGsmESP8266 Class
-//============================================================================//
-//============================================================================//
 
-
-class TinyGsmESP8266
+class TinyGsmESP8266 : public TinyGsmModem
 {
-
-  //============================================================================//
-  //============================================================================//
-  //                      The ESP8266 Internal Client Class
-  //============================================================================//
-  //============================================================================//
 
 public:
 
@@ -124,7 +109,7 @@ public:
 
   virtual int available() {
     TINY_GSM_YIELD();
-    if (!rx.size() && sock_connected) {
+    if (!rx.size()) {
       at->maintain();
     }
     return rx.size();
@@ -133,7 +118,8 @@ public:
   virtual int read(uint8_t *buf, size_t size) {
     TINY_GSM_YIELD();
     size_t cnt = 0;
-    while (cnt < size) {
+    uint32_t _startMillis = millis();
+    while (cnt < size && millis() - _startMillis < _timeout) {
       size_t chunk = TinyGsmMin(size-cnt, rx.size());
       if (chunk > 0) {
         rx.get(buf, chunk);
@@ -144,7 +130,6 @@ public:
       // TODO: Read directly into user buffer?
       if (!rx.size() && sock_connected) {
         at->maintain();
-        //break;
       }
     }
     return cnt;
@@ -182,12 +167,6 @@ private:
   RxFifo          rx;
 };
 
-//============================================================================//
-//============================================================================//
-//                          The Secure ESP8266 Client Class
-//============================================================================//
-//============================================================================//
-
 
 class GsmClientSecure : public GsmClient
 {
@@ -209,20 +188,10 @@ public:
 };
 
 
-//============================================================================//
-//============================================================================//
-//                          The ESP8266 Modem Functions
-//============================================================================//
-//============================================================================//
-
 public:
 
-#ifdef GSM_DEFAULT_STREAM
-  TinyGsmESP8266(Stream& stream = GSM_DEFAULT_STREAM)
-#else
   TinyGsmESP8266(Stream& stream)
-#endif
-    : stream(stream)
+    : TinyGsmModem(stream), stream(stream)
   {
     memset(sockets, 0, sizeof(sockets));
   }
@@ -230,11 +199,9 @@ public:
   /*
    * Basic functions
    */
-  bool begin() {
-    return init();
-  }
 
-  bool init() {
+  bool init(const char* pin = NULL) {
+    DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
     if (!testAT()) {
       return false;
     }
@@ -250,20 +217,22 @@ public:
     if (waitResponse() != 1) {
       return false;
     }
+    DBG(GF("### Modem:"), getModemName());
     return true;
   }
 
+  String getModemName() {
+    return "ESP8266";
+  }
+
   void setBaud(unsigned long baud) {
-    sendAT(GF("+IPR="), baud);
+    sendAT(GF("+UART_CUR="), baud, "8,1,0,0");
   }
 
   bool testAT(unsigned long timeout = 10000L) {
     for (unsigned long start = millis(); millis() - start < timeout; ) {
       sendAT(GF(""));
-      if (waitResponse(200) == 1) {
-        delay(100);
-        return true;
-      }
+      if (waitResponse(200) == 1) return true;
       delay(100);
     }
     return false;
@@ -294,6 +263,14 @@ public:
     return true;
   }
 
+  bool hasWifi() {
+    return true;
+  }
+
+  bool hasGPRS() {
+    return false;
+  }
+
   /*
    * Power functions
    */
@@ -313,7 +290,10 @@ public:
     return init();
   }
 
-  bool poweroff() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool poweroff() {
+    sendAT(GF("+GSLP=0"));  // Power down indefinitely - until manually reset!
+    return waitResponse() == 1;
+  }
 
   bool radioOff() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
@@ -335,7 +315,7 @@ public:
    * Generic network functions
    */
 
-  int getSignalQuality() {
+  int16_t getSignalQuality() {
     sendAT(GF("+CWJAP_CUR?"));
     int res1 = waitResponse(GF("No AP"), GF("+CWJAP_CUR:"));
     if (res1 != 2) {
@@ -390,6 +370,10 @@ public:
     return retVal;
   }
 
+  /*
+   * IP Address functions
+   */
+
   String getLocalIP() {
     sendAT(GF("+CIPSTA_CUR??"));
     int res1 = waitResponse(GF("ERROR"), GF("+CWJAP_CUR:"));
@@ -401,31 +385,9 @@ public:
     return res2;
   }
 
-  IPAddress localIP() {
-    return TinyGsmIpFromString(getLocalIP());
-  }
-
   /*
-   * GPRS functions
+   * Client related functions
    */
-
-  /*
-   * Messaging functions
-   */
-
-  /*
-   * Location functions
-   */
-
-  String getGsmLocation() TINY_GSM_ATTR_NOT_AVAILABLE;
-
-  /*
-   * Battery functions
-   */
-
-  uint16_t getBattVoltage() TINY_GSM_ATTR_NOT_AVAILABLE;
-
-  int getBattPercent() TINY_GSM_ATTR_NOT_AVAILABLE;
 
 protected:
 
@@ -444,7 +406,7 @@ protected:
     return (1 == rsp);
   }
 
-  int modemSend(const void* buff, size_t len, uint8_t mux) {
+  int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
     sendAT(GF("+CIPSEND="), mux, ',', len);
     if (waitResponse(GF(">")) != 1) {
       return 0;
@@ -464,31 +426,9 @@ protected:
 
 public:
 
-  /* Utilities */
-
-  template<typename T>
-  void streamWrite(T last) {
-    stream.print(last);
-  }
-
-  template<typename T, typename... Args>
-  void streamWrite(T head, Args... tail) {
-    stream.print(head);
-    streamWrite(tail...);
-  }
-
-  bool streamSkipUntil(char c) {
-    const unsigned long timeout = 1000L;
-    unsigned long startMillis = millis();
-    while (millis() - startMillis < timeout) {
-      while (millis() - startMillis < timeout && !stream.available()) {
-        TINY_GSM_YIELD();
-      }
-      if (stream.read() == c)
-        return true;
-    }
-    return false;
-  }
+  /*
+   Utilities
+   */
 
   template<typename... Args>
   void sendAT(Args... cmd) {
