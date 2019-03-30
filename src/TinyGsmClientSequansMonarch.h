@@ -256,6 +256,7 @@ public:
   }
 
   bool init() {
+    DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
     if (!testAT()) {
       return false;
     }
