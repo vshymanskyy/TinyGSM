@@ -395,6 +395,33 @@ public:
     return waitResponse() == 1;
   }
 
+  bool sleep(uint8_t sleepmode) // sleepmode = 1 || 2
+  {
+    sendAT(GF("+CSCLK="), sleepmode);
+    return waitResponse() == 1;
+  }
+
+  bool awaken(uint8_t sleepmode)
+  {
+    if (sleepmode == 1)
+    {
+      // TODO
+    }
+    else if(sleepmode == 2)
+    {
+      // Sends bulk AT commands to awaken the serial of the module.
+      for (uint8_t i = 0; i<10; i++)
+      {
+        sendAT(GF(""));
+        delay(50);
+      }
+      delay(100);
+      sendAT(GF("+CSCLK="), 0);
+      return waitResponse() == 1;
+    }
+    return false;
+  }
+
   /*
    * SIM card functions
    */
