@@ -92,6 +92,18 @@ public:
     host += ip[3];
     return connect(host.c_str(), port);
   }
+  
+  #ifdef ESP32 || ESP8266
+  virtual int connect(IPAddress ip, uint16_t port, int timeout)
+  {
+    throw "Method [virtual int connect(IPAddress ip, uint16_t port, int timeout)] is not implemented in TinyGsmClientSIM800.h";
+  }
+
+  virtual int connect(const char *host, uint16_t port, int timeout)
+  {
+    throw "Method [virtual int connect(const char *host, uint16_t port, int timeout)] is not implemented in TinyGsmClientSIM800.h";
+  }
+  #endif
 
   virtual void stop() {
     TINY_GSM_YIELD();
