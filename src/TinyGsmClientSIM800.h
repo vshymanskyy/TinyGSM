@@ -93,7 +93,7 @@ public:
     return connect(host.c_str(), port);
   }
   
-  #ifdef ESP32 || ESP8266
+  #ifdef ESP32 || ESP8266 || nodemcuv2 || esp01 || esp32dev
   virtual int connect(IPAddress ip, uint16_t port, int timeout)
   {
     throw "Method [virtual int connect(IPAddress ip, uint16_t port, int timeout)] is not implemented in TinyGsmClientSIM800.h";
