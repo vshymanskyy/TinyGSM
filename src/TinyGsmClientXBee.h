@@ -213,10 +213,10 @@ public:
   String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
 private:
-  TinyGsmXBee*  at;
-  uint8_t       mux;
-  bool          sock_connected;
-  // RxFifo        rx;
+  TinyGsmXBee*    at;
+  uint8_t         mux;
+  bool            sock_connected;
+  // RxFifo          rx;
 };
 
 

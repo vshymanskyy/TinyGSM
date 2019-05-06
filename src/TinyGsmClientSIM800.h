@@ -161,10 +161,10 @@ public:
         got_data = true;
         prev_check = millis();
       }
-      at->maintain();
       // TODO: Read directly into user buffer?
+      at->maintain();
       if (sock_available > 0) {
-        sock_available -= at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available), mux);
+        at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available), mux);
       } else {
         break;
       }
@@ -198,13 +198,13 @@ public:
   String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
 private:
-  TinyGsmSim800* at;
-  uint8_t        mux;
-  uint16_t       sock_available;
-  uint32_t       prev_check;
-  bool           sock_connected;
-  bool           got_data;
-  RxFifo         rx;
+  TinyGsmSim800*  at;
+  uint8_t         mux;
+  uint16_t        sock_available;
+  uint32_t        prev_check;
+  bool            sock_connected;
+  bool            got_data;
+  RxFifo          rx;
 };
 
 
@@ -578,6 +578,7 @@ public:
 
   bool gprsDisconnect() {
     // Shut the TCP/IP connection
+    // CIPSHUT will close *all* open connections
     sendAT(GF("+CIPSHUT"));
     if (waitResponse(60000L) != 1)
       return false;
@@ -791,6 +792,7 @@ public:
   /*
    * Battery functions
    */
+
   // Use: float vBatt = modem.getBattVoltage() / 1000.0;
   uint16_t getBattVoltage() {
     sendAT(GF("+CBC"));
@@ -868,12 +870,19 @@ protected:
       return 0;
     }
 #endif
-    streamSkipUntil(','); // Skip mode 2/3
+    streamSkipUntil(','); // Skip Rx mode 2/normal or 3/HEX
     streamSkipUntil(','); // Skip mux
-    size_t len = stream.readStringUntil(',').toInt();
-    sockets[mux]->sock_available = stream.readStringUntil('\n').toInt();
+    size_t len_requested = stream.readStringUntil(',').toInt();
+    //  ^^ Requested number of data bytes (1-1460 bytes)to be read
+    size_t len_confirmed = stream.readStringUntil('\n').toInt();
+    if (len_confirmed > len_requested) {
+      DBG(len_requested - len_confirmed, "fewer bytes confirmed than requested!");
+    }
+    sockets[mux]->sock_available = len_confirmed;
+    // ^^ Confirmed number of data bytes to be read, which may be less than requested.
+    // 0 indicates that no data can be read.
 
-    for (size_t i=0; i<len; i++) {
+    for (size_t i=0; i<len_confirmed; i++) {
 #ifdef TINY_GSM_USE_HEX
       while (stream.available() < 2) { TINY_GSM_YIELD(); }
       char buf[4] = { 0, };
@@ -887,7 +896,7 @@ protected:
       sockets[mux]->rx.put(c);
     }
     waitResponse();
-    return len;
+    return len_confirmed;
   }
 
   size_t modemGetAvailable(uint8_t mux) {
