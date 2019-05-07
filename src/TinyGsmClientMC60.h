@@ -738,7 +738,7 @@ protected:
       sockets[mux]->rx.put(c);
     }
     waitResponse();
-    DBG("### READ:", mux, ",", len);
+    DBG("### READ:", len, "from", mux);
     return len;
   }
 
@@ -749,7 +749,7 @@ protected:
       streamSkipUntil(','); // Skip total received
       streamSkipUntil(','); // Skip have read
       result = stream.readStringUntil('\n').toInt();
-      DBG("### STILL:", mux, "has", result);
+      DBG("### DATA AVAILABLE:", result, "on", mux);
       waitResponse();
     }
     if (!result) {

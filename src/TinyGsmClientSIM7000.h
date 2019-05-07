@@ -983,6 +983,7 @@ protected:
       sockets[mux]->rx.put(c);
     }
     waitResponse();
+    DBG("### READ:", len_confirmed, "from", mux);
     return len_confirmed;
   }
 
@@ -1065,9 +1066,19 @@ public:
               sockets[mux]->got_data = true;
             }
             data = "";
+            DBG("### Got Data:", mux);
           } else {
             data += mode;
           }
+        } else if (data.endsWith(GF(GSM_NL "+RECEIVE:"))) {
+          int mux = stream.readStringUntil(',').toInt();
+          int len = stream.readStringUntil('\n').toInt();
+          if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+            sockets[mux]->got_data = true;
+            sockets[mux]->sock_available = len;
+          }
+          data = "";
+          DBG("### Got Data:", len, "on", mux);
         } else if (data.endsWith(GF("CLOSED" GSM_NL))) {
           int nl = data.lastIndexOf(GSM_NL, data.length()-8);
           int coma = data.indexOf(',', nl+2);

@@ -829,6 +829,7 @@ protected:
     }
     streamSkipUntil('\"');
     waitResponse();
+    DBG("### READ:", len, "from", mux);
     return len;
   }
 
@@ -841,6 +842,7 @@ protected:
     if (res == 1) {
       streamSkipUntil(','); // Skip mux
       result = stream.readStringUntil('\n').toInt();
+      DBG("### DATA AVAILABLE:", result, "on", mux);
       waitResponse();
     }
     if (!result && res != 2 && res != 3) {  // Don't check modemGetConnected after an error
@@ -925,12 +927,13 @@ public:
           goto finish;
         } else if (data.endsWith(GF(GSM_NL "+UUSORD:"))) {
           int mux = stream.readStringUntil(',').toInt();
-          streamSkipUntil('\n');
+          int len = stream.readStringUntil('\n').toInt();
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
             sockets[mux]->got_data = true;
+            sockets[mux]->sock_available = len;
           }
           data = "";
-          DBG("### Got Data:", mux);
+          DBG("### Got Data:", len, "on", mux);
         } else if (data.endsWith(GF(GSM_NL "+UUSOCL:"))) {
           int mux = stream.readStringUntil('\n').toInt();
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
