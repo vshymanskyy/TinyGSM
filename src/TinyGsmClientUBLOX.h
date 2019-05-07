@@ -782,6 +782,7 @@ protected:
 
   bool modemDisconnect(uint8_t mux) {
     TINY_GSM_YIELD();
+    if (!modemGetConnected(mux)) return true;
     if (isCatM) {  //  These modems allow a faster "asynchronous" close
       sendAT(GF("+USOCL="), mux, GF(",1"));
       int rsp = waitResponse(120000L);
