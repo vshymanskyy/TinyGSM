@@ -62,6 +62,8 @@ public:
     got_data = false;
 
     at->sockets[mux] = this;
+    //  ^^ TODO: attach the socket here at init?  Or later at connect?
+    // Currently done inconsistently between modems
 
     return true;
   }
@@ -72,6 +74,10 @@ public:
     TINY_GSM_YIELD();
     rx.clear();
     sock_connected = at->modemConnect(host, port, mux);
+    // sock_connected = at->modemConnect(host, port, &mux);
+    // at->sockets[mux] = this;
+    // ^^ TODO: attach the socet after attempting connection or above at init?
+    // Currently done inconsistently between modems
     return sock_connected;
   }
 
@@ -97,7 +103,7 @@ public:
     rx.clear();
     at->maintain();
     while (sock_available > 0) {
-      sock_available -= at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available), mux);
+      at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available), mux);
       rx.clear();
       at->maintain();
     }
@@ -696,6 +702,7 @@ protected:
       return 0;
     }
     size_t len = stream.readStringUntil('\n').toInt();
+    sockets[mux]->sock_available = len;
 
     for (size_t i=0; i<len; i++) {
       while (!stream.available()) { TINY_GSM_YIELD(); }

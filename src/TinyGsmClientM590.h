@@ -59,6 +59,8 @@ public:
     sock_connected = false;
 
     at->sockets[mux] = this;
+    //  ^^ TODO: attach the socket here at init?  Or later at connect?
+    // Currently done inconsistently between modems
 
     return true;
   }
@@ -69,6 +71,10 @@ public:
     TINY_GSM_YIELD();
     rx.clear();
     sock_connected = at->modemConnect(host, port, mux);
+    // sock_connected = at->modemConnect(host, port, &mux);
+    // at->sockets[mux] = this;
+    // ^^ TODO: attach the socet after attempting connection or above at init?
+    // Currently done inconsistently between modems
     return sock_connected;
   }
 
@@ -128,7 +134,7 @@ public:
         continue;
       }
       // TODO: Read directly into user buffer?
-      if (!rx.size()) {
+      if (!rx.size() && sock_connected) {
         at->maintain();
       }
     }
