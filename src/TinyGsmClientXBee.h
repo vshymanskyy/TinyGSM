@@ -992,8 +992,8 @@ finish:
     streamClear();  // Empty everything in the buffer before starting
     while (!success and triesMade < retries) {
       // Cannot send anything for 1 "guard time" before entering command mode
-      // Default guard time is 1s, but the init fxn decreases it to 250 ms
-      delay(guardTime);
+      // Default guard time is 1s, but the init fxn decreases it to 100 ms
+      delay(guardTime + 50);
       streamWrite(GF("+++"));  // enter command mode
       int res = waitResponse(guardTime*2);
       success = (1 == res);
