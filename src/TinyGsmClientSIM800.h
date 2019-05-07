@@ -864,6 +864,7 @@ protected:
       return 0;
     }
     streamSkipUntil(','); // Skip mux
+    maintain();  // look for a very quick response from the remote
     return stream.readStringUntil('\n').toInt();
   }
 
@@ -906,6 +907,7 @@ protected:
     }
     waitResponse();
     DBG("### READ:", len_confirmed, "from", mux);
+    maintain();  // Listen for a close or other URC
     return len_confirmed;
   }
 
@@ -921,6 +923,7 @@ protected:
     if (!result) {
       sockets[mux]->sock_connected = modemGetConnected(mux);
     }
+    maintain();  // Listen for a close or other URC
     return result;
   }
 
@@ -928,6 +931,7 @@ protected:
     sendAT(GF("+CIPSTATUS="), mux);
     int res = waitResponse(GF(",\"CONNECTED\""), GF(",\"CLOSED\""), GF(",\"CLOSING\""), GF(",\"INITIAL\""));
     waitResponse();
+    maintain();  // Listen for a close or other URC
     return 1 == res;
   }
 

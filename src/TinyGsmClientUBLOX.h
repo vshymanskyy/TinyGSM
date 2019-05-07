@@ -808,7 +808,7 @@ protected:
     streamSkipUntil(','); // Skip mux
     int sent = stream.readStringUntil('\n').toInt();
     waitResponse();
-    maintain();  // look for a very quick response
+    maintain();  // look for a very quick response from the remote
     return sent;
   }
 
@@ -830,6 +830,7 @@ protected:
     streamSkipUntil('\"');
     waitResponse();
     DBG("### READ:", len, "from", mux);
+    maintain();  // Listen for a close or other URC
     return len;
   }
 
@@ -848,6 +849,7 @@ protected:
     if (!result && res != 2 && res != 3) {  // Don't check modemGetConnected after an error
       sockets[mux]->sock_connected = modemGetConnected(mux);
     }
+    maintain();  // Listen for a close or other URC
     return result;
   }
 
@@ -873,6 +875,7 @@ protected:
     // 9: the socket is in LAST_ACK status
     // 10: the socket is in TIME_WAIT status
     waitResponse();
+    maintain();  // Listen for a close or other URC
     return (result != 0);
   }
 
