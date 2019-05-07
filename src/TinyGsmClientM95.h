@@ -62,6 +62,8 @@ public:
     got_data = false;
 
     at->sockets[mux] = this;
+    //  ^^ TODO: attach the socket here at init?  Or later at connect?
+    // Currently done inconsistently between modems
 
     return true;
   }
@@ -72,6 +74,10 @@ public:
     TINY_GSM_YIELD();
     rx.clear();
     sock_connected = at->modemConnect(host, port, mux);
+    // sock_connected = at->modemConnect(host, port, &mux);
+    // at->sockets[mux] = this;
+    // ^^ TODO: attach the socet after attempting connection or above at init?
+    // Currently done inconsistently between modems
     return sock_connected;
   }
 
@@ -97,7 +103,7 @@ public:
     rx.clear();
     at->maintain();
     while (sock_available > 0) {
-      sock_available -= at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available), mux);
+      at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available), mux);
       rx.clear();
       at->maintain();
     }
@@ -144,7 +150,7 @@ public:
       // TODO: Read directly into user buffer?
       at->maintain();
       if (sock_available > 0) {
-        sock_available -= at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available), mux);
+        at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available), mux);
       } else {
         break;
       }
@@ -178,12 +184,12 @@ public:
   String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
 private:
-  TinyGsmM95*   at;
-  uint8_t       mux;
-  uint16_t      sock_available;
-  bool          sock_connected;
-  bool          got_data;
-  RxFifo        rx;
+  TinyGsmM95*     at;
+  uint8_t         mux;
+  uint16_t        sock_available;
+  bool            sock_connected;
+  bool            got_data;
+  RxFifo          rx;
 };
 
 
@@ -684,10 +690,11 @@ protected:
       }
     }
     waitResponse(5000L);
+    maintain();  // look for a very quick response from the remote
 
     // streamSkipUntil(','); // Skip mux
     // return stream.readStringUntil('\n').toInt();
-    return 1;
+    return len;  // TODO
   }
 
   size_t modemRead(size_t size, uint8_t mux) {
@@ -696,6 +703,7 @@ protected:
       return 0;
     }
     size_t len = stream.readStringUntil('\n').toInt();
+    sockets[mux]->sock_available = len;
 
     for (size_t i=0; i<len; i++) {
       while (!stream.available()) { TINY_GSM_YIELD(); }
@@ -703,7 +711,8 @@ protected:
       sockets[mux]->rx.put(c);
     }
     waitResponse();
-    DBG("### READ:", mux, ",", len);
+    DBG("### READ:", len, "from", mux);
+    maintain();  // Listen for a close or other URC
     return len;
   }
 
@@ -714,12 +723,13 @@ protected:
       streamSkipUntil(','); // Skip total received
       streamSkipUntil(','); // Skip have read
       result = stream.readStringUntil('\n').toInt();
-      DBG("### STILL:", mux, "has", result);
+      DBG("### DATA AVAILABLE:", result, "on", mux);
       waitResponse();
     }
     if (!result) {
       sockets[mux]->sock_connected = modemGetConnected(mux);
     }
+    maintain();  // Listen for a close or other URC
     return result;
   }
 
@@ -738,6 +748,7 @@ protected:
     int res = stream.readStringUntil(',').toInt(); // socket state
 
     waitResponse();
+    maintain();  // Listen for a close or other URC
 
     // 0 Initial, 1 Opening, 2 Connected, 3 Listening, 4 Closing
     return 2 == res;

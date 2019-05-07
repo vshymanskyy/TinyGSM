@@ -58,6 +58,10 @@ public:
     this->mux = -1;
     sock_connected = false;
 
+    // at->sockets[mux] = this;
+    //  ^^ TODO: attach the socket here at init?  Or later at connect?
+    // Currently done inconsistently between modems
+
     return true;
   }
 
@@ -71,6 +75,8 @@ public:
     if (sock_connected) {
       mux = newMux;
       at->sockets[mux] = this;
+    // ^^ TODO: attach the socet after attempting connection or above at init?
+    // Currently done inconsistently between modems
     }
     return sock_connected;
   }
@@ -112,7 +118,7 @@ public:
 
   virtual int available() {
     TINY_GSM_YIELD();
-    if (!rx.size()) {
+    if (!rx.size() && sock_connected) {
       at->maintain();
     }
     return rx.size();
