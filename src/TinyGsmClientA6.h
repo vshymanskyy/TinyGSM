@@ -75,7 +75,7 @@ public:
     if (sock_connected) {
       mux = newMux;
       at->sockets[mux] = this;
-    // ^^ TODO: attach the socet after attempting connection or above at init?
+    // ^^ TODO: attach the socket after attempting connection or above at init?
     // Currently done inconsistently between modems
     }
     return sock_connected;

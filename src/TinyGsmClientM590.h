@@ -73,7 +73,7 @@ public:
     sock_connected = at->modemConnect(host, port, mux);
     // sock_connected = at->modemConnect(host, port, &mux);
     // at->sockets[mux] = this;
-    // ^^ TODO: attach the socet after attempting connection or above at init?
+    // ^^ TODO: attach the socket after attempting connection or above at init?
     // Currently done inconsistently between modems
     return sock_connected;
   }

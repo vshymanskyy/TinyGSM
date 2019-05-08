@@ -75,7 +75,13 @@ public:
     // If we're creating a new connection on the same client, we need to wait
     // until the async close has finished on Cat-M modems.
     // After close has completed, the +UUSOCL should appear.
-    if (at->isCatM && sock_connected) {
+    // Without this wait, there might be unexpected behaviors when the same
+    // client instance attempts to move from one socket to another.
+    // This is only a problem for the LTE-M modules that take painfully long
+    // to open and close sockets.  For those modules, when connecting to multple
+    // locations, remember to create multiple clients with different mux numbers.
+    // TODO:  Re-evaluate this!
+    if (at->isCatM && at->modemGetConnected(mux)) {
       DBG("Waiting for +UUSOCL URC on", mux);
       for (unsigned long start = millis(); millis() - start < 120000L; ) {
         at->maintain();
@@ -87,7 +93,7 @@ public:
     // sock_connected = at->modemConnect(host, port, mux);
     sock_connected = at->modemConnect(host, port, &mux);
     at->sockets[mux] = this;
-    // ^^ TODO: attach the socet after attempting connection or above at init?
+    // ^^ TODO: attach the socket after attempting connection or above at init?
     // Currently done inconsistently between modems
     at->maintain();
     return sock_connected;
@@ -120,9 +126,6 @@ public:
       at->maintain();
     }
     at->modemDisconnect(mux);
-    // We don't actually know if the CatM modem has finished closing because
-    // we're using an "asynchronous" close
-    if (!at->isCatM) sock_connected = false;
   }
 
   virtual size_t write(const uint8_t *buf, size_t size) {
@@ -780,16 +783,24 @@ protected:
 
   bool modemDisconnect(uint8_t mux) {
     TINY_GSM_YIELD();
-    if (!modemGetConnected(mux)) return true;
+    if (!modemGetConnected(mux)) {
+      sockets[mux]->sock_connected = false;
+      return true;
+    }
+    bool success;
     if (isCatM) {  //  These modems allow a faster "asynchronous" close
       sendAT(GF("+USOCL="), mux, GF(",1"));
-      int rsp = waitResponse(120000L);
-      return (1 == rsp);  // but it still can take up to 120s to get a response
+      success = 1 == waitResponse(120000L);  // but it still can take up to 120s to get a response
+      // TODO:  Evaluate whether the speed bump by allowing the async close is worth it
     }
     else {  // no async close
       sendAT(GF("+USOCL="), mux);
-      return (1 == waitResponse());
+      success = 1 == waitResponse();  // others should return within 1s
+      if (success) {
+        sockets[mux]->sock_connected = false;
+      }
     }
+    return success;
   }
 
   int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
