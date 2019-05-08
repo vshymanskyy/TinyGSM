@@ -723,7 +723,7 @@ protected:
       streamSkipUntil(','); // Skip total received
       streamSkipUntil(','); // Skip have read
       result = stream.readStringUntil('\n').toInt();
-      DBG("### DATA AVAILABLE:", result, "on", mux);
+      if (result) DBG("### DATA AVAILABLE:", result, "on", mux);
       waitResponse();
     }
     if (!result) {

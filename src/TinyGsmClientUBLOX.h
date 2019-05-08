@@ -71,17 +71,15 @@ public:
 
 public:
   virtual int connect(const char *host, uint16_t port) {
-    if (sock_connected) {
-      stop();
-      // If we're creating a new connection on the same client, we need to wait
-      // until the async close has finished on Cat-M modems.
-      // After close has completed, the +UUSOCL should appear.
-      if (at->isCatM) {
-        DBG("Waiting for +UUSOCL URC on", mux);
-        for (unsigned long start = millis(); millis() - start < 120000L; ) {
-          at->maintain();
-          if (!sock_connected) break;
-        }
+    stop();
+    // If we're creating a new connection on the same client, we need to wait
+    // until the async close has finished on Cat-M modems.
+    // After close has completed, the +UUSOCL should appear.
+    if (at->isCatM && sock_connected) {
+      DBG("Waiting for +UUSOCL URC on", mux);
+      for (unsigned long start = millis(); millis() - start < 120000L; ) {
+        at->maintain();
+        if (!sock_connected) break;
       }
     }
     TINY_GSM_YIELD();
@@ -844,7 +842,7 @@ protected:
     if (res == 1) {
       streamSkipUntil(','); // Skip mux
       result = stream.readStringUntil('\n').toInt();
-      DBG("### DATA AVAILABLE:", result, "on", mux);
+      if (result) DBG("### DATA AVAILABLE:", result, "on", mux);
       waitResponse();
     }
     if (!result && res != 2 && res != 3) {  // Don't check modemGetConnected after an error
