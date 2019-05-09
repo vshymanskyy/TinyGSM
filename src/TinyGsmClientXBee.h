@@ -262,6 +262,7 @@ public:
       resetPin = -1;
       savedIP = IPAddress(0,0,0,0);
       savedHost = "";
+      inCommandMode = false;
       memset(sockets, 0, sizeof(sockets));
   }
 
@@ -273,6 +274,7 @@ public:
       this->resetPin = resetPin;
       savedIP = IPAddress(0,0,0,0);
       savedHost = "";
+      inCommandMode = false;
       memset(sockets, 0, sizeof(sockets));
   }
 
@@ -335,27 +337,36 @@ public:
   }
 
   bool testAT(unsigned long timeout = 10000L) {
-    for (unsigned long start = millis(); millis() - start < timeout; ) {
-      if (commandMode())
-      {
+    unsigned long start = millis();
+    bool success = false;
+    while (!success && millis() - start < timeout) {
+      if (!inCommandMode) {
+        success = commandMode();
+        if (success) exitCommand();
+      }
+      else {
           sendAT();
           if (waitResponse(200) == 1) {
+              success =  true;
               exitCommand();
-              return true;
           }
+          // if we didn't respond to the AT, must not be in command mode
+          else inCommandMode = false;
       }
-      delay(100);
+      delay(250);
     }
-    return false;
+    return success;
   }
 
   void maintain() {
     // this only happens OUTSIDE command mode, so if we're getting characters
     // they should be data received from the TCP connection
     // TINY_GSM_YIELD();
-    // while (stream.available()) {
-    //   char c = stream.read();
-    //   if (c > 0) sockets[0]->rx.put(c);
+    // if (!inCommandMode) {
+    //   while (stream.available()) {
+    //     char c = stream.read();
+    //     if (c > 0) sockets[0]->rx.put(c);
+    //   }
     // }
   }
 
@@ -521,7 +532,13 @@ public:
   }
 
   RegStatus getRegistrationStatus() {
-    if (!commandMode()) return REG_UNKNOWN;  // Return immediately
+
+    bool wasInCommandMode = inCommandMode;
+    if (!wasInCommandMode) {  // don't re-enter command mode if already in it
+      commandMode();
+    }
+
+    if (!inCommandMode) return REG_UNKNOWN;  // Return immediately
 
     if (beeType == XBEE_UNKNOWN) getSeries();  // Need to know the bee type to interpret response
 
@@ -598,7 +615,9 @@ public:
       }
     }
 
-    exitCommand();
+    if (!wasInCommandMode) {  // only exit if we weren't in command mode
+      exitCommand();
+    }
     return stat;
   }
 
@@ -632,12 +651,17 @@ public:
   }
 
   bool waitForNetwork(unsigned long timeout = 60000L) {
+    // Enter command mode at the start so we don't have to go in and out of it
+    // The cellular Bee's often freeze up and won't respond when attempting
+    // to enter command mode too many times.
+    commandMode();
     for (unsigned long start = millis(); millis() - start < timeout; ) {
       if (isNetworkConnected()) {
         return true;
       }
       delay(250);  // per Neil H. - more stable with delay
     }
+    exitCommand();
     return false;
   }
 
@@ -985,28 +1009,30 @@ finish:
     return waitResponse(1000, r1, r2, r3, r4, r5);
   }
 
-  bool commandMode(uint8_t retries = 3) {
+  bool commandMode(uint8_t retries = 5) {
     uint8_t triesMade = 0;
-    uint8_t triesUntilReset = 2;  // only reset after 2 failures
+    uint8_t triesUntilReset = 4;  // only reset after 4 failures
     bool success = false;
     streamClear();  // Empty everything in the buffer before starting
     while (!success and triesMade < retries) {
       // Cannot send anything for 1 "guard time" before entering command mode
       // Default guard time is 1s, but the init fxn decreases it to 100 ms
-      delay(guardTime + 50);
+      delay(guardTime + 10);
       streamWrite(GF("+++"));  // enter command mode
       int res = waitResponse(guardTime*2);
       success = (1 == res);
       if (0 == res) {
         triesUntilReset--;
         if (triesUntilReset == 0) {
-          triesUntilReset = 2;
+          triesUntilReset = 4;
           pinReset();  // if it's unresponsive, reset
-          delay(250);  // a short delay to allow it to come back up TODO-optimize this
+          delay(250);  // a short delay to allow it to come back up
+          // TODO-optimize this
         }
       }
       triesMade ++;
     }
+    if (success) inCommandMode = true;
     return success;
   }
 
@@ -1021,6 +1047,7 @@ finish:
   void exitCommand(void) {
     sendAT(GF("CN"));  // Exit command mode
     waitResponse();
+    inCommandMode = false;
   }
 
   bool exitAndFail(void) {
@@ -1061,6 +1088,7 @@ protected:
   XBeeType      beeType;
   IPAddress     savedIP;
   String        savedHost;
+  bool          inCommandMode;
   GsmClient*    sockets[TINY_GSM_MUX_COUNT];
 };
 
