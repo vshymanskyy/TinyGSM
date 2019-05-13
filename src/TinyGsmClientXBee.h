@@ -1079,6 +1079,11 @@ finish:
     return intRes;
   }
 
+  bool gotIPforSavedHost() {
+    if (savedHost != "" && savedIP != IPAddress(0,0,0,0)) return true;
+    else return false;
+  }
+
 public:
   Stream&       stream;
 
