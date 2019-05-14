@@ -62,10 +62,8 @@ public:
     sock_connected = false;
     got_data = false;
 
-    // at->sockets[mux] = this;
-    //  ^^ TODO: attach the socket here at init?  Or later at connect?
-    // Currently done inconsistently between modems
-
+    // Don't attach the socket here because we won't know the mux channel number
+    // until the u-blox assigns it upon opening the socket
     return true;
   }
 
@@ -93,8 +91,8 @@ public:
     // sock_connected = at->modemConnect(host, port, mux);
     sock_connected = at->modemConnect(host, port, &mux);
     at->sockets[mux] = this;
-    // ^^ TODO: attach the socket after attempting connection or above at init?
-    // Currently done inconsistently between modems
+    // Attach the socket after attempting connection because u-blox will assign
+    // whatever mux number is next regardless of the number requested.
     at->maintain();
     return sock_connected;
   }
