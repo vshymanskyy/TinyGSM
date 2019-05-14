@@ -37,7 +37,7 @@ enum RegStatus {
 };
 
 
-class TinyGsmUBLOX : public TinyGsmModem
+class TinyGsmUBLOX
 {
 
 public:
@@ -249,7 +249,7 @@ public:
 public:
 
   TinyGsmUBLOX(Stream& stream)
-    : TinyGsmModem(stream), stream(stream)
+    : stream(stream)
   {
     memset(sockets, 0, sizeof(sockets));
     isCatM = false;  // For SARA R4 and N4 series
@@ -294,6 +294,10 @@ public:
     else {
       return (ret == SIM_READY || ret == SIM_LOCKED);
     }
+  }
+
+  bool begin(const char* pin = NULL) {
+    return init(pin);
   }
 
   String getModemName() {
@@ -521,6 +525,16 @@ public:
     else return false;
   }
 
+  bool waitForNetwork(unsigned long timeout = 60000L) {
+    for (unsigned long start = millis(); millis() - start < timeout; ) {
+      if (isNetworkConnected()) {
+        return true;
+      }
+      delay(250);
+    }
+    return false;
+  }
+
   bool setURAT( uint8_t urat ) {
     // AT+URAT=<SelectedAcT>[,<PreferredAct>[,<2ndPreferredAct>]]
 
@@ -675,6 +689,10 @@ public:
       }
       return res;
     }
+  }
+
+  IPAddress localIP() {
+    return TinyGsmIpFromString(getLocalIP());
   }
 
   /*
@@ -893,12 +911,36 @@ public:
    Utilities
    */
 
+  template<typename T>
+  void streamWrite(T last) {
+    stream.print(last);
+  }
+
+  template<typename T, typename... Args>
+  void streamWrite(T head, Args... tail) {
+    stream.print(head);
+    streamWrite(tail...);
+  }
+
   template<typename... Args>
   void sendAT(Args... cmd) {
     streamWrite("AT", cmd..., GSM_NL);
     stream.flush();
     TINY_GSM_YIELD();
     //DBG("### AT:", cmd...);
+  }
+
+  bool streamSkipUntil(const char c, const unsigned long timeout = 1000L) {
+    unsigned long startMillis = millis();
+    while (millis() - startMillis < timeout) {
+      while (millis() - startMillis < timeout && !stream.available()) {
+        TINY_GSM_YIELD();
+      }
+      if (stream.read() == c) {
+        return true;
+      }
+    }
+    return false;
   }
 
   // TODO: Optimize this!

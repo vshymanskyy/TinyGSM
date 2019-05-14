@@ -37,7 +37,7 @@ enum RegStatus {
 };
 
 
-class TinyGsmM95 : public TinyGsmModem
+class TinyGsmM95
 {
 
 public:
@@ -216,7 +216,7 @@ private:
 public:
 
   TinyGsmM95(Stream& stream)
-    : TinyGsmModem(stream), stream(stream)
+    : stream(stream)
   {
     memset(sockets, 0, sizeof(sockets));
   }
@@ -241,6 +241,10 @@ public:
     DBG(GF("### Modem:"), getModemName());
     getSimStatus();
     return true;
+  }
+
+  bool begin(const char* pin = NULL) {
+    return init(pin);
   }
 
   String getModemName() {
@@ -441,6 +445,16 @@ public:
     waitResponse();
   }
 
+  bool waitForNetwork(unsigned long timeout = 60000L) {
+    for (unsigned long start = millis(); millis() - start < timeout; ) {
+      if (isNetworkConnected()) {
+        return true;
+      }
+      delay(250);
+    }
+    return false;
+  }
+
   /*
    * GPRS functions
    */
@@ -520,6 +534,10 @@ public:
     String res = stream.readStringUntil('\n');
     res.trim();
     return res;
+  }
+
+  IPAddress localIP() {
+    return TinyGsmIpFromString(getLocalIP());
   }
 
   /*
@@ -760,12 +778,36 @@ public:
    Utilities
    */
 
+  template<typename T>
+  void streamWrite(T last) {
+    stream.print(last);
+  }
+
+  template<typename T, typename... Args>
+  void streamWrite(T head, Args... tail) {
+    stream.print(head);
+    streamWrite(tail...);
+  }
+
   template<typename... Args>
   void sendAT(Args... cmd) {
     streamWrite("AT", cmd..., GSM_NL);
     stream.flush();
     TINY_GSM_YIELD();
     //DBG("### AT:", cmd...);
+  }
+
+  bool streamSkipUntil(const char c, const unsigned long timeout = 1000L) {
+    unsigned long startMillis = millis();
+    while (millis() - startMillis < timeout) {
+      while (millis() - startMillis < timeout && !stream.available()) {
+        TINY_GSM_YIELD();
+      }
+      if (stream.read() == c) {
+        return true;
+      }
+    }
+    return false;
   }
 
   // TODO: Optimize this!

@@ -49,7 +49,7 @@ enum XBeeType {
 };
 
 
-class TinyGsmXBee : public TinyGsmModem
+class TinyGsmXBee
 {
 
 public:
@@ -255,7 +255,7 @@ public:
 public:
 
   TinyGsmXBee(Stream& stream)
-    : TinyGsmModem(stream), stream(stream)
+    : stream(stream)
   {
       beeType = XBEE_UNKNOWN;  // Start not knowing what kind of bee it is
       guardTime = TINY_GSM_XBEE_GUARD_TIME;  // Start with the default guard time of 1 second
@@ -267,7 +267,7 @@ public:
   }
 
   TinyGsmXBee(Stream& stream, int8_t resetPin)
-    : TinyGsmModem(stream), stream(stream)
+    : stream(stream)
   {
       beeType = XBEE_UNKNOWN;  // Start not knowing what kind of bee it is
       guardTime = TINY_GSM_XBEE_GUARD_TIME;  // Start with the default guard time of 1 second
@@ -305,6 +305,10 @@ public:
 
     exitCommand();
     return ret_val;
+  }
+
+  bool begin(const char* pin = NULL) {
+    return init(pin);
   }
 
   String getModemName() {
@@ -719,6 +723,10 @@ public:
     return IPaddr;
   }
 
+  IPAddress localIP() {
+    return TinyGsmIpFromString(getLocalIP());
+  }
+
   /*
    * GPRS functions
    */
@@ -925,12 +933,36 @@ public:
     }
   }
 
+  template<typename T>
+  void streamWrite(T last) {
+    stream.print(last);
+  }
+
+  template<typename T, typename... Args>
+  void streamWrite(T head, Args... tail) {
+    stream.print(head);
+    streamWrite(tail...);
+  }
+
   template<typename... Args>
   void sendAT(Args... cmd) {
     streamWrite("AT", cmd..., GSM_NL);
     stream.flush();
     TINY_GSM_YIELD();
     //DBG("### AT:", cmd...);
+  }
+
+  bool streamSkipUntil(const char c, const unsigned long timeout = 1000L) {
+    unsigned long startMillis = millis();
+    while (millis() - startMillis < timeout) {
+      while (millis() - startMillis < timeout && !stream.available()) {
+        TINY_GSM_YIELD();
+      }
+      if (stream.read() == c) {
+        return true;
+      }
+    }
+    return false;
   }
 
   // TODO: Optimize this!

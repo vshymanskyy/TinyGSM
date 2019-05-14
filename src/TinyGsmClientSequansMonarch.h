@@ -20,7 +20,7 @@
 
 #include <TinyGsmCommon.h>
 
-#define GSM_NL "\r\n"
+#define GSM_NL "\r"
 static const char GSM_OK[] TINY_GSM_PROGMEM = "OK" GSM_NL;
 static const char GSM_ERROR[] TINY_GSM_PROGMEM = "ERROR" GSM_NL;
 
@@ -251,11 +251,8 @@ public:
   /*
    * Basic functions
    */
-  bool begin() {
-    return init();
-  }
 
-  bool init() {
+  bool init(const char* pin = NULL) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
     if (!testAT()) {
       return false;
@@ -266,6 +263,10 @@ public:
     }
     getSimStatus();
     return true;
+  }
+
+  bool begin(const char* pin = NULL) {
+    return init(pin);
   }
 
   void setBaud(unsigned long baud) {
@@ -710,11 +711,6 @@ public:
 
   /* Utilities */
 
-  bool commandMode(int retries = 2) {
-    streamWrite(GF("+++"));  // enter command mode
-    return true;
-  }
-
   template<typename T>
   void streamWrite(T last) {
     stream.print(last);
@@ -726,21 +722,25 @@ public:
     streamWrite(tail...);
   }
 
-  bool streamSkipUntil(char c) { //TODO: timeout
-    while (true) {
-      while (!stream.available()) { TINY_GSM_YIELD(); }
-      if (stream.read() == c)
-        return true;
-    }
-    return false;
-  }
-
   template<typename... Args>
   void sendAT(Args... cmd) {
-    streamWrite("AT", cmd..., '\r');
+    streamWrite("AT", cmd..., GSM_NL);
     stream.flush();
     TINY_GSM_YIELD();
-    DBG("### AT:", cmd...);
+    //DBG("### AT:", cmd...);
+  }
+
+  bool streamSkipUntil(const char c, const unsigned long timeout = 1000L) {
+    unsigned long startMillis = millis();
+    while (millis() - startMillis < timeout) {
+      while (millis() - startMillis < timeout && !stream.available()) {
+        TINY_GSM_YIELD();
+      }
+      if (stream.read() == c) {
+        return true;
+      }
+    }
+    return false;
   }
 
   // TODO: Optimize this!
