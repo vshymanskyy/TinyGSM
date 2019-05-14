@@ -105,10 +105,21 @@ public:
 
   virtual void stop() {
     TINY_GSM_YIELD();
+    // Read and dump anything remaining in the modem's internal buffer.
+    // The socket will appear open in response to connected() even after it
+    // closes until all data is read from the buffer.
+    // Doing it this way allows the external mcu to find and get all of the data
+    // that it wants from the socket even if it was closed externally.
+    rx.clear();
+    at->maintain();
+    while (sock_available > 0) {
+      at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available), mux);
+      rx.clear();
+      at->maintain();
+    }
     at->sendAT(GF("+SQNSH="), mux);
     sock_connected = false;
     at->waitResponse();
-    rx.clear();
   }
 
   virtual size_t write(const uint8_t *buf, size_t size) {
@@ -125,7 +136,7 @@ public:
     TINY_GSM_YIELD();
     if (!rx.size()) {
       // Workaround: sometimes unsolicited SQNSSRING notifications do not arrive.
-      if (millis() - prev_check > 500) {
+      if (millis() - prev_check > 250) {
         got_data = true;
         prev_check = millis();
       }
@@ -146,10 +157,15 @@ public:
         cnt += chunk;
         continue;
       }
+        // Workaround: sometimes unsolicited SQNSSRING notifications do not arrive.
+      if (millis() - prev_check > 250) {
+        got_data = true;
+        prev_check = millis();
+      }
       // TODO: Read directly into user buffer?
       at->maintain();
       if (sock_available > 0) {
-        int n = at->modemRead(rx.free(), mux);
+        int n = at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available), mux);
         if (n == 0) break;
       } else {
         break;
@@ -167,15 +183,13 @@ public:
   }
 
   virtual int peek() { return -1; } //TODO
-  virtual void flush() {
-    at->stream.flush();
-  }
+  virtual void flush() { at->stream.flush(); }
 
   virtual uint8_t connected() {
     if (available()) {
       return true;
     }
-    return got_data || sock_connected;
+    return sock_connected;
   }
   virtual operator bool() { return connected(); }
 
@@ -187,13 +201,14 @@ public:
 
 private:
   TinyGsmSequansMonarch* at;
-  uint8_t       mux;
-  uint16_t      sock_available;
-  uint32_t      prev_check;
-  bool          sock_connected;
-  bool          got_data;
-  RxFifo        rx;
+  uint8_t         mux;
+  uint16_t        sock_available;
+  uint32_t        prev_check;
+  bool            sock_connected;
+  bool            got_data;
+  RxFifo          rx;
 };
+
 
 class GsmClientSecure : public GsmClient
 {
@@ -209,7 +224,7 @@ protected:
 
 public:
   virtual int connect(const char *host, uint16_t port) {
-    if (sock_connected) stop();
+    stop();
     TINY_GSM_YIELD();
     rx.clear();
 
@@ -269,6 +284,10 @@ public:
     return init(pin);
   }
 
+  String getModemName() {
+    return "Sequans Monarch";
+  }
+
   void setBaud(unsigned long baud) {
     sendAT(GF("+IPR="), baud);
   }
@@ -293,7 +312,6 @@ public:
         sock->sock_available = modemGetAvailable(mux);
       }
     }
-
     while (stream.available()) {
       waitResponse(10, NULL, NULL);
     }
@@ -453,7 +471,7 @@ public:
    * Generic network functions
    */
 
-  int getSignalQuality() {
+  int16_t getSignalQuality() {
     sendAT(GF("+CSQ"));
     if (waitResponse(GF(GSM_NL "+CSQ:")) != 1) {
       return 99;
@@ -518,7 +536,6 @@ public:
     return true;
   }
 
-
   bool isGprsConnected() {
     sendAT(GF("+CGATT?"));
     if (waitResponse(GF(GSM_NL "+CGATT:")) != 1) {
@@ -531,6 +548,11 @@ public:
 
     return true;
   }
+
+
+  /*
+   * IP Address functions
+   */
 
   String getLocalIP() {
     sendAT(GF("+CGPADDR=3"));
@@ -546,6 +568,7 @@ public:
   IPAddress localIP() {
     return TinyGsmIpFromString(getLocalIP());
   }
+
 
   /*
    * Phone Call functions
@@ -567,7 +590,6 @@ public:
     //Set GSM 7 bit default alphabet (3GPP TS 23.038)
     sendAT(GF("+CSCS=\"GSM\""));
     waitResponse();
-
     sendAT(GF("+CMGS=\""), number, GF("\""));
     if (waitResponse(GF(">")) != 1) {
       return false;
@@ -583,11 +605,14 @@ public:
   /*
    * Location functions
    */
+
   String getGsmLocation() TINY_GSM_ATTR_NOT_AVAILABLE;
+
 
   /*
    * Battery functions
    */
+
   uint16_t getBattVoltage() TINY_GSM_ATTR_NOT_AVAILABLE;
 
   int getBattPercent() TINY_GSM_ATTR_NOT_AVAILABLE;
@@ -709,7 +734,9 @@ protected:
 
 public:
 
-  /* Utilities */
+  /*
+   Utilities
+   */
 
   template<typename T>
   void streamWrite(T last) {
