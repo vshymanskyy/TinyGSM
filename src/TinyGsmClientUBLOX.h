@@ -279,6 +279,7 @@ public:
     String name = getModemName();
     DBG(GF("### Modem:"), name);
     if (name.startsWith("u-blox SARA-R4") or name.startsWith("u-blox SARA-N4")) {
+      DBG(GF("### This is an LTE-M modem!"), name);
       isCatM = true;
     }
     else if (name.startsWith("u-blox SARA-N2")) {
@@ -833,7 +834,7 @@ protected:
     }
     streamSkipUntil(','); // Skip mux
     int sent = stream.readStringUntil('\n').toInt();
-    waitResponse();
+    waitResponse();  // sends back OK after the confirmation of number sent
     maintain();  // look for a very quick response from the remote
     return sent;
   }
