@@ -243,17 +243,15 @@ public:
 public:
 
   TinyGsmSequansMonarch(Stream& stream)
-    : stream(stream)
+    : TinyGsmModem(stream), stream(stream)
   {
     memset(sockets, 0, sizeof(sockets));
   }
+  virtual ~TinyGsmSequansMonarch() {}
 
   /*
    * Basic functions
    */
-  bool begin() {
-    return init();
-  }
 
   bool init() {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
@@ -472,16 +470,6 @@ public:
     }
   }
 
-  bool waitForNetwork(unsigned long timeout = 60000L) {
-    for (unsigned long start = millis(); millis() - start < timeout; ) {
-      if (isNetworkConnected()) {
-        return true;
-      }
-      delay(250);
-    }
-    return false;
-  }
-
   /*
    * GPRS functions
    */
@@ -540,10 +528,6 @@ public:
     String res = stream.readStringUntil('\"');
     waitResponse();
     return res;
-  }
-
-  IPAddress localIP() {
-    return TinyGsmIpFromString(getLocalIP());
   }
 
   /*
@@ -709,31 +693,6 @@ protected:
 public:
 
   /* Utilities */
-
-  bool commandMode(int retries = 2) {
-    streamWrite(GF("+++"));  // enter command mode
-    return true;
-  }
-
-  template<typename T>
-  void streamWrite(T last) {
-    stream.print(last);
-  }
-
-  template<typename T, typename... Args>
-  void streamWrite(T head, Args... tail) {
-    stream.print(head);
-    streamWrite(tail...);
-  }
-
-  bool streamSkipUntil(char c) { //TODO: timeout
-    while (true) {
-      while (!stream.available()) { TINY_GSM_YIELD(); }
-      if (stream.read() == c)
-        return true;
-    }
-    return false;
-  }
 
   template<typename... Args>
   void sendAT(Args... cmd) {
