@@ -5,7 +5,7 @@
  *   or from http://librarymanager/all#PubSubClient
  *
  * TinyGSM Getting Started guide:
- *   http://tiny.cc/tiny-gsm-readme
+ *   https://tiny.cc/tinygsm-readme
  *
  * For more MQTT examples, see PubSubClient library
  *
@@ -29,11 +29,18 @@
 
 // Select your modem:
 #define TINY_GSM_MODEM_SIM800
-// #define TINY_GSM_MODEM_SIM808
 // #define TINY_GSM_MODEM_SIM900
+// #define TINY_GSM_MODEM_SIM808
+// #define TINY_GSM_MODEM_SIM868
+// #define TINY_GSM_MODEM_SIM7000
+// #define TINY_GSM_MODEM_UBLOX
+// #define TINY_GSM_MODEM_M95
+// #define TINY_GSM_MODEM_BG96
 // #define TINY_GSM_MODEM_A6
 // #define TINY_GSM_MODEM_A7
 // #define TINY_GSM_MODEM_M590
+// #define TINY_GSM_MODEM_MC60
+// #define TINY_GSM_MODEM_MC60E
 // #define TINY_GSM_MODEM_ESP8266
 // #define TINY_GSM_MODEM_XBEE
 
@@ -119,7 +126,14 @@ void setup() {
 boolean mqttConnect() {
   SerialMon.print("Connecting to ");
   SerialMon.print(broker);
-  if (!mqtt.connect("GsmClientTest")) {
+
+  // Connect to MQTT Broker
+  boolean status = mqtt.connect("GsmClientTest");
+
+  // Or, if you want to authenticate MQTT:
+  //boolean status = mqtt.connect("GsmClientName", "mqtt_user", "mqtt_pass");
+
+  if (status == false) {
     SerialMon.println(" fail");
     return false;
   }
@@ -131,9 +145,8 @@ boolean mqttConnect() {
 
 void loop() {
 
-  if (mqtt.connected()) {
-    mqtt.loop();
-  } else {
+  if (!mqtt.connected()) {
+    SerialMon.println("=== MQTT NOT CONNECTED ===");
     // Reconnect every 10 seconds
     unsigned long t = millis();
     if (t - lastReconnectAttempt > 10000L) {
@@ -142,8 +155,11 @@ void loop() {
         lastReconnectAttempt = 0;
       }
     }
+    delay(100);
+    return;
   }
 
+  mqtt.loop();
 }
 
 void mqttCallback(char* topic, byte* payload, unsigned int len) {
@@ -160,4 +176,3 @@ void mqttCallback(char* topic, byte* payload, unsigned int len) {
     mqtt.publish(topicLedStatus, ledStatus ? "1" : "0");
   }
 }
-

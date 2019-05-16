@@ -8,12 +8,9 @@
 
 #ifndef TinyGsmClientESP8266_h
 #define TinyGsmClientESP8266_h
+//#pragma message("TinyGSM:  TinyGsmClientESP8266")
 
 //#define TINY_GSM_DEBUG Serial
-
-#if !defined(TINY_GSM_RX_BUFFER)
-  #define TINY_GSM_RX_BUFFER 512
-#endif
 
 #define TINY_GSM_MUX_COUNT 5
 
@@ -24,29 +21,46 @@ static const char GSM_OK[] TINY_GSM_PROGMEM = "OK" GSM_NL;
 static const char GSM_ERROR[] TINY_GSM_PROGMEM = "ERROR" GSM_NL;
 static unsigned TINY_GSM_TCP_KEEP_ALIVE = 120;
 
-class TinyGsm
+// <stat> status of ESP8266 station interface
+// 2 : ESP8266 station connected to an AP and has obtained IP
+// 3 : ESP8266 station created a TCP or UDP transmission
+// 4 : the TCP or UDP transmission of ESP8266 station disconnected
+// 5 : ESP8266 station did NOT connect to an AP
+enum RegStatus {
+  REG_OK_IP        = 2,
+  REG_OK_TCP       = 3,
+  REG_UNREGISTERED = 4,
+  REG_DENIED       = 5,
+  REG_UNKNOWN      = 6,
+};
+
+
+
+class TinyGsmESP8266 : public TinyGsmModem
 {
 
 public:
 
 class GsmClient : public Client
 {
-  friend class TinyGsm;
+  friend class TinyGsmESP8266;
   typedef TinyGsmFifo<uint8_t, TINY_GSM_RX_BUFFER> RxFifo;
 
 public:
   GsmClient() {}
 
-  GsmClient(TinyGsm& modem, uint8_t mux = 1) {
+  GsmClient(TinyGsmESP8266& modem, uint8_t mux = 1) {
     init(&modem, mux);
   }
 
-  bool init(TinyGsm* modem, uint8_t mux = 1) {
+  bool init(TinyGsmESP8266* modem, uint8_t mux = 1) {
     this->at = modem;
     this->mux = mux;
     sock_connected = false;
 
     at->sockets[mux] = this;
+    //  ^^ TODO: attach the socket here at init?  Or later at connect?
+    // Currently done inconsistently between modems
 
     return true;
   }
@@ -57,6 +71,10 @@ public:
     TINY_GSM_YIELD();
     rx.clear();
     sock_connected = at->modemConnect(host, port, mux);
+    // sock_connected = at->modemConnect(host, port, &mux);
+    // at->sockets[mux] = this;
+    // ^^ TODO: attach the socet after attempting connection or above at init?
+    // Currently done inconsistently between modems
     return sock_connected;
   }
 
@@ -90,6 +108,11 @@ public:
     return write(&c, 1);
   }
 
+  virtual size_t write(const char *str) {
+    if (str == NULL) return 0;
+    return write((const uint8_t *)str, strlen(str));
+  }
+
   virtual int available() {
     TINY_GSM_YIELD();
     if (!rx.size() && sock_connected) {
@@ -101,7 +124,8 @@ public:
   virtual int read(uint8_t *buf, size_t size) {
     TINY_GSM_YIELD();
     size_t cnt = 0;
-    while (cnt < size) {
+    uint32_t _startMillis = millis();
+    while (cnt < size && millis() - _startMillis < _timeout) {
       size_t chunk = TinyGsmMin(size-cnt, rx.size());
       if (chunk > 0) {
         rx.get(buf, chunk);
@@ -112,7 +136,6 @@ public:
       // TODO: Read directly into user buffer?
       if (!rx.size() && sock_connected) {
         at->maintain();
-        //break;
       }
     }
     return cnt;
@@ -144,18 +167,19 @@ public:
   String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
 private:
-  TinyGsm*      at;
-  uint8_t       mux;
-  bool          sock_connected;
-  RxFifo        rx;
+  TinyGsmESP8266* at;
+  uint8_t         mux;
+  bool            sock_connected;
+  RxFifo          rx;
 };
+
 
 class GsmClientSecure : public GsmClient
 {
 public:
   GsmClientSecure() {}
 
-  GsmClientSecure(TinyGsm& modem, uint8_t mux = 1)
+  GsmClientSecure(TinyGsmESP8266& modem, uint8_t mux = 1)
     : GsmClient(modem, mux)
   {}
 
@@ -165,14 +189,19 @@ public:
     TINY_GSM_YIELD();
     rx.clear();
     sock_connected = at->modemConnect(host, port, mux, true);
+    // sock_connected = at->modemConnect(host, port, &mux);
+    // at->sockets[mux] = this;
+    // ^^ TODO: attach the socet after attempting connection or above at init?
+    // Currently done inconsistently between modems
     return sock_connected;
   }
 };
 
+
 public:
 
-  TinyGsm(Stream& stream)
-    : stream(stream)
+  TinyGsmESP8266(Stream& stream)
+    : TinyGsmModem(stream), stream(stream)
   {
     memset(sockets, 0, sizeof(sockets));
   }
@@ -180,11 +209,9 @@ public:
   /*
    * Basic functions
    */
-  bool begin() {
-    return init();
-  }
 
-  bool init() {
+  bool init(const char* pin = NULL) {
+    DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
     if (!testAT()) {
       return false;
     }
@@ -192,20 +219,30 @@ public:
     if (waitResponse() != 1) {
       return false;
     }
+    sendAT(GF("+CIPMUX=1"));  // Enable Multiple Connections
+    if (waitResponse() != 1) {
+      return false;
+    }
+    sendAT(GF("+CWMODE_CUR=1"));  // Put into "station" mode
+    if (waitResponse() != 1) {
+      return false;
+    }
+    DBG(GF("### Modem:"), getModemName());
     return true;
   }
 
+  String getModemName() {
+    return "ESP8266";
+  }
+
   void setBaud(unsigned long baud) {
-    sendAT(GF("+IPR="), baud);
+    sendAT(GF("+UART_CUR="), baud, "8,1,0,0");
   }
 
   bool testAT(unsigned long timeout = 10000L) {
     for (unsigned long start = millis(); millis() - start < timeout; ) {
       sendAT(GF(""));
-      if (waitResponse(200) == 1) {
-          delay(100);
-          return true;
-      }
+      if (waitResponse(200) == 1) return true;
       delay(100);
     }
     return false;
@@ -236,6 +273,14 @@ public:
     return true;
   }
 
+  bool hasWifi() {
+    return true;
+  }
+
+  bool hasGPRS() {
+    return false;
+  }
+
   /*
    * Power functions
    */
@@ -255,12 +300,32 @@ public:
     return init();
   }
 
+  bool poweroff() {
+    sendAT(GF("+GSLP=0"));  // Power down indefinitely - until manually reset!
+    return waitResponse() == 1;
+  }
+
+  bool radioOff() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
+  bool sleepEnable(bool enable = true) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
+  /*
+   * SIM card functions
+   */
+
+  RegStatus getRegistrationStatus() {
+    sendAT(GF("+CIPSTATUS"));
+    if (waitResponse(3000, GF("STATUS:")) != 1) return REG_UNKNOWN;
+    int status = waitResponse(GFP(GSM_ERROR), GF("2"), GF("3"), GF("4"), GF("5"));
+    waitResponse();  // Returns an OK after the status
+    return (RegStatus)status;
+  }
 
   /*
    * Generic network functions
    */
 
-  int getSignalQuality() {
+  int16_t getSignalQuality() {
     sendAT(GF("+CWJAP_CUR?"));
     int res1 = waitResponse(GF("No AP"), GF("+CWJAP_CUR:"));
     if (res1 != 2) {
@@ -275,21 +340,9 @@ public:
     return res2;
   }
 
-  bool isNetworkConnected() {
-    sendAT(GF("+CIPSTATUS"));
-    int res1 = waitResponse(3000, GF("STATUS:"));
-    int res2 = 0;
-    if (res1 == 1) {
-      res2 = waitResponse(GFP(GSM_ERROR), GF("2"), GF("3"), GF("4"), GF("5"));
-    }
-    // <stat> status of ESP8266 station interface
-    // 2 : ESP8266 station connected to an AP and has obtained IP
-    // 3 : ESP8266 station created a TCP or UDP transmission
-    // 4 : the TCP or UDP transmission of ESP8266 station disconnected (but AP is connected)
-    // 5 : ESP8266 station did NOT connect to an AP
-    waitResponse();  // Returns an OK after the status
-    if (res2 == 2 || res2 == 3 || res2 == 4) return true;
-    else return false;
+  bool isNetworkConnected()  {
+    RegStatus s = getRegistrationStatus();
+    return (s == REG_OK_IP || s == REG_OK_TCP);
   }
 
   bool waitForNetwork(unsigned long timeout = 60000L) {
@@ -298,7 +351,7 @@ public:
       int res1 = waitResponse(3000, GF("busy p..."), GF("STATUS:"));
       if (res1 == 2) {
         int res2 = waitResponse(GFP(GSM_ERROR), GF("2"), GF("3"), GF("4"), GF("5"));
-        if (res2 == 2 || res2 == 3 || res2 == 4) {
+        if (res2 == 2 || res2 == 3) {
             waitResponse();
             return true;
          }
@@ -312,17 +365,6 @@ public:
    * WiFi functions
    */
   bool networkConnect(const char* ssid, const char* pwd) {
-
-    sendAT(GF("+CIPMUX=1"));
-    if (waitResponse() != 1) {
-      return false;
-    }
-
-    sendAT(GF("+CWMODE_CUR=1"));
-    if (waitResponse() != 1) {
-      return false;
-    }
-
     sendAT(GF("+CWJAP_CUR=\""), ssid, GF("\",\""), pwd, GF("\""));
     if (waitResponse(30000L, GFP(GSM_OK), GF(GSM_NL "FAIL" GSM_NL)) != 1) {
       return false;
@@ -338,6 +380,10 @@ public:
     return retVal;
   }
 
+  /*
+   * IP Address functions
+   */
+
   String getLocalIP() {
     sendAT(GF("+CIPSTA_CUR??"));
     int res1 = waitResponse(GF("ERROR"), GF("+CWJAP_CUR:"));
@@ -349,9 +395,9 @@ public:
     return res2;
   }
 
-  IPAddress localIP() {
-    return TinyGsmIpFromString(getLocalIP());
-  }
+  /*
+   * Client related functions
+   */
 
 protected:
 
@@ -370,7 +416,7 @@ protected:
     return (1 == rsp);
   }
 
-  int modemSend(const void* buff, size_t len, uint8_t mux) {
+  int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
     sendAT(GF("+CIPSEND="), mux, ',', len);
     if (waitResponse(GF(">")) != 1) {
       return 0;
@@ -384,46 +430,15 @@ protected:
   }
 
   bool modemGetConnected(uint8_t mux) {
-    // TODO: re-check this
-    sendAT(GF("+CIPSTATUS="), mux);
-    int res1 = waitResponse(3000, GF("STATUS:"));
-    int res2;
-    if (res1 == 1) {
-      res2 = waitResponse(GFP(GSM_ERROR), GF("2"), GF("3"), GF("4"), GF("5"));
-    }
-    // <stat> status of ESP8266 station interface
-    // 2 : ESP8266 station connected to an AP and has obtained IP
-    // 3 : ESP8266 station created a TCP or UDP transmission
-    // 4 : the TCP or UDP transmission of ESP8266 station disconnected (but AP is connected)
-    // 5 : ESP8266 station did NOT connect to an AP
-    waitResponse();  // Returns an OK after the status
-    if (res2 == 2 || res2 == 3 || res2 == 4) return true;
-    else return false;
+    RegStatus s = getRegistrationStatus();
+    return (s == REG_OK_IP || s == REG_OK_TCP);
   }
 
 public:
 
-  /* Utilities */
-
-  template<typename T>
-  void streamWrite(T last) {
-    stream.print(last);
-  }
-
-  template<typename T, typename... Args>
-  void streamWrite(T head, Args... tail) {
-    stream.print(head);
-    streamWrite(tail...);
-  }
-
-  bool streamSkipUntil(char c) { //TODO: timeout
-    while (true) {
-      while (!stream.available()) { TINY_GSM_YIELD(); }
-      if (stream.read() == c)
-        return true;
-    }
-    return false;
-  }
+  /*
+   Utilities
+   */
 
   template<typename... Args>
   void sendAT(Args... cmd) {
@@ -505,6 +520,7 @@ finish:
       }
       data = "";
     }
+    //DBG('<', index, '>');
     return index;
   }
 

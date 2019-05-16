@@ -4,26 +4,44 @@
  * It can be used to perform HTTP/RESTful API calls.
  *
  * TinyGSM Getting Started guide:
- *   http://tiny.cc/tiny-gsm-readme
+ *   https://tiny.cc/tinygsm-readme
  *
  **************************************************************/
 
 // Select your modem:
 #define TINY_GSM_MODEM_SIM800
-// #define TINY_GSM_MODEM_SIM808
 // #define TINY_GSM_MODEM_SIM900
+// #define TINY_GSM_MODEM_SIM808
+// #define TINY_GSM_MODEM_SIM868
+// #define TINY_GSM_MODEM_SIM7000
+// #define TINY_GSM_MODEM_UBLOX
+// #define TINY_GSM_MODEM_M95
+// #define TINY_GSM_MODEM_BG96
 // #define TINY_GSM_MODEM_A6
 // #define TINY_GSM_MODEM_A7
 // #define TINY_GSM_MODEM_M590
+// #define TINY_GSM_MODEM_MC60
+// #define TINY_GSM_MODEM_MC60E
 // #define TINY_GSM_MODEM_ESP8266
+// #define TINY_GSM_MODEM_XBEE
 
 // Increase RX buffer if needed
 //#define TINY_GSM_RX_BUFFER 512
+
+// See the debugging, if wanted
+//#define TINY_GSM_DEBUG Serial
+//#define LOGGING
+
+// Add a reception delay, if needed
+//#define TINY_GSM_YIELD() { delay(1); }
 
 #include <TinyGsmClient.h>
 
 // Uncomment this if you want to see all AT commands
 //#define DUMP_AT_COMMANDS
+
+// Uncomment this if you want to use SSL
+//#define USE_SSL
 
 // Set serial for debug console (to the Serial Monitor, default speed 115200)
 #define SerialMon Serial
@@ -39,13 +57,14 @@
 // Your GPRS credentials
 // Leave empty, if missing user or pass
 const char apn[]  = "YourAPN";
-const char user[] = "";
-const char pass[] = "";
+const char gprsUser[] = "";
+const char gprsPass[] = "";
+const char wifiSSID[]  = "YourSSID";
+const char wifiPass[] = "SSIDpw";
 
 // Server details
 const char server[] = "vsh.pp.ua";
 const char resource[] = "/TinyGSM/logo.txt";
-const int  port = 80;
 
 #ifdef DUMP_AT_COMMANDS
   #include <StreamDebugger.h>
@@ -55,15 +74,25 @@ const int  port = 80;
   TinyGsm modem(SerialAT);
 #endif
 
-TinyGsmClient client(modem);
+#ifdef USE_SSL
+  TinyGsmClientSecure client(modem);
+  const int  port = 443;
+#else
+  TinyGsmClient client(modem);
+  const int  port = 80;
+#endif
 
 void setup() {
   // Set console baud rate
   SerialMon.begin(115200);
   delay(10);
+  SerialMon.println(F("Wait..."));
+
+  pinMode(23, OUTPUT);
+  digitalWrite(23, LOW);
 
   // Set GSM module baud rate
-  SerialAT.begin(115200);
+  SerialAT.begin(9600);
   delay(3000);
 
   // Restart takes quite some time
@@ -80,6 +109,26 @@ void setup() {
 }
 
 void loop() {
+
+  if (modem.hasWifi()) {
+    SerialMon.print(F("Setting SSID/password..."));
+    if (!modem.networkConnect(wifiSSID, wifiPass)) {
+      SerialMon.println(" fail");
+      delay(10000);
+      return;
+    }
+    SerialMon.println(" OK");
+  }
+  else if (modem.getModemName().indexOf("XBee") >= 0) {
+    SerialMon.print(F("Setting APN"));
+    if (!modem.gprsConnect(apn)) {
+      SerialMon.println(" fail");
+      delay(10000);
+      return;
+    }
+    SerialMon.println(" OK");
+  }
+
   SerialMon.print(F("Waiting for network..."));
   if (!modem.waitForNetwork()) {
     SerialMon.println(" fail");
@@ -88,14 +137,16 @@ void loop() {
   }
   SerialMon.println(" OK");
 
-  SerialMon.print(F("Connecting to "));
-  SerialMon.print(apn);
-  if (!modem.gprsConnect(apn, user, pass)) {
-    SerialMon.println(" fail");
-    delay(10000);
-    return;
+  if (modem.hasGPRS()) {
+    SerialMon.print(F("Connecting to "));
+    SerialMon.print(apn);
+    if (!modem.gprsConnect(apn, gprsUser, gprsPass)) {
+      SerialMon.println(" fail");
+      delay(10000);
+      return;
+    }
+    SerialMon.println(" OK");
   }
-  SerialMon.println(" OK");
 
   SerialMon.print(F("Connecting to "));
   SerialMon.print(server);
@@ -127,12 +178,17 @@ void loop() {
   client.stop();
   SerialMon.println(F("Server disconnected"));
 
-  modem.gprsDisconnect();
-  SerialMon.println(F("GPRS disconnected"));
+  if (modem.hasWifi()) {
+    modem.networkDisconnect();
+    SerialMon.println(F("WiFi disconnected"));
+  }
+  else {
+    modem.gprsDisconnect();
+    SerialMon.println(F("GPRS disconnected"));
+  }
 
   // Do nothing forevermore
   while (true) {
     delay(1000);
   }
 }
-

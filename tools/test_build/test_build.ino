@@ -3,6 +3,7 @@
  *  DO NOT USE THIS - this is just a compilation test!
  *
  **************************************************************/
+// #define TINY_GSM_MODEM_SIM800
 
 #include <TinyGsmClient.h>
 
@@ -42,7 +43,7 @@ void loop() {
 
   // Test the Networking functions
   modem.getSignalQuality();
-
+  modem.localIP();
 
   #if defined(TINY_GSM_MODEM_HAS_GPRS)
     modem.waitForNetwork();
@@ -77,4 +78,3 @@ void loop() {
     modem.networkDisconnect();
   #endif
 }
-

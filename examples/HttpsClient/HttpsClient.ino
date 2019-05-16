@@ -8,9 +8,10 @@
  *   or from http://librarymanager/all#ArduinoHttpClient
  *
  * TinyGSM Getting Started guide:
- *   http://tiny.cc/tiny-gsm-readme
+ *   https://tiny.cc/tinygsm-readme
  *
- * SSL/TLS is currently supported only with SIM8xx series
+ * SSL/TLS is currently supported only with: SIM8xx, uBlox, ESP8266
+ *
  * For more HTTP API examples, see ArduinoHttpClient library
  *
  **************************************************************/
@@ -18,9 +19,22 @@
 // Select your modem:
 #define TINY_GSM_MODEM_SIM800
 // #define TINY_GSM_MODEM_SIM808
+// #define TINY_GSM_MODEM_SIM868
+// #define TINY_GSM_MODEM_UBLOX
+// #define TINY_GSM_MODEM_ESP8266
 
-// Increase RX buffer if needed
-//#define TINY_GSM_RX_BUFFER 512
+// Increase RX buffer to capture the entire response
+// Chips without internal buffering (ESP8266)
+// need enough space in the buffer for the entire response
+// else data will be lost (and the http library will fail).
+#define TINY_GSM_RX_BUFFER 650
+
+// See the debugging, if wanted
+//#define TINY_GSM_DEBUG Serial
+//#define LOGGING
+
+// Add a reception delay, if needed
+//#define TINY_GSM_YIELD() { delay(1); }
 
 #include <TinyGsmClient.h>
 #include <ArduinoHttpClient.h>
@@ -42,8 +56,10 @@
 // Your GPRS credentials
 // Leave empty, if missing user or pass
 const char apn[]  = "YourAPN";
-const char user[] = "";
-const char pass[] = "";
+const char gprsUser[] = "";
+const char gprsPass[] = "";
+const char wifiSSID[]  = "YourSSID";
+const char wifiPass[] = "SSIDpw";
 
 // Server details
 const char server[] = "vsh.pp.ua";
@@ -65,6 +81,7 @@ void setup() {
   // Set console baud rate
   SerialMon.begin(115200);
   delay(10);
+  SerialMon.println(F("Wait..."));
 
   // Set GSM module baud rate
   SerialAT.begin(115200);
@@ -89,6 +106,17 @@ void setup() {
 }
 
 void loop() {
+
+  if (modem.hasWifi()) {
+    SerialMon.print(F("Setting SSID/password..."));
+    if (!modem.networkConnect(wifiSSID, wifiPass)) {
+      SerialMon.println(" fail");
+      delay(10000);
+      return;
+    }
+    SerialMon.println(" OK");
+  }
+
   SerialMon.print(F("Waiting for network..."));
   if (!modem.waitForNetwork()) {
     SerialMon.println(" fail");
@@ -97,14 +125,16 @@ void loop() {
   }
   SerialMon.println(" OK");
 
-  SerialMon.print(F("Connecting to "));
-  SerialMon.print(apn);
-  if (!modem.gprsConnect(apn, user, pass)) {
-    SerialMon.println(" fail");
-    delay(10000);
-    return;
+  if (modem.hasGPRS()) {
+    SerialMon.print(F("Connecting to "));
+    SerialMon.print(apn);
+    if (!modem.gprsConnect(apn, gprsUser, gprsPass)) {
+      SerialMon.println(" fail");
+      delay(10000);
+      return;
+    }
+    SerialMon.println(" OK");
   }
-  SerialMon.println(" OK");
 
   SerialMon.print(F("Performing HTTPS GET request... "));
   http.connectionKeepAlive(); // Currently, this is needed for HTTPS
@@ -116,16 +146,18 @@ void loop() {
   }
 
   int status = http.responseStatusCode();
+  SerialMon.print(F("Response status code: "));
   SerialMon.println(status);
   if (!status) {
     delay(10000);
     return;
   }
 
+  SerialMon.println(F("Response Headers:"));
   while (http.headerAvailable()) {
     String headerName = http.readHeaderName();
     String headerValue = http.readHeaderValue();
-    //SerialMon.println(headerName + " : " + headerValue);
+    SerialMon.println("    " + headerName + " : " + headerValue);
   }
 
   int length = http.contentLength();
@@ -157,4 +189,3 @@ void loop() {
     delay(1000);
   }
 }
-

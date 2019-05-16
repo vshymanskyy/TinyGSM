@@ -5,22 +5,31 @@
  *   or from http://librarymanager/all#StreamDebugger
  *
  * TinyGSM Getting Started guide:
- *   http://tiny.cc/tiny-gsm-readme
+ *   https://tiny.cc/tinygsm-readme
  *
  **************************************************************/
 
 // Select your modem:
 #define TINY_GSM_MODEM_SIM800
-// #define TINY_GSM_MODEM_SIM808
 // #define TINY_GSM_MODEM_SIM900
+// #define TINY_GSM_MODEM_SIM808
+// #define TINY_GSM_MODEM_SIM868
+// #define TINY_GSM_MODEM_UBLOX
+// #define TINY_GSM_MODEM_M95
+// #define TINY_GSM_MODEM_BG96
 // #define TINY_GSM_MODEM_A6
 // #define TINY_GSM_MODEM_A7
 // #define TINY_GSM_MODEM_M590
+// #define TINY_GSM_MODEM_MC60
+// #define TINY_GSM_MODEM_MC60E
 // #define TINY_GSM_MODEM_ESP8266
 // #define TINY_GSM_MODEM_XBEE
 
 // Increase the buffer
 #define TINY_GSM_RX_BUFFER 512
+
+// Define the serial console for debug prints, if needed
+//#define TINY_GSM_DEBUG Serial
 
 #include <TinyGsmClient.h>
 
@@ -45,11 +54,16 @@ const char pass[] = "";
 #include <StreamDebugger.h>
 StreamDebugger debugger(SerialAT, SerialMon);
 TinyGsm modem(debugger);
-TinyGsmClient client(modem);
 
 const char server[] = "vsh.pp.ua";
 const char resource[] = "/TinyGSM/logo.txt";
+
 const int  port = 80;
+TinyGsmClient client(modem);
+
+// For SSL:
+//const int  port = 443;
+//TinyGsmClientSecure client(modem);
 
 void setup() {
   // Set console baud rate
@@ -66,7 +80,7 @@ void loop() {
   // To skip it, call init() instead of restart()
   SerialMon.print("Initializing modem...");
   if (!modem.restart()) {
-    SerialMon.println(" fail");
+    SerialMon.println(F(" [fail]"));
     SerialMon.println(F("************************"));
     SerialMon.println(F(" Is your modem connected properly?"));
     SerialMon.println(F(" Is your serial speed (baud rate) correct?"));
@@ -75,14 +89,20 @@ void loop() {
     SerialMon.println(F(" Try useing File -> Examples -> TinyGSM -> tools -> AT_Debug to find correct configuration"));
     SerialMon.println(F("************************"));
     delay(10000);
+    return;
   }
+  SerialMon.println(F(" [OK]"));
+
+  String modemInfo = modem.getModemInfo();
+  SerialMon.print("Modem: ");
+  SerialMon.println(modemInfo);
 
   // Unlock your SIM card with a PIN
   //modem.simUnlock("1234");
 
   SerialMon.print("Waiting for network...");
   if (!modem.waitForNetwork()) {
-    SerialMon.println(" fail");
+    SerialMon.println(F(" [fail]"));
     SerialMon.println(F("************************"));
     SerialMon.println(F(" Is your sim card locked?"));
     SerialMon.println(F(" Do you have a good signal?"));
@@ -92,12 +112,12 @@ void loop() {
     delay(10000);
     return;
   }
-  SerialMon.println(" OK");
+  SerialMon.println(F(" [OK]"));
 
   SerialMon.print("Connecting to ");
   SerialMon.print(apn);
   if (!modem.gprsConnect(apn, user, pass)) {
-    SerialMon.println(" fail");
+    SerialMon.println(F(" [fail]"));
     SerialMon.println(F("************************"));
     SerialMon.println(F(" Is GPRS enabled by network provider?"));
     SerialMon.println(F(" Try checking your card balance."));
@@ -105,21 +125,32 @@ void loop() {
     delay(10000);
     return;
   }
-  SerialMon.println(" OK");
+  SerialMon.println(F(" [OK]"));
 
-  SerialMon.print("Connecting to ");
+  IPAddress local = modem.localIP();
+  SerialMon.print("Local IP: ");
+  SerialMon.println(local);
+
+  SerialMon.print(F("Connecting to "));
   SerialMon.print(server);
   if (!client.connect(server, port)) {
-    SerialMon.println(" fail");
+    SerialMon.println(F(" [fail]"));
     delay(10000);
     return;
   }
-  SerialMon.println(" OK");
+  SerialMon.println(F(" [OK]"));
 
   // Make a HTTP GET request:
   client.print(String("GET ") + resource + " HTTP/1.0\r\n");
   client.print(String("Host: ") + server + "\r\n");
   client.print("Connection: close\r\n\r\n");
+
+  // Wait for data to arrive
+  while (client.connected() && !client.available()) {
+    delay(100);
+    SerialMon.print('.');
+  };
+  SerialMon.println();
 
   // Skip all headers
   client.find("\r\n\r\n");
@@ -137,23 +168,22 @@ void loop() {
   }
 
   client.stop();
-  SerialMon.println("Server disconnected");
+  SerialMon.println(F("Server disconnected"));
 
   modem.gprsDisconnect();
-  SerialMon.println("GPRS disconnected");
+  SerialMon.println(F("GPRS disconnected"));
 
   SerialMon.println();
-  SerialMon.println("************************");
-  SerialMon.print  (" Received: ");
+  SerialMon.println(F("************************"));
+  SerialMon.print  (F(" Received: "));
   SerialMon.print(bytesReceived);
-  SerialMon.println(" bytes");
-  SerialMon.print  (" Test:     ");
+  SerialMon.println(F(" bytes"));
+  SerialMon.print  (F(" Test:     "));
   SerialMon.println((bytesReceived == 121) ? "PASSED" : "FAILED");
-  SerialMon.println("************************");
+  SerialMon.println(F("************************"));
 
   // Do nothing forevermore
   while (true) {
     delay(1000);
   }
 }
-
