@@ -205,6 +205,7 @@ public:
   {
     memset(sockets, 0, sizeof(sockets));
   }
+  virtual ~TinyGsmESP8266() {}
 
   /*
    * Basic functions

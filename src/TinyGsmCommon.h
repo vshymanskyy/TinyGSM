@@ -211,6 +211,7 @@ public:
   TinyGsmModem(Stream& stream)
     : stream(stream)
   {}
+  virtual ~TinyGsmModem() {}
 
   /*
    * Basic functions
@@ -329,8 +330,6 @@ public:
 public:
   Stream&       stream;
 };
-
-
 
 
 #endif

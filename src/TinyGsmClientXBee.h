@@ -277,6 +277,8 @@ public:
       inCommandMode = false;
       memset(sockets, 0, sizeof(sockets));
   }
+  
+  virtual ~TinyGsmXBee() {}
 
   /*
    * Basic functions

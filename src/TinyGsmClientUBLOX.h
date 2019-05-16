@@ -254,6 +254,7 @@ public:
     memset(sockets, 0, sizeof(sockets));
     isCatM = false;  // For SARA R4 and N4 series
   }
+  virtual ~TinyGsmUBLOX() {}
 
   /*
    * Basic functions

@@ -220,6 +220,7 @@ public:
   {
     memset(sockets, 0, sizeof(sockets));
   }
+  virtual ~TinyGsmM95() {}
 
   /*
    * Basic functions

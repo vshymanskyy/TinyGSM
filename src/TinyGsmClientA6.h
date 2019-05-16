@@ -184,6 +184,7 @@ public:
   {
     memset(sockets, 0, sizeof(sockets));
   }
+  virtual ~TinyGsmA6() {}
 
   /*
    * Basic functions
