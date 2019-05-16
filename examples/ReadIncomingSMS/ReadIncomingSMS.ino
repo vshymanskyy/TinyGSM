@@ -1,3 +1,17 @@
+/**************************************************************
+ *
+ * TinyGSM Incoming SMS
+ *
+ * Developed by Robin Gilham - robin.gilham@gmail.com
+ * 
+ * Register a call back for an unsolicited message from the modem 
+ * The unsilicited message could be for RING notifications too
+ * This library has been tested on the SIM800 modem and was developed to
+ * be used with our STM32 based modem board which has a number of interfaces
+ * Check it on our website at
+ * https://www.inventech.co.za/product/stm32-sms-switch-2/
+ *
+ **************************************************************/
 #include <Arduino.h>
 
 #define TINY_GSM_MODEM_SIM800
