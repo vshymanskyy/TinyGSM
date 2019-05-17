@@ -77,6 +77,7 @@ Primary Author/Contributor   |[vshymanskyy](https://github.com/vshymanskyy)|[vsh
 - Quectel M95 ***(alpha)***
 - Quectel MC60 ***(alpha)***
 - SIMCom SIM7000 series ***(alpha)***
+- Sequans Monarch LTE Cat M1/NB1 ***(alpha)***
 
 ### Supported boards/modules
 - Arduino MKR GSM 1400
@@ -89,9 +90,9 @@ Primary Author/Contributor   |[vshymanskyy](https://github.com/vshymanskyy)|[vsh
 - ... other modules, based on supported modems. Some boards require [**special configuration**](https://github.com/vshymanskyy/TinyGSM/wiki/Board-configuration).
 
 More modems may be supported later:
-- [ ] Sequans Monarch LTE Cat M1/NB1
 - [ ] Quectel M10, UG95
 - [ ] SIMCom SIM5320, SIM5360, SIM5216
+- [ ] SIMCom SIM7020, SIM7100
 - [ ] Telit GL865
 - [ ] ZTE MG2639
 - [ ] Hi-Link HLK-RM04
