@@ -59,8 +59,6 @@ public:
     sock_connected = false;
 
     at->sockets[mux] = this;
-    //  ^^ TODO: attach the socket here at init?  Or later at connect?
-    // Currently done inconsistently between modems
 
     return true;
   }
@@ -71,24 +69,11 @@ public:
     TINY_GSM_YIELD();
     rx.clear();
     sock_connected = at->modemConnect(host, port, mux);
-    // sock_connected = at->modemConnect(host, port, &mux);
-    // at->sockets[mux] = this;
-    // ^^ TODO: attach the socket after attempting connection or above at init?
-    // Currently done inconsistently between modems
+
     return sock_connected;
   }
 
-  virtual int connect(IPAddress ip, uint16_t port) {
-    String host; host.reserve(16);
-    host += ip[0];
-    host += ".";
-    host += ip[1];
-    host += ".";
-    host += ip[2];
-    host += ".";
-    host += ip[3];
-    return connect(host.c_str(), port);
-  }
+TINY_GSM_CLIENT_CONNECT_TO_IP()
 
   virtual void stop() {
     TINY_GSM_YIELD();
@@ -98,67 +83,13 @@ public:
     rx.clear();
   }
 
-  virtual size_t write(const uint8_t *buf, size_t size) {
-    TINY_GSM_YIELD();
-    //at->maintain();
-    return at->modemSend(buf, size, mux);
-  }
+TINY_GSM_CLIENT_WRITE()
 
-  virtual size_t write(uint8_t c) {
-    return write(&c, 1);
-  }
+TINY_GSM_CLIENT_AVAILABLE_NO_MODEM_FIFO()
 
-  virtual size_t write(const char *str) {
-    if (str == NULL) return 0;
-    return write((const uint8_t *)str, strlen(str));
-  }
+TINY_GSM_CLIENT_READ_NO_MODEM_FIFO()
 
-  virtual int available() {
-    TINY_GSM_YIELD();
-    if (!rx.size() && sock_connected) {
-      at->maintain();
-    }
-    return rx.size();
-  }
-
-  virtual int read(uint8_t *buf, size_t size) {
-    TINY_GSM_YIELD();
-    size_t cnt = 0;
-    uint32_t _startMillis = millis();
-    while (cnt < size && millis() - _startMillis < _timeout) {
-      size_t chunk = TinyGsmMin(size-cnt, rx.size());
-      if (chunk > 0) {
-        rx.get(buf, chunk);
-        buf += chunk;
-        cnt += chunk;
-        continue;
-      }
-      // TODO: Read directly into user buffer?
-      if (!rx.size() && sock_connected) {
-        at->maintain();
-      }
-    }
-    return cnt;
-  }
-
-  virtual int read() {
-    uint8_t c;
-    if (read(&c, 1) == 1) {
-      return c;
-    }
-    return -1;
-  }
-
-  virtual int peek() { return -1; } //TODO
-  virtual void flush() { at->stream.flush(); }
-
-  virtual uint8_t connected() {
-    if (available()) {
-      return true;
-    }
-    return sock_connected;
-  }
-  virtual operator bool() { return connected(); }
+TINY_GSM_CLIENT_PEEK_FLUSH_CONNECTED()
 
   /*
    * Extended API
@@ -167,7 +98,7 @@ public:
   String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
 private:
-  TinyGsmM590*   at;
+  TinyGsmM590*    at;
   uint8_t         mux;
   bool            sock_connected;
   RxFifo          rx;

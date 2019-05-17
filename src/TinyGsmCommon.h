@@ -202,4 +202,204 @@ String TinyGsmDecodeHex16bit(String &instr) {
   return result;
 }
 
+
+// Connect to a IP address given as an IPAddress object by
+// converting said IP address to text
+#define TINY_GSM_CLIENT_CONNECT_TO_IP() \
+  virtual int connect(IPAddress ip, uint16_t port) { \
+    String host; host.reserve(16); \
+    host += ip[0]; \
+    host += "."; \
+    host += ip[1]; \
+    host += "."; \
+    host += ip[2]; \
+    host += "."; \
+    host += ip[3]; \
+    return connect(host.c_str(), port); \
+  }
+
+
+// Writes data out on the client using the modem send functionality
+#define TINY_GSM_CLIENT_WRITE() \
+  virtual size_t write(const uint8_t *buf, size_t size) { \
+    TINY_GSM_YIELD(); \
+    at->maintain(); \
+    return at->modemSend(buf, size, mux); \
+  } \
+  \
+  virtual size_t write(uint8_t c) {\
+    return write(&c, 1); \
+  }\
+  \
+  virtual size_t write(const char *str) { \
+    if (str == NULL) return 0; \
+    return write((const uint8_t *)str, strlen(str)); \
+  }
+
+
+// Returns the combined number of characters available in the TinyGSM fifo
+// and the modem chips internal fifo, doing an extra check-in with the
+// modem to see if anything has arrived without a UURC.
+#define TINY_GSM_CLIENT_AVAILABLE_WITH_BUFFER_CHECK() \
+  virtual int available() { \
+    TINY_GSM_YIELD(); \
+    if (!rx.size()) { \
+      /* Workaround: sometimes module forgets to notify about data arrival.
+      TODO: Currently we ping the module periodically,
+      but maybe there's a better indicator that we need to poll */ \
+      if (millis() - prev_check > 250) { \
+        got_data = true; \
+        prev_check = millis(); \
+      } \
+      at->maintain(); \
+    } \
+    return rx.size() + sock_available; \
+  }
+
+
+// Returns the combined number of characters available in the TinyGSM fifo and
+// the modem chips internal fifo.  Use this if you don't expect to miss any URC's.
+#define TINY_GSM_CLIENT_AVAILABLE_NO_BUFFER_CHECK() \
+  virtual int available() { \
+    TINY_GSM_YIELD(); \
+    if (!rx.size()) { \
+      at->maintain(); \
+    } \
+    return rx.size() + sock_available; \
+  }
+
+
+// Returns the number of characters avaialable in the TinyGSM fifo
+// Assumes the modem chip has no internal fifo
+#define TINY_GSM_CLIENT_AVAILABLE_NO_MODEM_FIFO() \
+  virtual int available() { \
+    TINY_GSM_YIELD(); \
+    if (!rx.size() && sock_connected) { \
+      at->maintain(); \
+    } \
+    return rx.size(); \
+  }
+
+
+#define TINY_GSM_CLIENT_READ_OVERLOAD() \
+  virtual int read() { \
+    uint8_t c; \
+    if (read(&c, 1) == 1) { \
+      return c; \
+    } \
+    return -1; \
+  }
+
+// Reads characters out of the TinyGSM fifo, and from the modem chips internal
+// fifo if avaiable, also double checking with the modem if data has arrived
+// without issuing a UURC.
+#define TINY_GSM_CLIENT_READ_WITH_BUFFER_CHECK() \
+  virtual int read(uint8_t *buf, size_t size) { \
+    TINY_GSM_YIELD(); \
+    at->maintain(); \
+    size_t cnt = 0; \
+    while (cnt < size) { \
+      size_t chunk = TinyGsmMin(size-cnt, rx.size()); \
+      if (chunk > 0) { \
+        rx.get(buf, chunk); \
+        buf += chunk; \
+        cnt += chunk; \
+        continue; \
+      } \
+      /* Workaround: sometimes module forgets to notify about data arrival.
+      TODO: Currently we ping the module periodically,
+      but maybe there's a better indicator that we need to poll */ \
+      if (millis() - prev_check > 250) { \
+        got_data = true; \
+        prev_check = millis(); \
+      } \
+      /* TODO: Read directly into user buffer? */ \
+      at->maintain(); \
+      if (sock_available > 0) { \
+        int n = at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available), mux); \
+        if (n == 0) break; \
+      } else { \
+        break; \
+      } \
+    } \
+    return cnt; \
+  } \
+  TINY_GSM_CLIENT_READ_OVERLOAD()
+
+
+// Reads characters out of the TinyGSM fifo, and from the modem chips internal
+// fifo if avaiable.  Use this if you don't expect to miss any URC's.
+#define TINY_GSM_CLIENT_READ_NO_BUFFER_CHECK() \
+  virtual int read(uint8_t *buf, size_t size) { \
+    TINY_GSM_YIELD(); \
+    at->maintain(); \
+    size_t cnt = 0; \
+    while (cnt < size) { \
+      size_t chunk = TinyGsmMin(size-cnt, rx.size()); \
+      if (chunk > 0) { \
+        rx.get(buf, chunk); \
+        buf += chunk; \
+        cnt += chunk; \
+        continue; \
+      } \
+      /* TODO: Read directly into user buffer? */ \
+      at->maintain(); \
+      if (sock_available > 0) { \
+        int n = at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available), mux); \
+        if (n == 0) break; \
+      } else { \
+        break; \
+      } \
+    } \
+    return cnt; \
+  } \
+  TINY_GSM_CLIENT_READ_OVERLOAD()
+
+
+// Reads characters out of the TinyGSM fifo, waiting for any URC's from the
+// modem for new data if there's nothing in the fifo.  This assumes the
+//modem chip itself has no fifo.
+#define TINY_GSM_CLIENT_READ_NO_MODEM_FIFO() \
+  virtual int read(uint8_t *buf, size_t size) { \
+    TINY_GSM_YIELD(); \
+    size_t cnt = 0; \
+    uint32_t _startMillis = millis(); \
+    while (cnt < size && millis() - _startMillis < _timeout) { \
+      size_t chunk = TinyGsmMin(size-cnt, rx.size()); \
+      if (chunk > 0) { \
+        rx.get(buf, chunk); \
+        buf += chunk; \
+        cnt += chunk; \
+        continue; \
+      } \
+      /* TODO: Read directly into user buffer? */ \
+      if (!rx.size() && sock_connected) { \
+        at->maintain(); \
+      } \
+    } \
+    return cnt; \
+  } \
+  \
+  virtual int read() { \
+    uint8_t c; \
+    if (read(&c, 1) == 1) { \
+      return c; \
+    } \
+    return -1; \
+  }
+
+
+#define TINY_GSM_CLIENT_PEEK_FLUSH_CONNECTED() \
+  virtual int peek() { return -1; } /* TODO */ \
+  \
+  virtual void flush() { at->stream.flush(); } \
+  \
+  virtual uint8_t connected() { \
+    if (available()) { \
+      return true; \
+    } \
+    return sock_connected; \
+  } \
+  virtual operator bool() { return connected(); }
+
 #endif
