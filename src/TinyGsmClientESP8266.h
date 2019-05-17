@@ -12,6 +12,10 @@
 
 //#define TINY_GSM_DEBUG Serial
 
+#if !defined(TINY_GSM_RX_BUFFER)
+  #define TINY_GSM_RX_BUFFER 512
+#endif
+
 #define TINY_GSM_MUX_COUNT 5
 
 #include <TinyGsmCommon.h>
@@ -119,10 +123,6 @@ public:
     TINY_GSM_YIELD();
     rx.clear();
     sock_connected = at->modemConnect(host, port, mux, true);
-    // sock_connected = at->modemConnect(host, port, &mux);
-    // at->sockets[mux] = this;
-    // ^^ TODO: attach the socket after attempting connection or above at init?
-    // Currently done inconsistently between modems
     return sock_connected;
   }
 };
@@ -139,6 +139,10 @@ public:
   /*
    * Basic functions
    */
+
+  bool begin(const char* pin = NULL) {
+    return init(pin);
+  }
 
   bool init(const char* pin = NULL) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
@@ -159,10 +163,6 @@ public:
     }
     DBG(GF("### Modem:"), getModemName());
     return true;
-  }
-
-  bool begin(const char* pin = NULL) {
-    return init(pin);
   }
 
   String getModemName() {
@@ -289,6 +289,7 @@ TINY_GSM_MODEM_MAINTAIN_LISTEN()
   /*
    * WiFi functions
    */
+
   bool networkConnect(const char* ssid, const char* pwd) {
     sendAT(GF("+CWJAP_CUR=\""), ssid, GF("\",\""), pwd, GF("\""));
     if (waitResponse(30000L, GFP(GSM_OK), GF(GSM_NL "FAIL" GSM_NL)) != 1) {

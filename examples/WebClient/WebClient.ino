@@ -9,7 +9,7 @@
  **************************************************************/
 
 // Select your modem:
-#define TINY_GSM_MODEM_SIM800
+// #define TINY_GSM_MODEM_SIM800
 // #define TINY_GSM_MODEM_SIM808
 // #define TINY_GSM_MODEM_SIM868
 // #define TINY_GSM_MODEM_SIM900
@@ -65,7 +65,7 @@
 
 // Your GPRS credentials
 // Leave empty, if missing user or pass
-const char apn[]  = "YourAPN";
+const char apn[]  = "hologram";
 const char gprsUser[] = "";
 const char gprsPass[] = "";
 const char wifiSSID[]  = "YourSSID";
@@ -106,11 +106,11 @@ void setup() {
   digitalWrite(23, HIGH);
 
   SerialMon.println("Wait...");
-  delay(3000);
 
   // Set GSM module baud rate
   // TinyGsmAutoBaud(SerialAT,GSM_AUTOBAUD_MIN,GSM_AUTOBAUD_MAX);
   SerialAT.begin(9600);
+  delay(3000);
 
   // Restart takes quite some time
   // To skip it, call init() instead of restart()
@@ -139,9 +139,11 @@ void loop() {
 
   SerialMon.print("Waiting for network...");
   if (!modem.waitForNetwork()) {
+    SerialMon.println(" fail");
     delay(10000);
     return;
   }
+  SerialMon.println(" OK");
 
   if (modem.isNetworkConnected()) {
     SerialMon.print("Network connected");

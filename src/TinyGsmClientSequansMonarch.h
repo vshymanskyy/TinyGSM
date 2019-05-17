@@ -194,6 +194,10 @@ public:
    * Basic functions
    */
 
+  bool begin(const char* pin = NULL) {
+    return init(pin);
+  }
+
   bool init(const char* pin = NULL) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
     if (!testAT()) {
@@ -205,10 +209,6 @@ public:
     }
     getSimStatus();
     return true;
-  }
-
-  bool begin(const char* pin = NULL) {
-    return init(pin);
   }
 
   String getModemName() {
@@ -361,6 +361,7 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
   /*
    * GPRS functions
    */
+
   bool gprsConnect(const char* apn, const char* user = NULL, const char* pwd = NULL) {
     gprsDisconnect();
 

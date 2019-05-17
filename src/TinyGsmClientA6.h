@@ -12,6 +12,10 @@
 
 //#define TINY_GSM_DEBUG Serial
 
+#if !defined(TINY_GSM_RX_BUFFER)
+  #define TINY_GSM_RX_BUFFER 256
+#endif
+
 #define TINY_GSM_MUX_COUNT 8
 
 #include <TinyGsmCommon.h>
@@ -119,6 +123,10 @@ public:
    * Basic functions
    */
 
+   bool begin(const char* pin = NULL) {
+     return init(pin);
+   }
+
   bool init(const char* pin = NULL) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
     if (!testAT()) {
@@ -135,10 +143,6 @@ public:
     DBG(GF("### Modem:"), getModemName());
     getSimStatus();
     return true;
-  }
-
-  bool begin(const char* pin = NULL) {
-    return init(pin);
   }
 
   String getModemName() {
@@ -269,6 +273,7 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
   /*
    * GPRS functions
    */
+
   bool gprsConnect(const char* apn, const char* user = NULL, const char* pwd = NULL) {
     gprsDisconnect();
 

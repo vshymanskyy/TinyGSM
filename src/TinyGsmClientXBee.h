@@ -282,6 +282,10 @@ public:
    * Basic functions
    */
 
+  bool begin(const char* pin = NULL) {
+    return init(pin);
+  }
+
   bool init(const char* pin = NULL) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
 
@@ -305,10 +309,6 @@ public:
 
     exitCommand();
     return ret_val;
-  }
-
-  bool begin(const char* pin = NULL) {
-    return init(pin);
   }
 
   String getModemName() {
@@ -672,6 +672,7 @@ public:
   /*
    * WiFi functions
    */
+
   bool networkConnect(const char* ssid, const char* pwd) {
 
     if (!commandMode()) return false;  // return immediately
@@ -730,6 +731,7 @@ public:
   /*
    * GPRS functions
    */
+
   bool gprsConnect(const char* apn, const char* user = NULL, const char* pwd = NULL) {
     if (!commandMode()) return false;  // Return immediately
     sendAT(GF("AN"), apn);  // Set the APN

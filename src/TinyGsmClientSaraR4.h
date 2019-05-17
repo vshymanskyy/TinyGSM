@@ -12,6 +12,10 @@
 
 //#define TINY_GSM_DEBUG Serial
 
+#if !defined(TINY_GSM_RX_BUFFER)
+  #define TINY_GSM_RX_BUFFER 64
+#endif
+
 #define TINY_GSM_MUX_COUNT 7
 
 #include <TinyGsmCommon.h>
@@ -181,6 +185,10 @@ public:
    * Basic functions
    */
 
+  bool begin(const char* pin = NULL) {
+    return init(pin);
+  }
+
   bool init(const char* pin = NULL) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
     if (!testAT()) {
@@ -210,10 +218,6 @@ public:
     else {
       return (ret == SIM_READY || ret == SIM_LOCKED);
     }
-  }
-
-  bool begin(const char* pin = NULL) {
-    return init(pin);
   }
 
   String getModemName() {

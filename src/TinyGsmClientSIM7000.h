@@ -165,6 +165,10 @@ public:
    * Basic functions
    */
 
+  bool begin(const char* pin = NULL) {
+    return init(pin);
+  }
+
   bool init(const char* pin = NULL) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
     if (!testAT()) {
@@ -177,10 +181,6 @@ public:
     DBG(GF("### Modem:"), getModemName());
     getSimStatus();
     return true;
-  }
-
-  bool begin(const char* pin = NULL) {
-    return init(pin);
   }
 
   String getModemName() {
@@ -352,6 +352,7 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
   /*
    * GPRS functions
    */
+
   bool gprsConnect(const char* apn, const char* user = NULL, const char* pwd = NULL) {
     gprsDisconnect();
 
@@ -656,6 +657,7 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
   /*
    * Time functions
    */
+
   String getGSMDateTime(TinyGSMDateTimeFormat format) {
     sendAT(GF("+CCLK?"));
     if (waitResponse(2000L, GF(GSM_NL "+CCLK: \"")) != 1) {
@@ -729,6 +731,7 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
   /*
    * Battery functions
    */
+
   // Use: float vBatt = modem.getBattVoltage() / 1000.0;
   uint16_t getBattVoltage() {
     sendAT(GF("+CBC"));
