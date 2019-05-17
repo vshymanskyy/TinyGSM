@@ -168,7 +168,7 @@ public:
         cnt += chunk;
         continue;
       }
-      /* TODO: Read directly into user buffer? */
+      // TODO: Read directly into user buffer?
       if (!rx.size() || at->stream.available()) {
         at->maintain();
       }
