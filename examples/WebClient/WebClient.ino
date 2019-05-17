@@ -28,10 +28,10 @@
 // #define TINY_GSM_MODEM_SEQUANS_MONARCH
 
 // Increase RX buffer if needed
-#define TINY_GSM_RX_BUFFER 512
+// #define TINY_GSM_RX_BUFFER 512
 
 // Add a reception delay, if needed
-#define TINY_GSM_YIELD() { delay(1); }
+// #define TINY_GSM_YIELD() { delay(1); }
 
 // Uncomment this if you want to use SSL
 //#define USE_SSL
@@ -51,7 +51,7 @@
 //#define DUMP_AT_COMMANDS
 
 // See the debugging, if wanted
-#define TINY_GSM_DEBUG SerialMon
+// #define TINY_GSM_DEBUG SerialMon
 
 // Range to attempt to autobaud
 #define GSM_AUTOBAUD_MIN 9600
