@@ -933,37 +933,7 @@ public:
     }
   }
 
-  template<typename T>
-  void streamWrite(T last) {
-    stream.print(last);
-  }
-
-  template<typename T, typename... Args>
-  void streamWrite(T head, Args... tail) {
-    stream.print(head);
-    streamWrite(tail...);
-  }
-
-  template<typename... Args>
-  void sendAT(Args... cmd) {
-    streamWrite("AT", cmd..., GSM_NL);
-    stream.flush();
-    TINY_GSM_YIELD();
-    //DBG("### AT:", cmd...);
-  }
-
-  bool streamSkipUntil(const char c, const unsigned long timeout = 1000L) {
-    unsigned long startMillis = millis();
-    while (millis() - startMillis < timeout) {
-      while (millis() - startMillis < timeout && !stream.available()) {
-        TINY_GSM_YIELD();
-      }
-      if (stream.read() == c) {
-        return true;
-      }
-    }
-    return false;
-  }
+TINY_GSP_MODEM_STREAM_UTILITIES()
 
   // TODO: Optimize this!
   // NOTE:  This function is used while INSIDE command mode, so we're only
