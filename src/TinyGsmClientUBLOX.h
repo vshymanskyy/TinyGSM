@@ -147,10 +147,13 @@ public:
     stop();
     TINY_GSM_YIELD();
     rx.clear();
-    // sock_connected = at->modemConnect(host, port, mux, true);
+    uint8_t oldMux = mux;
     sock_connected = at->modemConnect(host, port, &mux, true);
+    if (mux != oldMux) {
+        DBG("WARNING:  Mux number changed from", oldMux, "to", mux);
+        at->sockets[oldMux] = NULL;
+    }
     at->sockets[mux] = this;
-    // TODO:  When is the socket attached?
     at->maintain();
     return sock_connected;
   }

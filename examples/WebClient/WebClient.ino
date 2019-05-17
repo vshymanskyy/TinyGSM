@@ -9,7 +9,7 @@
  **************************************************************/
 
 // Select your modem:
-#define TINY_GSM_MODEMs_SIM800
+#define TINY_GSM_MODEM_SIM800
 // #define TINY_GSM_MODEM_SIM808
 // #define TINY_GSM_MODEM_SIM868
 // #define TINY_GSM_MODEM_SIM900
@@ -65,7 +65,7 @@
 
 // Your GPRS credentials
 // Leave empty, if missing user or pass
-const char apn[]  = "hologram";
+const char apn[]  = "YourAPN";
 const char gprsUser[] = "";
 const char gprsPass[] = "";
 const char wifiSSID[]  = "YourSSID";

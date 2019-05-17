@@ -145,9 +145,6 @@ public:
     TINY_GSM_YIELD();
     rx.clear();
     sock_connected = at->modemConnect(host, port, mux, true);
-    // sock_connected = at->modemConnect(host, port, &mux, true);
-    // at->sockets[mux] = this;
-    // TODO:  When is the socket attached?
     return sock_connected;
   }
 };
