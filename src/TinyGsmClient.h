@@ -52,7 +52,7 @@
   #define TINY_GSM_MODEM_HAS_GPRS
   #define TINY_GSM_MODEM_HAS_SSL
   #include <TinyGsmClientSaraR4.h>
-  typedef TinyGsmUBLOX TinyGsm;
+  typedef TinyGsmSaraR4 TinyGsm;
   typedef TinyGsmSaraR4::GsmClient TinyGsmClient;
   typedef TinyGsmSaraR4::GsmClientSecure TinyGsmClientSecure;
 

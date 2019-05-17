@@ -21,6 +21,7 @@
 // #define TINY_GSM_MODEM_SIM808
 // #define TINY_GSM_MODEM_SIM868
 // #define TINY_GSM_MODEM_UBLOX
+// #define TINY_GSM_MODEM_SARAR4
 // #define TINY_GSM_MODEM_ESP8266
 
 // Increase RX buffer to capture the entire response
