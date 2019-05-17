@@ -62,8 +62,8 @@ public:
     sock_connected = false;
     got_data = false;
 
-    // Don't attach the socket here because we won't know the mux channel number
-    // until the u-blox assigns it upon opening the socket
+    at->sockets[mux] = this;
+
     return true;
   }
 
@@ -88,11 +88,14 @@ public:
     }
     TINY_GSM_YIELD();
     rx.clear();
-    // sock_connected = at->modemConnect(host, port, mux);
+
+    uint8_t oldMux = mux;
     sock_connected = at->modemConnect(host, port, &mux);
+    if (mux != oldMux) {
+        DBG("WARNING:  Mux number changed from", oldMux, "to", mux);
+        at->sockets[oldMux] = NULL;
+    }
     at->sockets[mux] = this;
-    // Attach the socket after attempting connection because u-blox will assign
-    // whatever mux number is next regardless of the number requested.
     at->maintain();
     return sock_connected;
   }
@@ -276,15 +279,8 @@ public:
 #endif
     waitResponse();
 
-    String name = getModemName();
-    DBG(GF("### Modem:"), name);
-    if (name.startsWith("u-blox SARA-R4") or name.startsWith("u-blox SARA-N4")) {
-      DBG(GF("### This is an LTE-M modem!"), name);
-      isCatM = true;
-    }
-    else if (name.startsWith("u-blox SARA-N2")) {
-      DBG(GF("### SARA N2 NB-IoT modems not supported!"), name);
-    }
+    getModemName();
+
     int ret = getSimStatus();
     // if the sim isn't ready and a pin has been provided, try to unlock the sim
     if (ret != SIM_READY && pin != NULL && strlen(pin) > 0) {
@@ -317,8 +313,18 @@ public:
     }
     res2.replace(GSM_NL "OK" GSM_NL, "");
     res2.trim();
+    
+    String name = res1 + String(' ') + res2;
+    DBG("### Modem:", name);
+    if (name.startsWith("u-blox SARA-R4") or name.startsWith("u-blox SARA-N4")) {
+      DBG("### This is an LTE-M modem!");
+      isCatM = true;
+    }
+    else if (name.startsWith("u-blox SARA-N2")) {
+      DBG("### SARA N2 NB-IoT modems not supported!");
+    }
 
-    return res1 + String(' ') + res2;
+    return name;
   }
 
   void setBaud(unsigned long baud) {
@@ -835,7 +841,6 @@ protected:
     streamSkipUntil(','); // Skip mux
     int sent = stream.readStringUntil('\n').toInt();
     waitResponse();  // sends back OK after the confirmation of number sent
-    maintain();  // look for a very quick response from the remote
     return sent;
   }
 
@@ -857,7 +862,6 @@ protected:
     streamSkipUntil('\"');
     waitResponse();
     DBG("### READ:", len, "from", mux);
-    maintain();  // Listen for a close or other URC
     return len;
   }
 
@@ -876,7 +880,6 @@ protected:
     if (!result && res != 2 && res != 3) {  // Don't check modemGetConnected after an error
       sockets[mux]->sock_connected = modemGetConnected(mux);
     }
-    maintain();  // Listen for a close or other URC
     return result;
   }
 
@@ -902,7 +905,6 @@ protected:
     // 9: the socket is in LAST_ACK status
     // 10: the socket is in TIME_WAIT status
     waitResponse();
-    maintain();  // Listen for a close or other URC
     return (result != 0);
   }
 

@@ -740,7 +740,6 @@ protected:
     // streamSkipUntil(','); // Skip mux
     // return stream.readStringUntil('\n').toInt();
 
-    maintain();  // look for a very quick response from the remote
     return len;  // TODO
   }
 
@@ -759,7 +758,6 @@ protected:
     }
     waitResponse();
     DBG("### READ:", len, "from", mux);
-    maintain();  // Listen for a close or other URC
     return len;
   }
 
@@ -776,7 +774,6 @@ protected:
     if (!result) {
       sockets[mux]->sock_connected = modemGetConnected(mux);
     }
-    maintain();  // Listen for a close or other URC
     return result;
   }
 
@@ -795,7 +792,6 @@ protected:
     int res = stream.readStringUntil(',').toInt(); // socket state
 
     waitResponse();
-    maintain();  // Listen for a close or other URC
 
     // 0 Initial, 1 Opening, 2 Connected, 3 Listening, 4 Closing
     return 2 == res;
