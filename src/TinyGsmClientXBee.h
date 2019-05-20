@@ -538,7 +538,7 @@ public:
     if (beeType == XBEE_UNKNOWN) getSeries();  // Need to know the bee type to interpret response
 
     sendAT(GF("AI"));
-    int16_t intRes = readResponseInt();
+    int16_t intRes = readResponseInt(10000L);
     RegStatus stat = REG_UNKNOWN;
 
     switch (beeType){
@@ -1106,6 +1106,7 @@ finish:
 
   int16_t readResponseInt(uint32_t timeout_ms = 1000) {
     String res = readResponseString(timeout_ms);  // it just works better reading a string first
+    if (res == "") res = "FF";
     char buf[5] = {0,};
     res.toCharArray(buf, 5);
     int16_t intRes = strtol(buf, 0, 16);
