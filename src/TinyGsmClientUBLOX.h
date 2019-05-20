@@ -72,13 +72,13 @@ public:
   }
 
 public:
-  virtual int connect(const char *host, uint16_t port) {
+  virtual int connect(const char *host, uint16_t port, int timeout) {
     stop();
     TINY_GSM_YIELD();
     rx.clear();
 
     uint8_t oldMux = mux;
-    sock_connected = at->modemConnect(host, port, &mux);
+    sock_connected = at->modemConnect(host, port, &mux, timeout);
     if (mux != oldMux) {
         DBG("WARNING:  Mux number changed from", oldMux, "to", mux);
         at->sockets[oldMux] = NULL;
@@ -89,7 +89,7 @@ public:
     return sock_connected;
   }
 
-TINY_GSM_CLIENT_CONNECT_TO_IP()
+TINY_GSM_CLIENT_CONNECT_OVERLOADS()
 
   virtual void stop() {
     TINY_GSM_YIELD();
@@ -143,12 +143,12 @@ public:
   {}
 
 public:
-  virtual int connect(const char *host, uint16_t port) {
+  virtual int connect(const char *host, uint16_t port, int timeout) {
     stop();
     TINY_GSM_YIELD();
     rx.clear();
     uint8_t oldMux = mux;
-    sock_connected = at->modemConnect(host, port, &mux, true);
+    sock_connected = at->modemConnect(host, port, &mux, true, timeout);
     if (mux != oldMux) {
         DBG("WARNING:  Mux number changed from", oldMux, "to", mux);
         at->sockets[oldMux] = NULL;
@@ -511,7 +511,9 @@ TINY_GSP_MODEM_GET_GPRS_IP_CONNECTED()
 
 protected:
 
-  bool modemConnect(const char* host, uint16_t port, uint8_t* mux, bool ssl = false) {
+  bool modemConnect(const char* host, uint16_t port, uint8_t* mux,
+                    bool ssl = false, int timeout = 120000L)
+  {
     sendAT(GF("+USOCR=6"));  // create a socket
     if (waitResponse(GF(GSM_NL "+USOCR:")) != 1) {  // reply is +USOCR: ## of socket created
       return false;
@@ -536,7 +538,7 @@ protected:
     // TODO:  Use faster "asynchronous" connection?
     // We would have to wait for the +UUSOCO URC to verify connection
     sendAT(GF("+USOCO="), *mux, ",\"", host, "\",", port);
-    int rsp = waitResponse(120000L);
+    int rsp = waitResponse(timeout);
     return (1 == rsp);
   }
 

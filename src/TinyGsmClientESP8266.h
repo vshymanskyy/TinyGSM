@@ -68,15 +68,15 @@ public:
   }
 
 public:
-  virtual int connect(const char *host, uint16_t port) {
+  virtual int connect(const char *host, uint16_t port, int timeout) {
     stop();
     TINY_GSM_YIELD();
     rx.clear();
-    sock_connected = at->modemConnect(host, port, mux);
+    sock_connected = at->modemConnect(host, port, mux, timeout);
     return sock_connected;
   }
 
-TINY_GSM_CLIENT_CONNECT_TO_IP()
+TINY_GSM_CLIENT_CONNECT_OVERLOADS()
 
   virtual void stop() {
     TINY_GSM_YIELD();
@@ -118,11 +118,11 @@ public:
   {}
 
 public:
-  virtual int connect(const char *host, uint16_t port) {
+  virtual int connect(const char *host, uint16_t port, int timeout) {
     stop();
     TINY_GSM_YIELD();
     rx.clear();
-    sock_connected = at->modemConnect(host, port, mux, true);
+    sock_connected = at->modemConnect(host, port, mux, true, timeout);
     return sock_connected;
   }
 };
@@ -331,14 +331,17 @@ TINY_GSM_MODEM_MAINTAIN_LISTEN()
 
 protected:
 
-  bool modemConnect(const char* host, uint16_t port, uint8_t mux, bool ssl = false) {
+  bool modemConnect(const char* host, uint16_t port, uint8_t mux,
+                    bool ssl = false, int timeout = 75000L)
+ {
     if (ssl) {
       sendAT(GF("+CIPSSLSIZE=4096"));
       waitResponse();
     }
-    sendAT(GF("+CIPSTART="), mux, ',', ssl ? GF("\"SSL") : GF("\"TCP"), GF("\",\""), host, GF("\","), port, GF(","), TINY_GSM_TCP_KEEP_ALIVE);
+    sendAT(GF("+CIPSTART="), mux, ',', ssl ? GF("\"SSL") : GF("\"TCP"),
+           GF("\",\""), host, GF("\","), port, GF(","), TINY_GSM_TCP_KEEP_ALIVE);
     // TODO: Check mux
-    int rsp = waitResponse(75000L,
+    int rsp = waitResponse(timeout,
                            GFP(GSM_OK),
                            GFP(GSM_ERROR),
                            GF("ALREADY CONNECT"));

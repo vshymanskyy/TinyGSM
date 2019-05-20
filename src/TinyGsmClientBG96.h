@@ -71,15 +71,15 @@ public:
   }
 
 public:
-  virtual int connect(const char *host, uint16_t port) {
+  virtual int connect(const char *host, uint16_t port, int timeout) {
     stop();
     TINY_GSM_YIELD();
     rx.clear();
-    sock_connected = at->modemConnect(host, port, mux);
+    sock_connected = at->modemConnect(host, port, mux, timeout);
     return sock_connected;
   }
 
-TINY_GSM_CLIENT_CONNECT_TO_IP()
+TINY_GSM_CLIENT_CONNECT_OVERLOADS()
 
   virtual void stop() {
     TINY_GSM_YIELD();
@@ -134,11 +134,11 @@ private:
 //   {}
 //
 // public:
-//   virtual int connect(const char *host, uint16_t port) {
+//   virtual int connect(const char *host, uint16_t port, int timeout) {
 //     stop();
 //     TINY_GSM_YIELD();
 //     rx.clear();
-//     sock_connected = at->modemConnect(host, port, mux, true);
+//     sock_connected = at->modemConnect(host, port, mux, true, timeout);
 //     return sock_connected;
 //   }
 // };
@@ -470,14 +470,16 @@ TINY_GSP_MODEM_GET_GPRS_IP_CONNECTED()
 
 protected:
 
-  bool modemConnect(const char* host, uint16_t port, uint8_t mux, bool ssl = false) {
+  bool modemConnect(const char* host, uint16_t port, uint8_t mux,
+                    bool ssl = false, int timeout = 20000L)
+ {
     int rsp;
     // <PDPcontextID>(1-16), <connectID>(0-11),"TCP/UDP/TCP LISTENER/UDP SERVICE",
     // "<IP_address>/<domain_name>",<remote_port>,<local_port>,<access_mode>(0-2 0=buffer)
     sendAT(GF("+QIOPEN=1,"), mux, ',', GF("\"TCP"), GF("\",\""), host, GF("\","), port, GF(",0,0"));
     rsp = waitResponse();
 
-    if (waitResponse(20000L, GF(GSM_NL "+QIOPEN:")) != 1) {
+    if (waitResponse(timeout, GF(GSM_NL "+QIOPEN:")) != 1) {
       return false;
     }
 

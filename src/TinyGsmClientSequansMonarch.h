@@ -83,15 +83,15 @@ public:
   }
 
 public:
-  virtual int connect(const char *host, uint16_t port) {
+  virtual int connect(const char *host, uint16_t port, int timeout) {
     if (sock_connected) stop();
     TINY_GSM_YIELD();
     rx.clear();
-    sock_connected = at->modemConnect(host, port, mux);
+    sock_connected = at->modemConnect(host, port, mux, timeout);
     return sock_connected;
   }
 
-TINY_GSM_CLIENT_CONNECT_TO_IP()
+TINY_GSM_CLIENT_CONNECT_OVERLOADS()
 
   virtual void stop() {
     TINY_GSM_YIELD();
@@ -150,7 +150,7 @@ protected:
   bool          strictSSL = false;
 
 public:
-  virtual int connect(const char *host, uint16_t port) {
+  virtual int connect(const char *host, uint16_t port, int timeout) {
     stop();
     TINY_GSM_YIELD();
     rx.clear();
@@ -172,7 +172,7 @@ public:
       return false;
     }
 
-    sock_connected = at->modemConnect(host, port, mux, true);
+    sock_connected = at->modemConnect(host, port, mux, true, timeout);
     return sock_connected;
   }
 
@@ -477,8 +477,11 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
 
 protected:
 
-  bool modemConnect(const char* host, uint16_t port, uint8_t mux, bool ssl = false) {
+  bool modemConnect(const char* host, uint16_t port, uint8_t mux,
+                    bool ssl = false, int timeout = 75000L)
+ {
     int rsp;
+    unsigned long startMillis = millis();
 
     if (ssl) {
       // enable SSl and use security profile 1
@@ -496,7 +499,7 @@ protected:
     waitResponse();
 
     sendAT(GF("+SQNSD="), mux, ",0,", port, ',', GF("\""), host, GF("\""), ",0,0,1");
-    rsp = waitResponse(75000L,
+    rsp = waitResponse((timeout - (millis() - startMillis)),
                       GF("OK" GSM_NL),
                       GF("NO CARRIER" GSM_NL)
                       );
@@ -505,19 +508,10 @@ protected:
     if (rsp != 1) return rsp;
 
     // wait until we get a good status
-    unsigned long timeout = 5000;
-    unsigned long startMillis = millis();
     bool connected = false;
-    while (!connected) {
+    while (!connected && ((millis() - startMillis) < timeout)) {
       connected = modemGetConnected(mux);
-      if (connected) {
-        delay(50);
-        break;
-      }
       delay(100); // socket may be in opening state
-      if (millis() - startMillis < timeout) {
-        break;
-      }
     }
     return connected;
   }

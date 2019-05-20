@@ -201,8 +201,8 @@ String TinyGsmDecodeHex16bit(String &instr) {
 
 // Connect to a IP address given as an IPAddress object by
 // converting said IP address to text
-#define TINY_GSM_CLIENT_CONNECT_TO_IP() \
-  virtual int connect(IPAddress ip, uint16_t port) { \
+#define TINY_GSM_CLIENT_CONNECT_OVERLOADS() \
+  virtual int connect(IPAddress ip, uint16_t port, int timeout) { \
     String host; host.reserve(16); \
     host += ip[0]; \
     host += "."; \
@@ -211,7 +211,13 @@ String TinyGsmDecodeHex16bit(String &instr) {
     host += ip[2]; \
     host += "."; \
     host += ip[3]; \
-    return connect(host.c_str(), port); \
+    return connect(host.c_str(), port, timeout); \
+  } \
+  virtual int connect(const char *host, uint16_t port) \
+    return connect(host, port, 75000L); \
+  } \
+  virtual int connect(IPAddress ip, uint16_t port) \
+    return connect(ip, port, 75000L); \
   }
 
 

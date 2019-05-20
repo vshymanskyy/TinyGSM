@@ -66,12 +66,12 @@ public:
   }
 
 public:
-  virtual int connect(const char *host, uint16_t port) {
+  virtual int connect(const char *host, uint16_t port, int timeout) {
     stop();
     TINY_GSM_YIELD();
     rx.clear();
     uint8_t newMux = -1;
-    sock_connected = at->modemConnect(host, port, &newMux);
+    sock_connected = at->modemConnect(host, port, &newMux, timeout)
     if (sock_connected) {
       mux = newMux;
       at->sockets[mux] = this;
@@ -79,7 +79,7 @@ public:
     return sock_connected;
   }
 
-TINY_GSM_CLIENT_CONNECT_TO_IP()
+TINY_GSM_CLIENT_CONNECT_OVERLOADS()
 
   virtual void stop() {
     TINY_GSM_YIELD();
@@ -504,15 +504,16 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
 
 protected:
 
-  bool modemConnect(const char* host, uint16_t port, uint8_t* mux) {
-    sendAT(GF("+CIPSTART="),  GF("\"TCP"), GF("\",\""), host, GF("\","), port);
+  bool modemConnect(const char* host, uint16_t port, uint8_t* mux, int timeout = 75000L) {
+    unsigned long startMillis = millis();
 
-    if (waitResponse(75000L, GF(GSM_NL "+CIPNUM:")) != 1) {
+    sendAT(GF("+CIPSTART="),  GF("\"TCP"), GF("\",\""), host, GF("\","), port);
+    if (waitResponse(timeout, GF(GSM_NL "+CIPNUM:")) != 1) {
       return false;
     }
     int newMux = stream.readStringUntil('\n').toInt();
 
-    int rsp = waitResponse(75000L,
+    int rsp = waitResponse((timeout - (millis() - startMillis)),
                            GF("CONNECT OK" GSM_NL),
                            GF("CONNECT FAIL" GSM_NL),
                            GF("ALREADY CONNECT" GSM_NL));
