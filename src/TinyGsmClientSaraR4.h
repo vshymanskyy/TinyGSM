@@ -94,7 +94,7 @@ public:
     rx.clear();
 
     uint8_t oldMux = mux;
-    sock_connected = at->modemConnect(host, port, &mux, timeout_s);
+    sock_connected = at->modemConnect(host, port, &mux, false, timeout_s);
     if (mux != oldMux) {
         DBG("WARNING:  Mux number changed from", oldMux, "to", mux);
         at->sockets[oldMux] = NULL;

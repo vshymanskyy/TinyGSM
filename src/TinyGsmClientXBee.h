@@ -99,7 +99,7 @@ public:
   virtual int connect(const char *host, uint16_t port, int timeout_s) {
     // NOTE:  Not caling stop() or yeild() here
     at->streamClear();  // Empty anything in the buffer before starting
-    sock_connected = at->modemConnect(host, port, mux, timeout_s);
+    sock_connected = at->modemConnect(host, port, mux, false, timeout_s);
     return sock_connected;
   }
   virtual int connect(const char *host, uint16_t port) {

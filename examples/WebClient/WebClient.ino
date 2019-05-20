@@ -138,7 +138,7 @@ void loop() {
 #endif
 
   SerialMon.print("Waiting for network...");
-  if (!modem.waitForNetwork()) {
+  if (!modem.waitForNetwork(240000L)) {
     SerialMon.println(" fail");
     delay(10000);
     return;
@@ -146,12 +146,12 @@ void loop() {
   SerialMon.println(" OK");
 
   if (modem.isNetworkConnected()) {
-    SerialMon.print("Network connected");
+    SerialMon.println("Network connected");
   }
 
 #if TINY_GSM_USE_GPRS
     SerialMon.print(F("Connecting to "));
-    SerialMon.print(apn);
+    SerialMon.println(apn);
     if (!modem.gprsConnect(apn, gprsUser, gprsPass)) {
       SerialMon.println(" fail");
       delay(10000);
@@ -161,7 +161,7 @@ void loop() {
 #endif
 
   SerialMon.print("Connecting to ");
-  SerialMon.print(server);
+  SerialMon.println(server);
   if (!client.connect(server, port)) {
     SerialMon.println(" fail");
     delay(10000);
@@ -170,6 +170,7 @@ void loop() {
   SerialMon.println(" OK");
 
   // Make a HTTP GET request:
+  SerialMon.println("Performing HTTP GET request...");
   client.print(String("GET ") + resource + " HTTP/1.0\r\n");
   client.print(String("Host: ") + server + "\r\n");
   client.print("Connection: close\r\n\r\n");
