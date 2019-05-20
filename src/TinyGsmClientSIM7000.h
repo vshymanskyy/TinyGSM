@@ -828,7 +828,7 @@ protected:
       sockets[mux]->rx.put(c);
     }
     waitResponse();
-    DBG("### READ:", len_read, "from", mux);
+    DBG("### READ:", TinyGsmMin(len_confirmed, len_requested), "from", mux);
     return TinyGsmMin(len_confirmed, len_requested);
   }
 
