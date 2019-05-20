@@ -68,11 +68,11 @@ public:
   }
 
 public:
-  virtual int connect(const char *host, uint16_t port, int timeout) {
+  virtual int connect(const char *host, uint16_t port, int timeout_s) {
     stop();
     TINY_GSM_YIELD();
     rx.clear();
-    sock_connected = at->modemConnect(host, port, mux, timeout);
+    sock_connected = at->modemConnect(host, port, mux, timeout_s);
 
     return sock_connected;
   }
@@ -219,8 +219,8 @@ TINY_GSM_MODEM_GET_SIMCCID_CCID()
 
 TINY_GSM_MODEM_GET_IMEI_GSN()
 
-  SimStatus getSimStatus(unsigned long timeout = 10000L) {
-    for (unsigned long start = millis(); millis() - start < timeout; ) {
+  SimStatus getSimStatus(unsigned long timeout_ms = 10000L) {
+    for (unsigned long start = millis(); millis() - start < timeout_ms; ) {
       sendAT(GF("+CPIN?"));
       if (waitResponse(GF(GSM_NL "+CPIN:")) != 1) {
         delay(1000);
@@ -276,8 +276,8 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
     sendAT(GF("+XIIC=1"));
     waitResponse();
 
-    const unsigned long timeout = 60000L;
-    for (unsigned long start = millis(); millis() - start < timeout; ) {
+    const unsigned long timeout_ms = 60000L;
+    for (unsigned long start = millis(); millis() - start < timeout_ms; ) {
       if (isGprsConnected()) {
         //goto set_dns; // TODO
         return true;
@@ -413,12 +413,13 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
 
 protected:
 
-  bool modemConnect(const char* host, uint16_t port, uint8_t mux, int timeout = 75000L) {
+  bool modemConnect(const char* host, uint16_t port, uint8_t mux, int timeout_s = 75) {
+    uint32_t timeout_ms = timeout_s*1000;
     for (int i=0; i<3; i++) { // TODO: no need for loop?
       String ip = dnsIpQuery(host);
 
       sendAT(GF("+TCPSETUP="), mux, GF(","), ip, GF(","), port);
-      int rsp = waitResponse(timeout,
+      int rsp = waitResponse(timeout_ms,
                             GF(",OK" GSM_NL),
                             GF(",FAIL" GSM_NL),
                             GF("+TCPSETUP:Error" GSM_NL));
@@ -475,7 +476,7 @@ public:
 TINY_GSP_MODEM_STREAM_UTILITIES()
 
   // TODO: Optimize this!
-  uint8_t waitResponse(uint32_t timeout, String& data,
+  uint8_t waitResponse(uint32_t timeout_ms, String& data,
                        GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),
                        GsmConstStr r3=NULL, GsmConstStr r4=NULL, GsmConstStr r5=NULL)
   {
@@ -536,7 +537,7 @@ TINY_GSP_MODEM_STREAM_UTILITIES()
           DBG("### Closed: ", mux);
         }
       }
-    } while (millis() - startMillis < timeout);
+    } while (millis() - startMillis < timeout_ms);
 finish:
     if (!index) {
       data.trim();
@@ -549,12 +550,12 @@ finish:
     return index;
   }
 
-  uint8_t waitResponse(uint32_t timeout,
+  uint8_t waitResponse(uint32_t timeout_ms,
                        GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),
                        GsmConstStr r3=NULL, GsmConstStr r4=NULL, GsmConstStr r5=NULL)
   {
     String data;
-    return waitResponse(timeout, data, r1, r2, r3, r4, r5);
+    return waitResponse(timeout_ms, data, r1, r2, r3, r4, r5);
   }
 
   uint8_t waitResponse(GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),

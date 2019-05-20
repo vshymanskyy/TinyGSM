@@ -68,11 +68,11 @@ public:
   }
 
 public:
-  virtual int connect(const char *host, uint16_t port, int timeout) {
+  virtual int connect(const char *host, uint16_t port, int timeout_s) {
     stop();
     TINY_GSM_YIELD();
     rx.clear();
-    sock_connected = at->modemConnect(host, port, mux, timeout);
+    sock_connected = at->modemConnect(host, port, mux, timeout_s);
     return sock_connected;
   }
 
@@ -118,11 +118,11 @@ public:
   {}
 
 public:
-  virtual int connect(const char *host, uint16_t port, int timeout) {
+  virtual int connect(const char *host, uint16_t port, int timeout_s) {
     stop();
     TINY_GSM_YIELD();
     rx.clear();
-    sock_connected = at->modemConnect(host, port, mux, true, timeout);
+    sock_connected = at->modemConnect(host, port, mux, true, timeout_s);
     return sock_connected;
   }
 };
@@ -270,8 +270,8 @@ TINY_GSM_MODEM_MAINTAIN_LISTEN()
     return (s == REG_OK_IP || s == REG_OK_TCP);
   }
 
-  bool waitForNetwork(unsigned long timeout = 60000L) {
-    for (unsigned long start = millis(); millis() - start < timeout; ) {
+  bool waitForNetwork(unsigned long timeout_ms = 60000L) {
+    for (unsigned long start = millis(); millis() - start < timeout_ms; ) {
       sendAT(GF("+CIPSTATUS"));
       int res1 = waitResponse(3000, GF("busy p..."), GF("STATUS:"));
       if (res1 == 2) {
@@ -332,8 +332,9 @@ TINY_GSM_MODEM_MAINTAIN_LISTEN()
 protected:
 
   bool modemConnect(const char* host, uint16_t port, uint8_t mux,
-                    bool ssl = false, int timeout = 75000L)
+                    bool ssl = false, int timeout_s = 75)
  {
+    uint32_t timeout_ms = timeout_s*1000;
     if (ssl) {
       sendAT(GF("+CIPSSLSIZE=4096"));
       waitResponse();
@@ -341,7 +342,7 @@ protected:
     sendAT(GF("+CIPSTART="), mux, ',', ssl ? GF("\"SSL") : GF("\"TCP"),
            GF("\",\""), host, GF("\","), port, GF(","), TINY_GSM_TCP_KEEP_ALIVE);
     // TODO: Check mux
-    int rsp = waitResponse(timeout,
+    int rsp = waitResponse(timeout_ms,
                            GFP(GSM_OK),
                            GFP(GSM_ERROR),
                            GF("ALREADY CONNECT"));
@@ -376,7 +377,7 @@ public:
 TINY_GSP_MODEM_STREAM_UTILITIES()
 
   // TODO: Optimize this!
-  uint8_t waitResponse(uint32_t timeout, String& data,
+  uint8_t waitResponse(uint32_t timeout_ms, String& data,
                        GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),
                        GsmConstStr r3=NULL, GsmConstStr r4=NULL, GsmConstStr r5=NULL)
   {
@@ -438,7 +439,7 @@ TINY_GSP_MODEM_STREAM_UTILITIES()
           DBG("### Closed: ", mux);
         }
       }
-    } while (millis() - startMillis < timeout);
+    } while (millis() - startMillis < timeout_ms);
 finish:
     if (!index) {
       data.trim();
@@ -451,12 +452,12 @@ finish:
     return index;
   }
 
-  uint8_t waitResponse(uint32_t timeout,
+  uint8_t waitResponse(uint32_t timeout_ms,
                        GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),
                        GsmConstStr r3=NULL, GsmConstStr r4=NULL, GsmConstStr r5=NULL)
   {
     String data;
-    return waitResponse(timeout, data, r1, r2, r3, r4, r5);
+    return waitResponse(timeout_ms, data, r1, r2, r3, r4, r5);
   }
 
   uint8_t waitResponse(GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),

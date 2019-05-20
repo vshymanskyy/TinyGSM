@@ -83,11 +83,11 @@ public:
   }
 
 public:
-  virtual int connect(const char *host, uint16_t port, int timeout) {
+  virtual int connect(const char *host, uint16_t port, int timeout_s) {
     if (sock_connected) stop();
     TINY_GSM_YIELD();
     rx.clear();
-    sock_connected = at->modemConnect(host, port, mux, timeout);
+    sock_connected = at->modemConnect(host, port, mux, timeout_s);
     return sock_connected;
   }
 
@@ -150,7 +150,7 @@ protected:
   bool          strictSSL = false;
 
 public:
-  virtual int connect(const char *host, uint16_t port, int timeout) {
+  virtual int connect(const char *host, uint16_t port, int timeout_s) {
     stop();
     TINY_GSM_YIELD();
     rx.clear();
@@ -172,7 +172,7 @@ public:
       return false;
     }
 
-    sock_connected = at->modemConnect(host, port, mux, true, timeout);
+    sock_connected = at->modemConnect(host, port, mux, true, timeout_s);
     return sock_connected;
   }
 
@@ -217,8 +217,8 @@ public:
 
 TINY_GSM_MODEM_SET_BAUD_IPR()
 
-  bool testAT(unsigned long timeout = 10000L) {
-    for (unsigned long start = millis(); millis() - start < timeout; ) {
+  bool testAT(unsigned long timeout_ms = 10000L) {
+    for (unsigned long start = millis(); millis() - start < timeout_ms; ) {
       sendAT(GF(""));
       if (waitResponse(200) == 1) {
           delay(100);
@@ -317,8 +317,8 @@ TINY_GSM_MODEM_SIM_UNLOCK_CPIN()
 
 TINY_GSM_MODEM_GET_IMEI_GSN()
 
-  SimStatus getSimStatus(unsigned long timeout = 10000L) {
-    for (unsigned long start = millis(); millis() - start < timeout; ) {
+  SimStatus getSimStatus(unsigned long timeout_ms = 10000L) {
+    for (unsigned long start = millis(); millis() - start < timeout_ms; ) {
       sendAT(GF("+CPIN?"));
       if (waitResponse(GF(GSM_NL "+CPIN:")) != 1) {
         delay(1000);
@@ -478,10 +478,11 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
 protected:
 
   bool modemConnect(const char* host, uint16_t port, uint8_t mux,
-                    bool ssl = false, int timeout = 75000L)
+                    bool ssl = false, int timeout_s = 75)
  {
     int rsp;
     unsigned long startMillis = millis();
+    uint32_t timeout_ms = timeout_s*1000;
 
     if (ssl) {
       // enable SSl and use security profile 1
@@ -499,7 +500,7 @@ protected:
     waitResponse();
 
     sendAT(GF("+SQNSD="), mux, ",0,", port, ',', GF("\""), host, GF("\""), ",0,0,1");
-    rsp = waitResponse((timeout - (millis() - startMillis)),
+    rsp = waitResponse((timeout_ms - (millis() - startMillis)),
                       GF("OK" GSM_NL),
                       GF("NO CARRIER" GSM_NL)
                       );
@@ -509,7 +510,7 @@ protected:
 
     // wait until we get a good status
     bool connected = false;
-    while (!connected && ((millis() - startMillis) < timeout)) {
+    while (!connected && ((millis() - startMillis) < timeout_ms)) {
       connected = modemGetConnected(mux);
       delay(100); // socket may be in opening state
     }
@@ -593,7 +594,7 @@ public:
 TINY_GSP_MODEM_STREAM_UTILITIES()
 
   // TODO: Optimize this!
-  uint8_t waitResponse(uint32_t timeout, String& data,
+  uint8_t waitResponse(uint32_t timeout_ms, String& data,
                        GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),
                        GsmConstStr r3=NULL, GsmConstStr r4=NULL, GsmConstStr r5=NULL)
   {
@@ -643,7 +644,7 @@ TINY_GSP_MODEM_STREAM_UTILITIES()
           DBG("### Closed: ", mux);
         }
       }
-    } while (millis() - startMillis < timeout);
+    } while (millis() - startMillis < timeout_ms);
 finish:
     if (!index) {
       data.trim();
@@ -655,12 +656,12 @@ finish:
     return index;
   }
 
-  uint8_t waitResponse(uint32_t timeout,
+  uint8_t waitResponse(uint32_t timeout_ms,
                        GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),
                        GsmConstStr r3=NULL, GsmConstStr r4=NULL, GsmConstStr r5=NULL)
   {
     String data;
-    return waitResponse(timeout, data, r1, r2, r3, r4, r5);
+    return waitResponse(timeout_ms, data, r1, r2, r3, r4, r5);
   }
 
   uint8_t waitResponse(GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),

@@ -96,20 +96,20 @@ public:
   // last set.  The TCP connection itself is not opened until you attempt to send data.
   // Because all settings are saved to flash, it is possible (or likely) that
   // you could send data even if you haven't "made" any connection.
-  virtual int connect(const char *host, uint16_t port, int timeout) {
+  virtual int connect(const char *host, uint16_t port, int timeout_s) {
     // NOTE:  Not caling stop() or yeild() here
     at->streamClear();  // Empty anything in the buffer before starting
-    sock_connected = at->modemConnect(host, port, mux, timeout);
+    sock_connected = at->modemConnect(host, port, mux, timeout_s);
     return sock_connected;
   }
   virtual int connect(const char *host, uint16_t port) {
     return connect(host, port, 75000L);
   }
 
-  virtual int connect(IPAddress ip, uint16_t port, int timeout) {
+  virtual int connect(IPAddress ip, uint16_t port, int timeout_s) {
     // NOTE:  Not caling stop() or yeild() here
     at->streamClear();  // Empty anything in the buffer before starting
-    sock_connected = at->modemConnect(ip, port, mux, timeout);
+    sock_connected = at->modemConnect(ip, port, mux, timeout_s);
     return sock_connected;
   }
   virtual int connect(IPAddress ip, uint16_t port) {
@@ -237,17 +237,17 @@ public:
   {}
 
 public:
-  virtual int connect(const char *host, uint16_t port, int timeout) {
+  virtual int connect(const char *host, uint16_t port, int timeout_s) {
     // NOTE:  Not caling stop() or yeild() here
     at->streamClear();  // Empty anything in the buffer before starting
-    sock_connected = at->modemConnect(host, port, mux, true, timeout);
+    sock_connected = at->modemConnect(host, port, mux, true, timeout_s);
     return sock_connected;
   }
 
-  virtual int connect(IPAddress ip, uint16_t port, int timeout) {
+  virtual int connect(IPAddress ip, uint16_t port, int timeout_s) {
     // NOTE:  Not caling stop() or yeild() here
     at->streamClear();  // Empty anything in the buffer before starting
-    sock_connected = at->modemConnect(ip, port, mux, timeout);
+    sock_connected = at->modemConnect(ip, port, mux, timeout_s);
     return sock_connected;
   }
 };
@@ -347,10 +347,10 @@ public:
     XBEE_COMMAND_END_DECORATOR
   }
 
-  bool testAT(unsigned long timeout = 10000L) {
+  bool testAT(unsigned long timeout_ms = 10000L) {
     unsigned long start = millis();
     bool success = false;
-    while (!success && millis() - start < timeout) {
+    while (!success && millis() - start < timeout_ms) {
       if (!inCommandMode) {
         success = commandMode();
         if (success) exitCommand();
@@ -525,7 +525,7 @@ public:
     return sendATGetString(GF("IM"));
   }
 
-  SimStatus getSimStatus(unsigned long timeout = 10000L) {
+  SimStatus getSimStatus(unsigned long timeout_ms = 10000L) {
     return SIM_READY;  // unsupported
   }
 
@@ -644,9 +644,9 @@ public:
     return (s == REG_OK);
   }
 
-  bool waitForNetwork(unsigned long timeout = 60000L) {
+  bool waitForNetwork(unsigned long timeout_ms = 60000L) {
     XBEE_COMMAND_START_DECORATOR(5, false)
-    for (unsigned long start = millis(); millis() - start < timeout; ) {
+    for (unsigned long start = millis(); millis() - start < timeout_ms; ) {
       if (isNetworkConnected()) {
         return true;
       }
@@ -791,17 +791,18 @@ public:
 
 protected:
 
-  IPAddress getHostIP(const char* host, int timeout = 45000L) {
+  IPAddress getHostIP(const char* host, int timeout_s = 45) {
     String strIP; strIP.reserve(16);
     unsigned long startMillis = millis();
+    uint32_t timeout_ms = timeout_s*1000;
     bool gotIP = false;
     XBEE_COMMAND_START_DECORATOR(5, IPAddress(0,0,0,0))
     // XBee's require a numeric IP address for connection, but do provide the
     // functionality to look up the IP address from a fully qualified domain name
-    while (millis() - startMillis < timeout)  // the lookup can take a while
+    while (millis() - startMillis < timeout_ms)  // the lookup can take a while
     {
       sendAT(GF("LA"), host);
-      while (stream.available() < 4 && (millis() - startMillis < timeout)) {};  // wait for any response
+      while (stream.available() < 4 && (millis() - startMillis < timeout_ms)) {};  // wait for any response
       strIP = stream.readStringUntil('\r');  // read result
       strIP.trim();
       if (!strIP.endsWith(GF("ERROR"))) {
@@ -820,9 +821,10 @@ protected:
   }
 
   bool modemConnect(const char* host, uint16_t port, uint8_t mux = 0,
-                    bool ssl = false, int timeout = 75000L)
+                    bool ssl = false, int timeout_s = 75)
   {
     unsigned long startMillis = millis();
+    uint32_t timeout_ms = timeout_s*1000;
     bool retVal = false;
      XBEE_COMMAND_START_DECORATOR(5, false)
 
@@ -830,12 +832,12 @@ protected:
     // search for the IP to connect to
     if (this->savedHost != String(host) || savedIP == IPAddress(0,0,0,0)) {
       this->savedHost = String(host);
-      savedIP = getHostIP(host, timeout);  // This will return 0.0.0.0 if lookup fails
+      savedIP = getHostIP(host, timeout_s);  // This will return 0.0.0.0 if lookup fails
     }
 
     // If we now have a valid IP address, use it to connect
     if (savedIP != IPAddress(0,0,0,0)) {  // Only re-set connection information if we have an IP address
-      retVal = modemConnect(savedIP, port, mux, ssl, timeout - (millis() - startMillis));
+      retVal = modemConnect(savedIP, port, mux, ssl, timeout_ms - (millis() - startMillis));
     }
 
     XBEE_COMMAND_END_DECORATOR
@@ -843,10 +845,11 @@ protected:
     return retVal;
   }
 
-  bool modemConnect(IPAddress ip, uint16_t port, uint8_t mux = 0, bool ssl = false, int timeout = 75000L) {
+  bool modemConnect(IPAddress ip, uint16_t port, uint8_t mux = 0, bool ssl = false, int timeout_s = 75) {
 
     savedIP = ip;  // Set the newly requested IP address
     bool success = true;
+    uint32_t timeout_ms = timeout_s*1000;
     XBEE_COMMAND_START_DECORATOR(5, false)
     String host; host.reserve(16);
     host += ip[0];
@@ -870,7 +873,7 @@ protected:
     sendAT(GF("DE"), String(port, HEX));  // Set the destination port
     success &= (1 == waitResponse());
 
-    for (unsigned long start = millis(); millis() - start < timeout; ) {
+    for (unsigned long start = millis(); millis() - start < timeout_ms; ) {
       if (modemGetConnected()) {
         sockets[mux]->sock_connected = true;
         break;
@@ -956,7 +959,7 @@ TINY_GSP_MODEM_STREAM_UTILITIES()
   // NOTE:  This function is used while INSIDE command mode, so we're only
   // waiting for requested responses.  The XBee has no unsoliliced responses
   // (URC's) when in command mode.
-  uint8_t waitResponse(uint32_t timeout, String& data,
+  uint8_t waitResponse(uint32_t timeout_ms, String& data,
                        GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),
                        GsmConstStr r3=NULL, GsmConstStr r4=NULL, GsmConstStr r5=NULL)
   {
@@ -992,7 +995,7 @@ TINY_GSP_MODEM_STREAM_UTILITIES()
           goto finish;
         }
       }
-    } while (millis() - startMillis < timeout);
+    } while (millis() - startMillis < timeout_ms);
 finish:
     if (!index) {
       data.trim();
@@ -1014,12 +1017,12 @@ finish:
     return index;
   }
 
-  uint8_t waitResponse(uint32_t timeout,
+  uint8_t waitResponse(uint32_t timeout_ms,
                        GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),
                        GsmConstStr r3=NULL, GsmConstStr r4=NULL, GsmConstStr r5=NULL)
   {
     String data;
-    return waitResponse(timeout, data, r1, r2, r3, r4, r5);
+    return waitResponse(timeout_ms, data, r1, r2, r3, r4, r5);
   }
 
   uint8_t waitResponse(GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),
@@ -1092,17 +1095,17 @@ finish:
     DBG(GF("### Modem: "), getModemName());
   }
 
-  String readResponseString(uint32_t timeout = 1000) {
+  String readResponseString(uint32_t timeout_ms = 1000) {
     TINY_GSM_YIELD();
     unsigned long startMillis = millis();
-    while (!stream.available() && millis() - startMillis < timeout) {};
+    while (!stream.available() && millis() - startMillis < timeout_ms) {};
     String res = stream.readStringUntil('\r');  // lines end with carriage returns
     res.trim();
     return res;
   }
 
-  int16_t readResponseInt(uint32_t timeout = 1000) {
-    String res = readResponseString(timeout);  // it just works better reading a string first
+  int16_t readResponseInt(uint32_t timeout_ms = 1000) {
+    String res = readResponseString(timeout_ms);  // it just works better reading a string first
     char buf[5] = {0,};
     res.toCharArray(buf, 5);
     int16_t intRes = strtol(buf, 0, 16);

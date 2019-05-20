@@ -71,11 +71,11 @@ public:
   }
 
 public:
-  virtual int connect(const char *host, uint16_t port, int timeout) {
+  virtual int connect(const char *host, uint16_t port, int timeout_s) {
     stop();
     TINY_GSM_YIELD();
     rx.clear();
-    sock_connected = at->modemConnect(host, port, mux, timeout);
+    sock_connected = at->modemConnect(host, port, mux, timeout_s);
     return sock_connected;
   }
 
@@ -134,11 +134,11 @@ private:
 //   {}
 //
 // public:
-//   virtual int connect(const char *host, uint16_t port, int timeout) {
+//   virtual int connect(const char *host, uint16_t port, int timeout_s) {
 //     stop();
 //     TINY_GSM_YIELD();
 //     rx.clear();
-//     sock_connected = at->modemConnect(host, port, mux, true, timeout);
+//     sock_connected = at->modemConnect(host, port, mux, true, timeout_s);
 //     return sock_connected;
 //   }
 // };
@@ -257,8 +257,8 @@ TINY_GSM_MODEM_SIM_UNLOCK_CPIN()
 
 TINY_GSM_MODEM_GET_IMEI_GSN()
 
-  SimStatus getSimStatus(unsigned long timeout = 10000L) {
-    for (unsigned long start = millis(); millis() - start < timeout; ) {
+  SimStatus getSimStatus(unsigned long timeout_ms = 10000L) {
+    for (unsigned long start = millis(); millis() - start < timeout_ms; ) {
       sendAT(GF("+CPIN?"));
       if (waitResponse(GF(GSM_NL "+CPIN:")) != 1) {
         delay(1000);
@@ -471,15 +471,17 @@ TINY_GSP_MODEM_GET_GPRS_IP_CONNECTED()
 protected:
 
   bool modemConnect(const char* host, uint16_t port, uint8_t mux,
-                    bool ssl = false, int timeout = 20000L)
+                    bool ssl = false, int timeout_s = 20)
  {
     int rsp;
+    uint32_t timeout_ms = timeout_s*1000;
+
     // <PDPcontextID>(1-16), <connectID>(0-11),"TCP/UDP/TCP LISTENER/UDP SERVICE",
     // "<IP_address>/<domain_name>",<remote_port>,<local_port>,<access_mode>(0-2 0=buffer)
     sendAT(GF("+QIOPEN=1,"), mux, ',', GF("\"TCP"), GF("\",\""), host, GF("\","), port, GF(",0,0"));
     rsp = waitResponse();
 
-    if (waitResponse(timeout, GF(GSM_NL "+QIOPEN:")) != 1) {
+    if (waitResponse(timeout_ms, GF(GSM_NL "+QIOPEN:")) != 1) {
       return false;
     }
 
@@ -569,7 +571,7 @@ public:
 TINY_GSP_MODEM_STREAM_UTILITIES()
 
   // TODO: Optimize this!
-  uint8_t waitResponse(uint32_t timeout, String& data,
+  uint8_t waitResponse(uint32_t timeout_ms, String& data,
                        GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),
                        GsmConstStr r3=NULL, GsmConstStr r4=NULL, GsmConstStr r5=NULL)
   {
@@ -625,7 +627,7 @@ TINY_GSP_MODEM_STREAM_UTILITIES()
           data = "";
         }
       }
-    } while (millis() - startMillis < timeout);
+    } while (millis() - startMillis < timeout_ms);
 finish:
     if (!index) {
       data.trim();
@@ -638,12 +640,12 @@ finish:
     return index;
   }
 
-  uint8_t waitResponse(uint32_t timeout,
+  uint8_t waitResponse(uint32_t timeout_ms,
                        GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),
                        GsmConstStr r3=NULL, GsmConstStr r4=NULL, GsmConstStr r5=NULL)
   {
     String data;
-    return waitResponse(timeout, data, r1, r2, r3, r4, r5);
+    return waitResponse(timeout_ms, data, r1, r2, r3, r4, r5);
   }
 
   uint8_t waitResponse(GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),

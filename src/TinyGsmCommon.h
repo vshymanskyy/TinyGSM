@@ -202,7 +202,7 @@ String TinyGsmDecodeHex16bit(String &instr) {
 // Connect to a IP address given as an IPAddress object by
 // converting said IP address to text
 #define TINY_GSM_CLIENT_CONNECT_OVERLOADS() \
-  virtual int connect(IPAddress ip, uint16_t port, int timeout) { \
+  virtual int connect(IPAddress ip, uint16_t port, int timeout_s) { \
     String host; host.reserve(16); \
     host += ip[0]; \
     host += "."; \
@@ -211,13 +211,13 @@ String TinyGsmDecodeHex16bit(String &instr) {
     host += ip[2]; \
     host += "."; \
     host += ip[3]; \
-    return connect(host.c_str(), port, timeout); \
+    return connect(host.c_str(), port, timeout_s); \
   } \
-  virtual int connect(const char *host, uint16_t port) \
-    return connect(host, port, 75000L); \
+  virtual int connect(const char *host, uint16_t port) { \
+    return connect(host, port, 75); \
   } \
-  virtual int connect(IPAddress ip, uint16_t port) \
-    return connect(ip, port, 75000L); \
+  virtual int connect(IPAddress ip, uint16_t port) { \
+    return connect(ip, port, 75); \
   }
 
 
@@ -415,8 +415,8 @@ String TinyGsmDecodeHex16bit(String &instr) {
 
 // Test response to AT commands
 #define TINY_GSM_MODEM_TEST_AT() \
-  bool testAT(unsigned long timeout = 10000L) { \
-    for (unsigned long start = millis(); millis() - start < timeout; ) { \
+  bool testAT(unsigned long timeout_ms = 10000L) { \
+    for (unsigned long start = millis(); millis() - start < timeout_ms; ) { \
       sendAT(GF("")); \
       if (waitResponse(200) == 1) return true; \
       delay(100); \
@@ -535,8 +535,8 @@ String TinyGsmDecodeHex16bit(String &instr) {
 
 // Waits for network attachment
 #define TINY_GSM_MODEM_WAIT_FOR_NETWORK() \
-  bool waitForNetwork(unsigned long timeout = 60000L) { \
-    for (unsigned long start = millis(); millis() - start < timeout; ) { \
+  bool waitForNetwork(unsigned long timeout_ms = 60000L) { \
+    for (unsigned long start = millis(); millis() - start < timeout_ms; ) { \
       if (isNetworkConnected()) { \
         return true; \
       } \
@@ -596,10 +596,10 @@ String TinyGsmDecodeHex16bit(String &instr) {
     /* DBG("### AT:", cmd...); */ \
   } \
   \
-  bool streamSkipUntil(const char c, const unsigned long timeout = 1000L) { \
+  bool streamSkipUntil(const char c, const unsigned long timeout_ms = 1000L) { \
     unsigned long startMillis = millis(); \
-    while (millis() - startMillis < timeout) { \
-      while (millis() - startMillis < timeout && !stream.available()) { \
+    while (millis() - startMillis < timeout_ms) { \
+      while (millis() - startMillis < timeout_ms && !stream.available()) { \
         TINY_GSM_YIELD(); \
       } \
       if (stream.read() == c) { \
