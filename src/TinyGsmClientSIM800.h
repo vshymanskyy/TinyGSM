@@ -742,26 +742,22 @@ protected:
     // ^^ Confirmed number of data bytes to be read, which may be less than requested.
     // 0 indicates that no data can be read.
 
-  size_t len_read = 0;
     for (size_t i=0; i<TinyGsmMin(len_confirmed, len_requested) ; i++) {
 #ifdef TINY_GSM_USE_HEX
       while (stream.available() < 2) { TINY_GSM_YIELD(); }
       char buf[4] = { 0, };
       buf[0] = stream.read();
-      len_read++;
       buf[1] = stream.read();
       char c = strtol(buf, NULL, 16);
-      len_read++;
 #else
       while (!stream.available()) { TINY_GSM_YIELD(); }
       char c = stream.read();
-      len_read++;
 #endif
       sockets[mux]->rx.put(c);
     }
     waitResponse();
     DBG("### READ:", len_read, "from", mux);
-    return len_read;
+    return TinyGsmMin(len_confirmed, len_requested);
   }
 
   size_t modemGetAvailable(uint8_t mux) {

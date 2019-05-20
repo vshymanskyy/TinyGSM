@@ -71,7 +71,7 @@ public:
     TINY_GSM_YIELD();
     rx.clear();
     uint8_t newMux = -1;
-    sock_connected = at->modemConnect(host, port, &newMux, timeout_s)
+    sock_connected = at->modemConnect(host, port, &newMux, timeout_s);
     if (sock_connected) {
       mux = newMux;
       at->sockets[mux] = this;

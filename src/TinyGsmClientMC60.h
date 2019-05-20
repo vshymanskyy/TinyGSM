@@ -374,7 +374,7 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
     }
 
     // Check that we have a local IP address
-    if (localIP() != 0) {
+    if (localIP() != IPAddress(0,0,0,0)) {
       return true;
     }
 
