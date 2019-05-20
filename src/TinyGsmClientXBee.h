@@ -103,7 +103,7 @@ public:
     return sock_connected;
   }
   virtual int connect(const char *host, uint16_t port) {
-    return connect(host, port, 75000L);
+    return connect(host, port, 75);
   }
 
   virtual int connect(IPAddress ip, uint16_t port, int timeout_s) {
@@ -113,7 +113,7 @@ public:
     return sock_connected;
   }
   virtual int connect(IPAddress ip, uint16_t port) {
-    return connect(ip, port, 75000L);
+    return connect(ip, port, 75);
   }
 
   virtual void stop() {

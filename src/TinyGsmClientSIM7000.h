@@ -9,7 +9,7 @@
 #ifndef TinyGsmClientSIM7000_h
 #define TinyGsmClientSIM7000_h
 
-#define TINY_GSM_DEBUG Serial
+// #define TINY_GSM_DEBUG Serial
 //#define TINY_GSM_USE_HEX
 
 #if !defined(TINY_GSM_RX_BUFFER)
@@ -815,14 +815,15 @@ protected:
     // 0 indicates that no data can be read.
 
     for (size_t i=0; i<TinyGsmMin(len_confirmed, len_requested) ; i++) {
+      uint32_t startMillis = millis();
 #ifdef TINY_GSM_USE_HEX
-      while (stream.available() < 2) { TINY_GSM_YIELD(); }
+      while (stream.available() < 2 && (millis() - startMillis < sockets[mux]->_timeout)) { TINY_GSM_YIELD(); }
       char buf[4] = { 0, };
       buf[0] = stream.read();
       buf[1] = stream.read();
       char c = strtol(buf, NULL, 16);
 #else
-      while (!stream.available()) { TINY_GSM_YIELD(); }
+      while (!stream.available() && (millis() - startMillis < sockets[mux]->_timeout)) { TINY_GSM_YIELD(); }
       char c = stream.read();
 #endif
       sockets[mux]->rx.put(c);

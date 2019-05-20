@@ -599,7 +599,8 @@ TINY_GSP_MODEM_STREAM_UTILITIES()
             DBG("### Got: ", len, "->", sockets[mux]->rx.free());
           }
           while (len--) {
-            while (!stream.available()) { TINY_GSM_YIELD(); }
+            startMillis = millis();
+            while (!stream.available() && (millis() - startMillis < sockets[mux]->_timeout)) { TINY_GSM_YIELD(); }
             sockets[mux]->rx.put(stream.read());
           }
           if (len_orig > sockets[mux]->available()) { // TODO

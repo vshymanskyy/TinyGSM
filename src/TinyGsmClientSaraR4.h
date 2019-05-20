@@ -566,7 +566,6 @@ protected:
       sockets[mux]->sock_connected = false;
       return true;
     }
-    bool success;
     //  These modems allow a faster "asynchronous" close
     sendAT(GF("+USOCL="), mux, GF(",1"));
     return 1 == waitResponse(120000L);  // but it still can take up to 120s to get a response
@@ -602,7 +601,8 @@ protected:
     streamSkipUntil('\"');
 
     for (size_t i=0; i<len; i++) {
-      while (!stream.available()) { TINY_GSM_YIELD(); }
+      uint32_t startMillis = millis();
+      while (!stream.available() && (millis() - startMillis < sockets[mux]->_timeout)) { TINY_GSM_YIELD(); }
       char c = stream.read();
       sockets[mux]->rx.put(c);
     }

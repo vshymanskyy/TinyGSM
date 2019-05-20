@@ -591,7 +591,8 @@ protected:
     sockets[mux]->sock_available = len;
 
     for (size_t i=0; i<len; i++) {
-      while (!stream.available()) { TINY_GSM_YIELD(); }
+      uint32_t startMillis = millis();
+      while (!stream.available() && (millis() - startMillis < sockets[mux]->_timeout)) { TINY_GSM_YIELD(); }
       char c = stream.read();
       sockets[mux]->rx.put(c);
     }
