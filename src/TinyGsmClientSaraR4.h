@@ -74,22 +74,6 @@ public:
 public:
   virtual int connect(const char *host, uint16_t port, int timeout_s) {
     stop();
-    // If we're creating a new connection on the same client, we need to wait
-    // until the async close has finished on Cat-M modems.
-    // After close has completed, the +UUSOCL should appear.
-    // Without this wait, there might be unexpected behaviors when the same
-    // client instance attempts to move from one socket to another.
-    // This is only a problem for the LTE-M modules that take painfully long
-    // to open and close sockets.  For those modules, when connecting to multple
-    // locations, remember to create multiple clients with different mux numbers.
-    // TODO:  Re-evaluate this!
-    if (at->modemGetConnected(mux)) {
-      DBG("Waiting for +UUSOCL URC on", mux);
-      for (unsigned long start = millis(); millis() - start < 120000L; ) {
-        at->maintain();
-        if (!sock_connected) break;
-      }
-    }
     TINY_GSM_YIELD();
     rx.clear();
 
@@ -553,8 +537,6 @@ protected:
     //waitResponse();
 
     // connect on the allocated socket
-    // TODO:  Use faster "asynchronous" connection?
-    // We would have to wait for the +UUSOCO URC to verify connection
     sendAT(GF("+USOCO="), *mux, ",\"", host, "\",", port);
     int rsp = waitResponse(timeout_ms);
     return (1 == rsp);
@@ -566,10 +548,8 @@ protected:
       sockets[mux]->sock_connected = false;
       return true;
     }
-    //  These modems allow a faster "asynchronous" close
-    sendAT(GF("+USOCL="), mux, GF(",1"));
-    return 1 == waitResponse(120000L);  // but it still can take up to 120s to get a response
-    // TODO:  Evaluate whether the speed bump by allowing the async close is worth it
+    sendAT(GF("+USOCL="), mux);
+    return 1 == waitResponse(120000L);  // can take up to 120s to get a response
   }
 
   int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
