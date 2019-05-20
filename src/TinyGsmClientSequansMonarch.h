@@ -482,7 +482,7 @@ protected:
  {
     int rsp;
     unsigned long startMillis = millis();
-    uint32_t timeout_ms = timeout_s*1000;
+    uint32_t timeout_ms = ((uint32_t)timeout_s)*1000;
 
     if (ssl) {
       // enable SSl and use security profile 1

@@ -474,7 +474,7 @@ protected:
                     bool ssl = false, int timeout_s = 20)
  {
     int rsp;
-    uint32_t timeout_ms = timeout_s*1000;
+    uint32_t timeout_ms = ((uint32_t)timeout_s)*1000;
 
     // <PDPcontextID>(1-16), <connectID>(0-11),"TCP/UDP/TCP LISTENER/UDP SERVICE",
     // "<IP_address>/<domain_name>",<remote_port>,<local_port>,<access_mode>(0-2 0=buffer)

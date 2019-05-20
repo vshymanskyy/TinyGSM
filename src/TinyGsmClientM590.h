@@ -414,7 +414,7 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
 protected:
 
   bool modemConnect(const char* host, uint16_t port, uint8_t mux, int timeout_s = 75) {
-    uint32_t timeout_ms = timeout_s*1000;
+    uint32_t timeout_ms = ((uint32_t)timeout_s)*1000;
     for (int i=0; i<3; i++) { // TODO: no need for loop?
       String ip = dnsIpQuery(host);
 

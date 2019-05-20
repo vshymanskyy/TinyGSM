@@ -645,15 +645,17 @@ public:
   }
 
   bool waitForNetwork(unsigned long timeout_ms = 60000L) {
+    bool retVal = false;
     XBEE_COMMAND_START_DECORATOR(5, false)
     for (unsigned long start = millis(); millis() - start < timeout_ms; ) {
       if (isNetworkConnected()) {
-        return true;
+        retVal = true;
+        break;
       }
       delay(250);  // per Neil H. - more stable with delay
     }
     XBEE_COMMAND_END_DECORATOR
-    return false;
+    return retVal;
   }
 
   /*
@@ -662,28 +664,30 @@ public:
 
   bool networkConnect(const char* ssid, const char* pwd) {
 
+    bool retVal = true;
     XBEE_COMMAND_START_DECORATOR(5, false)
 
     //nh For no pwd don't set setscurity or pwd
-    if (NULL == ssid ) return exitAndFail();
+    if (ssid == NULL) retVal = false;;
 
-    if (NULL != pwd)
+    if (pwd != NULL)
     {
       sendAT(GF("EE"), 2);  // Set security to WPA2
-      if (waitResponse() != 1) return exitAndFail();
+      if (waitResponse() != 1) retVal = false;
       sendAT(GF("PK"), pwd);
     } else {
       sendAT(GF("EE"), 0);  // Set No security
     }
-    if (waitResponse() != 1) return exitAndFail();
+    if (waitResponse() != 1) retVal = false;
 
     sendAT(GF("ID"), ssid);
-    if (waitResponse() != 1) return exitAndFail();
+    if (waitResponse() != 1) retVal = false;
 
-    if (!writeChanges()) return exitAndFail();
+    if (!writeChanges()) retVal = false;
+
     XBEE_COMMAND_END_DECORATOR
 
-    return true;
+    return retVal;
   }
 
   bool networkDisconnect() {
@@ -794,18 +798,18 @@ protected:
   IPAddress getHostIP(const char* host, int timeout_s = 45) {
     String strIP; strIP.reserve(16);
     unsigned long startMillis = millis();
-    uint32_t timeout_ms = timeout_s*1000;
+    uint32_t timeout_ms = ((uint32_t)timeout_s)*1000;
     bool gotIP = false;
     XBEE_COMMAND_START_DECORATOR(5, IPAddress(0,0,0,0))
     // XBee's require a numeric IP address for connection, but do provide the
     // functionality to look up the IP address from a fully qualified domain name
-    while (millis() - startMillis < timeout_ms)  // the lookup can take a while
+    while ((millis() - startMillis) < timeout_ms)  // the lookup can take a while
     {
       sendAT(GF("LA"), host);
-      while (stream.available() < 4 && (millis() - startMillis < timeout_ms)) {};  // wait for any response
+      while (stream.available() < 4 && (millis() - startMillis < timeout_ms)) {TINY_GSM_YIELD()};
       strIP = stream.readStringUntil('\r');  // read result
       strIP.trim();
-      if (!strIP.endsWith(GF("ERROR"))) {
+      if (strIP != "" && strIP != GF("ERROR")) {
         gotIP = true;
         break;
       }
@@ -824,7 +828,7 @@ protected:
                     bool ssl = false, int timeout_s = 75)
   {
     unsigned long startMillis = millis();
-    uint32_t timeout_ms = timeout_s*1000;
+    uint32_t timeout_ms = ((uint32_t)timeout_s)*1000;
     bool retVal = false;
      XBEE_COMMAND_START_DECORATOR(5, false)
 
@@ -849,7 +853,7 @@ protected:
 
     savedIP = ip;  // Set the newly requested IP address
     bool success = true;
-    uint32_t timeout_ms = timeout_s*1000;
+    uint32_t timeout_ms = ((uint32_t)timeout_s)*1000;
     XBEE_COMMAND_START_DECORATOR(5, false)
     String host; host.reserve(16);
     host += ip[0];
@@ -896,25 +900,25 @@ protected:
   // really be open, but no data has yet been sent.  We return this unknown value
   // as true so there's a possibility it's wrong.
   bool modemGetConnected() {
-
-     XBEE_COMMAND_START_DECORATOR(5, false)
-
     // If the IP address is 0, it's not valid so we can't be connected
     if (savedIP == IPAddress(0,0,0,0)) return false;
+
+     XBEE_COMMAND_START_DECORATOR(5, false)
 
     // Verify that we're connected to the *right* IP address
     // We might be connected - but to the wrong thing
     // NOTE:  In transparent mode, there is only one connection possible - no multiplex
-    String strIP; strIP.reserve(16);
-    sendAT(GF("DL"));
-    strIP = stream.readStringUntil('\r');  // read result
-    if (TinyGsmIpFromString(strIP) != savedIP) return exitAndFail();
+    // String strIP; strIP.reserve(16);
+    // sendAT(GF("DL"));
+    // strIP = stream.readStringUntil('\r');  // read result
+    // if (TinyGsmIpFromString(strIP) != savedIP) return exitAndFail();
 
     if (beeType == XBEE_UNKNOWN) getSeries();  // Need to know the bee type to interpret response
 
     switch (beeType){  // The wifi be can only say if it's connected to the netowrk
       case XBEE_S6B_WIFI: {
         RegStatus s = getRegistrationStatus();
+        XBEE_COMMAND_END_DECORATOR
         if (s != REG_OK) {
           sockets[0]->sock_connected = false;  // no multiplex
         }
@@ -926,6 +930,7 @@ protected:
         XBEE_COMMAND_END_DECORATOR
         switch(intRes) {
           case 0x00:  // 0x00 = The socket is definitely open
+          case 0x28:  // 0x28 = "Unknown."
           case 0xFF:  // 0xFF = No known status - this is always returned prior to sending data
             return true;
           case 0x02:  // 0x02 = Invalid parameters (bad IP/host)

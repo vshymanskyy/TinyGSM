@@ -506,7 +506,7 @@ protected:
 
   bool modemConnect(const char* host, uint16_t port, uint8_t* mux, int timeout_s = 75) {
     unsigned long startMillis = millis();
-    uint32_t timeout_ms = timeout_s*1000;
+    uint32_t timeout_ms = ((uint32_t)timeout_s)*1000;
 
     sendAT(GF("+CIPSTART="),  GF("\"TCP"), GF("\",\""), host, GF("\","), port);
     if (waitResponse(timeout_ms, GF(GSM_NL "+CIPNUM:")) != 1) {

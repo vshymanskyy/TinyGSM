@@ -334,7 +334,7 @@ protected:
   bool modemConnect(const char* host, uint16_t port, uint8_t mux,
                     bool ssl = false, int timeout_s = 75)
  {
-    uint32_t timeout_ms = timeout_s*1000;
+    uint32_t timeout_ms = ((uint32_t)timeout_s)*1000;
     if (ssl) {
       sendAT(GF("+CIPSSLSIZE=4096"));
       waitResponse();

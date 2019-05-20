@@ -764,7 +764,7 @@ protected:
                     bool ssl = false, int timeout_s = 75)
  {
     int rsp;
-    uint32_t timeout_ms = timeout_s*1000;
+    uint32_t timeout_ms = ((uint32_t)timeout_s)*1000;
     sendAT(GF("+CIPSTART="), mux, ',', GF("\"TCP"), GF("\",\""), host, GF("\","), port);
     rsp = waitResponse(timeout_ms,
                        GF("CONNECT OK" GSM_NL),

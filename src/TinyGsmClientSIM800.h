@@ -685,7 +685,7 @@ protected:
                     bool ssl = false, int timeout_s = 75)
  {
     int rsp;
-    uint32_t timeout_ms = timeout_s*1000;
+    uint32_t timeout_ms = ((uint32_t)timeout_s)*1000;
 #if !defined(TINY_GSM_MODEM_SIM900)
     sendAT(GF("+CIPSSL="), ssl);
     rsp = waitResponse();
