@@ -547,7 +547,7 @@ String TinyGsmDecodeHex16bit(String &instr) {
 
 
 // Checks if current attached to GPRS/EPS service
-#define TINY_GSP_MODEM_GET_GPRS_IP_CONNECTED() \
+#define TINY_GSM_MODEM_GET_GPRS_IP_CONNECTED() \
   bool isGprsConnected() { \
     sendAT(GF("+CGATT?")); \
     if (waitResponse(GF(GSM_NL "+CGATT:")) != 1) { \
@@ -563,7 +563,7 @@ String TinyGsmDecodeHex16bit(String &instr) {
 
 
 // Gets signal quality report according to 3GPP TS command AT+CSQ
-#define TINY_GSP_MODEM_GET_CSQ() \
+#define TINY_GSM_MODEM_GET_CSQ() \
   int16_t getSignalQuality() { \
     sendAT(GF("+CSQ")); \
     if (waitResponse(GF(GSM_NL "+CSQ:")) != 1) { \
@@ -575,8 +575,18 @@ String TinyGsmDecodeHex16bit(String &instr) {
   }
 
 
+// Yields up to a time-out period and then reads a character from the stream into the mux FIFO
+// TODO:  Do we need to wait two _timeout periods for no character return?  Will wait once in the first
+// "while !stream.available()" and then will wait again in the stream.read() function.
+#define TINY_GSM_MODEM_STREAM_TO_MUX_FIFO_WITH_DOUBLE_TIMEOUT \
+  uint32_t startMillis = millis(); \
+  while (!stream.available() && (millis() - startMillis < sockets[mux]->_timeout)) { TINY_GSM_YIELD(); } \
+  char c = stream.read(); \
+  sockets[mux]->rx.put(c);
+
+
 // Utility templates for writing/skipping characters on a stream
-#define TINY_GSP_MODEM_STREAM_UTILITIES() \
+#define TINY_GSM_MODEM_STREAM_UTILITIES() \
   template<typename T> \
   void streamWrite(T last) { \
     stream.print(last); \

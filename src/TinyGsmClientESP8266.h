@@ -374,7 +374,7 @@ public:
    Utilities
    */
 
-TINY_GSP_MODEM_STREAM_UTILITIES()
+TINY_GSM_MODEM_STREAM_UTILITIES()
 
   // TODO: Optimize this!
   uint8_t waitResponse(uint32_t timeout_ms, String& data,
@@ -421,9 +421,7 @@ TINY_GSP_MODEM_STREAM_UTILITIES()
             DBG("### Got: ", len, "->", sockets[mux]->rx.free());
           }
           while (len--) {
-            startMillis = millis();
-            while (!stream.available() && (millis() - startMillis < sockets[mux]->_timeout)) { TINY_GSM_YIELD(); }
-            sockets[mux]->rx.put(stream.read());
+            TINY_GSM_MODEM_STREAM_TO_MUX_FIFO_WITH_DOUBLE_TIMEOUT
           }
           if (len_orig > sockets[mux]->available()) { // TODO
             DBG("### Fewer characters received than expected: ", sockets[mux]->available(), " vs ", len_orig);

@@ -344,7 +344,7 @@ TINY_GSM_MODEM_GET_OPERATOR_COPS()
    * Generic network functions
    */
 
-TINY_GSP_MODEM_GET_CSQ()
+TINY_GSM_MODEM_GET_CSQ()
 
   bool isNetworkConnected() {
     RegStatus s = getRegistrationStatus();
@@ -541,10 +541,7 @@ protected:
     streamSkipUntil(','); // Skip mux
     size_t len = stream.readStringUntil('\n').toInt();
     for (size_t i=0; i<len; i++) {
-      uint32_t startMillis = millis();
-      while (!stream.available() && (millis() - startMillis < sockets[mux]->_timeout)) { TINY_GSM_YIELD(); }
-      char c = stream.read();
-      sockets[mux]->rx.put(c);
+      TINY_GSM_MODEM_STREAM_TO_MUX_FIFO_WITH_DOUBLE_TIMEOUT
     }
     waitResponse();
     sockets[mux]->sock_available = modemGetAvailable(mux);
@@ -592,7 +589,7 @@ public:
    Utilities
    */
 
-TINY_GSP_MODEM_STREAM_UTILITIES()
+TINY_GSM_MODEM_STREAM_UTILITIES()
 
   // TODO: Optimize this!
   uint8_t waitResponse(uint32_t timeout_ms, String& data,

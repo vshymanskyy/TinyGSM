@@ -328,7 +328,7 @@ TINY_GSM_MODEM_GET_OPERATOR_COPS()
    * Generic network functions
    */
 
-TINY_GSP_MODEM_GET_CSQ()
+TINY_GSM_MODEM_GET_CSQ()
 
   bool isNetworkConnected() {
     RegStatus s = getRegistrationStatus();
@@ -789,7 +789,7 @@ public:
    Utilities
    */
 
-TINY_GSP_MODEM_STREAM_UTILITIES()
+TINY_GSM_MODEM_STREAM_UTILITIES()
 
   // TODO: Optimize this!
   uint8_t waitResponse(uint32_t timeout_ms, String& data,

@@ -953,7 +953,7 @@ public:
     }
   }
 
-TINY_GSP_MODEM_STREAM_UTILITIES()
+TINY_GSM_MODEM_STREAM_UTILITIES()
 
   // TODO: Optimize this!
   // NOTE:  This function is used while INSIDE command mode, so we're only
