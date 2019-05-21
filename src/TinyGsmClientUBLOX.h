@@ -596,6 +596,8 @@ protected:
   }
 
   size_t modemGetAvailable(uint8_t mux) {
+    // Querying a closed socket gives an error "operation not allowed"
+    if (!sockets[mux]->sock_connected) return 0;
     sendAT(GF("+USORD="), mux, ",0");
     size_t result = 0;
     uint8_t res = waitResponse(GF(GSM_NL "+USORD:"));
@@ -614,6 +616,8 @@ protected:
   }
 
   bool modemGetConnected(uint8_t mux) {
+    // Querying a closed socket gives an error "operation not allowed"
+    if (!sockets[mux]->sock_connected) return false;
     sendAT(GF("+USOCTL="), mux, ",10");
     uint8_t res = waitResponse(GF(GSM_NL "+USOCTL:"));
     if (res != 1)
@@ -689,14 +693,14 @@ TINY_GSM_MODEM_STREAM_UTILITIES()
             sockets[mux]->sock_available = len;
           }
           data = "";
-          DBG("### Got Data:", len, "on", mux);
+          DBG("### URC Data Received:", len, "on", mux);
         } else if (data.endsWith(GF(GSM_NL "+UUSOCL:"))) {
           int mux = stream.readStringUntil('\n').toInt();
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
             sockets[mux]->sock_connected = false;
           }
           data = "";
-          DBG("### Closed: ", mux);
+          DBG("### URC Sock Closed: ", mux);
         }
       }
     } while (millis() - startMillis < timeout_ms);
