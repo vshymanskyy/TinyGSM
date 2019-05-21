@@ -16,11 +16,11 @@
   #define TINY_GSM_RX_BUFFER 64
 #endif
 
-#define TINY_GSM_MUX_COUNT 5
+#define TINY_GSM_MUX_COUNT 6
 
 #include <TinyGsmCommon.h>
 
-#define GSM_NL "\r"
+#define GSM_NL "\r\n"
 static const char GSM_OK[] TINY_GSM_PROGMEM = "OK" GSM_NL;
 static const char GSM_ERROR[] TINY_GSM_PROGMEM = "ERROR" GSM_NL;
 
@@ -38,8 +38,6 @@ enum RegStatus {
   REG_OK_ROAMING   = 5,
   REG_UNKNOWN      = 4,
 };
-
-#define NUM_SOCKETS 6
 
 enum SocketStatus {
   SOCK_CLOSED                 = 0,
@@ -77,7 +75,9 @@ public:
     sock_connected = false;
     got_data = false;
 
-    at->sockets[mux] = this;
+    // adjust for zero indexed socket array vs Sequans' 1 indexed mux numbers
+    // using modulus will force 6 back to 0
+    at->sockets[mux % TINY_GSM_MUX_COUNT] = this;
 
     return true;
   }
@@ -217,19 +217,22 @@ public:
 
 TINY_GSM_MODEM_SET_BAUD_IPR()
 
-  bool testAT(unsigned long timeout_ms = 10000L) {
-    for (unsigned long start = millis(); millis() - start < timeout_ms; ) {
-      sendAT(GF(""));
-      if (waitResponse(200) == 1) {
-          delay(100);
-          return true;
-      }
-      delay(100);
-    }
-    return false;
-  }
+TINY_GSM_MODEM_TEST_AT()
 
-TINY_GSM_MODEM_MAINTAIN_CHECK_SOCKS()
+  void maintain() {
+    for (int mux = 1; mux <= TINY_GSM_MUX_COUNT; mux++) {
+      GsmClient* sock = sockets[mux % TINY_GSM_MUX_COUNT];
+      if (sock && sock->got_data) {
+        sock->got_data = false;
+        sock->sock_available = modemGetAvailable(mux);
+        // modemGetConnected() always checks the state of ALL socks
+        modemGetConnected();
+      }
+    }
+    while (stream.available()) {
+      waitResponse(15, NULL, NULL);
+  }
+  }
 
   bool factoryDefault() {
     sendAT(GF("&FZE0&W"));  // Factory + Reset + Echo Off + Write
@@ -262,12 +265,14 @@ TINY_GSM_MODEM_GET_INFO_ATI()
     }
 
     sendAT(GF("+CFUN=0"));
-    if (waitResponse(10000L) != 1) {
+    int res = waitResponse(20000L, GFP(GSM_OK), GFP(GSM_ERROR), GF("+SYSSTART")) ;
+    if (res != 1 && res != 3) {
       return false;
     }
 
     sendAT(GF("+CFUN=1,1"));
-    if (waitResponse(60000L, GF("+SYSSTART")) != 1) {
+    res = waitResponse(20000L, GF("+SYSSTART"), GFP(GSM_ERROR)) ;
+    if (res != 1 && res != 3) {
       return false;
     }
     delay(1000);
@@ -289,12 +294,14 @@ TINY_GSM_MODEM_GET_INFO_ATI()
   }
 
   /*
-    During sleep, the SIM800 module has its serial communication disabled. In order to reestablish communication
-    pull the DRT-pin of the SIM800 module LOW for at least 50ms. Then use this function to disable sleep mode.
-    The DTR-pin can then be released again.
+   When power saving is enabled, UART0 interface is activated with sleep mode support.
+   Module power state is controlled by RTS0 line.  When no activity on UART, CTS line
+   will be set to OFF state (driven high level) <timeout> milliseconds (100ms to 10s,
+   default 5s) after the last sent character, then module will go to sleep mode as soon
+   as DTE set RTS line to OFF state (driver high level).
   */
   bool sleepEnable(bool enable = true) {
-    sendAT(GF("+CSCLK="), enable);
+    sendAT(GF("+SQNIPSCFG="), enable);
     return waitResponse() == 1;
   }
 
@@ -349,7 +356,7 @@ TINY_GSM_MODEM_GET_CSQ()
   bool isNetworkConnected() {
     RegStatus s = getRegistrationStatus();
     if (s == REG_OK_HOME || s == REG_OK_ROAMING) {
-      DBG(F("connected with status:"), s);
+      // DBG(F("connected with status:"), s);
       return true;
     } else {
       return false;
@@ -365,10 +372,11 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
   bool gprsConnect(const char* apn, const char* user = NULL, const char* pwd = NULL) {
     gprsDisconnect();
 
-    // Define the PDP context
+    // Define the PDP context (This uses context #3!)
     sendAT(GF("+CGDCONT=3,\"IPV4V6\",\""), apn, '"');
     waitResponse();
 
+    // Set authentication
     if (user && strlen(user) > 0) {
       sendAT(GF("+CGAUTH=3,1,\""), user, GF("\",\""), pwd, GF("\""));
       waitResponse();
@@ -486,27 +494,55 @@ protected:
 
     if (ssl) {
       // enable SSl and use security profile 1
+      //AT+SQNSSCFG=<connId>,<enable>,<spId>
       sendAT(GF("+SQNSSCFG="), mux, GF(",1,1"));
       if (waitResponse() != 1) {
-        DBG("failed to configure secure socket");
+        DBG("### WARNING: failed to configure secure socket");
         return false;
       }
     }
 
+    // Socket configuration
+    //AT+SQNSCFG:<connId1>, <cid1>, <pktSz1>, <maxTo1>, <connTo1>, <txTo1>
+    // <connId1> = Connection ID = mux
+    // <cid1> = PDP context ID = 3 - this is number set up above in the GprsConnect function
+    // <pktSz1> = Packet Size, used for online data mode only = 300 (default)
+    // <maxTo1> = Max timeout in seconds = 90 (default)
+    // <connTo1> = Connection timeout in hundreds of milliseconds = 600 (default)
+    // <txTo1> = Data sending timeout in hundreds of milliseconds, used for online data mode only = 50 (default)
     sendAT(GF("+SQNSCFG="), mux, GF(",3,300,90,600,50"));
-    waitResponse();
+    waitResponse(5000L);
 
+    // Socket configuration extended
+    //AT+SQNSCFGEXT:<connId1>, <srMode1>, <recvDataMode1>, <keepalive1>, <listenAutoRsp1>, <sendDataMode1>
+    // <connId1> = Connection ID = mux
+    // <srMode1> = Send/Receive URC model = 1 - data amount mode
+    // <recvDataMode1> = Receive data mode = 0  - data as text (1 would be as hex)
+    // <keepalive1> = unused = 0
+    // <listenAutoRsp1> = Listen auto-response mode = 0 - deactivated
+    // <sendDataMode1> = Send data mode = 0  - data as text (1 would be as hex)
     sendAT(GF("+SQNSCFGEXT="), mux, GF(",1,0,0,0,0"));
-    waitResponse();
+    waitResponse(5000L);
 
+    // Socket dial
+    //AT+SQNSD=<connId>,<txProt>,<rPort>,<IPaddr>[,<closureType>[,<lPort>[,<connMode>[,acceptAnyRemote]]]]
+    // <connId> = Connection ID = mux
+    // <txProt> = Transmission protocol = 0 - TCP (1 for UDP)
+    // <rPort> = Remote host port to contact
+    // <IPaddr> = Any valid IP address in the format “xxx.xxx.xxx.xxx” or any host name solved with a DNS query
+    // <closureType> = Socket closure behaviour for TCP, has no effect for UDP = 0 - local port closes when remote does (default)
+    // <lPort> = UDP connection local port, has no effect for TCP connections.
+    // <connMode> = Connection mode = 1 - command mode connection
+    // <acceptAnyRemote> = Applies to UDP only
     sendAT(GF("+SQNSD="), mux, ",0,", port, ',', GF("\""), host, GF("\""), ",0,0,1");
     rsp = waitResponse((timeout_ms - (millis() - startMillis)),
-                      GF("OK" GSM_NL),
+                      GFP(GSM_OK),
+                      GFP(GSM_ERROR),
                       GF("NO CARRIER" GSM_NL)
                       );
 
     // creation of socket failed immediately.
-    if (rsp != 1) return rsp;
+    if (rsp != 1) return false;
 
     // wait until we get a good status
     bool connected = false;
@@ -519,14 +555,17 @@ protected:
 
 
   int modemSend(const void* buff, size_t len, uint8_t mux) {
-    sendAT(GF("+SQNSSENDEXT="), mux, ',', len);
-    if (waitResponse(5000, GF(GSM_NL "> ")) != 1) {
+    if (sockets[mux % TINY_GSM_MUX_COUNT]->sock_connected == false) {
+      DBG("### Sock closed, cannot send data!");
       return 0;
     }
+
+    sendAT(GF("+SQNSSENDEXT="), mux, ',', len);
+    waitResponse(10000L, GF(GSM_NL "> "));
     stream.write((uint8_t*)buff, len);
     stream.flush();
     if (waitResponse() != 1) {
-      DBG("no OK after send");
+      DBG("### no OK after send");
       return 0;
     }
     return len;
@@ -541,10 +580,14 @@ protected:
     streamSkipUntil(','); // Skip mux
     size_t len = stream.readStringUntil('\n').toInt();
     for (size_t i=0; i<len; i++) {
-      TINY_GSM_MODEM_STREAM_TO_MUX_FIFO_WITH_DOUBLE_TIMEOUT
+      uint32_t startMillis = millis(); \
+      while (!stream.available() && ((millis() - startMillis) < sockets[mux % TINY_GSM_MUX_COUNT]->_timeout)) { TINY_GSM_YIELD(); } \
+      char c = stream.read(); \
+      sockets[mux % TINY_GSM_MUX_COUNT]->rx.put(c);
     }
+    // DBG("### Read:", len, "from", mux);
     waitResponse();
-    sockets[mux]->sock_available = modemGetAvailable(mux);
+    sockets[mux % TINY_GSM_MUX_COUNT]->sock_available = modemGetAvailable(mux);
     return len;
   }
 
@@ -553,34 +596,44 @@ protected:
     size_t result = 0;
     if (waitResponse(GF("+SQNSI:")) == 1) {
       streamSkipUntil(','); // Skip mux
-      streamSkipUntil(','); // Skip sent
-      streamSkipUntil(','); // Skip received
-      result = stream.readStringUntil(',').toInt();
+      streamSkipUntil(','); // Skip total sent
+      streamSkipUntil(','); // Skip total received
+      result = stream.readStringUntil(',').toInt();  // keep data not yet read
       waitResponse();
     }
-    if (!result) {
-      sockets[mux]->sock_connected = modemGetConnected(mux);
-    }
+    // DBG("### Available:", result, "on", mux);
     return result;
   }
 
-  bool modemGetConnected(uint8_t mux) {
+  bool modemGetConnected(uint8_t mux = 1) {
+    // This single command always returns the connection status of all
+    // six possible sockets.
     sendAT(GF("+SQNSS"));
-    uint8_t m = 0;
-    uint8_t status = 0;
-
-    while (true) {
+    for (int muxNo = 1; muxNo <= TINY_GSM_MUX_COUNT; muxNo++) {
       if (waitResponse(GFP(GSM_OK), GF(GSM_NL "+SQNSS: ")) != 2) {
         break;
       };
-      m = stream.readStringUntil(',').toInt();
-      if (m == mux) {
-        status = stream.readStringUntil(',').toInt();
-      }
-      streamSkipUntil('\n'); // Skip
+      uint8_t status = 0;
+      // if (stream.readStringUntil(',').toInt() != muxNo) { // check the mux no
+      //   DBG("### Warning: misaligned mux numbers!");
+      // }
+      streamSkipUntil(',');  // skip mux [use muxNo]
+      status = stream.parseInt();  // Read the status
+      // if mux is in use, will have comma then other info after the status
+      // if not, there will be new line immediately after status
+      // streamSkipUntil('\n'); // Skip port and IP info
+      // SOCK_CLOSED                 = 0,
+      // SOCK_ACTIVE_DATA            = 1,
+      // SOCK_SUSPENDED              = 2,
+      // SOCK_SUSPENDED_PENDING_DATA = 3,
+      // SOCK_LISTENING              = 4,
+      // SOCK_INCOMING               = 5,
+      // SOCK_OPENING                = 6,
+      sockets[muxNo % TINY_GSM_MUX_COUNT]->sock_connected = \
+        ((status != SOCK_CLOSED) && (status != SOCK_INCOMING) && (status != SOCK_OPENING));
     }
-
-    return ((status != SOCK_CLOSED) && (status != SOCK_INCOMING) && (status != SOCK_OPENING));
+    waitResponse();  // Should be an OK at the end
+    return sockets[mux % TINY_GSM_MUX_COUNT]->sock_connected;
   }
 
 public:
@@ -628,18 +681,20 @@ TINY_GSM_MODEM_STREAM_UTILITIES()
           goto finish;
         } else if (data.endsWith(GF(GSM_NL "+SQNSRING:"))) {
           int mux = stream.readStringUntil(',').toInt();
-          if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
-            sockets[mux]->got_data = true;
+          int len = stream.readStringUntil('\n').toInt();
+          if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux % TINY_GSM_MUX_COUNT]) {
+            sockets[mux % TINY_GSM_MUX_COUNT]->got_data = true;
+            sockets[mux % TINY_GSM_MUX_COUNT]->sock_available = len;
           }
-          stream.readStringUntil('\n');
           data = "";
+          DBG("### URC Data Received:", len, "on", mux);
         } else if (data.endsWith(GF("SQNSH: "))) {
           int mux = stream.readStringUntil('\n').toInt();
-          if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
-            sockets[mux]->sock_connected = false;
+          if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux % TINY_GSM_MUX_COUNT]) {
+            sockets[mux % TINY_GSM_MUX_COUNT]->sock_connected = false;
           }
           data = "";
-          DBG("### Closed: ", mux);
+          DBG("### URC Sock Closed: ", mux);
         }
       }
     } while (millis() - startMillis < timeout_ms);
