@@ -590,8 +590,7 @@ protected:
   }
 
   size_t modemGetAvailable(uint8_t mux) {
-    // Querying a closed socket gives an error "operation not allowed"
-    if (!sockets[mux]->sock_connected) return 0;
+    // NOTE:  Querying a closed socket gives an error "operation not allowed"
     sendAT(GF("+USORD="), mux, ",0");
     size_t result = 0;
     uint8_t res = waitResponse(GF(GSM_NL "+USORD:"));
@@ -610,8 +609,7 @@ protected:
   }
 
   bool modemGetConnected(uint8_t mux) {
-    // Querying a closed socket gives an error "operation not allowed"
-    if (!sockets[mux]->sock_connected) return false;
+    // NOTE:  Querying a closed socket gives an error "operation not allowed"
     sendAT(GF("+USOCTL="), mux, ",10");
     uint8_t res = waitResponse(GF(GSM_NL "+USOCTL:"));
     if (res != 1)
