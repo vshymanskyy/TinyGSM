@@ -540,14 +540,15 @@ TINY_GSM_MODEM_GET_GPRS_IP_CONNECTED()
     return true;
   }
 
-  float getTemperature(uint16_t &milliVolts = 0) {
+  float getTemperature() {
     sendAT(GF("+QTEMP"));
     if (waitResponse(GF(GSM_NL "+QTEMP:")) != 1) {
       return (float)-9999;
     }
     streamSkipUntil(','); // Skip mode
     // Read charge of thermistor
-    milliVolts = stream.readStringUntil(',').toInt();
+    // milliVolts = stream.readStringUntil(',').toInt();
+    streamSkipUntil(','); // Skip thermistor charge
     float temp = stream.readStringUntil('\n').toFloat();
     // Wait for final OK
     waitResponse();
