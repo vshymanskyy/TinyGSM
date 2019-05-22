@@ -482,7 +482,7 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
   String getGsmLocation() TINY_GSM_ATTR_NOT_AVAILABLE;
 
   /*
-   * Battery functions
+   * Battery & temperature functions
    */
 
   uint16_t getBattVoltage() TINY_GSM_ATTR_NOT_AVAILABLE;
@@ -492,11 +492,40 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
     if (waitResponse(GF(GSM_NL "+CBC:")) != 1) {
       return false;
     }
-    stream.readStringUntil(',');
+    streamSkipUntil(','); // Skip battery charge status
+    // Read battery charge level
     int res = stream.readStringUntil('\n').toInt();
+    // Wait for final OK
     waitResponse();
     return res;
   }
+
+  uint8_t getBattChargeState()
+    sendAT(GF("+CBC?"));
+    if (waitResponse(GF(GSM_NL "+CBC:")) != 1) {
+      return false;
+    }
+    // Read battery charge status
+    int res = stream.readStringUntil(',').toInt();
+    // Wait for final OK
+    waitResponse();
+    return res;
+  }
+
+  bool getBattStats(uint8_t &chargeState, int8_t &percent, uint16_t &milliVolts) {
+    sendAT(GF("+CBC?"));
+    if (waitResponse(GF(GSM_NL "+CBC:")) != 1) {
+      return false;
+    }
+    chargeState = stream.readStringUntil(',').toInt();
+    percent = stream.readStringUntil('\n').toInt();
+    // Wait for final OK
+    waitResponse();
+    return true;
+  }
+
+
+  float getTemperature() TINY_GSM_ATTR_NOT_AVAILABLE;
 
   /*
    * Client related functions

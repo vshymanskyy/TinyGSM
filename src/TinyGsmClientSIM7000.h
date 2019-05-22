@@ -735,9 +735,9 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
     if (waitResponse(GF(GSM_NL "+CBC:")) != 1) {
       return 0;
     }
-    streamSkipUntil(','); // Skip
-    streamSkipUntil(','); // Skip
-
+    streamSkipUntil(','); // Skip battery charge status
+    streamSkipUntil(','); // Skip battery charge level
+    // return voltage in mV
     uint16_t res = stream.readStringUntil(',').toInt();
     waitResponse();
     return res;
@@ -748,11 +748,39 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
     if (waitResponse(GF(GSM_NL "+CBC:")) != 1) {
       return false;
     }
-    stream.readStringUntil(',');
+    streamSkipUntil(','); // Skip battery charge status
+    // Read battery charge level
     int res = stream.readStringUntil(',').toInt();
     waitResponse();
     return res;
   }
+
+  uint8_t getBattChargeState()
+    sendAT(GF("+CBC?"));
+    if (waitResponse(GF(GSM_NL "+CBC:")) != 1) {
+      return false;
+    }
+    // Read battery charge status
+    int res = stream.readStringUntil(',').toInt();
+    // Wait for final OK
+    waitResponse();
+    return res;
+  }
+
+  bool getBattStats(uint8_t &chargeState, int8_t &percent, uint16_t &milliVolts) {
+    sendAT(GF("+CBC?"));
+    if (waitResponse(GF(GSM_NL "+CBC:")) != 1) {
+      return false;
+    }
+    chargeState = stream.readStringUntil(',').toInt();
+    percent = stream.readStringUntil(',').toInt();
+    milliVolts = stream.readStringUntil('\n').toInt();
+    // Wait for final OK
+    waitResponse();
+    return true;
+  }
+
+  float getTemperature() TINY_GSM_ATTR_NOT_AVAILABLE;
 
   /*
    * Client related functions

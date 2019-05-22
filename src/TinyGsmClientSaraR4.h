@@ -490,7 +490,7 @@ TINY_GSM_MODEM_GET_GPRS_IP_CONNECTED()
   }
 
   /*
-   * Battery functions
+   * Battery & temperature functions
    */
 
   uint16_t getBattVoltage() TINY_GSM_ATTR_NOT_AVAILABLE;
@@ -501,9 +501,37 @@ TINY_GSM_MODEM_GET_GPRS_IP_CONNECTED()
       return 0;
     }
 
-    int res = stream.readStringUntil(',').toInt();
+    int8_t res = stream.readStringUntil(',').toInt();
+    int8_t percent = res*20;  // return is 0-5
+    // Wait for final OK
     waitResponse();
-    return res;
+    return percent;
+  }
+
+  uint8_t getBattChargeState() TINY_GSM_ATTR_NOT_AVAILABLE;
+
+  bool getBattStats(uint8_t &chargeState, int8_t &percent, uint16_t &milliVolts) {
+    percent = getBattPercent();
+    return true;
+  }
+
+  float getTemperature() {
+    // First make sure the temperature is set to be in celsius
+    sendAT(GF("+UTEMP=0"));  // Would use 1 for Fahrenheit
+    if (waitResponse() != 1) {
+      return (float)-9999;
+    }
+    sendAT(GF("+UTEMP?"));
+    if (waitResponse(GF(GSM_NL "+UTEMP:")) != 1) {
+      return (float)-9999;
+    }
+    streamSkipUntil(','); // Skip units (C/F)
+    int16_t res = stream.readStringUntil('\n').toInt();
+    float temp = -9999;
+    if (res != 655355) {
+      temp = ((float)res)/10;
+    }
+    return temp;
   }
 
   /*

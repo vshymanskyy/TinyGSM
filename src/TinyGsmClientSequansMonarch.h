@@ -422,7 +422,6 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
 
   String getLocalIP() {
     sendAT(GF("+CGPADDR=3"));
-
     if (waitResponse(10000L, GF("+CGPADDR: 3,\"")) != 1) {
       return "";
     }
@@ -476,12 +475,28 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
 
 
   /*
-   * Battery functions
+   * Battery & temperature functions
    */
 
   uint16_t getBattVoltage() TINY_GSM_ATTR_NOT_AVAILABLE;
+  int8_t getBattPercent() TINY_GSM_ATTR_NOT_AVAILABLE;
+  uint8_t getBattChargeState() TINY_GSM_ATTR_NOT_AVAILABLE;
+  bool getBattStats(uint8_t &chargeState, int8_t &percent, uint16_t &milliVolts) TINY_GSM_ATTR_NOT_AVAILABLE;
 
-  int getBattPercent() TINY_GSM_ATTR_NOT_AVAILABLE;
+  float getTemperature() {
+    sendAT(GF("+SMDTH"));
+    if (waitResponse(10000L, GF("+SMDTH: ")) != 1) {
+      return (float)-9999;
+    }
+    String res;
+    if (waitResponse(1000L, res) != 1) {
+      return (float)-9999;
+    }
+    if (res.indexOf("ERROR") >=0) {
+      return (float)-9999;
+    }
+    return res.toFloat();
+  }
 
 protected:
 
@@ -569,6 +584,28 @@ protected:
       return 0;
     }
     return len;
+
+    // uint8_t nAttempts = 5;
+    // bool gotPrompt = false;
+    // while (nAttempts > 0 && !gotPrompt) {
+    //   sendAT(GF("+SQNSSEND="), mux);
+    //   if (waitResponse(5000, GF(GSM_NL "> ")) == 1) {
+    //     gotPrompt = true;
+    //   }
+    //   nAttempts--;
+    //   delay(50);
+    // }
+    // if (gotPrompt) {
+    //   stream.write((uint8_t*)buff, len);
+    //   stream.write((char)0x1A);
+    //   stream.flush();
+    //   if (waitResponse() != 1) {
+    //     DBG("### no OK after send");
+    //     return 0;
+    //   }
+    //   return len;
+    // }
+    // return 0;
   }
 
 

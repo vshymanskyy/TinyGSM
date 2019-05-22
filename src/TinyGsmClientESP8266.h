@@ -326,6 +326,17 @@ TINY_GSM_MODEM_MAINTAIN_LISTEN()
   }
 
   /*
+   * Battery & temperature functions
+   */
+
+  // Use: float vBatt = modem.getBattVoltage() / 1000.0;
+  uint16_t getBattVoltage() TINY_GSM_ATTR_NOT_AVAILABLE;
+  int8_t getBattPercent() TINY_GSM_ATTR_NOT_AVAILABLE;
+  uint8_t getBattChargeState() TINY_GSM_ATTR_NOT_AVAILABLE;
+  bool getBattStats(uint8_t &chargeState, int8_t &percent, uint16_t &milliVolts) TINY_GSM_ATTR_NOT_AVAILABLE;
+  float getTemperature() TINY_GSM_ATTR_NOT_AVAILABLE;
+
+  /*
    * Client related functions
    */
 

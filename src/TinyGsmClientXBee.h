@@ -782,12 +782,25 @@ public:
   String getGsmLocation() TINY_GSM_ATTR_NOT_AVAILABLE;
 
   /*
-   * Battery functions
+   * Battery & temperature functions
    */
 
+  // Use: float vBatt = modem.getBattVoltage() / 1000.0;
   uint16_t getBattVoltage() TINY_GSM_ATTR_NOT_AVAILABLE;
-
   int8_t getBattPercent() TINY_GSM_ATTR_NOT_AVAILABLE;
+  uint8_t getBattChargeState() TINY_GSM_ATTR_NOT_AVAILABLE;
+  bool getBattStats(uint8_t &chargeState, int8_t &percent, uint16_t &milliVolts) TINY_GSM_ATTR_NOT_AVAILABLE;
+
+  float getTemperature() {
+    String res = sendATGetString(GF("TP"));
+    if (res == "") {
+      return (float)-9999;
+    }
+    char buf[5] = {0,};
+    res.toCharArray(buf, 5);
+    int8_t intRes = (int8_t)strtol(buf, 0, 16); // degrees Celsius displayed in 8-bit two's complement format.
+    return (float)intRes;
+  }
 
   /*
    * Client related functions

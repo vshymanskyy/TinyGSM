@@ -116,6 +116,7 @@ void setup() {
   // To skip it, call init() instead of restart()
   SerialMon.println("Initializing modem...");
   modem.restart();
+  // modem.init();
 
   String modemInfo = modem.getModemInfo();
   SerialMon.print("Modem: ");

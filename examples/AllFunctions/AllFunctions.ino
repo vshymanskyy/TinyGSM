@@ -111,6 +111,7 @@ void loop() {
   // To skip it, call init() instead of restart()
   DBG("Initializing modem...");
   if (!modem.restart()) {
+  // if (!modem.init()) {
     DBG("Failed to restart modem, delaying 10s and retrying");
     delay(3000);
     // restart autobaud in case GSM just rebooted
@@ -122,10 +123,12 @@ void loop() {
   String modemInfo = modem.getModemInfo();
   DBG("Modem:", modemInfo);
 
+#if TINY_GSM_USE_GPRS
   // Unlock your SIM card with a PIN if needed
   if ( GSM_PIN && modem.getSimStatus() != 3 ) {
     modem.simUnlock(GSM_PIN);
   }
+#endif
 
 #if TINY_GSM_USE_WIFI
   SerialMon.print(F("Setting SSID/password..."));

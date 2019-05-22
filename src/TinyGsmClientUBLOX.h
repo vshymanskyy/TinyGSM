@@ -489,7 +489,7 @@ TINY_GSM_MODEM_GET_GPRS_IP_CONNECTED()
   }
 
   /*
-   * Battery functions
+   * Battery & temperature functions
    */
 
   uint16_t getBattVoltage() TINY_GSM_ATTR_NOT_AVAILABLE;
@@ -504,6 +504,16 @@ TINY_GSM_MODEM_GET_GPRS_IP_CONNECTED()
     waitResponse();
     return res;
   }
+
+  uint8_t getBattChargeState() TINY_GSM_ATTR_NOT_AVAILABLE;
+
+  bool getBattStats(uint8_t &chargeState, int8_t &percent, uint16_t &milliVolts) {
+    percent = getBattPercent();
+    return true;
+  }
+
+  // This would only available for a small number of modules in this group (TOBY-L)
+  float getTemperature() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
   /*
    * Client related functions
