@@ -755,7 +755,7 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
     return res;
   }
 
-  uint8_t getBattChargeState()
+  uint8_t getBattChargeState() {
     sendAT(GF("+CBC?"));
     if (waitResponse(GF(GSM_NL "+CBC:")) != 1) {
       return false;

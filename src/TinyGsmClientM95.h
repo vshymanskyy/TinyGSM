@@ -515,7 +515,7 @@ TINY_GSM_MODEM_GET_GPRS_IP_CONNECTED()
     return res;
   }
 
-  uint8_t getBattChargeState()
+  uint8_t getBattChargeState() {
     sendAT(GF("+CBC?"));
     if (waitResponse(GF(GSM_NL "+CBC:")) != 1) {
       return false;
