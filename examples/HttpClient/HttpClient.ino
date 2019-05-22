@@ -19,11 +19,12 @@
 
 // Select your modem:
 #define TINY_GSM_MODEM_SIM800
-// #define TINY_GSM_MODEM_SIM900
 // #define TINY_GSM_MODEM_SIM808
 // #define TINY_GSM_MODEM_SIM868
+// #define TINY_GSM_MODEM_SIM900
 // #define TINY_GSM_MODEM_SIM7000
 // #define TINY_GSM_MODEM_UBLOX
+// #define TINY_GSM_MODEM_SARAR4
 // #define TINY_GSM_MODEM_M95
 // #define TINY_GSM_MODEM_BG96
 // #define TINY_GSM_MODEM_A6
@@ -32,12 +33,17 @@
 // #define TINY_GSM_MODEM_MC60
 // #define TINY_GSM_MODEM_MC60E
 // #define TINY_GSM_MODEM_ESP8266
+// #define TINY_GSM_MODEM_XBEE
+// #define TINY_GSM_MODEM_SEQUANS_MONARCH
 
 // Increase RX buffer to capture the entire response
 // Chips without internal buffering (A6/A7, ESP8266, M590)
 // need enough space in the buffer for the entire response
 // else data will be lost (and the http library will fail).
 #define TINY_GSM_RX_BUFFER 650
+
+// See all AT commands, if wanted
+//#define DUMP_AT_COMMANDS
 
 // See the debugging, if wanted
 //#define TINY_GSM_DEBUG Serial
@@ -49,12 +55,10 @@
 #include <TinyGsmClient.h>
 #include <ArduinoHttpClient.h>
 
-// Uncomment this if you want to see all AT commands
-//#define DUMP_AT_COMMANDS
-
 // Set serial for debug console (to the Serial Monitor, default speed 115200)
 #define SerialMon Serial
 
+// Set serial for AT commands (to the module)
 // Use Hardware Serial on Mega, Leonardo, Micro
 #define SerialAT Serial1
 
@@ -62,6 +66,11 @@
 //#include <SoftwareSerial.h>
 //SoftwareSerial SerialAT(2, 3); // RX, TX
 
+#define TINY_GSM_USE_GPRS true
+#define TINY_GSM_USE_WIFI false
+
+// set GSM PIN, if any
+#define GSM_PIN ""
 
 // Your GPRS credentials
 // Leave empty, if missing user or pass
@@ -91,7 +100,15 @@ void setup() {
   // Set console baud rate
   SerialMon.begin(115200);
   delay(10);
-  SerialMon.println(F("Wait..."));
+
+  // Set your reset, enable, power pins here
+  pinMode(20, OUTPUT);
+  digitalWrite(20, HIGH);
+
+  pinMode(23, OUTPUT);
+  digitalWrite(23, HIGH);
+
+  SerialMon.println("Wait...");
 
   // Set GSM module baud rate
   SerialAT.begin(115200);
@@ -99,11 +116,11 @@ void setup() {
 
   // Restart takes quite some time
   // To skip it, call init() instead of restart()
-  SerialMon.println(F("Initializing modem..."));
+  SerialMon.println("Initializing modem...");
   modem.restart();
 
   String modemInfo = modem.getModemInfo();
-  SerialMon.print(F("Modem: "));
+  SerialMon.print("Modem: ");
   SerialMon.println(modemInfo);
 
   // Unlock your SIM card with a PIN
@@ -112,17 +129,17 @@ void setup() {
 
 void loop() {
 
-  if (modem.hasWifi()) {
-    SerialMon.print(F("Setting SSID/password..."));
-    if (!modem.networkConnect(wifiSSID, wifiPass)) {
-      SerialMon.println(" fail");
-      delay(10000);
-      return;
-    }
-    SerialMon.println(" OK");
+#if TINY_GSM_USE_WIFI
+  SerialMon.print(F("Setting SSID/password..."));
+  if (!modem.networkConnect(wifiSSID, wifiPass)) {
+    SerialMon.println(" fail");
+    delay(10000);
+    return;
   }
+  SerialMon.println(" OK");
+#endif
 
-  SerialMon.print(F("Waiting for network..."));
+  SerialMon.print("Waiting for network...");
   if (!modem.waitForNetwork()) {
     SerialMon.println(" fail");
     delay(10000);
@@ -130,7 +147,11 @@ void loop() {
   }
   SerialMon.println(" OK");
 
-  if (modem.hasGPRS()) {
+  if (modem.isNetworkConnected()) {
+    SerialMon.print("Network connected");
+  }
+
+#if TINY_GSM_USE_GPRS
     SerialMon.print(F("Connecting to "));
     SerialMon.print(apn);
     if (!modem.gprsConnect(apn, gprsUser, gprsPass)) {
@@ -139,7 +160,7 @@ void loop() {
       return;
     }
     SerialMon.println(" OK");
-  }
+#endif
 
   SerialMon.print(F("Performing HTTP GET request... "));
   int err = http.get(resource);
@@ -185,8 +206,14 @@ void loop() {
   http.stop();
   SerialMon.println(F("Server disconnected"));
 
-  modem.gprsDisconnect();
-  SerialMon.println(F("GPRS disconnected"));
+#if TINY_GSM_USE_WIFI
+    modem.networkDisconnect();
+    SerialMon.println(F("WiFi disconnected"));
+#endif
+#if TINY_GSM_USE_GPRS
+    modem.gprsDisconnect();
+    SerialMon.println(F("GPRS disconnected"));
+#endif
 
   // Do nothing forevermore
   while (true) {

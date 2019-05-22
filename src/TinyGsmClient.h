@@ -48,6 +48,14 @@
   typedef TinyGsmUBLOX::GsmClient TinyGsmClient;
   typedef TinyGsmUBLOX::GsmClientSecure TinyGsmClientSecure;
 
+#elif defined(TINY_GSM_MODEM_SARAR4)
+  #define TINY_GSM_MODEM_HAS_GPRS
+  #define TINY_GSM_MODEM_HAS_SSL
+  #include <TinyGsmClientSaraR4.h>
+  typedef TinyGsmSaraR4 TinyGsm;
+  typedef TinyGsmSaraR4::GsmClient TinyGsmClient;
+  typedef TinyGsmSaraR4::GsmClientSecure TinyGsmClientSecure;
+
 #elif defined(TINY_GSM_MODEM_M95)
   #define TINY_GSM_MODEM_HAS_GPRS
   #include <TinyGsmClientM95.h>
@@ -95,6 +103,15 @@
   typedef TinyGsmXBee TinyGsm;
   typedef TinyGsmXBee::GsmClient TinyGsmClient;
   typedef TinyGsmXBee::GsmClientSecure TinyGsmClientSecure;
+
+#elif defined(TINY_GSM_MODEM_SEQUANS_MONARCH)
+  #define TINY_GSM_MODEM_HAS_GPRS
+  #define TINY_GSM_MODEM_HAS_SSL
+  #include <TinyGsmClientSequansMonarch.h>
+  typedef TinyGsmSequansMonarch TinyGsm;
+  typedef TinyGsmSequansMonarch::GsmClient TinyGsmClient;
+  typedef TinyGsmSequansMonarch::GsmClientSecure TinyGsmClientSecure;
+
 
 #else
   #error "Please define GSM modem model"

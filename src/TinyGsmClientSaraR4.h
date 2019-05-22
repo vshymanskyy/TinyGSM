@@ -1,14 +1,14 @@
 /**
- * @file       TinyGsmClientUBLOX.h
+ * @file       TinyGsmClientSaraR4.h
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
  * @date       Nov 2016
  */
 
-#ifndef TinyGsmClientUBLOX_h
-#define TinyGsmClientUBLOX_h
-//#pragma message("TinyGSM:  TinyGsmClientUBLOX")
+#ifndef TinyGsmClientSaraR4_h
+#define TinyGsmClientSaraR4_h
+//#pragma message("TinyGSM:  TinyGsmClientSaraR4")
 
 //#define TINY_GSM_DEBUG Serial
 
@@ -41,24 +41,24 @@ enum RegStatus {
 };
 
 
-class TinyGsmUBLOX
+class TinyGsmSaraR4
 {
 
 public:
 
 class GsmClient : public Client
 {
-  friend class TinyGsmUBLOX;
+  friend class TinyGsmSaraR4;
   typedef TinyGsmFifo<uint8_t, TINY_GSM_RX_BUFFER> RxFifo;
 
 public:
   GsmClient() {}
 
-  GsmClient(TinyGsmUBLOX& modem, uint8_t mux = 0) {
+  GsmClient(TinyGsmSaraR4& modem, uint8_t mux = 0) {
     init(&modem, mux);
   }
 
-  bool init(TinyGsmUBLOX* modem, uint8_t mux = 0) {
+  bool init(TinyGsmSaraR4* modem, uint8_t mux = 0) {
     this->at = modem;
     this->mux = mux;
     sock_available = 0;
@@ -108,11 +108,11 @@ TINY_GSM_CLIENT_CONNECT_OVERLOADS()
     at->modemDisconnect(mux);
   }
 
-TINY_GSM_CLIENT_WRITE() ;
+TINY_GSM_CLIENT_WRITE()
 
-TINY_GSM_CLIENT_AVAILABLE_WITH_BUFFER_CHECK() ;
+TINY_GSM_CLIENT_AVAILABLE_WITH_BUFFER_CHECK()
 
-TINY_GSM_CLIENT_READ_WITH_BUFFER_CHECK() ;
+TINY_GSM_CLIENT_READ_WITH_BUFFER_CHECK()
 
 TINY_GSM_CLIENT_PEEK_FLUSH_CONNECTED()
 
@@ -123,7 +123,7 @@ TINY_GSM_CLIENT_PEEK_FLUSH_CONNECTED()
   String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
 private:
-  TinyGsmUBLOX*   at;
+  TinyGsmSaraR4*   at;
   uint8_t         mux;
   uint16_t        sock_available;
   uint32_t        prev_check;
@@ -138,7 +138,7 @@ class GsmClientSecure : public GsmClient
 public:
   GsmClientSecure() {}
 
-  GsmClientSecure(TinyGsmUBLOX& modem, uint8_t mux = 1)
+  GsmClientSecure(TinyGsmSaraR4& modem, uint8_t mux = 1)
     : GsmClient(modem, mux)
   {}
 
@@ -162,7 +162,7 @@ public:
 
 public:
 
-  TinyGsmUBLOX(Stream& stream)
+  TinyGsmSaraR4(Stream& stream)
     : stream(stream)
   {
     memset(sockets, 0, sizeof(sockets));
@@ -226,11 +226,8 @@ public:
 
     String name = res1 + String(' ') + res2;
     DBG("### Modem:", name);
-    if (name.startsWith("u-blox SARA-R4") || name.startsWith("u-blox SARA-N4")) {
+    if (!name.startsWith("u-blox SARA-R4") && !name.startsWith("u-blox SARA-N4")) {
       DBG("### WARNING:  You are using the wrong TinyGSM modem!");
-    }
-    else if (name.startsWith("u-blox SARA-N2")) {
-      DBG("### SARA N2 NB-IoT modems not supported!");
     }
 
     return name;
@@ -243,9 +240,7 @@ TINY_GSM_MODEM_TEST_AT()
 TINY_GSM_MODEM_MAINTAIN_CHECK_SOCKS()
 
   bool factoryDefault() {
-    sendAT(GF("+UFACTORY=0,1"));  // No factory restore, erase NVM
-    waitResponse();
-    sendAT(GF("+CFUN=16"));   // Reset
+    sendAT(GF("&F"));  // Resets the current profile, other NVM not affected
     return waitResponse() == 1;
   }
 
@@ -271,7 +266,7 @@ TINY_GSM_MODEM_GET_INFO_ATI()
     if (!testAT()) {
       return false;
     }
-    sendAT(GF("+CFUN=16"));
+    sendAT(GF("+CFUN=15"));
     if (waitResponse(10000L) != 1) {
       return false;
     }
@@ -333,7 +328,8 @@ TINY_GSM_MODEM_GET_SIMCCID_CCID()
     return SIM_ERROR;
   }
 
-TINY_GSM_MODEM_GET_REGISTRATION_XREG(CGREG)
+
+TINY_GSM_MODEM_GET_REGISTRATION_XREG(CEREG)
 
 TINY_GSM_MODEM_GET_OPERATOR_COPS()
 
@@ -354,6 +350,24 @@ TINY_GSM_MODEM_GET_CSQ()
 
 TINY_GSM_MODEM_WAIT_FOR_NETWORK()
 
+  bool setURAT( uint8_t urat ) {
+    // AT+URAT=<SelectedAcT>[,<PreferredAct>[,<2ndPreferredAct>]]
+
+    sendAT(GF("+COPS=2"));        // Deregister from network
+    if (waitResponse() != 1) {
+      return false;
+    }
+    sendAT(GF("+URAT="), urat);  // Radio Access Technology (RAT) selection
+    if (waitResponse() != 1) {
+      return false;
+    }
+    sendAT(GF("+COPS=0"));        // Auto-register to the network
+    if (waitResponse() != 1) {
+      return false;
+    }
+    return restart();
+  }
+
   /*
    * GPRS functions
    */
@@ -366,42 +380,30 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
       return false;
     }
 
-    // Setting up the PSD profile/PDP context with the UPSD commands sets up an
-    // "internal" PDP context, i.e. a data connection using the internal IP
-    // stack and related AT commands for sockets.
-
-    sendAT(GF("+UPSD=0,1,\""), apn, '"');  // Set APN for PSD profile 0
-    waitResponse();
+    // Using CGDCONT sets up an "external" PCP context, i.e. a data connection
+    // using the external IP stack (e.g. Windows dial up) and PPP link over the
+    // serial interface.  This is the only command set supported by the LTE-M
+    // and LTE NB-IoT modules (SARA-R4xx, SARA-N4xx)
 
     if (user && strlen(user) > 0) {
-      sendAT(GF("+UPSD=0,2,\""), user, '"');  // Set user for PSD profile 0
-      waitResponse();
-    }
-    if (pwd && strlen(pwd) > 0) {
-      sendAT(GF("+UPSD=0,3,\""), pwd, '"');  // Set password for PSD profile 0
+      sendAT(GF("+CGAUTH=1,0,\""), user, GF("\",\""), pwd, '"');  // Set the authentication
       waitResponse();
     }
 
-    sendAT(GF("+UPSD=0,7,\"0.0.0.0\"")); // Dynamic IP on PSD profile 0
+    sendAT(GF("+CGDCONT=1,\"IP\",\""), apn, '"');  // Define PDP context 1
     waitResponse();
 
-    sendAT(GF("+UPSDA=0,3")); // Activate the PDP context associated with profile 0
-    if (waitResponse(360000L) != 1) {
+    sendAT(GF("+CGACT=1,1"));  // activate PDP profile/context 1
+    if (waitResponse(150000L) != 1) {
       return false;
     }
-
-    sendAT(GF("+UPSND=0,8")); // Activate PSD profile 0
-    if (waitResponse(GF(",8,1")) != 1) {
-      return false;
-    }
-    waitResponse();
 
     return true;
   }
 
   bool gprsDisconnect() {
-    sendAT(GF("+UPSDA=0,4"));  // Deactivate the PDP context associated with profile 0
-    if (waitResponse(360000L) != 1) {
+    sendAT(GF("+CGACT=1,0"));  // Deactivate PDP context 1
+    if (waitResponse(40000L) != 1) {
       return false;
     }
 
@@ -420,13 +422,12 @@ TINY_GSM_MODEM_GET_GPRS_IP_CONNECTED()
    */
 
   String getLocalIP() {
-    sendAT(GF("+UPSND=0,0"));
-    if (waitResponse(GF(GSM_NL "+UPSND:")) != 1) {
+    sendAT(GF("+CGPADDR"));
+    if (waitResponse(GF(GSM_NL "+CGPADDR:")) != 1) {
       return "";
     }
-    streamSkipUntil(',');  // Skip PSD profile
-    streamSkipUntil('\"'); // Skip request type
-    String res = stream.readStringUntil('\"');
+    streamSkipUntil(',');  // Skip context id
+    String res = stream.readStringUntil('\r');
     if (waitResponse() != 1) {
       return "";
     }
@@ -500,9 +501,11 @@ TINY_GSM_MODEM_GET_GPRS_IP_CONNECTED()
       return 0;
     }
 
-    int res = stream.readStringUntil(',').toInt();
+    int8_t res = stream.readStringUntil(',').toInt();
+    int8_t percent = res*20;  // return is 0-5
+    // Wait for final OK
     waitResponse();
-    return res;
+    return percent;
   }
 
   uint8_t getBattChargeState() TINY_GSM_ATTR_NOT_AVAILABLE;
@@ -512,8 +515,24 @@ TINY_GSM_MODEM_GET_GPRS_IP_CONNECTED()
     return true;
   }
 
-  // This would only available for a small number of modules in this group (TOBY-L)
-  float getTemperature() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  float getTemperature() {
+    // First make sure the temperature is set to be in celsius
+    sendAT(GF("+UTEMP=0"));  // Would use 1 for Fahrenheit
+    if (waitResponse() != 1) {
+      return (float)-9999;
+    }
+    sendAT(GF("+UTEMP?"));
+    if (waitResponse(GF(GSM_NL "+UTEMP:")) != 1) {
+      return (float)-9999;
+    }
+    streamSkipUntil(','); // Skip units (C/F)
+    int16_t res = stream.readStringUntil('\n').toInt();
+    float temp = -9999;
+    if (res != 655355) {
+      temp = ((float)res)/10;
+    }
+    return temp;
+  }
 
   /*
    * Client related functions
@@ -546,8 +565,6 @@ protected:
     //waitResponse();
 
     // connect on the allocated socket
-    // TODO:  Use faster "asynchronous" connection?
-    // We would have to wait for the +UUSOCO URC to verify connection
     sendAT(GF("+USOCO="), *mux, ",\"", host, "\",", port);
     int rsp = waitResponse(timeout_ms);
     return (1 == rsp);
@@ -559,13 +576,8 @@ protected:
       sockets[mux]->sock_connected = false;
       return true;
     }
-    bool success;
     sendAT(GF("+USOCL="), mux);
-    success = 1 == waitResponse();  // should return within 1s
-    if (success) {
-      sockets[mux]->sock_connected = false;
-    }
-    return success;
+    return 1 == waitResponse(120000L);  // can take up to 120s to get a response
   }
 
   int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
@@ -708,7 +720,7 @@ TINY_GSM_MODEM_STREAM_UTILITIES()
             sockets[mux]->sock_connected = false;
           }
           data = "";
-          DBG("### URC Sock Closed: ", mux);
+          DBG("### URC Sock Closed:", mux);
         }
       }
     } while (millis() - startMillis < timeout_ms);
