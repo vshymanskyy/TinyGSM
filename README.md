@@ -35,31 +35,31 @@ TinyGSM also pulls data gently from the modem (whenever possible), so it can ope
 
 ## Features
 
-Feature \ Modem              | SIM8xx | u-Blox | A6/A7/A20 | Neoway M590| ESP8266 |Digi XBee|Quectel BG96|Quectel M95|Quectel MC60(E)| SIM7000 |
----                          | ---    | ---    | ---       | ---        | ---     | ---     | ---        | ---       | ---           | ---     |
+Feature \ Modem              | SIM8xx | u-Blox | A6/A7/A20 | Neoway M590| ESP8266 |Digi XBee|Quectel BG96|Quectel M95|Quectel MC60(E)| SIM7000 | Monarch |
+---                          | ---    | ---    | ---       | ---        | ---     | ---     | ---        | ---       | ---           | ---     | ---     |
 **Data connections**
-TCP (HTTP, MQTT, Blynk, ...) | ✔      | ✔      | ✔         | ✔         | ✔        | ✔       | ✔          | ✔         | ✔             |         |
-UDP                          | ◌      | ◌      |           |           |          | ◌       | ◌          |           |               | ◌       |
-SSL/TLS (HTTPS)              | ✔¹     | ✔      | x         | x         | ✔        | ✔       | ◌          |           |               | ◌       |
+TCP (HTTP, MQTT, Blynk, ...) | ✔      | ✔      | ✔         | ✔         | ✔        | ✔       | ✔          | ✔         | ✔             | ✔       | ✔       |
+UDP                          | ◌      | ◌      |           |           |          | ◌       | ◌          |           |               | ◌       | ◌       |
+SSL/TLS (HTTPS)              | ✔¹     | ✔      | x         | x         | ✔        | ✔       | ◌          |           |               | ◌       | ✔       |
 **USSD**
-Sending USSD requests        | ✔      |        | ✔         | ✔         | x        |          |             |         |               | ✔       |
-Decoding 7,8,16-bit response | ✔      |        | ✔         | ✔         | x        |          |             |         |               | ✔       |
+Sending USSD requests        | ✔      |        | ✔         | ✔         | x        |          |             |         |               | ✔       |         |
+Decoding 7,8,16-bit response | ✔      |        | ✔         | ✔         | x        |          |             |         |               | ✔       |         |
 **SMS**
-Sending                      | ✔      | ✔      | ✔         | ✔         | x        | ✔        | ✔          | ✔        | ✔             | ✔       |
-Sending Unicode              | ✔      |        | ◌         | x         | x        |          | ✔           | ✔       | ✔             | ✔       |
-Reading                      |        |        |           |           | x        |          |             |         |               |         |
-Incoming message event       |        |        |           | ?         | x        |          |             |         |               |         |
+Sending                      | ✔      | ✔      | ✔         | ✔         | x        | ✔        | ✔          | ✔        | ✔             | ✔       | ✔       |
+Sending Unicode              | ✔      |        | ◌         | x         | x        |          | ✔           | ✔       | ✔             | ✔       |         |
+Reading                      |        |        |           |           | x        |          |             |         |               |         |         |
+Incoming message event       |        |        |           | ?         | x        |          |             |         |               |         |         |
 **Calls**
-Dial, hangup                 | ✔      |        | ✔         | x         | x        | x        |             |         |               |         |
-Receiving calls              | ✔      |        | ✔         | x         | x        | x        |             |         |               |         |
-Incoming event (RING)        | ◌      |        | ◌         | x         | x        | x        |             |         |               |         |
-DTMF sending                 | ✔      |        | ✔         | x         | x        | x        |             |         |               |         |
-DTMF decoding                | ◌      |        | x         | x         | x        | x        |             |         |               |         |
+Dial, hangup                 | ✔      |        | ✔         | x         | x        | x        |             |         |               |         |         |
+Receiving calls              | ✔      |        | ✔         | x         | x        | x        |             |         |               |         |         |
+Incoming event (RING)        | ◌      |        | ◌         | x         | x        | x        |             |         |               |         |         |
+DTMF sending                 | ✔      |        | ✔         | x         | x        | x        |             |         |               |         |         |
+DTMF decoding                | ◌      |        | x         | x         | x        | x        |             |         |               |         |         |
 **Location**
-GSM location service         | ✔      | ✔      | x         | x         | x        | x        |             | x       | ✔             | ✔       |
-GPS/GNSS                     | ✔¹     | x      | ◌¹        | x         | x        | x        |             | x       |               | ✔       |
+GSM location service         | ✔      | ✔      | x         | x         | x        | x        |             | x       | ✔             | ✔       | x       |
+GPS/GNSS                     | ✔¹     | x      | ◌¹        | x         | x        | x        |             | x       |               | ✔       | x       |
 **Credits**
-Primary Author/Contributor   |[vshymanskyy](https://github.com/vshymanskyy)|[vshymanskyy](https://github.com/vshymanskyy)|[vshymanskyy](https://github.com/vshymanskyy)|[vshymanskyy](https://github.com/vshymanskyy)|[vshymanskyy](https://github.com/vshymanskyy)|[SRGDamia1](https://github.com/SRGDamia1/)|[vshymanskyy](https://github.com/vshymanskyy)  |[replicadeltd](https://github.com/replicadeltd)|[V1pr](https://github.com/V1pr)|[captFuture](https://github.com/captFuture/)|
+Primary Author/Contributor   |[vshymanskyy](https://github.com/vshymanskyy)|[vshymanskyy](https://github.com/vshymanskyy)|[vshymanskyy](https://github.com/vshymanskyy)|[vshymanskyy](https://github.com/vshymanskyy)|[vshymanskyy](https://github.com/vshymanskyy)|[SRGDamia1](https://github.com/SRGDamia1/)|[vshymanskyy](https://github.com/vshymanskyy)  |[replicadeltd](https://github.com/replicadeltd)|[V1pr](https://github.com/V1pr)|[captFuture](https://github.com/captFuture/)|[nootropicdesign](https://github.com/nootropicdesign/)|
 
 ✔ - implemented  ◌ - planned  x - not available on this modem
 ¹ - only some device models or firmware revisions have this feature (SIM8xx R14.18, A7, etc.)
@@ -73,11 +73,11 @@ Primary Author/Contributor   |[vshymanskyy](https://github.com/vshymanskyy)|[vsh
 - Digi XBee WiFi and Cellular (using XBee command mode)
 - Neoway M590
 - u-blox Cellular Modems (many modules including LEON-G100, LISA-U2xx, SARA-G3xx, SARA-U2xx, TOBY-L2xx, LARA-R2xx, MPCI-L2xx, SARA-R4xx, SARA-N4xx, _but NOT SARA-N2xx_)
+- Sequans Monarch LTE Cat M1/NB1 ***(beta)***
 - Quectel BG96 ***(alpha)***
 - Quectel M95 ***(alpha)***
 - Quectel MC60 ***(alpha)***
 - SIMCom SIM7000 series ***(alpha)***
-- Sequans Monarch LTE Cat M1/NB1 ***(alpha)***
 
 ### Supported boards/modules
 - Arduino MKR GSM 1400
