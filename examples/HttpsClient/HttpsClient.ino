@@ -10,19 +10,27 @@
  * TinyGSM Getting Started guide:
  *   https://tiny.cc/tinygsm-readme
  *
- * SSL/TLS is currently supported only with: SIM8xx, uBlox, ESP8266
+ * SSL/TLS is not yet supported on the Quectel modems
+ * The A6/A7/A20 and M590 are not capable of SSL/TLS
  *
  * For more HTTP API examples, see ArduinoHttpClient library
  *
+ * NOTE: This example may NOT work with the XBee because the
+ * HttpClient library does not empty to serial buffer fast enough
+ * and the buffer overflow causes the HttpClient library to stall.
+ * Boards with faster processors may work, 8MHz boards will not.
  **************************************************************/
 
 // Select your modem:
 #define TINY_GSM_MODEM_SIM800
 // #define TINY_GSM_MODEM_SIM808
 // #define TINY_GSM_MODEM_SIM868
+// #define TINY_GSM_MODEM_SIM7000
 // #define TINY_GSM_MODEM_UBLOX
 // #define TINY_GSM_MODEM_SARAR4
 // #define TINY_GSM_MODEM_ESP8266
+// #define TINY_GSM_MODEM_XBEE
+// #define TINY_GSM_MODEM_SEQUANS_MONARCH
 
 // Increase RX buffer to capture the entire response
 // Chips without internal buffering (ESP8266)
@@ -35,13 +43,10 @@
 
 // See the debugging, if wanted
 //#define TINY_GSM_DEBUG Serial
-//#define LOGGING
+//#define LOGGING  // <- Logging is for the HTTP library
 
 // Add a reception delay, if needed
 //#define TINY_GSM_YIELD() { delay(1); }
-
-#include <TinyGsmClient.h>
-#include <ArduinoHttpClient.h>
 
 // Set serial for debug console (to the Serial Monitor, default speed 115200)
 #define SerialMon Serial
@@ -72,6 +77,9 @@ const char wifiPass[] = "SSIDpw";
 const char server[] = "vsh.pp.ua";
 const char resource[] = "/TinyGSM/logo.txt";
 const int  port = 443;
+
+#include <TinyGsmClient.h>
+#include <ArduinoHttpClient.h>
 
 #ifdef DUMP_AT_COMMANDS
   #include <StreamDebugger.h>
@@ -106,6 +114,7 @@ void setup() {
   // To skip it, call init() instead of restart()
   SerialMon.println("Initializing modem...");
   modem.restart();
+  // modem.init();
 
   String modemInfo = modem.getModemInfo();
   SerialMon.print("Modem: ");
@@ -122,7 +131,7 @@ void setup() {
 
 void loop() {
 
-#if TINY_GSM_USE_WIFI
+#if defined TINY_GSM_USE_WIFI && defined TINY_GSM_MODEM_HAS_WIFI
   SerialMon.print(F("Setting SSID/password..."));
   if (!modem.networkConnect(wifiSSID, wifiPass)) {
     SerialMon.println(" fail");
@@ -130,6 +139,11 @@ void loop() {
     return;
   }
   SerialMon.println(" OK");
+#endif
+
+#if TINY_GSM_USE_GPRS && defined TINY_GSM_MODEM_XBEE
+  // The XBee must run the gprsConnect function BEFORE waiting for network!
+  modem.gprsConnect(apn, gprsUser, gprsPass);
 #endif
 
   SerialMon.print("Waiting for network...");
@@ -141,10 +155,10 @@ void loop() {
   SerialMon.println(" OK");
 
   if (modem.isNetworkConnected()) {
-    SerialMon.print("Network connected");
+    SerialMon.println("Network connected");
   }
 
-#if TINY_GSM_USE_GPRS
+#if TINY_GSM_USE_GPRS && defined TINY_GSM_MODEM_HAS_GPRS
     SerialMon.print(F("Connecting to "));
     SerialMon.print(apn);
     if (!modem.gprsConnect(apn, gprsUser, gprsPass)) {

@@ -47,16 +47,6 @@
 //#include <SoftwareSerial.h>
 //SoftwareSerial SerialAT(2, 3); // RX, TX
 
-// See all AT commands, if wanted
-//#define DUMP_AT_COMMANDS
-
-// See the debugging, if wanted
-// #define TINY_GSM_DEBUG SerialMon
-
-// Range to attempt to autobaud
-#define GSM_AUTOBAUD_MIN 9600
-#define GSM_AUTOBAUD_MAX 38400
-
 #define TINY_GSM_USE_GPRS true
 #define TINY_GSM_USE_WIFI false
 
@@ -122,9 +112,12 @@ void setup() {
   SerialMon.print("Modem: ");
   SerialMon.println(modemInfo);
 
-  // Unlock your SIM card with a PIN
-  //modem.simUnlock("1234");
+#if TINY_GSM_USE_GPRS
+  // Unlock your SIM card with a PIN if needed
+  if ( GSM_PIN && modem.getSimStatus() != 3 ) {
+    modem.simUnlock(GSM_PIN);
 }
+#endif
 
 void loop() {
 
@@ -136,6 +129,11 @@ void loop() {
     return;
   }
   SerialMon.println(" OK");
+#endif
+
+#if TINY_GSM_USE_GPRS && defined TINY_GSM_MODEM_XBEE
+  // The XBee must run the gprsConnect function BEFORE waiting for network!
+  modem.gprsConnect(apn, gprsUser, gprsPass);
 #endif
 
   SerialMon.print("Waiting for network...");
@@ -150,9 +148,9 @@ void loop() {
     SerialMon.println("Network connected");
   }
 
-#if TINY_GSM_USE_GPRS
+#if TINY_GSM_USE_GPRS && defined TINY_GSM_MODEM_HAS_GPRS
     SerialMon.print(F("Connecting to "));
-    SerialMon.println(apn);
+    SerialMon.print(apn);
     if (!modem.gprsConnect(apn, gprsUser, gprsPass)) {
       SerialMon.println(" fail");
       delay(10000);
@@ -172,9 +170,10 @@ void loop() {
 
   // Make a HTTP GET request:
   SerialMon.println("Performing HTTP GET request...");
-  client.print(String("GET ") + resource + " HTTP/1.0\r\n");
+  client.print(String("GET ") + resource + " HTTP/1.1\r\n");
   client.print(String("Host: ") + server + "\r\n");
   client.print("Connection: close\r\n\r\n");
+  client.println();
 
   unsigned long timeout = millis();
   while (client.connected() && millis() - timeout < 10000L) {

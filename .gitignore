@@ -14,8 +14,7 @@
 .cproject
 .project
 .settings
-.pioenvs
-.piolibdeps
+.pio/*
 .clang_complete
 .gcc-flags.json
 platformio.ini

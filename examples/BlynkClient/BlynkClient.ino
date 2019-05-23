@@ -48,7 +48,7 @@
 // #define TINY_GSM_MODEM_SEQUANS_MONARCH
 
 #include <TinyGsmClient.h>
-#include <BlynkSimpleSIM800.h>
+#include <BlynkSimpleTinyGSM.h>
 
 // Set serial for debug console (to the Serial Monitor, default speed 115200)
 #define SerialMon Serial
