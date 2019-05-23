@@ -768,7 +768,7 @@ protected:
     // ^^ Confirmed number of data bytes to be read, which may be less than requested.
     // 0 indicates that no data can be read.
     if (len_confirmed < len_requested) {
-      DBG(len_requested - len_confirmed, "fewer bytes confirmed than requested!");
+      DBG("WARNING:", len_requested - len_confirmed, "fewer bytes confirmed readable than requested!");
     }
     sockets[mux]->sock_available = len_confirmed;
 

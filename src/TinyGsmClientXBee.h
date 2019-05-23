@@ -109,7 +109,7 @@ public:
   virtual int connect(IPAddress ip, uint16_t port, int timeout_s) {
     // NOTE:  Not caling stop() or yeild() here
     at->streamClear();  // Empty anything in the buffer before starting
-    sock_connected = at->modemConnect(ip, port, mux, timeout_s);
+    sock_connected = at->modemConnect(ip, port, mux, false, timeout_s);
     return sock_connected;
   }
   virtual int connect(IPAddress ip, uint16_t port) {
@@ -247,7 +247,7 @@ public:
   virtual int connect(IPAddress ip, uint16_t port, int timeout_s) {
     // NOTE:  Not caling stop() or yeild() here
     at->streamClear();  // Empty anything in the buffer before starting
-    sock_connected = at->modemConnect(ip, port, mux, timeout_s);
+    sock_connected = at->modemConnect(ip, port, mux, true, timeout_s);
     return sock_connected;
   }
 };
