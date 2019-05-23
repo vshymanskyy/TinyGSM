@@ -802,6 +802,7 @@ protected:
       result = stream.readStringUntil('\n').toInt();
       waitResponse();
     }
+    DBG("### Available:", result, "on", mux);
     if (!result) {
       sockets[mux]->sock_connected = modemGetConnected(mux);
     }
