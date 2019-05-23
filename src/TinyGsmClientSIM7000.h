@@ -835,12 +835,12 @@ protected:
     size_t len_requested = stream.readStringUntil(',').toInt();
     //  ^^ Requested number of data bytes (1-1460 bytes)to be read
     size_t len_confirmed = stream.readStringUntil('\n').toInt();
+    // ^^ Confirmed number of data bytes to be read, which may be less than requested.
+    // 0 indicates that no data can be read.
     if (len_confirmed < len_requested) {
       DBG(len_requested - len_confirmed, "fewer bytes confirmed than requested!");
     }
     sockets[mux]->sock_available = len_confirmed;
-    // ^^ Confirmed number of data bytes to be read, which may be less than requested.
-    // 0 indicates that no data can be read.
 
     for (size_t i=0; i<TinyGsmMin(len_confirmed, len_requested) ; i++) {
       uint32_t startMillis = millis();
@@ -855,6 +855,8 @@ protected:
       char c = stream.read();
 #endif
       sockets[mux]->rx.put(c);
+      sockets[mux]->sock_available--;
+      // ^^ One less character available after moving from modem's FIFO to our FIFO
     }
     waitResponse();
     DBG("### READ:", TinyGsmMin(len_confirmed, len_requested), "from", mux);

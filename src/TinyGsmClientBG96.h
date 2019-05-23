@@ -548,6 +548,8 @@ protected:
 
     for (size_t i=0; i<len; i++) {
       TINY_GSM_MODEM_STREAM_TO_MUX_FIFO_WITH_DOUBLE_TIMEOUT
+      sockets[mux]->sock_available--;
+      // ^^ One less character available after moving from modem's FIFO to our FIFO
     }
     waitResponse();
     DBG("### READ:", len, "from", mux);
