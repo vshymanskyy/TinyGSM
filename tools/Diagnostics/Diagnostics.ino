@@ -14,7 +14,10 @@
 // #define TINY_GSM_MODEM_SIM900
 // #define TINY_GSM_MODEM_SIM808
 // #define TINY_GSM_MODEM_SIM868
+// #define TINY_GSM_MODEM_SIM900
+// #define TINY_GSM_MODEM_SIM7000
 // #define TINY_GSM_MODEM_UBLOX
+// #define TINY_GSM_MODEM_SARAR4
 // #define TINY_GSM_MODEM_M95
 // #define TINY_GSM_MODEM_BG96
 // #define TINY_GSM_MODEM_A6
@@ -24,22 +27,28 @@
 // #define TINY_GSM_MODEM_MC60E
 // #define TINY_GSM_MODEM_ESP8266
 // #define TINY_GSM_MODEM_XBEE
+// #define TINY_GSM_MODEM_SEQUANS_MONARCH
 
-// Increase the buffer
+// Increase RX buffer if needed
 #define TINY_GSM_RX_BUFFER 512
 
+// See all AT commands, if wanted
+#define DUMP_AT_COMMANDS
+
 // Define the serial console for debug prints, if needed
-//#define TINY_GSM_DEBUG Serial
+#define TINY_GSM_DEBUG Serial
 
-#include <TinyGsmClient.h>
+// Range to attempt to autobaud
+#define GSM_AUTOBAUD_MIN 9600
+#define GSM_AUTOBAUD_MAX 115200
 
-// Your GPRS credentials
-// Leave empty, if missing user or pass
-const char apn[]  = "YourAPN";
-const char user[] = "";
-const char pass[] = "";
+// Add a reception delay, if needed
+#define TINY_GSM_YIELD() { delay(2); }
 
-// Set serial for debug console (to the Serial Monitor, speed 115200)
+// Uncomment this if you want to use SSL
+//#define USE_SSL
+
+// Set serial for debug console (to the Serial Monitor, default speed 115200)
 #define SerialMon Serial
 
 // Set serial for AT commands (to the module)
@@ -50,28 +59,59 @@ const char pass[] = "";
 //#include <SoftwareSerial.h>
 //SoftwareSerial SerialAT(2, 3); // RX, TX
 
+#define TINY_GSM_USE_GPRS true
+#define TINY_GSM_USE_WIFI false
 
-#include <StreamDebugger.h>
-StreamDebugger debugger(SerialAT, SerialMon);
-TinyGsm modem(debugger);
+// set GSM PIN, if any
+#define GSM_PIN ""
 
+// Your GPRS credentials
+// Leave empty, if missing user or pass
+const char apn[]  = "YourAPN";
+const char gprsUser[] = "";
+const char gprsPass[] = "";
+const char wifiSSID[]  = "YourSSID";
+const char wifiPass[] = "YourWiFiPass";
+
+// Server details
 const char server[] = "vsh.pp.ua";
 const char resource[] = "/TinyGSM/logo.txt";
 
-const int  port = 80;
-TinyGsmClient client(modem);
+#include <TinyGsmClient.h>
 
-// For SSL:
-//const int  port = 443;
-//TinyGsmClientSecure client(modem);
+#ifdef DUMP_AT_COMMANDS
+#include <StreamDebugger.h>
+StreamDebugger debugger(SerialAT, SerialMon);
+TinyGsm modem(debugger);
+#else
+  TinyGsm modem(SerialAT);
+#endif
+
+#ifdef USE_SSL
+  TinyGsmClientSecure client(modem);
+  const int  port = 443;
+#else
+  TinyGsmClient client(modem);
+const int  port = 80;
+#endif
 
 void setup() {
   // Set console baud rate
   SerialMon.begin(115200);
   delay(10);
 
+  // Set your reset, enable, power pins here
+  pinMode(20, OUTPUT);
+  digitalWrite(20, HIGH);
+
+  pinMode(23, OUTPUT);
+  digitalWrite(23, HIGH);
+
+  SerialMon.println("Wait...");
+
   // Set GSM module baud rate
-  SerialAT.begin(115200);
+  TinyGsmAutoBaud(SerialAT,GSM_AUTOBAUD_MIN,GSM_AUTOBAUD_MAX);
+  // SerialAT.begin(115200);
   delay(3000);
 }
 
@@ -80,6 +120,7 @@ void loop() {
   // To skip it, call init() instead of restart()
   SerialMon.print("Initializing modem...");
   if (!modem.restart()) {
+  // if (!modem.init()) {
     SerialMon.println(F(" [fail]"));
     SerialMon.println(F("************************"));
     SerialMon.println(F(" Is your modem connected properly?"));
@@ -97,11 +138,30 @@ void loop() {
   SerialMon.print("Modem: ");
   SerialMon.println(modemInfo);
 
-  // Unlock your SIM card with a PIN
-  //modem.simUnlock("1234");
+#if TINY_GSM_USE_GPRS
+  // Unlock your SIM card with a PIN if needed
+  if ( GSM_PIN && modem.getSimStatus() != 3 ) {
+    modem.simUnlock(GSM_PIN);
+  }
+#endif
+
+#if TINY_GSM_USE_WIFI
+  SerialMon.print(F("Setting SSID/password..."));
+  if (!modem.networkConnect(wifiSSID, wifiPass)) {
+    SerialMon.println(" fail");
+    delay(10000);
+    return;
+  }
+  SerialMon.println(" OK");
+#endif
+
+#if TINY_GSM_USE_GPRS && defined TINY_GSM_MODEM_XBEE
+  // The XBee must run the gprsConnect function BEFORE waiting for network!
+  modem.gprsConnect(apn, gprsUser, gprsPass);
+#endif
 
   SerialMon.print("Waiting for network...");
-  if (!modem.waitForNetwork()) {
+  if (!modem.waitForNetwork(240000L)) {  // You may need lengthen this in poor service ares
     SerialMon.println(F(" [fail]"));
     SerialMon.println(F("************************"));
     SerialMon.println(F(" Is your sim card locked?"));
@@ -114,9 +174,10 @@ void loop() {
   }
   SerialMon.println(F(" [OK]"));
 
+#if TINY_GSM_USE_GPRS && defined TINY_GSM_MODEM_HAS_GPRS
   SerialMon.print("Connecting to ");
   SerialMon.print(apn);
-  if (!modem.gprsConnect(apn, user, pass)) {
+  if (!modem.gprsConnect(apn, gprsUser, gprsPass)) {
     SerialMon.println(F(" [fail]"));
     SerialMon.println(F("************************"));
     SerialMon.println(F(" Is GPRS enabled by network provider?"));
@@ -126,6 +187,7 @@ void loop() {
     return;
   }
   SerialMon.println(F(" [OK]"));
+#endif
 
   IPAddress local = modem.localIP();
   SerialMon.print("Local IP: ");

@@ -30,6 +30,16 @@
 // Increase RX buffer if needed
 // #define TINY_GSM_RX_BUFFER 512
 
+// See all AT commands, if wanted
+// #define DUMP_AT_COMMANDS
+
+// Define the serial console for debug prints, if needed
+#define TINY_GSM_DEBUG SerialMon
+
+// Range to attempt to autobaud
+#define GSM_AUTOBAUD_MIN 9600
+#define GSM_AUTOBAUD_MAX 115200
+
 // Add a reception delay, if needed
 // #define TINY_GSM_YIELD() { delay(1); }
 

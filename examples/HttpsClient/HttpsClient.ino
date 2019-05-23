@@ -33,7 +33,7 @@
 // #define TINY_GSM_MODEM_SEQUANS_MONARCH
 
 // Increase RX buffer to capture the entire response
-// Chips without internal buffering (ESP8266)
+// Chips without internal buffering (A6/A7, ESP8266, M590)
 // need enough space in the buffer for the entire response
 // else data will be lost (and the http library will fail).
 #define TINY_GSM_RX_BUFFER 650
@@ -41,7 +41,7 @@
 // See all AT commands, if wanted
 //#define DUMP_AT_COMMANDS
 
-// See the debugging, if wanted
+// Define the serial console for debug prints, if needed
 //#define TINY_GSM_DEBUG Serial
 //#define LOGGING  // <- Logging is for the HTTP library
 

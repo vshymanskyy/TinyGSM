@@ -46,7 +46,7 @@
 // See all AT commands, if wanted
 //#define DUMP_AT_COMMANDS
 
-// See the debugging, if wanted
+// Define the serial console for debug prints, if needed
 //#define TINY_GSM_DEBUG Serial
 //#define LOGGING  // <- Logging is for the HTTP library
 

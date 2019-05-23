@@ -31,7 +31,7 @@
 // See all AT commands, if wanted
 // #define DUMP_AT_COMMANDS
 
-// See the debugging, if wanted
+// Define the serial console for debug prints, if needed
 #define TINY_GSM_DEBUG SerialMon
 
 // Range to attempt to autobaud
@@ -70,8 +70,11 @@
 
 // Your GPRS credentials
 // Leave empty, if missing user or pass
+const char apn[]  = "YourAPN";
 const char gprsUser[] = "";
 const char gprsPass[] = "";
+const char wifiSSID[]  = "YourSSID";
+const char wifiPass[] = "YourWiFiPass";
 
 #include <TinyGsmClient.h>
 
@@ -98,6 +101,8 @@ void setup() {
   DBG("Wait...");
 
   // Set GSM module baud rate
+  TinyGsmAutoBaud(SerialAT,GSM_AUTOBAUD_MIN,GSM_AUTOBAUD_MAX);
+  //SerialAT.begin(9600);
   delay(3000);
 }
 
