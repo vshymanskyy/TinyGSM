@@ -308,7 +308,7 @@ TINY_GSM_MODEM_GET_IMEI_GSN()
         delay(1000);
         continue;
       }
-      int status = waitResponse(GF("READY"), GF("SIM PIN"), GF("SIM PUK"), GF("NOT INSERTED"));
+      int status = waitResponse(GF("READY"), GF("SIM PIN"), GF("SIM PUK"), GF("NOT INSERTED"), GF("NOT READY"));
       waitResponse();
       switch (status) {
         case 2:
@@ -767,12 +767,10 @@ protected:
     size_t len_confirmed = stream.readStringUntil('\n').toInt();
     // ^^ Confirmed number of data bytes to be read, which may be less than requested.
     // 0 indicates that no data can be read.
-    if (len_confirmed < len_requested) {
-      DBG("WARNING:", len_requested - len_confirmed, "fewer bytes confirmed readable than requested!");
-    }
-    sockets[mux]->sock_available = len_confirmed;
-
-    for (size_t i=0; i<TinyGsmMin(len_confirmed, len_requested) ; i++) {
+    // This is actually be the number of bytes that will be remaining after the read
+    size_t len_read = 0;
+    // Attempt to read the full amount we requested, even if that quantity was not confirmed
+    for (size_t i=0; i<len_requested; i++) {
       uint32_t startMillis = millis();
 #ifdef TINY_GSM_USE_HEX
       while (stream.available() < 2 && (millis() - startMillis < sockets[mux]->_timeout)) { TINY_GSM_YIELD(); }
@@ -784,13 +782,16 @@ protected:
       while (!stream.available() && (millis() - startMillis < sockets[mux]->_timeout)) { TINY_GSM_YIELD(); }
       char c = stream.read();
 #endif
-      sockets[mux]->rx.put(c);
-      sockets[mux]->sock_available--;
-      // ^^ One less character available after moving from modem's FIFO to our FIFO
+      if (c > 0) {
+        sockets[mux]->rx.put(c);
+        len_read++;
+      }
     }
+    DBG("### READ:", len_read, "from", mux);
+    // sockets[mux]->sock_available = modemGetAvailable(mux);
+    sockets[mux]->sock_available = len_confirmed;
     waitResponse();
-    DBG("### READ:", TinyGsmMin(len_confirmed, len_requested), "from", mux);
-    return TinyGsmMin(len_confirmed, len_requested);
+    return len_read;
   }
 
   size_t modemGetAvailable(uint8_t mux) {
@@ -811,7 +812,9 @@ protected:
 
   bool modemGetConnected(uint8_t mux) {
     sendAT(GF("+CIPSTATUS="), mux);
-    int res = waitResponse(GF(",\"CONNECTED\""), GF(",\"CLOSED\""), GF(",\"CLOSING\""), GF(",\"INITIAL\""));
+    waitResponse(GF("+CIPSTATUS"));
+    int res = waitResponse(GF(",\"CONNECTED\""), GF(",\"CLOSED\""), GF(",\"CLOSING\""),
+                           GF(",\"REMOTE CLOSING\""), GF(",\"INITIAL\""));
     waitResponse();
     return 1 == res;
   }

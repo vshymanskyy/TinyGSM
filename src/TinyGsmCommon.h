@@ -249,7 +249,7 @@ String TinyGsmDecodeHex16bit(String &instr) {
       /* Workaround: sometimes module forgets to notify about data arrival.
       TODO: Currently we ping the module periodically,
       but maybe there's a better indicator that we need to poll */ \
-      if (millis() - prev_check > 250) { \
+      if (millis() - prev_check > 500) { \
         got_data = true; \
         prev_check = millis(); \
       } \
@@ -311,7 +311,7 @@ String TinyGsmDecodeHex16bit(String &instr) {
       /* Workaround: sometimes module forgets to notify about data arrival.
       TODO: Currently we ping the module periodically,
       but maybe there's a better indicator that we need to poll */ \
-      if (millis() - prev_check > 250) { \
+      if (millis() - prev_check > 500) { \
         got_data = true; \
         prev_check = millis(); \
       } \
