@@ -62,6 +62,7 @@ public:
     this->at = modem;
     this->mux = mux;
     sock_available = 0;
+    prev_check = 0;
     sock_connected = false;
     got_data = false;
 
@@ -118,6 +119,7 @@ private:
   TinyGsmBG96*    at;
   uint8_t         mux;
   uint16_t        sock_available;
+  uint32_t        prev_check;
   bool            sock_connected;
   bool            got_data;
   RxFifo          rx;
