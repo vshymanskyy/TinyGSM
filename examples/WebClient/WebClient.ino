@@ -128,6 +128,7 @@ void setup() {
     modem.simUnlock(GSM_PIN);
 }
 #endif
+}
 
 void loop() {
 
