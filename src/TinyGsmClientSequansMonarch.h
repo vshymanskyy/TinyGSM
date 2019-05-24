@@ -621,8 +621,6 @@ protected:
       while (!stream.available() && ((millis() - startMillis) < sockets[mux % TINY_GSM_MUX_COUNT]->_timeout)) { TINY_GSM_YIELD(); } \
       char c = stream.read(); \
       sockets[mux % TINY_GSM_MUX_COUNT]->rx.put(c);
-      sockets[mux % TINY_GSM_MUX_COUNT]->sock_available--;
-      // ^^ One less character available after moving from modem's FIFO to our FIFO
     }
     DBG("### Read:", len, "from", mux);
     waitResponse();

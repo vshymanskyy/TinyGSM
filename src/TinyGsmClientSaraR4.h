@@ -605,13 +605,10 @@ protected:
     }
     streamSkipUntil(','); // Skip mux
     size_t len = stream.readStringUntil(',').toInt();
-    sockets[mux]->sock_available = len;
     streamSkipUntil('\"');
 
     for (size_t i=0; i<len; i++) {
       TINY_GSM_MODEM_STREAM_TO_MUX_FIFO_WITH_DOUBLE_TIMEOUT
-      sockets[mux]->sock_available--;
-      // ^^ One less character available after moving from modem's FIFO to our FIFO
     }
     streamSkipUntil('\"');
     waitResponse();
