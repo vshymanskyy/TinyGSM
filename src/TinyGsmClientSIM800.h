@@ -768,8 +768,6 @@ protected:
     // ^^ Confirmed number of data bytes to be read, which may be less than requested.
     // 0 indicates that no data can be read.
     // This is actually be the number of bytes that will be remaining after the read
-    size_t len_read = 0;
-    // Attempt to read the full amount we requested, even if that quantity was not confirmed
     for (size_t i=0; i<len_requested; i++) {
       uint32_t startMillis = millis();
 #ifdef TINY_GSM_USE_HEX
@@ -782,16 +780,13 @@ protected:
       while (!stream.available() && (millis() - startMillis < sockets[mux]->_timeout)) { TINY_GSM_YIELD(); }
       char c = stream.read();
 #endif
-      if (c > 0) {
-        sockets[mux]->rx.put(c);
-        len_read++;
-      }
+      sockets[mux]->rx.put(c);
     }
-    DBG("### READ:", len_read, "from", mux);
+    DBG("### READ:", len_requested, "from", mux);
     // sockets[mux]->sock_available = modemGetAvailable(mux);
     sockets[mux]->sock_available = len_confirmed;
     waitResponse();
-    return len_read;
+    return len_requested;
   }
 
   size_t modemGetAvailable(uint8_t mux) {
