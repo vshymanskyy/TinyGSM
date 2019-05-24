@@ -161,7 +161,7 @@ void loop() {
 #endif
 
   SerialMon.print("Waiting for network...");
-  if (!modem.waitForNetwork(240000L)) {  // You may need lengthen this in poor service ares
+  if (!modem.waitForNetwork(600000L)) {  // You may need lengthen this in poor service areas
     SerialMon.println(F(" [fail]"));
     SerialMon.println(F("************************"));
     SerialMon.println(F(" Is your sim card locked?"));
