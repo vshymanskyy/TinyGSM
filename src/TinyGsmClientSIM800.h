@@ -459,7 +459,6 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
     return true;
   }
 
-
   /*
    * IP Address functions
    */
