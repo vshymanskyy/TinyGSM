@@ -184,16 +184,36 @@ public:
   }
 
   String getModemName() {
+    String name = "";
     #if defined(TINY_GSM_MODEM_SIM800)
-      return "SIMCom SIM800";
+      name = "SIMCom SIM800";
     #elif defined(TINY_GSM_MODEM_SIM808)
-      return "SIMCom SIM808";
+      name = "SIMCom SIM808";
     #elif defined(TINY_GSM_MODEM_SIM868)
-      return "SIMCom SIM868";
+      name = "SIMCom SIM868";
     #elif defined(TINY_GSM_MODEM_SIM900)
-      return "SIMCom SIM900";
+      name = "SIMCom SIM900";
     #endif
-    return "SIMCom SIM800";
+
+    sendAT(GF("+CGMI"));
+    String res1;
+    if (waitResponse(1000L, res1) != 1) {
+      return name;
+    }
+    res1.replace(GSM_NL "OK" GSM_NL, "");
+    res1.trim();
+
+    sendAT(GF("+GMM"));
+    String res2;
+    if (waitResponse(1000L, res2) != 1) {
+      return name;
+    }
+    res2.replace(GSM_NL "OK" GSM_NL, "");
+    res2.trim();
+
+    name = res1 + String(' ') + res2;
+    DBG("### Modem:", name);
+    return name;
   }
 
 TINY_GSM_MODEM_SET_BAUD_IPR()
