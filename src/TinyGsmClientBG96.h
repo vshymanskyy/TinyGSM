@@ -62,6 +62,7 @@ public:
     this->at = modem;
     this->mux = mux;
     sock_available = 0;
+    prev_check = 0;
     sock_connected = false;
     got_data = false;
 
@@ -102,9 +103,9 @@ TINY_GSM_CLIENT_CONNECT_OVERLOADS()
 
 TINY_GSM_CLIENT_WRITE()
 
-TINY_GSM_CLIENT_AVAILABLE_NO_BUFFER_CHECK()
+TINY_GSM_CLIENT_AVAILABLE_WITH_BUFFER_CHECK()
 
-TINY_GSM_CLIENT_READ_NO_BUFFER_CHECK()
+TINY_GSM_CLIENT_READ_WITH_BUFFER_CHECK()
 
 TINY_GSM_CLIENT_PEEK_FLUSH_CONNECTED()
 
@@ -115,9 +116,10 @@ TINY_GSM_CLIENT_PEEK_FLUSH_CONNECTED()
   String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
 private:
-  TinyGsmBG96*   at;
+  TinyGsmBG96*    at;
   uint8_t         mux;
   uint16_t        sock_available;
+  uint32_t        prev_check;
   bool            sock_connected;
   bool            got_data;
   RxFifo          rx;
@@ -544,7 +546,6 @@ protected:
       return 0;
     }
     size_t len = stream.readStringUntil('\n').toInt();
-    sockets[mux]->sock_available = len;
 
     for (size_t i=0; i<len; i++) {
       TINY_GSM_MODEM_STREAM_TO_MUX_FIFO_WITH_DOUBLE_TIMEOUT

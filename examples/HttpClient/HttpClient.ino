@@ -12,9 +12,10 @@
  *
  * For more HTTP API examples, see ArduinoHttpClient library
  *
- * NOTE: This example does NOT work with the XBee because the
+ * NOTE: This example may NOT work with the XBee because the
  * HttpClient library does not empty to serial buffer fast enough
  * and the buffer overflow causes the HttpClient library to stall.
+ * Boards with faster processors may work, 8MHz boards will not.
  **************************************************************/
 
 // Select your modem:
@@ -45,15 +46,12 @@
 // See all AT commands, if wanted
 //#define DUMP_AT_COMMANDS
 
-// See the debugging, if wanted
+// Define the serial console for debug prints, if needed
 //#define TINY_GSM_DEBUG Serial
-//#define LOGGING
+//#define LOGGING  // <- Logging is for the HTTP library
 
 // Add a reception delay, if needed
 //#define TINY_GSM_YIELD() { delay(1); }
-
-#include <TinyGsmClient.h>
-#include <ArduinoHttpClient.h>
 
 // Set serial for debug console (to the Serial Monitor, default speed 115200)
 #define SerialMon Serial
@@ -84,6 +82,9 @@ const char wifiPass[] = "SSIDpw";
 const char server[] = "vsh.pp.ua";
 const char resource[] = "/TinyGSM/logo.txt";
 const int  port = 80;
+
+#include <TinyGsmClient.h>
+#include <ArduinoHttpClient.h>
 
 #ifdef DUMP_AT_COMMANDS
   #include <StreamDebugger.h>
@@ -118,6 +119,7 @@ void setup() {
   // To skip it, call init() instead of restart()
   SerialMon.println("Initializing modem...");
   modem.restart();
+  // modem.init();
 
   String modemInfo = modem.getModemInfo();
   SerialMon.print("Modem: ");
@@ -129,7 +131,7 @@ void setup() {
 
 void loop() {
 
-#if TINY_GSM_USE_WIFI
+#if defined TINY_GSM_USE_WIFI && defined TINY_GSM_MODEM_HAS_WIFI
   SerialMon.print(F("Setting SSID/password..."));
   if (!modem.networkConnect(wifiSSID, wifiPass)) {
     SerialMon.println(" fail");
@@ -137,6 +139,11 @@ void loop() {
     return;
   }
   SerialMon.println(" OK");
+#endif
+
+#if TINY_GSM_USE_GPRS && defined TINY_GSM_MODEM_XBEE
+  // The XBee must run the gprsConnect function BEFORE waiting for network!
+  modem.gprsConnect(apn, gprsUser, gprsPass);
 #endif
 
   SerialMon.print("Waiting for network...");
@@ -148,10 +155,10 @@ void loop() {
   SerialMon.println(" OK");
 
   if (modem.isNetworkConnected()) {
-    SerialMon.print("Network connected");
+    SerialMon.println("Network connected");
   }
 
-#if TINY_GSM_USE_GPRS
+#if TINY_GSM_USE_GPRS && defined TINY_GSM_MODEM_HAS_GPRS
     SerialMon.print(F("Connecting to "));
     SerialMon.print(apn);
     if (!modem.gprsConnect(apn, gprsUser, gprsPass)) {

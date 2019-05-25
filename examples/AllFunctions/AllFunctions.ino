@@ -28,6 +28,16 @@
 // #define TINY_GSM_MODEM_XBEE
 // #define TINY_GSM_MODEM_SEQUANS_MONARCH
 
+// See all AT commands, if wanted
+// #define DUMP_AT_COMMANDS
+
+// Define the serial console for debug prints, if needed
+#define TINY_GSM_DEBUG SerialMon
+
+// Range to attempt to autobaud
+#define GSM_AUTOBAUD_MIN 9600
+#define GSM_AUTOBAUD_MAX 38400
+
 // Set serial for debug console (to the Serial Monitor, default speed 115200)
 #define SerialMon Serial
 
@@ -39,24 +49,15 @@
 //#include <SoftwareSerial.h>
 //SoftwareSerial SerialAT(2, 3); // RX, TX
 
-// See all AT commands, if wanted
-//#define DUMP_AT_COMMANDS
-
-// See the debugging, if wanted
-#define TINY_GSM_DEBUG SerialMon
-
-// Range to attempt to autobaud
-#define GSM_AUTOBAUD_MIN 9600
-#define GSM_AUTOBAUD_MAX 38400
-
 /*
  * Test enabled
  */
-#define TINY_GSM_USE_GPRS true
-#define TINY_GSM_USE_WIFI false
-#define TINY_GSM_USE_CALL true
-#define TINY_GSM_USE_SMS true
-#define TINY_GSM_USE_USSD true
+#define TINY_GSM_TEST_GPRS true
+#define TINY_GSM_TEST_WIFI false
+#define TINY_GSM_TEST_CALL true
+#define TINY_GSM_TEST_SMS true
+#define TINY_GSM_TEST_USSD true
+#define TINY_GSM_TEST_BATTERY true
 // powerdown modem after tests
 #define TINY_GSM_POWERDOWN false
 
@@ -70,10 +71,10 @@
 // Your GPRS credentials
 // Leave empty, if missing user or pass
 const char apn[]  = "YourAPN";
-const char user[] = "";
-const char pass[] = "";
+const char gprsUser[] = "";
+const char gprsPass[] = "";
 const char wifiSSID[]  = "YourSSID";
-const char wifiPass[] = "SSIDpw";
+const char wifiPass[] = "YourWiFiPass";
 
 #include <TinyGsmClient.h>
 
@@ -98,11 +99,11 @@ void setup() {
   digitalWrite(23, HIGH);
 
   DBG("Wait...");
-  delay(3000);
 
   // Set GSM module baud rate
   TinyGsmAutoBaud(SerialAT,GSM_AUTOBAUD_MIN,GSM_AUTOBAUD_MAX);
-  // SerialAT.begin(9600);
+  //SerialAT.begin(9600);
+  delay(3000);
 }
 
 void loop() {
@@ -120,24 +121,32 @@ void loop() {
     return;
   }
 
-  String modemInfo = modem.getModemInfo();
-  DBG("Modem:", modemInfo);
+  String name = modem.getModemName();
+  DBG("Modem Name:", name);
 
-#if TINY_GSM_USE_GPRS
+  String modemInfo = modem.getModemInfo();
+  DBG("Modem Info:", modemInfo);
+
+#if TINY_GSM_TEST_GPRS
   // Unlock your SIM card with a PIN if needed
   if ( GSM_PIN && modem.getSimStatus() != 3 ) {
     modem.simUnlock(GSM_PIN);
   }
 #endif
 
-#if TINY_GSM_USE_WIFI
-  SerialMon.print(F("Setting SSID/password..."));
+#if TINY_GSM_TEST_WIFI
+  DBG("Setting SSID/password...");
   if (!modem.networkConnect(wifiSSID, wifiPass)) {
-    SerialMon.println(" fail");
+    DBG(" fail");
     delay(10000);
     return;
   }
   SerialMon.println(" OK");
+#endif
+
+#if TINY_GSM_TEST_GPRS && defined TINY_GSM_MODEM_XBEE
+  // The XBee must run the gprsConnect function BEFORE waiting for network!
+  modem.gprsConnect(apn, gprsUser, gprsPass);
 #endif
 
   DBG("Waiting for network...");
@@ -150,9 +159,9 @@ void loop() {
     DBG("Network connected");
   }
 
-#if TINY_GSM_USE_GPRS
+#if TINY_GSM_TEST_GPRS
   DBG("Connecting to", apn);
-  if (!modem.gprsConnect(apn, user, pass)) {
+  if (!modem.gprsConnect(apn, gprsUser, gprsPass)) {
     delay(10000);
     return;
   }
@@ -175,17 +184,9 @@ void loop() {
   int csq = modem.getSignalQuality();
   DBG("Signal quality:", csq);
 
-  // This is NOT supported on M590
-  int battLevel = modem.getBattPercent();
-  DBG("Battery lavel:", battLevel);
-
   // This is only supported on SIMxxx series
-  float battVoltage = modem.getBattVoltage() / 1000.0F;
-  DBG("Battery voltage:", battVoltage);
-
-  // This is only supported on SIMxxx series
-  String gsmLoc = modem.getGsmLocation();
-  DBG("GSM location:", gsmLoc);
+  // String gsmLoc = modem.getGsmLocation();
+  // DBG("GSM location:", gsmLoc);
 
   // This is only supported on SIMxxx series
   // String gsmTime = modem.getGSMDateTime(DATE_TIME);
@@ -207,7 +208,7 @@ void loop() {
   DBG("GPS raw data:", gps_raw);
 #endif
 
-#if TINY_GSM_USE_SMS && defined(SMS_TARGET)
+#if TINY_GSM_TEST_SMS && defined(SMS_TARGET)
   res = modem.sendSMS(SMS_TARGET, String("Hello from ") + imei);
   DBG("SMS:", res ? "OK" : "fail");
 
@@ -216,7 +217,7 @@ void loop() {
   DBG("UTF16 SMS:", res ? "OK" : "fail");
 #endif
 
-#if TINY_GSM_USE_CALL && defined(CALL_TARGET)
+#if TINY_GSM_TEST_CALL && defined(CALL_TARGET)
   DBG("Calling:", CALL_TARGET);
 
   // This is NOT supported on M590
@@ -241,7 +242,20 @@ void loop() {
   }
 #endif
 
-#if TINY_GSM_USE_GPRS
+#if TINY_GSM_TEST_BATTERY
+  uint8_t chargeState = -99;
+  int8_t percent = -99;
+  uint16_t milliVolts = -9999;
+  modem.getBattStats(chargeState, percent, milliVolts)
+  DBG("Battery charge state:", chargeState);
+  DBG("Battery charge 'percent':", percent);
+  DBG("Battery voltage:", milliVolts / 1000.0F);
+
+  float temp = modem.getTemperature();
+  DBG("Chip temperature:", temp);
+#endif
+
+#if TINY_GSM_TEST_GPRS
   modem.gprsDisconnect();
   if (!modem.isGprsConnected()) {
     DBG("GPRS disconnected");
@@ -250,7 +264,7 @@ void loop() {
   }
 #endif
 
-#if TINY_GSM_USE_WIFI
+#if TINY_GSM_TEST_WIFI
   modem.networkDisconnect();
   DBG("WiFi disconnected");
 #endif

@@ -10,7 +10,7 @@
 #define TinyGsmCommon_h
 
 // The current library version number
-#define TINYGSM_VERSION "0.7.4"
+#define TINYGSM_VERSION "0.7.7"
 
 #if defined(SPARK) || defined(PARTICLE)
   #include "Particle.h"
@@ -100,7 +100,7 @@ uint32_t TinyGsmAutoBaud(T& SerialAT, uint32_t minimum = 9600, uint32_t maximum 
     DBG("Trying baud rate", rate, "...");
     SerialAT.begin(rate);
     delay(10);
-    for (int i=0; i<3; i++) {
+    for (int i=0; i<10; i++) {
       SerialAT.print("AT\r\n");
       String input = SerialAT.readString();
       if (input.indexOf("OK") >= 0) {
@@ -249,7 +249,7 @@ String TinyGsmDecodeHex16bit(String &instr) {
       /* Workaround: sometimes module forgets to notify about data arrival.
       TODO: Currently we ping the module periodically,
       but maybe there's a better indicator that we need to poll */ \
-      if (millis() - prev_check > 250) { \
+      if (millis() - prev_check > 500) { \
         got_data = true; \
         prev_check = millis(); \
       } \
@@ -311,7 +311,7 @@ String TinyGsmDecodeHex16bit(String &instr) {
       /* Workaround: sometimes module forgets to notify about data arrival.
       TODO: Currently we ping the module periodically,
       but maybe there's a better indicator that we need to poll */ \
-      if (millis() - prev_check > 250) { \
+      if (millis() - prev_check > 500) { \
         got_data = true; \
         prev_check = millis(); \
       } \

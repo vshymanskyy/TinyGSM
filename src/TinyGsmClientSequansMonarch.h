@@ -622,9 +622,9 @@ protected:
       char c = stream.read(); \
       sockets[mux % TINY_GSM_MUX_COUNT]->rx.put(c);
     }
-    // DBG("### Read:", len, "from", mux);
+    DBG("### Read:", len, "from", mux);
     waitResponse();
-    sockets[mux % TINY_GSM_MUX_COUNT]->sock_available = modemGetAvailable(mux);
+    // sockets[mux % TINY_GSM_MUX_COUNT]->sock_available = modemGetAvailable(mux);
     return len;
   }
 
@@ -638,7 +638,7 @@ protected:
       result = stream.readStringUntil(',').toInt();  // keep data not yet read
       waitResponse();
     }
-    // DBG("### Available:", result, "on", mux);
+    DBG("### Available:", result, "on", mux);
     return result;
   }
 

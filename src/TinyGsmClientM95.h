@@ -186,7 +186,7 @@ TINY_GSM_MODEM_SET_BAUD_IPR()
 
 TINY_GSM_MODEM_TEST_AT()
 
-TINY_GSM_MODEM_MAINTAIN_CHECK_SOCKS()
+TINY_GSM_MODEM_MAINTAIN_LISTEN()
 
   bool factoryDefault() {
     sendAT(GF("&FZE0&W"));  // Factory + Reset + Echo Off + Write
@@ -606,35 +606,31 @@ protected:
   }
 
   size_t modemRead(size_t size, uint8_t mux) {
-    sendAT(GF("+QIRD="), mux, ',', size);
+    // TODO:  Does this work????
+    // AT+QIRD=<id>,<sc>,<sid>,<len>
+    // id = GPRS context number - 0, set in GPRS connect
+    // sc = roll in connection - 1, client of connection
+    // sid = index of connection - mux
+    // len = maximum length of data to send
+    sendAT(GF("+QIRD=0,1,"), mux, ',', size);
+    // sendAT(GF("+QIRD="), mux, ',', size);
     if (waitResponse(GF("+QIRD:")) != 1) {
       return 0;
     }
-    size_t len = stream.readStringUntil('\n').toInt();
+    streamSkipUntil(':');  // skip IP address
+    streamSkipUntil(',');  // skip port
+    streamSkipUntil(',');  // skip connection type (TCP/UDP)
+    size_t len = stream.readStringUntil('\n').toInt();  // read length
     sockets[mux]->sock_available = len;
 
     for (size_t i=0; i<len; i++) {
       TINY_GSM_MODEM_STREAM_TO_MUX_FIFO_WITH_DOUBLE_TIMEOUT
+      sockets[mux]->sock_available--;
+      // ^^ One less character available after moving from modem's FIFO to our FIFO
     }
-    waitResponse();
+    waitResponse();  // ends with an OK
     DBG("### READ:", len, "from", mux);
     return len;
-  }
-
-  size_t modemGetAvailable(uint8_t mux) {
-    sendAT(GF("+QIRD="), mux, GF(",0"));
-    size_t result = 0;
-    if (waitResponse(GF("+QIRD:")) == 1) {
-      streamSkipUntil(','); // Skip total received
-      streamSkipUntil(','); // Skip have read
-      result = stream.readStringUntil('\n').toInt();
-      if (result) DBG("### DATA AVAILABLE:", result, "on", mux);
-      waitResponse();
-    }
-    if (!result) {
-      sockets[mux]->sock_connected = modemGetConnected(mux);
-    }
-    return result;
   }
 
   bool modemGetConnected(uint8_t mux) {
@@ -700,7 +696,7 @@ TINY_GSM_MODEM_STREAM_UTILITIES()
         } else if (r5 && data.endsWith(r5)) {
           index = 5;
           goto finish;
-        } else if (data.endsWith(GF(GSM_NL "+QIRD:"))) {
+        } else if (data.endsWith(GF(GSM_NL "+QIRD:"))) {  // TODO:  QIRD? or QIRDI?
           streamSkipUntil(',');  // Skip the context
           streamSkipUntil(',');  // Skip the role
           int mux = stream.readStringUntil('\n').toInt();

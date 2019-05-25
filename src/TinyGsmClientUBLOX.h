@@ -593,7 +593,6 @@ protected:
     }
     streamSkipUntil(','); // Skip mux
     size_t len = stream.readStringUntil(',').toInt();
-    sockets[mux]->sock_available = len;
     streamSkipUntil('\"');
 
     for (size_t i=0; i<len; i++) {

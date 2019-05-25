@@ -308,7 +308,7 @@ TINY_GSM_MODEM_GET_IMEI_GSN()
         delay(1000);
         continue;
       }
-      int status = waitResponse(GF("READY"), GF("SIM PIN"), GF("SIM PUK"), GF("NOT INSERTED"));
+      int status = waitResponse(GF("READY"), GF("SIM PIN"), GF("SIM PUK"), GF("NOT INSERTED"), GF("NOT READY"));
       waitResponse();
       switch (status) {
         case 2:
@@ -458,7 +458,6 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
 
     return true;
   }
-
 
   /*
    * IP Address functions
@@ -765,14 +764,10 @@ protected:
     size_t len_requested = stream.readStringUntil(',').toInt();
     //  ^^ Requested number of data bytes (1-1460 bytes)to be read
     size_t len_confirmed = stream.readStringUntil('\n').toInt();
-    if (len_confirmed < len_requested) {
-      DBG(len_requested - len_confirmed, "fewer bytes confirmed than requested!");
-    }
-    sockets[mux]->sock_available = len_confirmed;
     // ^^ Confirmed number of data bytes to be read, which may be less than requested.
     // 0 indicates that no data can be read.
-
-    for (size_t i=0; i<TinyGsmMin(len_confirmed, len_requested) ; i++) {
+    // This is actually be the number of bytes that will be remaining after the read
+    for (size_t i=0; i<len_requested; i++) {
       uint32_t startMillis = millis();
 #ifdef TINY_GSM_USE_HEX
       while (stream.available() < 2 && (millis() - startMillis < sockets[mux]->_timeout)) { TINY_GSM_YIELD(); }
@@ -786,9 +781,11 @@ protected:
 #endif
       sockets[mux]->rx.put(c);
     }
+    DBG("### READ:", len_requested, "from", mux);
+    // sockets[mux]->sock_available = modemGetAvailable(mux);
+    sockets[mux]->sock_available = len_confirmed;
     waitResponse();
-    DBG("### READ:", TinyGsmMin(len_confirmed, len_requested), "from", mux);
-    return TinyGsmMin(len_confirmed, len_requested);
+    return len_requested;
   }
 
   size_t modemGetAvailable(uint8_t mux) {
@@ -800,6 +797,7 @@ protected:
       result = stream.readStringUntil('\n').toInt();
       waitResponse();
     }
+    DBG("### Available:", result, "on", mux);
     if (!result) {
       sockets[mux]->sock_connected = modemGetConnected(mux);
     }
@@ -808,7 +806,9 @@ protected:
 
   bool modemGetConnected(uint8_t mux) {
     sendAT(GF("+CIPSTATUS="), mux);
-    int res = waitResponse(GF(",\"CONNECTED\""), GF(",\"CLOSED\""), GF(",\"CLOSING\""), GF(",\"INITIAL\""));
+    waitResponse(GF("+CIPSTATUS"));
+    int res = waitResponse(GF(",\"CONNECTED\""), GF(",\"CLOSED\""), GF(",\"CLOSING\""),
+                           GF(",\"REMOTE CLOSING\""), GF(",\"INITIAL\""));
     waitResponse();
     return 1 == res;
   }
