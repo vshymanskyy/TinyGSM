@@ -501,8 +501,10 @@ TINY_GSM_MODEM_GET_GPRS_IP_CONNECTED()
     }
 
     int res = stream.readStringUntil(',').toInt();
+    int8_t percent = res*20;  // return is 0-5
+    // Wait for final OK
     waitResponse();
-    return res;
+    return percent;
   }
 
   uint8_t getBattChargeState() TINY_GSM_ATTR_NOT_AVAILABLE;
