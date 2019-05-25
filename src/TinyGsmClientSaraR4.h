@@ -632,7 +632,7 @@ protected:
     } else if (res == 3) {
       streamSkipUntil('\n'); // Skip the error text
     }
-    if (!result)
+    if (!result) {
       sockets[mux]->sock_connected = modemGetConnected(mux);
     }
     return result;
