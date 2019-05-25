@@ -269,7 +269,7 @@ TINY_GSM_MODEM_GET_INFO_ATI()
 
   bool poweroff() {
     sendAT(GF("+CPOWD=1"));
-    return waitResponse(GF("NORMAL POWER DOWN")) == 1;
+    return waitResponse(10000L, GF("NORMAL POWER DOWN")) == 1;
   }
 
   bool radioOff() {
