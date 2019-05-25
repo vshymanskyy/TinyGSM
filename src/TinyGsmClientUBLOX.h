@@ -100,7 +100,7 @@ TINY_GSM_CLIENT_CONNECT_OVERLOADS()
     // that it wants from the socket even if it was closed externally.
     rx.clear();
     at->maintain();
-    while (sock_available > 0) {
+    while (sock_connected && sock_available > 0) {
       at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available), mux);
       rx.clear();
       at->maintain();
@@ -501,8 +501,10 @@ TINY_GSM_MODEM_GET_GPRS_IP_CONNECTED()
     }
 
     int res = stream.readStringUntil(',').toInt();
+    int8_t percent = res*20;  // return is 0-5
+    // Wait for final OK
     waitResponse();
-    return res;
+    return percent;
   }
 
   uint8_t getBattChargeState() TINY_GSM_ATTR_NOT_AVAILABLE;
@@ -601,6 +603,7 @@ protected:
     streamSkipUntil('\"');
     waitResponse();
     DBG("### READ:", len, "from", mux);
+    sockets[mux]->sock_available = modemGetAvailable(mux);
     return len;
   }
 
@@ -616,8 +619,10 @@ protected:
       result = stream.readStringUntil('\n').toInt();
       // if (result) DBG("### DATA AVAILABLE:", result, "on", mux);
       waitResponse();
+    } else if (res == 3) {
+      streamSkipUntil('\n'); // Skip the error text
     }
-    if (!result && res != 2 && res != 3) {  // Don't check modemGetConnected after an error
+    if (!result) {
       sockets[mux]->sock_connected = modemGetConnected(mux);
     }
     return result;

@@ -552,6 +552,7 @@ protected:
     }
     waitResponse();
     DBG("### READ:", len, "from", mux);
+    sockets[mux]->sock_available = modemGetAvailable(mux);
     return len;
   }
 

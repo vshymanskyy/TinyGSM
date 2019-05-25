@@ -621,8 +621,6 @@ protected:
     streamSkipUntil(',');  // skip port
     streamSkipUntil(',');  // skip connection type (TCP/UDP)
     size_t len = stream.readStringUntil('\n').toInt();  // read length
-    sockets[mux]->sock_available = len;
-
     for (size_t i=0; i<len; i++) {
       TINY_GSM_MODEM_STREAM_TO_MUX_FIFO_WITH_DOUBLE_TIMEOUT
       sockets[mux]->sock_available--;
