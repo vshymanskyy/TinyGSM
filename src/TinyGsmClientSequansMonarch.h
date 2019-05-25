@@ -624,7 +624,7 @@ protected:
     }
     DBG("### Read:", len, "from", mux);
     waitResponse();
-    // sockets[mux % TINY_GSM_MUX_COUNT]->sock_available = modemGetAvailable(mux);
+    sockets[mux % TINY_GSM_MUX_COUNT]->sock_available = modemGetAvailable(mux);
     return len;
   }
 

@@ -183,23 +183,16 @@ public:
   String getModemName() {
     String name =  "SIMCom SIM7000";
 
-    sendAT(GF("+CGMI"));
-    String res1;
-    if (waitResponse(1000L, res1) != 1) {
-      return name;
-    }
-    res1.replace(GSM_NL "OK" GSM_NL, "");
-    res1.trim();
-
     sendAT(GF("+GMM"));
     String res2;
     if (waitResponse(1000L, res2) != 1) {
       return name;
     }
     res2.replace(GSM_NL "OK" GSM_NL, "");
+    res2.replace("_", " ");
     res2.trim();
 
-    name = res1 + String(' ') + res2;
+    name = res2;
     DBG("### Modem:", name);
     return name;
   }
