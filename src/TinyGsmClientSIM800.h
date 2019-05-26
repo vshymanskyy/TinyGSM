@@ -714,6 +714,78 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
     waitResponse();
     return true;
   }
+  
+  /*
+   * NTP server functions
+   */
+  boolean isValidNumber(String str)
+{
+   boolean isNum = false;
+   if(!(str.charAt(0) == '+' || str.charAt(0) == '-' || isDigit(str.charAt(0)))) return false;
+
+   for(byte i=1;i < str.length(); i++)
+   {
+       if(!(isDigit(str.charAt(i)) || str.charAt(i) == '.')) return false;
+   }
+   return true;
+}
+
+String ShowNTPError(byte error)
+{
+  switch (error)
+  {
+    case 1:
+      return "Network time synchronization is successful";
+    case 61:
+      return "Network error";
+    case 62:
+      return "DNS resolution error";
+    case 63:
+      return "Connection error";
+    case 64:
+      return "Service response error";
+    case 65:
+      return "Service response timeout";
+    default:
+      return "Unknown error: " + String(error);
+  }
+}
+  
+byte NTPServerSync(String server = "pool.ntp.org", byte TimeZone = 3)
+{
+  //Serial.println("Sync time with NTP server.");
+  sendAT(GF("+CNTPCID=1"));
+  if (waitResponse(10000L) != 1) 
+  {
+      //Serial.println("AT command \"AT+CNTPCID=1\" executing fault.");
+      return -1; 
+  }
+
+  String CNTP = "+CNTP=" + server + "," + String(TimeZone);   
+  sendAT(GF(CNTP));
+  if (waitResponse(10000L) != 1) 
+  {
+      //Serial.println("AT command \"" + CNTP + "\" executing fault.");
+      return -1;
+  }
+
+  sendAT(GF("+CNTP"));
+  if (waitResponse(10000L, GF(GSM_NL "+CNTP:")))
+  {
+      String result = stream.readStringUntil('\n');
+      result.trim();
+      if (isValidNumber(result))
+      {
+        return result.toInt();
+      }
+  }
+  else
+  {
+    //Serial.println("AT command \"+CNTP\" executing fault.");
+    return -1;
+  }  
+  return -1;
+}
 
   float getTemperature() TINY_GSM_ATTR_NOT_AVAILABLE;
 
