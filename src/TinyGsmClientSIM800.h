@@ -910,7 +910,8 @@ finish:
       }
       data = "";
     }
-    //DBG('<', index, '>');
+    //data.replace(GSM_NL, "/");
+    //DBG('<', index, '>', data);
     return index;
   }
 

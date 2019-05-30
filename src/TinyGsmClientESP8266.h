@@ -404,6 +404,7 @@ TINY_GSM_MODEM_STREAM_UTILITIES()
     do {
       TINY_GSM_YIELD();
       while (stream.available() > 0) {
+        TINY_GSM_YIELD();
         int a = stream.read();
         if (a <= 0) continue; // Skip 0x00 bytes, just in case
         data += (char)a;
@@ -458,7 +459,8 @@ finish:
       }
       data = "";
     }
-    //DBG('<', index, '>');
+    //data.replace(GSM_NL, "/");
+    //DBG('<', index, '>', data);
     return index;
   }
 
