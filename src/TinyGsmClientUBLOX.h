@@ -399,7 +399,7 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
     // action = 3: activate; it activates a PDP context with the specified profile,
     // using the current parameters
     sendAT(GF("+UPSDA=0,3")); // Activate the PDP context associated with profile 0
-    if (waitResponse(360000L) != 1) {
+    if (waitResponse(360000L) != 1) {  // Should return ok
       return false;
     }
 
@@ -409,11 +409,19 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
     // AT+UPSND=<profile_id>,<param_tag>
     // profile_id = 0: PSD profile identifier, in range 0-6 (NOT PDP context)
     // param_tag = 8: PSD profile status: if the profile is active the return value is 1, 0 otherwise
-    sendAT(GF("+UPSND=0,8")); // Activate PSD profile 0
-    if (waitResponse(GF(",8,1")) != 1) {
+    sendAT(GF("+UPSND=0,8")); // Check if PSD profile 0 is now active
+    int res = waitResponse(GF(",8,1"), GF(",8,0"));
+    waitResponse();  // Should return another OK
+    if (res == 1) {
+      return true;  // It's now active
+    } else if (res == 2) {  // If it's not active yet, wait for the +UUPSDA URC
+      if (waitResponse(180000L, GF("+UUPSDA: 0")) != 1) {  // 0=successful
+        return false;
+      }
+      streamSkipUntil('\n');  // Ignore the IP address, if returned
+    } else {
       return false;
     }
-    waitResponse();
 
     return true;
   }
