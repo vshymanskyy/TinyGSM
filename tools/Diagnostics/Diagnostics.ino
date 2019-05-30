@@ -10,8 +10,7 @@
  **************************************************************/
 
 // Select your modem:
-#define TINY_GSM_MODEM_SIM800
-// #define TINY_GSM_MODEM_SIM900
+// #define TINY_GSM_MODEM_SIM800
 // #define TINY_GSM_MODEM_SIM808
 // #define TINY_GSM_MODEM_SIM868
 // #define TINY_GSM_MODEM_SIM900
@@ -155,7 +154,7 @@ void loop() {
     delay(10000);
     return;
   }
-  SerialMon.println(" OK");
+  SerialMon.println(" success");
 #endif
 
 #if TINY_GSM_USE_GPRS && defined TINY_GSM_MODEM_XBEE

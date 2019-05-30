@@ -83,7 +83,7 @@ void loop() {
     delay(10000);
     return;
   }
-  SerialMon.println(" OK");
+  SerialMon.println(" success");
 
   SerialMon.print(F("Connecting to "));
   SerialMon.print(apn);
@@ -92,7 +92,7 @@ void loop() {
     delay(10000);
     return;
   }
-  SerialMon.println(" OK");
+  SerialMon.println(" success");
 
   SerialMon.print(F("Connecting to "));
   SerialMon.print(server);
@@ -101,7 +101,7 @@ void loop() {
     delay(10000);
     return;
   }
-  SerialMon.println(" OK");
+  SerialMon.println(" success");
 
   // Make a HTTP GET request:
   client.print(String("GET ") + resource + " HTTP/1.0\r\n");
@@ -132,4 +132,3 @@ void loop() {
     delay(1000);
   }
 }
-

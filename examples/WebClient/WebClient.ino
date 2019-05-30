@@ -60,17 +60,6 @@
 // Uncomment this if you want to use SSL
 //#define USE_SSL
 
-// Set serial for debug console (to the Serial Monitor, default speed 115200)
-#define SerialMon Serial
-
-// Set serial for AT commands (to the module)
-// Use Hardware Serial on Mega, Leonardo, Micro
-#define SerialAT Serial1
-
-// or Software Serial on Uno, Nano
-//#include <SoftwareSerial.h>
-//SoftwareSerial SerialAT(2, 3); // RX, TX
-
 #define TINY_GSM_USE_GPRS true
 #define TINY_GSM_USE_WIFI false
 
@@ -152,7 +141,7 @@ void loop() {
     delay(10000);
     return;
   }
-  SerialMon.println(" OK");
+  SerialMon.println(" success");
 #endif
 
 #if TINY_GSM_USE_GPRS && defined TINY_GSM_MODEM_XBEE
@@ -166,7 +155,7 @@ void loop() {
     delay(10000);
     return;
   }
-  SerialMon.println(" OK");
+  SerialMon.println(" success");
 
   if (modem.isNetworkConnected()) {
     SerialMon.println("Network connected");
@@ -180,7 +169,7 @@ void loop() {
       delay(10000);
       return;
     }
-    SerialMon.println(" OK");
+    SerialMon.println(" success");
 #endif
 
   SerialMon.print("Connecting to ");
@@ -190,7 +179,7 @@ void loop() {
     delay(10000);
     return;
   }
-  SerialMon.println(" OK");
+  SerialMon.println(" success");
 
   // Make a HTTP GET request:
   SerialMon.println("Performing HTTP GET request...");

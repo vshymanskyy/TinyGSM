@@ -141,7 +141,7 @@ void loop() {
     delay(10000);
     return;
   }
-  SerialMon.println(" OK");
+  SerialMon.println(" success");
 #endif
 
 #if TINY_GSM_TEST_GPRS && defined TINY_GSM_MODEM_XBEE

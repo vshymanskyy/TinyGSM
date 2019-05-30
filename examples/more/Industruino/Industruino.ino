@@ -96,7 +96,7 @@ void loop() {
     delay(10000);
     return;
   }
-  SerialMon.println(" OK");
+  SerialMon.println(" success");
 
   SerialMon.print(F("Connecting to "));
   SerialMon.print(apn);
@@ -105,7 +105,7 @@ void loop() {
     delay(10000);
     return;
   }
-  SerialMon.println(" OK");
+  SerialMon.println(" success");
 
   SerialMon.print(F("Performing HTTP GET request... "));
   int err = http.get(resource);
@@ -157,4 +157,3 @@ void loop() {
     delay(1000);
   }
 }
-

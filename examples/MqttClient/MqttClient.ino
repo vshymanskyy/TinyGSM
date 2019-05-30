@@ -167,7 +167,7 @@ void setup() {
     delay(10000);
     return;
   }
-  SerialMon.println(" OK");
+  SerialMon.println(" success");
 
   if (modem.isNetworkConnected()) {
     SerialMon.println("Network connected");
@@ -181,7 +181,7 @@ void setup() {
       delay(10000);
       return;
   }
-  SerialMon.println(" OK");
+    SerialMon.println(" success");
 #endif
 
   // MQTT Broker setup
@@ -203,7 +203,7 @@ boolean mqttConnect() {
     SerialMon.println(" fail");
     return false;
   }
-  SerialMon.println(" OK");
+  SerialMon.println(" success");
   mqtt.publish(topicInit, "GsmClientTest started");
   mqtt.subscribe(topicLed);
   return mqtt.connected();

@@ -140,7 +140,7 @@ void loop() {
     delay(10000);
     return;
   }
-  SerialMon.println(" OK");
+  SerialMon.println(" success");
 #endif
 
 #if TINY_GSM_USE_GPRS && defined TINY_GSM_MODEM_XBEE
@@ -154,7 +154,7 @@ void loop() {
     delay(10000);
     return;
   }
-  SerialMon.println(" OK");
+  SerialMon.println(" success");
 
   if (modem.isNetworkConnected()) {
     SerialMon.println("Network connected");
@@ -168,7 +168,7 @@ void loop() {
     delay(10000);
     return;
   }
-  SerialMon.println(" OK");
+  SerialMon.println(" success");
 #endif
 
   SerialMon.print(F("Connecting to "));
@@ -178,7 +178,7 @@ void loop() {
     delay(10000);
     return;
   }
-  SerialMon.println(" OK");
+  SerialMon.println(" success");
 
   // Make a HTTP GET request:
   client.print(String("GET ") + resource + " HTTP/1.0\r\n");
