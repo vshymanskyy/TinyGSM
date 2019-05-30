@@ -82,7 +82,7 @@ TINY_GSM_CLIENT_CONNECT_OVERLOADS()
     TINY_GSM_YIELD();
     at->sendAT(GF("+CIPCLOSE="), mux);
     sock_connected = false;
-    at->waitResponse();
+    at->waitResponse(5000L);
     rx.clear();
   }
 
