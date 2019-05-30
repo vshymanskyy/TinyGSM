@@ -864,31 +864,36 @@ protected:
 
   bool modemConnect(IPAddress ip, uint16_t port, uint8_t mux = 0, bool ssl = false, int timeout_s = 75) {
 
-    savedIP = ip;  // Set the newly requested IP address
     bool success = true;
     uint32_t timeout_ms = ((uint32_t)timeout_s)*1000;
     XBEE_COMMAND_START_DECORATOR(5, false)
-    String host; host.reserve(16);
-    host += ip[0];
-    host += ".";
-    host += ip[1];
-    host += ".";
-    host += ip[2];
-    host += ".";
-    host += ip[3];
 
-    if (ssl) {
-      sendAT(GF("IP"), 4);  // Put in SSL over TCP communication mode
+    if (ip != savedIP) {  // Can skip almost everything if there's no change in the IP address
+      savedIP = ip;  // Set the newly requested IP address
+      String host; host.reserve(16);
+      host += ip[0];
+      host += ".";
+      host += ip[1];
+      host += ".";
+      host += ip[2];
+      host += ".";
+      host += ip[3];
+
+      if (ssl) {
+        sendAT(GF("IP"), 4);  // Put in SSL over TCP communication mode
+        success &= (1 == waitResponse());
+      } else {
+        sendAT(GF("IP"), 1);  // Put in TCP mode
+        success &= (1 == waitResponse());
+      }
+
+      sendAT(GF("DL"), host);  // Set the "Destination Address Low"
       success &= (1 == waitResponse());
-    } else {
-      sendAT(GF("IP"), 1);  // Put in TCP mode
+      sendAT(GF("DE"), String(port, HEX));  // Set the destination port
       success &= (1 == waitResponse());
+
+      success &= writeChanges();
     }
-
-    sendAT(GF("DL"), host);  // Set the "Destination Address Low"
-    success &= (1 == waitResponse());
-    sendAT(GF("DE"), String(port, HEX));  // Set the destination port
-    success &= (1 == waitResponse());
 
     for (unsigned long start = millis(); millis() - start < timeout_ms; ) {
       if (modemGetConnected()) {
