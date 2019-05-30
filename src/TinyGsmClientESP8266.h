@@ -422,14 +422,14 @@ TINY_GSM_MODEM_STREAM_UTILITIES()
         } else if (r5 && data.endsWith(r5)) {
           index = 5;
           goto finish;
-        } else if (data.endsWith(GF(GSM_NL "+IPD,"))) {
+        } else if (data.endsWith(GF("+IPD,"))) {
           int mux = stream.readStringUntil(',').toInt();
           int len = stream.readStringUntil(':').toInt();
           int len_orig = len;
           if (len > sockets[mux]->rx.free()) {
-            DBG("### Buffer overflow: ", len, "->", sockets[mux]->rx.free());
+            DBG("### Buffer overflow: ", len, "received vs", sockets[mux]->rx.free(), "available");
           } else {
-            DBG("### Got: ", len, "->", sockets[mux]->rx.free());
+            DBG("### Got Data: ", len, "on", mux);
           }
           while (len--) {
             TINY_GSM_MODEM_STREAM_TO_MUX_FIFO_WITH_DOUBLE_TIMEOUT
