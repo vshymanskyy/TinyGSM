@@ -27,11 +27,25 @@
 // #define TINY_GSM_MODEM_XBEE
 // #define TINY_GSM_MODEM_SEQUANS_MONARCH
 
-// Increase RX buffer if needed
-// #define TINY_GSM_RX_BUFFER 512
+// Set serial for debug console (to the Serial Monitor, default speed 115200)
+#define SerialMon Serial
+
+// Set serial for AT commands (to the module)
+// Use Hardware Serial on Mega, Leonardo, Micro
+#define SerialAT Serial1
+
+// or Software Serial on Uno, Nano
+//#include <SoftwareSerial.h>
+//SoftwareSerial SerialAT(2, 3); // RX, TX
+
+// Increase RX buffer to capture the entire response
+// Chips without internal buffering (A6/A7, ESP8266, M590)
+// need enough space in the buffer for the entire response
+// else data will be lost (and the http library will fail).
+#define TINY_GSM_RX_BUFFER 650
 
 // See all AT commands, if wanted
-// #define DUMP_AT_COMMANDS
+//#define DUMP_AT_COMMANDS
 
 // Define the serial console for debug prints, if needed
 #define TINY_GSM_DEBUG SerialMon
@@ -41,7 +55,7 @@
 #define GSM_AUTOBAUD_MAX 115200
 
 // Add a reception delay, if needed
-// #define TINY_GSM_YIELD() { delay(1); }
+//#define TINY_GSM_YIELD() { delay(2); }
 
 // Uncomment this if you want to use SSL
 //#define USE_SSL
@@ -68,8 +82,7 @@
 const char apn[]  = "YourAPN";
 const char gprsUser[] = "";
 const char gprsPass[] = "";
-const char wifiSSID[]  = "YourSSID";
-const char wifiPass[] = "SSIDpw";
+const char wifiPass[] = "YourWiFiPass";
 
 // Server details
 const char server[] = "vsh.pp.ua";
@@ -132,7 +145,7 @@ void setup() {
 
 void loop() {
 
-#if TINY_GSM_USE_WIFI
+#if defined TINY_GSM_USE_WIFI && defined TINY_GSM_MODEM_HAS_WIFI
   SerialMon.print(F("Setting SSID/password..."));
   if (!modem.networkConnect(wifiSSID, wifiPass)) {
     SerialMon.println(" fail");
@@ -148,7 +161,7 @@ void loop() {
 #endif
 
   SerialMon.print("Waiting for network...");
-  if (!modem.waitForNetwork(240000L)) {
+  if (!modem.waitForNetwork()) {
     SerialMon.println(" fail");
     delay(10000);
     return;

@@ -37,22 +37,6 @@
 // #define TINY_GSM_MODEM_XBEE
 // #define TINY_GSM_MODEM_SEQUANS_MONARCH
 
-// Increase RX buffer to capture the entire response
-// Chips without internal buffering (A6/A7, ESP8266, M590)
-// need enough space in the buffer for the entire response
-// else data will be lost (and the http library will fail).
-#define TINY_GSM_RX_BUFFER 650
-
-// See all AT commands, if wanted
-//#define DUMP_AT_COMMANDS
-
-// Define the serial console for debug prints, if needed
-//#define TINY_GSM_DEBUG Serial
-//#define LOGGING  // <- Logging is for the HTTP library
-
-// Add a reception delay, if needed
-//#define TINY_GSM_YIELD() { delay(1); }
-
 // Set serial for debug console (to the Serial Monitor, default speed 115200)
 #define SerialMon Serial
 
@@ -63,6 +47,22 @@
 // or Software Serial on Uno, Nano
 //#include <SoftwareSerial.h>
 //SoftwareSerial SerialAT(2, 3); // RX, TX
+
+// Increase RX buffer to capture the entire response
+// Chips without internal buffering (A6/A7, ESP8266, M590)
+// need enough space in the buffer for the entire response
+// else data will be lost (and the http library will fail).
+#define TINY_GSM_RX_BUFFER 650
+
+// See all AT commands, if wanted
+//#define DUMP_AT_COMMANDS
+
+// Define the serial console for debug prints, if needed
+#define TINY_GSM_DEBUG SerialMon
+//#define LOGGING  // <- Logging is for the HTTP library
+
+// Add a reception delay, if needed
+//#define TINY_GSM_YIELD() { delay(2); }
 
 #define TINY_GSM_USE_GPRS true
 #define TINY_GSM_USE_WIFI false
@@ -76,7 +76,7 @@ const char apn[]  = "YourAPN";
 const char gprsUser[] = "";
 const char gprsPass[] = "";
 const char wifiSSID[]  = "YourSSID";
-const char wifiPass[] = "SSIDpw";
+const char wifiPass[] = "YourWiFiPass";
 
 // Server details
 const char server[] = "vsh.pp.ua";
@@ -125,8 +125,12 @@ void setup() {
   SerialMon.print("Modem: ");
   SerialMon.println(modemInfo);
 
-  // Unlock your SIM card with a PIN
-  //modem.simUnlock("1234");
+#if TINY_GSM_USE_GPRS
+  // Unlock your SIM card with a PIN if needed
+  if ( GSM_PIN && modem.getSimStatus() != 3 ) {
+    modem.simUnlock(GSM_PIN);
+  }
+#endif
 }
 
 void loop() {

@@ -28,16 +28,6 @@
 // #define TINY_GSM_MODEM_XBEE
 // #define TINY_GSM_MODEM_SEQUANS_MONARCH
 
-// See all AT commands, if wanted
-// #define DUMP_AT_COMMANDS
-
-// Define the serial console for debug prints, if needed
-#define TINY_GSM_DEBUG SerialMon
-
-// Range to attempt to autobaud
-#define GSM_AUTOBAUD_MIN 9600
-#define GSM_AUTOBAUD_MAX 38400
-
 // Set serial for debug console (to the Serial Monitor, default speed 115200)
 #define SerialMon Serial
 
@@ -49,8 +39,18 @@
 //#include <SoftwareSerial.h>
 //SoftwareSerial SerialAT(2, 3); // RX, TX
 
+// See all AT commands, if wanted
+//#define DUMP_AT_COMMANDS
+
+// Define the serial console for debug prints, if needed
+#define TINY_GSM_DEBUG SerialMon
+
+// Range to attempt to autobaud
+#define GSM_AUTOBAUD_MIN 9600
+#define GSM_AUTOBAUD_MAX 38400
+
 /*
- * Test enabled
+ * Tests enabled
  */
 #define TINY_GSM_TEST_GPRS true
 #define TINY_GSM_TEST_WIFI false
