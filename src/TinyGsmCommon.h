@@ -30,8 +30,12 @@
 
 #include <TinyGsmFifo.h>
 
+#ifndef TINY_GSM_YIELD_MS
+  #define TINY_GSM_YIELD_MS 0
+#endif
+
 #ifndef TINY_GSM_YIELD
-  #define TINY_GSM_YIELD() { delay(0); }
+  #define TINY_GSM_YIELD() { delay(TINY_GSM_YIELD_MS); }
 #endif
 
 #define TINY_GSM_ATTR_NOT_AVAILABLE __attribute__((error("Not available on this modem type")))
@@ -446,7 +450,7 @@ String TinyGsmDecodeHex16bit(String &instr) {
 // modem has no internal fifo
 #define TINY_GSM_MODEM_MAINTAIN_LISTEN() \
   void maintain() { \
-    waitResponse(10, NULL, NULL); \
+    waitResponse(100, NULL, NULL); \
   }
 
 
