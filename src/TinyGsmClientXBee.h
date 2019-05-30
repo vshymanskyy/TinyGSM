@@ -263,6 +263,7 @@ public:
       resetPin = -1;
       savedIP = IPAddress(0,0,0,0);
       savedHost = "";
+      savedHostIP = IPAddress(0,0,0,0);
       inCommandMode = false;
       memset(sockets, 0, sizeof(sockets));
   }
@@ -275,6 +276,7 @@ public:
       this->resetPin = resetPin;
       savedIP = IPAddress(0,0,0,0);
       savedHost = "";
+      savedHostIP = IPAddress(0,0,0,0);
       inCommandMode = false;
       memset(sockets, 0, sizeof(sockets));
   }
@@ -845,16 +847,20 @@ protected:
     bool retVal = false;
      XBEE_COMMAND_START_DECORATOR(5, false)
 
-    // If it's a new host or we dont' have a good IP, we need to do a DNS
-    // search for the IP to connect to
-    if (this->savedHost != String(host) || savedIP == IPAddress(0,0,0,0)) {
+    // If this is a new host name, replace the saved host and wipe out the saved host IP
+    if (this->savedHost != String(host)) {
       this->savedHost = String(host);
-      savedIP = getHostIP(host, timeout_s);  // This will return 0.0.0.0 if lookup fails
+      savedHostIP = IPAddress(0,0,0,0);
+    }
+
+    // If we don't have a good IP for the host, we need to do a DNS search
+    if (savedHostIP == IPAddress(0,0,0,0)) {
+      savedHostIP = getHostIP(host, timeout_s);  // This will return 0.0.0.0 if lookup fails
     }
 
     // If we now have a valid IP address, use it to connect
-    if (savedIP != IPAddress(0,0,0,0)) {  // Only re-set connection information if we have an IP address
-      retVal = modemConnect(savedIP, port, mux, ssl, timeout_ms - (millis() - startMillis));
+    if (savedHostIP != IPAddress(0,0,0,0)) {  // Only re-set connection information if we have an IP address
+      retVal = modemConnect(savedHostIP, port, mux, ssl, timeout_ms - (millis() - startMillis));
     }
 
     XBEE_COMMAND_END_DECORATOR
@@ -1147,7 +1153,7 @@ finish:
   }
 
   bool gotIPforSavedHost() {
-    if (savedHost != "" && savedIP != IPAddress(0,0,0,0)) return true;
+    if (savedHost != "" && savedHostIP != IPAddress(0,0,0,0)) return true;
     else return false;
   }
 
@@ -1160,6 +1166,7 @@ protected:
   XBeeType      beeType;
   IPAddress     savedIP;
   String        savedHost;
+  IPAddress     savedHostIP;
   bool          inCommandMode;
   uint32_t      lastCommandModeMillis;
   GsmClient*    sockets[TINY_GSM_MUX_COUNT];
