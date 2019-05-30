@@ -370,6 +370,14 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
     // "internal" PDP context, i.e. a data connection using the internal IP
     // stack and related AT commands for sockets.
 
+    // Packet switched data configuration
+    // AT+UPSD=<profile_id>,<param_tag>,<param_val>
+    // profile_id = 0 - PSD profile identifier, in range 0-6 (NOT PDP context)
+    // param_tag = 1: APN
+    // param_tag = 2: username
+    // param_tag = 3: password
+    // param_tag = 7: IP address Note: IP address set as "0.0.0.0" means
+    //    dynamic IP address assigned during PDP context activation
     sendAT(GF("+UPSD=0,1,\""), apn, '"');  // Set APN for PSD profile 0
     waitResponse();
 
@@ -385,11 +393,22 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
     sendAT(GF("+UPSD=0,7,\"0.0.0.0\"")); // Dynamic IP on PSD profile 0
     waitResponse();
 
+    // Packet switched data action
+    // AT+UPSDA=<profile_id>,<action>
+    // profile_id = 0: PSD profile identifier, in range 0-6 (NOT PDP context)
+    // action = 3: activate; it activates a PDP context with the specified profile,
+    // using the current parameters
     sendAT(GF("+UPSDA=0,3")); // Activate the PDP context associated with profile 0
     if (waitResponse(360000L) != 1) {
       return false;
     }
 
+    // Packet switched network-assigned data - Returns the current (dynamic)
+    // network-assigned or network-negotiated value of the specified parameter
+    // for the active PDP context associated with the specified PSD profile.
+    // AT+UPSND=<profile_id>,<param_tag>
+    // profile_id = 0: PSD profile identifier, in range 0-6 (NOT PDP context)
+    // param_tag = 8: PSD profile status: if the profile is active the return value is 1, 0 otherwise
     sendAT(GF("+UPSND=0,8")); // Activate PSD profile 0
     if (waitResponse(GF(",8,1")) != 1) {
       return false;
