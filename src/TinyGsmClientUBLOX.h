@@ -646,8 +646,6 @@ protected:
       result = stream.readStringUntil('\n').toInt();
       // if (result) DBG("### DATA AVAILABLE:", result, "on", mux);
       waitResponse();
-    } else if (res == 3) {
-      streamSkipUntil('\n'); // Skip the error text
     }
     if (!result) {
       sockets[mux]->sock_connected = modemGetConnected(mux);
@@ -718,6 +716,9 @@ TINY_GSM_MODEM_STREAM_UTILITIES()
           goto finish;
         } else if (r3 && data.endsWith(r3)) {
           index = 3;
+          if (r3 == GFP(GSM_CME_ERROR)) {
+            streamSkipUntil('\n');  // Read out the error
+          }
           goto finish;
         } else if (r4 && data.endsWith(r4)) {
           index = 4;
