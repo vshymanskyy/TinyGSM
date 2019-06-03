@@ -708,7 +708,7 @@ TINY_GSM_MODEM_STREAM_UTILITIES()
         } else if (r5 && data.endsWith(r5)) {
           index = 5;
           goto finish;
-        } else if (data.endsWith(GF(GSM_NL "+UUSORD:"))) {
+        } else if (data.endsWith(GF("+UUSORD:"))) {
           int mux = stream.readStringUntil(',').toInt();
           int len = stream.readStringUntil('\n').toInt();
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
@@ -717,7 +717,7 @@ TINY_GSM_MODEM_STREAM_UTILITIES()
           }
           data = "";
           DBG("### URC Data Received:", len, "on", mux);
-        } else if (data.endsWith(GF(GSM_NL "+UUSOCL:"))) {
+        } else if (data.endsWith(GF("+UUSOCL:"))) {
           int mux = stream.readStringUntil('\n').toInt();
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
             sockets[mux]->sock_connected = false;
