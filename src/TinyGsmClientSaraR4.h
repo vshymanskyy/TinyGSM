@@ -328,7 +328,6 @@ TINY_GSM_MODEM_GET_SIMCCID_CCID()
     return SIM_ERROR;
   }
 
-
 TINY_GSM_MODEM_GET_REGISTRATION_XREG(CEREG)
 
 TINY_GSM_MODEM_GET_OPERATOR_COPS()
@@ -501,7 +500,7 @@ TINY_GSM_MODEM_GET_GPRS_IP_CONNECTED()
       return 0;
     }
 
-    int8_t res = stream.readStringUntil(',').toInt();
+    int res = stream.readStringUntil(',').toInt();
     int8_t percent = res*20;  // return is 0-5
     // Wait for final OK
     waitResponse();
@@ -576,8 +575,13 @@ protected:
       sockets[mux]->sock_connected = false;
       return true;
     }
+    bool success;
     sendAT(GF("+USOCL="), mux);
-    return 1 == waitResponse(120000L);  // can take up to 120s to get a response
+    success = 1 == waitResponse(120000L);  // can take up to 120s to get a response
+    if (success) {
+      sockets[mux]->sock_connected = false;
+    }
+    return success;
   }
 
   int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
@@ -629,12 +633,11 @@ protected:
       result = stream.readStringUntil('\n').toInt();
       // if (result) DBG("### DATA AVAILABLE:", result, "on", mux);
       waitResponse();
-    } else if (res == 3) {
-      streamSkipUntil('\n'); // Skip the error text
     }
     if (!result) {
       sockets[mux]->sock_connected = modemGetConnected(mux);
     }
+    DBG("### AVAILABLE:", result, "on", mux);
     return result;
   }
 
@@ -701,6 +704,9 @@ TINY_GSM_MODEM_STREAM_UTILITIES()
           goto finish;
         } else if (r3 && data.endsWith(r3)) {
           index = 3;
+          if (r3 == GFP(GSM_CME_ERROR)) {
+            streamSkipUntil('\n');  // Read out the error
+          }
           goto finish;
         } else if (r4 && data.endsWith(r4)) {
           index = 4;
@@ -723,7 +729,7 @@ TINY_GSM_MODEM_STREAM_UTILITIES()
             sockets[mux]->sock_connected = false;
           }
           data = "";
-          DBG("### URC Sock Closed:", mux);
+          DBG("### URC Sock Closed: ", mux);
         }
       }
     } while (millis() - startMillis < timeout_ms);

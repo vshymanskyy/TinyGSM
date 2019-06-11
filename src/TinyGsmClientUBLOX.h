@@ -108,11 +108,11 @@ TINY_GSM_CLIENT_CONNECT_OVERLOADS()
     at->modemDisconnect(mux);
   }
 
-TINY_GSM_CLIENT_WRITE() ;
+TINY_GSM_CLIENT_WRITE()
 
-TINY_GSM_CLIENT_AVAILABLE_WITH_BUFFER_CHECK() ;
+TINY_GSM_CLIENT_AVAILABLE_WITH_BUFFER_CHECK()
 
-TINY_GSM_CLIENT_READ_WITH_BUFFER_CHECK() ;
+TINY_GSM_CLIENT_READ_WITH_BUFFER_CHECK()
 
 TINY_GSM_CLIENT_PEEK_FLUSH_CONNECTED()
 
@@ -575,8 +575,6 @@ protected:
     //waitResponse();
 
     // connect on the allocated socket
-    // TODO:  Use faster "asynchronous" connection?
-    // We would have to wait for the +UUSOCO URC to verify connection
     sendAT(GF("+USOCO="), *mux, ",\"", host, "\",", port);
     int rsp = waitResponse(timeout_ms);
     return (1 == rsp);
@@ -650,6 +648,7 @@ protected:
     if (!result) {
       sockets[mux]->sock_connected = modemGetConnected(mux);
     }
+    DBG("### AVAILABLE:", result, "on", mux);
     return result;
   }
 
