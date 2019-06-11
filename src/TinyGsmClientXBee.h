@@ -116,21 +116,21 @@ public:
     return connect(ip, port, 75);
   }
 
-  virtual void stop() {
+  virtual void stop(uint32_t maxWaitMs) {
     at->streamClear();  // Empty anything in the buffer
     at->commandMode();
     // For WiFi models, there's no direct way to close the socket.  This is a
     // hack to shut the socket by setting the timeout to zero.
     if (at->beeType == XBEE_S6B_WIFI) {
       at->sendAT(GF("TM0"));  // Set socket timeout (using Digi default of 10 seconds)
-      at->waitResponse(5000);  // This response can be slow
+      at->waitResponse(maxWaitMs);  // This response can be slow
       at->writeChanges();
     }
     // For cellular models, per documentation: If you change the TM (socket
     // timeout) value while in Transparent Mode, the current connection is
     // immediately closed.
     at->sendAT(GF("TM64"));  // Set socket timeout (using Digi default of 10 seconds)
-    at->waitResponse(5000);  // This response can be slow
+    at->waitResponse(maxWaitMs);  // This response can be slow
     at->writeChanges();
     at->exitCommand();
     at->streamClear();  // Empty anything remaining in the buffer
@@ -141,6 +141,8 @@ public:
     // will return false after a stop has been ordered.  This makes it play
     // much more nicely with libraries like PubSubClient.
   }
+
+  virtual void stop() { stop(5000L); }
 
   virtual size_t write(const uint8_t *buf, size_t size) {
     TINY_GSM_YIELD();

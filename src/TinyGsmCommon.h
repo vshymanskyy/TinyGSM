@@ -275,7 +275,7 @@ String TinyGsmDecodeHex16bit(String &instr) {
   }
 
 
-// Returns the number of characters avaialable in the TinyGSM fifo
+// Returns the number of characters available in the TinyGSM fifo
 // Assumes the modem chip has no internal fifo
 #define TINY_GSM_CLIENT_AVAILABLE_NO_MODEM_FIFO() \
   virtual int available() { \
@@ -393,6 +393,24 @@ String TinyGsmDecodeHex16bit(String &instr) {
     } \
     return -1; \
   }
+
+
+// Read and dump anything remaining in the modem's internal buffer.
+// Using this in the client stop() function.
+// The socket will appear open in response to connected() even after it
+// closes until all data is read from the buffer.
+// Doing it this way allows the external mcu to find and get all of the data
+// that it wants from the socket even if it was closed externally.
+#define TINY_GSM_CLIENT_DUMP_MODEM_BUFFER() \
+    TINY_GSM_YIELD(); \
+    rx.clear(); \
+    at->maintain(); \
+    unsigned long startMillis = millis(); \
+    while (sock_available > 0 && (millis() - startMillis < maxWaitMs)) { \
+      at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available), mux); \
+      rx.clear(); \
+      at->maintain(); \
+    }
 
 
 // The peek, flush, and connected functions

@@ -81,24 +81,14 @@ public:
 
 TINY_GSM_CLIENT_CONNECT_OVERLOADS()
 
-  virtual void stop() {
-    TINY_GSM_YIELD();
-    // Read and dump anything remaining in the modem's internal buffer.
-    // The socket will appear open in response to connected() even after it
-    // closes until all data is read from the buffer.
-    // Doing it this way allows the external mcu to find and get all of the data
-    // that it wants from the socket even if it was closed externally.
-    rx.clear();
-    at->maintain();
-    while (sock_available > 0) {
-      at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available), mux);
-      rx.clear();
-      at->maintain();
-    }
+  virtual void stop(uint32_t maxWaitMs) {
+    TINY_GSM_CLIENT_DUMP_MODEM_BUFFER()
     at->sendAT(GF("+QICLOSE="), mux);
     sock_connected = false;
-    at->waitResponse(60000L, GF("CLOSED"), GF("CLOSE OK"), GF("ERROR"));
+    at->waitResponse((maxWaitMs - (millis() - startMillis)), GF("CLOSED"), GF("CLOSE OK"), GF("ERROR"));
   }
+
+  virtual void stop() { stop(75000L); }
 
 TINY_GSM_CLIENT_WRITE()
 

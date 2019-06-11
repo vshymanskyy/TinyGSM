@@ -91,22 +91,14 @@ public:
 
 TINY_GSM_CLIENT_CONNECT_OVERLOADS()
 
-  virtual void stop() {
-    TINY_GSM_YIELD();
-    // Read and dump anything remaining in the modem's internal buffer.
-    // The socket will appear open in response to connected() even after it
-    // closes until all data is read from the buffer.
-    // Doing it this way allows the external mcu to find and get all of the data
-    // that it wants from the socket even if it was closed externally.
-    rx.clear();
-    at->maintain();
-    while (sock_connected && sock_available > 0) {
-      at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available), mux);
-      rx.clear();
-      at->maintain();
-    }
-    at->modemDisconnect(mux);
+  virtual void stop(uint32_t maxWaitMs) {
+    TINY_GSM_CLIENT_DUMP_MODEM_BUFFER()
+    at->sendAT(GF("+USOCL="), mux);
+    at->waitResponse((maxWaitMs - (millis() - startMillis)));  // NOTE:  can take up to 120s to get a response
+    sock_connected = false;
   }
+
+  virtual void stop() { stop(135000L); }
 
 TINY_GSM_CLIENT_WRITE()
 
@@ -567,21 +559,6 @@ protected:
     sendAT(GF("+USOCO="), *mux, ",\"", host, "\",", port);
     int rsp = waitResponse(timeout_ms);
     return (1 == rsp);
-  }
-
-  bool modemDisconnect(uint8_t mux) {
-    TINY_GSM_YIELD();
-    if (!modemGetConnected(mux)) {
-      sockets[mux]->sock_connected = false;
-      return true;
-    }
-    bool success;
-    sendAT(GF("+USOCL="), mux);
-    success = 1 == waitResponse(120000L);  // can take up to 120s to get a response
-    if (success) {
-      sockets[mux]->sock_connected = false;
-    }
-    return success;
   }
 
   int16_t modemSend(const void* buff, size_t len, uint8_t mux) {

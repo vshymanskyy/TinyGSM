@@ -78,13 +78,15 @@ public:
 
 TINY_GSM_CLIENT_CONNECT_OVERLOADS()
 
-  virtual void stop() {
+  virtual void stop(uint32_t maxWaitMs) {
     TINY_GSM_YIELD();
     at->sendAT(GF("+CIPCLOSE="), mux);
     sock_connected = false;
-    at->waitResponse(5000L);
+    at->waitResponse(maxWaitMs);
     rx.clear();
   }
+
+  virtual void stop() { stop(5000L); }
 
 TINY_GSM_CLIENT_WRITE()
 
