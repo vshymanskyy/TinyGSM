@@ -329,7 +329,7 @@ TINY_GSM_MODEM_GET_SIMCCID_CCID()
   }
 
 
-TINY_GSM_MODEM_GET_REGISTRATION_XREG(CEREG)
+TINY_GSM_MODEM_GET_REGISTRATION_XREG(CREG)
 
 TINY_GSM_MODEM_GET_OPERATOR_COPS()
 
@@ -343,8 +343,8 @@ TINY_GSM_MODEM_GET_CSQ()
     RegStatus s = getRegistrationStatus();
     if (s == REG_OK_HOME || s == REG_OK_ROAMING)
       return true;
-    else if (s == REG_UNKNOWN)  // for some reason, it can hang at unknown..
-      return isGprsConnected();
+    // else if (s == REG_UNKNOWN)  // for some reason, it can hang at unknown..
+    //   return isGprsConnected();
     else return false;
   }
 
