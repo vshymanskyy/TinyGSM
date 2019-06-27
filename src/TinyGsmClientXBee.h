@@ -421,12 +421,12 @@ public:
 
   String getBeeName() {
     switch (beeType){
-      case XBEE_S6B_WIFI: return "Digi XBee® Wi-Fi";
-      case XBEE_LTE1_VZN: return "Digi XBee® Cellular LTE Cat 1";
-      case XBEE_3G: return "Digi XBee® Cellular 3G";
-      case XBEE3_LTE1_ATT: return "Digi XBee3™ Cellular LTE CAT 1";
-      case XBEE3_LTEM_ATT: return "Digi XBee3™ Cellular LTE-M";
-      default:  return "Digi XBee®";
+      case XBEE_S6B_WIFI: return "Digi XBee Wi-Fi";
+      case XBEE_LTE1_VZN: return "Digi XBee Cellular LTE Cat 1";
+      case XBEE_3G: return "Digi XBee Cellular 3G";
+      case XBEE3_LTE1_ATT: return "Digi XBee3 Cellular LTE CAT 1";
+      case XBEE3_LTEM_ATT: return "Digi XBee3 Cellular LTE-M";
+      default:  return "Digi XBee";
     }
   }
 
