@@ -73,11 +73,11 @@ Primary Author/Contributor   |[vshymanskyy](https://github.com/vshymanskyy)|[vsh
 - Digi XBee WiFi and Cellular (using XBee command mode)
 - Neoway M590
 - u-blox Cellular Modems (many modules including LEON-G100, LISA-U2xx, SARA-G3xx, SARA-U2xx, TOBY-L2xx, LARA-R2xx, MPCI-L2xx, SARA-R4xx, SARA-N4xx, _but NOT SARA-N2xx_)
-- Sequans Monarch LTE Cat M1/NB1 ***(beta)***
-- Quectel BG96 ***(alpha)***
-- Quectel M95 ***(alpha)***
+- Sequans Monarch LTE Cat M1/NB1
+- Quectel BG96
+- Quectel M95
 - Quectel MC60 ***(alpha)***
-- SIMCom SIM7000 series ***(alpha)***
+- SIMCom SIM7000 ***(alpha)***
 
 ### Supported boards/modules
 - Arduino MKR GSM 1400
