@@ -709,7 +709,6 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
    * NTP server functions
    */
   boolean isValidNumber(String str) {
-    boolean isNum = false;
     if(!(str.charAt(0) == '+' || str.charAt(0) == '-' || isDigit(str.charAt(0)))) return false;
 
     for(byte i=1;i < str.length(); i++) {
