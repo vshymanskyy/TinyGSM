@@ -11,7 +11,6 @@
 //#pragma message("TinyGSM:  TinyGsmClientM95")
 
 //#define TINY_GSM_DEBUG Serial
-//#define TINY_GSM_USE_HEX
 
 #if !defined(TINY_GSM_RX_BUFFER)
   #define TINY_GSM_RX_BUFFER 64
