@@ -33,6 +33,7 @@
 // #define TINY_GSM_MODEM_SIM868
 // #define TINY_GSM_MODEM_SIM900
 // #define TINY_GSM_MODEM_SIM7000
+// #define TINY_GSM_MODEM_SIM5360
 // #define TINY_GSM_MODEM_UBLOX
 // #define TINY_GSM_MODEM_SARAR4
 // #define TINY_GSM_MODEM_M95
@@ -153,7 +154,7 @@ void setup() {
     delay(10000);
     return;
   }
-  SerialMon.println(" OK");
+  SerialMon.println(" success");
 #endif
 
 #if TINY_GSM_USE_GPRS && defined TINY_GSM_MODEM_XBEE
@@ -175,12 +176,12 @@ void setup() {
 
 #if TINY_GSM_USE_GPRS && defined TINY_GSM_MODEM_HAS_GPRS
     SerialMon.print(F("Connecting to "));
-  SerialMon.print(apn);
+    SerialMon.print(apn);
     if (!modem.gprsConnect(apn, gprsUser, gprsPass)) {
-    SerialMon.println(" fail");
+      SerialMon.println(" fail");
       delay(10000);
       return;
-  }
+    }
     SerialMon.println(" success");
 #endif
 
