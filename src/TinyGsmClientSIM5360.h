@@ -120,26 +120,6 @@ private:
 };
 
 
-class GsmClientSecure : public GsmClient
-{
-public:
-  GsmClientSecure() {}
-
-  GsmClientSecure(TinyGsmSim5360& modem, uint8_t mux = 1)
-    : GsmClient(modem, mux)
-  {}
-
-public:
-  virtual int connect(const char *host, uint16_t port, int timeout_s) {
-    stop();
-    TINY_GSM_YIELD();
-    rx.clear();
-    sock_connected = at->modemConnect(host, port, mux, true, timeout_s);
-    return sock_connected;
-  }
-};
-
-
 public:
 
   TinyGsmSim5360(Stream& stream)

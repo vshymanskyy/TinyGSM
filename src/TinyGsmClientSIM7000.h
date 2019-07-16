@@ -120,6 +120,7 @@ private:
 };
 
 
+/*TODO!
 class GsmClientSecure : public GsmClient
 {
 public:
@@ -138,6 +139,7 @@ public:
     return sock_connected;
   }
 };
+*/
 
 
 public:
