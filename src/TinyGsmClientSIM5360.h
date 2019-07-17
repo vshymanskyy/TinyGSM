@@ -207,7 +207,7 @@ TINY_GSM_MODEM_GET_INFO_ATI()
     if (waitResponse(10000L) != 1) {
       return false;
     }
-    waitResponse(10000L, GF(GSM_NL "PB DONE"));
+    delay(3000L);  // TODO:  Test this delay!
     return init();
   }
 
@@ -350,7 +350,7 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
 
     // Configure timeouts for open and close socket
     // AT+CIPTIMEOUT=[<netopen_timeout>][, [<cipopen_timeout>][, [<cipsend_timeout>]]]
-    sendAT(GF("+CIPTIMEOUT"), 75000, ',', 15000, ',', 15000);
+    sendAT(GF("+CIPTIMEOUT="), 75000, ',', 15000, ',', 15000);
     waitResponse();
 
     // Set to get data manually
