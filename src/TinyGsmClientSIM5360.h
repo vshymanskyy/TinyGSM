@@ -62,6 +62,8 @@ public:
     init(&modem, mux);
   }
 
+  virtual ~GsmClient(){}
+
   bool init(TinyGsmSim5360* modem, uint8_t mux = 1) {
     this->at = modem;
     this->mux = mux;
@@ -127,6 +129,8 @@ public:
   {
     memset(sockets, 0, sizeof(sockets));
   }
+
+  virtual ~TinyGsmSim5360(){}
 
   /*
    * Basic functions
@@ -220,7 +224,7 @@ TINY_GSM_MODEM_GET_INFO_ATI()
     delay(3000);
     return true;
   }
-  
+
   bool sleepEnable(bool enable = true) {
     sendAT(GF("+CSCLK="), enable);
     return waitResponse() == 1;

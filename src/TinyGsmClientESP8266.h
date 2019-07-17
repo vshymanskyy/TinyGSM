@@ -57,6 +57,8 @@ public:
     init(&modem, mux);
   }
 
+  virtual ~GsmClient(){}
+
   bool init(TinyGsmESP8266* modem, uint8_t mux = 1) {
     this->at = modem;
     this->mux = mux;
@@ -119,6 +121,8 @@ public:
     : GsmClient(modem, mux)
   {}
 
+  virtual ~GsmClientSecure() {}
+
 public:
   virtual int connect(const char *host, uint16_t port, int timeout_s) {
     stop();
@@ -137,6 +141,8 @@ public:
   {
     memset(sockets, 0, sizeof(sockets));
   }
+
+  virtual ~TinyGsmESP8266() {}
 
   /*
    * Basic functions

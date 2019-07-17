@@ -57,6 +57,8 @@ public:
     init(&modem);
   }
 
+  virtual ~GsmClient(){}
+
   bool init(TinyGsmA6* modem) {
     this->at = modem;
     this->mux = -1;
@@ -120,6 +122,8 @@ public:
   {
     memset(sockets, 0, sizeof(sockets));
   }
+  
+  virtual ~TinyGsmA6() {}
 
   /*
    * Basic functions

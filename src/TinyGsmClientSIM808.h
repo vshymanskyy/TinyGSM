@@ -22,6 +22,8 @@ public:
     : TinyGsmSim800(stream)
   {}
 
+  virtual ~TinyGsmSim808(){}
+
   /*
    * GPS location functions
    */

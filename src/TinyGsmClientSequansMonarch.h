@@ -66,6 +66,8 @@ public:
     init(&modem, mux);
   }
 
+  virtual ~GsmClient(){}
+
   bool init(TinyGsmSequansMonarch* modem, uint8_t mux = 1) {
     this->at = modem;
     this->mux = mux;
@@ -135,6 +137,8 @@ public:
     : GsmClient(modem, mux)
   {}
 
+  virtual ~GsmClientSecure(){}
+
 protected:
   bool          strictSSL = false;
 
@@ -178,6 +182,8 @@ public:
   {
     memset(sockets, 0, sizeof(sockets));
   }
+
+  virtual ~TinyGsmSequansMonarch() {}
 
   /*
    * Basic functions

@@ -80,6 +80,8 @@ public:
     init(&modem, mux);
   }
 
+  virtual ~GsmClient(){}
+
   bool init(TinyGsmXBee* modem, uint8_t mux = 0) {
     this->at = modem;
     this->mux = mux;
@@ -238,6 +240,8 @@ public:
     : GsmClient(modem, mux)
   {}
 
+  virtual ~GsmClientSecure(){}
+
 public:
   virtual int connect(const char *host, uint16_t port, int timeout_s) {
     // NOTE:  Not caling stop() or yeild() here
@@ -282,6 +286,8 @@ public:
       inCommandMode = false;
       memset(sockets, 0, sizeof(sockets));
   }
+
+  virtual ~TinyGsmXBee() {}
 
   /*
    * Basic functions
