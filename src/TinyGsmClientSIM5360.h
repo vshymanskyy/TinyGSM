@@ -359,46 +359,55 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
       return false;
     }
 
-    // Actually open the packet network
-    // NOTE:  AT command manual hints this might be depricated or other options preferred
-    // but all application notes use it
-    sendAT(GF("+NETOPEN"));
-    if (waitResponse(60000L) != 1) {
+    sendAT(GF("+CGATT=1"));  // attach to GPRS
+    if (waitResponse(360000L) != 1) {
       return false;
     }
 
-    /*
-        sendAT(GF("+CGATT=1"));  // attach to GPRS
-        if (waitResponse(360000L) != 1) {
-          return false;
-        }
+    // Using CGDCONT sets up an "external" PCP context, i.e. a data connection
+    // using the external IP stack (e.g. Windows dial up) and PPP link over the
+    // serial interface.  Is this preferred?
 
-        // Using CGDCONT sets up an "external" PCP context, i.e. a data connection
-        // using the external IP stack (e.g. Windows dial up) and PPP link over the
-        // serial interface.  Is this preferred?
+    if (user && strlen(user) > 0) {
+      sendAT(GF("+CGAUTH=1,0,\""), user, GF("\",\""), pwd, '"');  // Set the authentication
+      waitResponse();
+    }
 
-        if (user && strlen(user) > 0) {
-          sendAT(GF("+CGAUTH=1,0,\""), user, GF("\",\""), pwd, '"');  // Set the authentication
-          waitResponse();
-        }
+    sendAT(GF("+CGDCONT=1,\"IP\",\""), apn, '"');  // Define PDP context 1
+    waitResponse();
 
-        sendAT(GF("+CGDCONT=1,\"IP\",\""), apn, '"');  // Define PDP context 1
-        waitResponse();
+    sendAT(GF("+CGACT=1,1"));  // activate PDP profile/context 1
+    if (waitResponse(75000L) != 1) {
+      return false;
+    }
 
-        sendAT(GF("+CGACT=1,1"));  // activate PDP profile/context 1
-        if (waitResponse(150000L) != 1) {
-          return false;
-        }
-    */
+    // Actually open network socket
+    // NOTE:  AT command manual hints this might be depricated or other options preferred
+    // but all application notes use it (and nothing states what *IS* preferred)
+    sendAT(GF("+NETOPEN"));
+    if (waitResponse(75000L) != 1) {
+      return false;
+    }
 
     return true;
   }
 
   bool gprsDisconnect() {
+
     // Close the network (note, all sockets should be closed first)
     sendAT(GF("+NETCLOSE"));
     if (waitResponse(60000L) != 1)
       return false;
+
+    sendAT(GF("+CGACT=1,0"));  // Deactivate PDP context 1
+    if (waitResponse(40000L) != 1) {
+      return false;
+    }
+
+    sendAT(GF("+CGATT=0"));  // detach from GPRS
+    if (waitResponse(360000L) != 1) {
+      return false;
+    }
 
     return true;
   }
