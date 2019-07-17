@@ -115,14 +115,11 @@ void setup() {
   SerialMon.begin(115200);
   delay(10);
 
-  // Set your reset, enable, power pins here
   pinMode(LED_PIN, OUTPUT);
 
-  pinMode(20, OUTPUT);
-  digitalWrite(20, HIGH);
-
-  pinMode(23, OUTPUT);
-  digitalWrite(23, LOW);
+  // !!!!!!!!!!!
+  // Set your reset, enable, power pins here
+  // !!!!!!!!!!!
 
   SerialMon.println("Wait...");
 
