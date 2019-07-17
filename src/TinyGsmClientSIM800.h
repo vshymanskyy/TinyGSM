@@ -711,9 +711,12 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
     return true;
   }
 
+  float getTemperature() TINY_GSM_ATTR_NOT_AVAILABLE;
+
   /*
    * NTP server functions
    */
+
   boolean isValidNumber(String str) {
     if(!(str.charAt(0) == '+' || str.charAt(0) == '-' || isDigit(str.charAt(0)))) return false;
 
@@ -743,7 +746,6 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
   }
 
   byte NTPServerSync(String server = "pool.ntp.org", byte TimeZone = 3) {
-    //Serial.println("Sync time with NTP server.");
     sendAT(GF("+CNTPCID=1"));
     if (waitResponse(10000L) != 1) {
         return -1;
@@ -768,8 +770,6 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
     }
     return -1;
   }
-
-  float getTemperature() TINY_GSM_ATTR_NOT_AVAILABLE;
 
   /*
    * Client related functions

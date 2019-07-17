@@ -78,12 +78,12 @@ const char wifiPass[] = "YourWiFiPass";
 const char server[] = "vsh.pp.ua";
 const int  port = 80;
 
+#include <TinyGsmClient.h>
+#include <CRC32.h>
+
 const char resource[]  = "/TinyGSM/test_1k.bin";
 uint32_t knownCRC32    = 0x6f50d767;
 uint32_t knownFileSize = 1024;   // In case server does not send it
-
-#include <TinyGsmClient.h>
-#include <CRC32.h>
 
 #ifdef DUMP_AT_COMMANDS
   #include <StreamDebugger.h>
@@ -123,7 +123,7 @@ void setup() {
 
 void printPercent(uint32_t readLength, uint32_t contentLength) {
   // If we know the total length
-  if (contentLength != -1) {
+  if (contentLength != (uint32_t)-1) {
     SerialMon.print("\r ");
     SerialMon.print((100.0 * readLength) / contentLength);
     SerialMon.print('%');
