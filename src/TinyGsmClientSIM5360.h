@@ -207,7 +207,7 @@ TINY_GSM_MODEM_GET_INFO_ATI()
     if (waitResponse(10000L) != 1) {
       return false;
     }
-    delay(3000);  //TODO:  Test this delay
+    waitResponse(10000L, GF(GSM_NL "PB DONE"));
     return init();
   }
 

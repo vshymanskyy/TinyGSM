@@ -194,7 +194,9 @@ void loop() {
   // DBG("GSM Time:", gsmTime);
   // String gsmDate = modem.getGSMDateTime(DATE_DATE);
   // DBG("GSM Date:", gsmDate);
+#endif
 
+#if TINY_GSM_TEST_USSD
   String ussd_balance = modem.sendUSSD("*111#");
   DBG("Balance (USSD):", ussd_balance);
 
@@ -247,7 +249,7 @@ void loop() {
   uint8_t chargeState = -99;
   int8_t percent = -99;
   uint16_t milliVolts = -9999;
-  modem.getBattStats(chargeState, percent, milliVolts)
+  modem.getBattStats(chargeState, percent, milliVolts);
   DBG("Battery charge state:", chargeState);
   DBG("Battery charge 'percent':", percent);
   DBG("Battery voltage:", milliVolts / 1000.0F);
