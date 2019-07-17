@@ -186,17 +186,6 @@ void loop() {
   client.print(String("Host: ") + server + "\r\n");
   client.print("Connection: close\r\n\r\n");
 
-  // This timeout check is unneeded since there is a timeout handler in the data retrieval below
-  // long timeout = millis();
-  // while (client.available() == 0) {
-  //   if (millis() - timeout > 5000L) {
-  //     SerialMon.println(F(">>> Client Timeout !"));
-  //     client.stop();
-  //     delay(10000L);
-  //     return;
-  //   }
-  // }
-
   // Let's see what the entire elapsed time is, from after we send the request.
   unsigned long timeElapsed = millis();
 
@@ -265,20 +254,6 @@ void loop() {
     }
   }
 
-  // vv Broken vv
-  // while (client.available()) {  // ** race condition -- if the client doesn't have enough data, we will exit.
-  //   String line = client.readStringUntil('\n');  // ** Depending on what we get from the client, this could be a partial line.
-  //   line.trim();
-  //   //SerialMon.println(line);    // Uncomment this to show response header
-  //   line.toLowerCase();
-  //   if (line.startsWith("content-length:")) {
-  //     contentLength = line.substring(line.lastIndexOf(':') + 1).toInt();
-  //   } else if (line.length() == 0) {
-  //     break;
-  //   }
-  // }
-  // ^^ Broken ^^
-  //
   // The two cases which are not managed properly are as follows:
   // 1. The client doesn't provide data quickly enough to keep up with this loop.
   // 2. If the client data is segmented in the middle of the 'Content-Length: ' header,
