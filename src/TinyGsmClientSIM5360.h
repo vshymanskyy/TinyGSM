@@ -199,11 +199,7 @@ TINY_GSM_MODEM_GET_INFO_ATI()
     if (!testAT()) {
       return false;
     }
-    sendAT(GF("+CFUN=0"));
-    if (waitResponse(10000L) != 1) {
-      return false;
-    }
-    sendAT(GF("+CFUN=1,1"));
+    sendAT(GF("+REBOOT"));
     if (waitResponse(10000L) != 1) {
       return false;
     }
@@ -212,17 +208,22 @@ TINY_GSM_MODEM_GET_INFO_ATI()
   }
 
   bool poweroff() {
-    sendAT(GF("+CPOF=1"));
+    sendAT(GF("+CPOF"));
     return waitResponse() == 1;
   }
 
   bool radioOff() {
-    sendAT(GF("+CFUN=0"));
+    sendAT(GF("+CFUN=4"));
     if (waitResponse(10000L) != 1) {
       return false;
     }
     delay(3000);
     return true;
+  }
+  
+  bool sleepEnable(bool enable = true) {
+    sendAT(GF("+CSCLK="), enable);
+    return waitResponse() == 1;
   }
 
   /*
@@ -761,10 +762,9 @@ TINY_GSM_MODEM_STREAM_UTILITIES()
           }
           data = "";
           DBG("### Got Data:", len, "on", mux);
-        } else if (data.endsWith(GF("CLOSED" GSM_NL))) {
-          int nl = data.lastIndexOf(GSM_NL, data.length()-8);
-          int coma = data.indexOf(',', nl+2);
-          int mux = data.substring(nl+2, coma).toInt();
+        } else if (data.endsWith(GF("+IPCLOSE:"))) {
+          int mux = stream.readStringUntil(',').toInt();
+          streamSkipUntil('\n');  // Skip the reason code
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
             sockets[mux]->sock_connected = false;
           }

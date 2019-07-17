@@ -78,6 +78,7 @@ Primary Author/Contributor   |[vshymanskyy](https://github.com/vshymanskyy)|[vsh
 - Quectel M95
 - Quectel MC60 ***(alpha)***
 - SIMCom SIM7000 ***(alpha)***
+- SIMCom SIM5360 ***(alpha)***
 
 ### Supported boards/modules
 - Arduino MKR GSM 1400
