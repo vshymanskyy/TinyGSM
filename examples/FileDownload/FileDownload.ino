@@ -141,51 +141,128 @@ void loop() {
   client.print(String("Host: ") + server + "\r\n");
   client.print("Connection: close\r\n\r\n");
 
-  long timeout = millis();
-  while (client.available() == 0) {
-    if (millis() - timeout > 5000L) {
-      SerialMon.println(F(">>> Client Timeout !"));
-      client.stop();
-      delay(10000L);
-      return;
+  // This timeout check is unneeded since there is a timeout handler in the data retrieval below
+  // long timeout = millis();
+  // while (client.available() == 0) {
+  //   if (millis() - timeout > 5000L) {
+  //     SerialMon.println(F(">>> Client Timeout !"));
+  //     client.stop();
+  //     delay(10000L);
+  //     return;
+  //   }
+  // }
+
+  // Let's see what the entire elapsed time is, from after we send the request.
+  unsigned long timeElapsed = millis();
+
+  SerialMon.println(F("Waiting for response header"));
+
+  // While we are still looking for the end of the header (i.e. empty line FOLLOWED by a newline),
+  // continue to read data into the buffer, parsing each line (data FOLLOWED by a newline).
+  // If it takes too long to get data from the client, we need to exit.
+
+  const uint32_t clientReadTimeout = 5000;
+  uint32_t clientReadStartTime = millis();
+  String headerBuffer;
+  bool finishedHeader = false;
+  uint32_t contentLength = 0;
+
+  while (!finishedHeader) {
+    int nlPos;
+
+    if (client.available()) {
+      clientReadStartTime = millis();
+      while (client.available()) {
+        char c = client.read();
+        headerBuffer += c;
+
+        // Uncomment the lines below to see the data coming into the buffer
+        // if (c < 16)
+        //   SerialMon.print('0');
+        // SerialMon.print(c, HEX);
+        // SerialMon.print(' ');
+        // if (isprint(c))
+        //   SerialMon.print((char) c);
+        // else
+        //   SerialMon.print('*');
+        // SerialMon.print(' ');
+
+        // Let's exit and process if we find a new line
+        if (headerBuffer.indexOf(F("\r\n")) >= 0)
+          break;
+      }
+    }
+    else {
+      if (millis() - clientReadStartTime > clientReadTimeout) {
+        // Time-out waiting for data from client
+        SerialMon.println(F(">>> Client Timeout !"));
+        break;
+      }
+    }
+
+    // See if we have a new line.
+    nlPos = headerBuffer.indexOf(F("\r\n"));
+
+    if (nlPos > 0) {
+      headerBuffer.toLowerCase();
+      // Check if line contains content-length
+      if (headerBuffer.startsWith(F("content-length:"))) {
+        contentLength = headerBuffer.substring(headerBuffer.indexOf(':') + 1).toInt();
+        // SerialMon.print(F("Got Content Length: "));  // uncomment for
+        // SerialMon.println(contentLength);            // confirmation
+      }
+
+      headerBuffer.remove(0, nlPos + 2);  // remove the line
+    }
+    else if (nlPos == 0) {
+      // if the new line is empty (i.e. "\r\n" is at the beginning of the line), we are done with the header.
+      finishedHeader = true;
     }
   }
 
-  SerialMon.println(F("Reading response header"));
-  uint32_t contentLength = knownFileSize;
+  // vv Broken vv
+  // while (client.available()) {  // ** race condition -- if the client doesn't have enough data, we will exit.
+  //   String line = client.readStringUntil('\n');  // ** Depending on what we get from the client, this could be a partial line.
+  //   line.trim();
+  //   //SerialMon.println(line);    // Uncomment this to show response header
+  //   line.toLowerCase();
+  //   if (line.startsWith("content-length:")) {
+  //     contentLength = line.substring(line.lastIndexOf(':') + 1).toInt();
+  //   } else if (line.length() == 0) {
+  //     break;
+  //   }
+  // }
+  // ^^ Broken ^^
+  //
+  // The two cases which are not managed properly are as follows:
+  // 1. The client doesn't provide data quickly enough to keep up with this loop.
+  // 2. If the client data is segmented in the middle of the 'Content-Length: ' header,
+  //    then that header may be missed/damaged.
+  //
 
-  while (client.available()) {
-    String line = client.readStringUntil('\n');
-    line.trim();
-    //SerialMon.println(line);    // Uncomment this to show response header
-    line.toLowerCase();
-    if (line.startsWith("content-length:")) {
-      contentLength = line.substring(line.lastIndexOf(':') + 1).toInt();
-    } else if (line.length() == 0) {
-      break;
-    }
-  }
-
-  SerialMon.println(F("Reading response data"));
-  timeout = millis();
   uint32_t readLength = 0;
   CRC32 crc;
 
-  unsigned long timeElapsed = millis();
-  printPercent(readLength, contentLength);
-  while (readLength < contentLength && client.connected() && millis() - timeout < 10000L) {
-    while (client.available()) {
-      uint8_t c = client.read();
-      //SerialMon.print((char)c);       // Uncomment this to show data
-      crc.update(c);
-      readLength++;
-      if (readLength % (contentLength / 13) == 0) {
-        printPercent(readLength, contentLength);
+  if (finishedHeader && contentLength == knownFileSize) {
+    SerialMon.println(F("Reading response data"));
+    clientReadStartTime = millis();
+
+    printPercent(readLength, contentLength);
+    while (readLength < contentLength && client.connected() && millis() - clientReadStartTime < clientReadTimeout) {
+      while (client.available()) {
+        uint8_t c = client.read();
+        //SerialMon.print((char)c);       // Uncomment this to show data
+        crc.update(c);
+        readLength++;
+        if (readLength % (contentLength / 13) == 0) {
+          printPercent(readLength, contentLength);
+        }
+        clientReadStartTime = millis();
       }
-      timeout = millis();
     }
+    printPercent(readLength, contentLength);
   }
-  printPercent(readLength, contentLength);
+
   timeElapsed = millis() - timeElapsed;
   SerialMon.println();
 
