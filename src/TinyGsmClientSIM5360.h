@@ -312,22 +312,50 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
    */
 
   bool gprsConnect(const char* apn, const char* user = NULL, const char* pwd = NULL) {
-    gprsDisconnect();
+    gprsDisconnect();  // Make sure we're not connected first
 
     // Define the PDP context
+
+    // Using CGDCONT sets up an "external" PCP context, i.e. a data connection
+    // using the external IP stack (e.g. Windows dial up) and PPP link over the
+    // serial interface.  Is this preferred?
+
+    // Set the authentication
+    if (user && strlen(user) > 0) {
+      sendAT(GF("+CGAUTH=1,0,\""), user, GF("\",\""), pwd, '"');
+      waitResponse();
+    }
+
+    // Define PDP context 1
+    sendAT(GF("+CGDCONT=1,\"IP\",\""), apn, '"');
+    waitResponse();
+
+    sendAT(GF("+CGACT=1,1"));  // activate PDP profile/context 1
+    if (waitResponse(75000L) != 1) {
+      return false;
+    }
+
     // Using CGSOCKCONT commands defines a PDP context for  Embedded  TCP/IP application
     // CGDCONT commands could be used for an external PDP context
+
+    //  ?? Unsure if this step is needed - redundant with +CGDCONT
     sendAT(GF("+CGSOCKCONT=1,\"IP\",\""), apn, '"');
     waitResponse();
 
     // Set the user name and password
+    //  ?? Unsure if this step is needed - redundant with +CGAUTH
     if (user && strlen(user) > 0) {
       sendAT(GF("+CSOCKAUTH=1,1,\""), user, "\",\"", pwd, '"');
       waitResponse();
     }
 
     // Set active PDP context’s profile number
+    //  ?? Unsure if this step is needed - redundant with +CGAUTH
     sendAT(GF("+CSOCKSETPN=1"));
+    waitResponse();
+
+    // Set Sending Mode - send without waiting for peer TCP ACK
+    sendAT(GF("+CIPSENDMODE=0"));
     waitResponse();
 
     // Configure TCP parameters
@@ -353,39 +381,18 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
     sendAT(GF("+CIPTIMEOUT="), 75000, ',', 15000, ',', 15000);
     waitResponse();
 
-    // Set to get data manually
-    sendAT(GF("+CIPRXGET=1"));
-    if (waitResponse() != 1) {
-      return false;
-    }
-
-    sendAT(GF("+CGATT=1"));  // attach to GPRS
+    // attach to GPRS
+    sendAT(GF("+CGATT=1"));
     if (waitResponse(360000L) != 1) {
       return false;
     }
 
-    // Using CGDCONT sets up an "external" PCP context, i.e. a data connection
-    // using the external IP stack (e.g. Windows dial up) and PPP link over the
-    // serial interface.  Is this preferred?
-
-    if (user && strlen(user) > 0) {
-      sendAT(GF("+CGAUTH=1,0,\""), user, GF("\",\""), pwd, '"');  // Set the authentication
-      waitResponse();
-    }
-
-    sendAT(GF("+CGDCONT=1,\"IP\",\""), apn, '"');  // Define PDP context 1
-    waitResponse();
-
-    sendAT(GF("+CGACT=1,1"));  // activate PDP profile/context 1
-    if (waitResponse(75000L) != 1) {
-      return false;
-    }
-
-    // Actually open network socket
-    // NOTE:  AT command manual hints this might be depricated or other options preferred
-    // but all application notes use it (and nothing states what *IS* preferred)
+    // Start the socket service
+    // Response may be an immediate "+NETOPEN: 0,0\r\n\r\nOK\r\n" followed later by
+    // a URC "+NETOPEN: 1".  We to ignore any immediate response and wait for the
+    // URC to show it's realy connected.
     sendAT(GF("+NETOPEN"));
-    if (waitResponse(75000L) != 1) {
+    if (waitResponse(75000L, GF(GSM_NL "+NETOPEN: 1")) != 1) {
       return false;
     }
 
@@ -394,7 +401,8 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
 
   bool gprsDisconnect() {
 
-    // Close the network (note, all sockets should be closed first)
+    // Stop the socket service
+    // Note: all sockets should be closed first
     sendAT(GF("+NETCLOSE"));
     if (waitResponse(60000L) != 1)
       return false;
@@ -422,7 +430,8 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
     if (res != 1)
       return false;
 
-    sendAT(GF("+IPADDR")); // Make sure we have a local IP address
+    sendAT(GF("+IPADDR")); // Inquire Socket PDP address
+    // sendAT(GF("+CGPADDR=1")); // Show PDP address
     if (waitResponse() != 1)
       return false;
 
@@ -434,7 +443,8 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
    */
 
   String getLocalIP() {
-    sendAT(GF("+IPADDR"));
+    sendAT(GF("+IPADDR"));  // Inquire Socket PDP address
+    // sendAT(GF("+CGPADDR=1"));  // Show PDP address
     String res;
     if (waitResponse(10000L, res) != 1) {
       return "";
@@ -445,7 +455,7 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
     return res;
   }
 
-  IPAddress localIP() {
+  CGPADDR=1ess localIP() {
     return TinyGsmIpFromString(getLocalIP());
   }
 
@@ -616,8 +626,13 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
 protected:
 
   bool modemConnect(const char* host, uint16_t port, uint8_t mux,
-                    bool ssl = false, int timeout_s = 75)
- {
+                    bool ssl = false, int timeout_s = 75) {
+    // Make sure we'll be getting data manually on this connection
+    sendAT(GF("+CIPRXGET=1"));
+    if (waitResponse() != 1) {
+      return false;
+    }
+
     // Establish connection in multi-socket mode
     sendAT(GF("+CIOPEN="), mux, ',', GF("\"TCP"), GF("\",\""), host, GF("\","), port);
     if (waitResponse(GF(GSM_NL "+CIOPEN:")) != 1) {  // reply is +USOCR: ## of socket created
