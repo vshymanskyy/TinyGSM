@@ -388,9 +388,9 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
     }
 
     // Start the socket service
-    // Response may be an immediate "+NETOPEN: 0,0\r\n\r\nOK\r\n" followed later by
-    // a URC "+NETOPEN: 1".  We to ignore any immediate response and wait for the
-    // URC to show it's realy connected.
+    // Response may be an immediate "OK" followed later by "+NETOPEN: 1".
+    // We to ignore any immediate response and wait for the
+    // URC to show it's really connected.
     sendAT(GF("+NETOPEN"));
     if (waitResponse(75000L, GF(GSM_NL "+NETOPEN: 1")) != 1) {
       return false;
@@ -455,7 +455,7 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
     return res;
   }
 
-  CGPADDR=1ess localIP() {
+  IPAddress localIP() {
     return TinyGsmIpFromString(getLocalIP());
   }
 
@@ -634,8 +634,8 @@ protected:
     }
 
     // Establish connection in multi-socket mode
-    sendAT(GF("+CIOPEN="), mux, ',', GF("\"TCP"), GF("\",\""), host, GF("\","), port);
-    if (waitResponse(GF(GSM_NL "+CIOPEN:")) != 1) {  // reply is +USOCR: ## of socket created
+    sendAT(GF("+CIPOPEN="), mux, ',', GF("\"TCP"), GF("\",\""), host, GF("\","), port);
+    if (waitResponse(GF(GSM_NL "+CIPOPEN:")) != 1) {  // reply is +USOCR: ## of socket created
       return false;
     }
     return waitResponse() == 1;
