@@ -411,8 +411,9 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
     // Stop the socket service
     // Note: all sockets should be closed first
     sendAT(GF("+NETCLOSE"));
-    if (waitResponse(60000L) != 1)
+    if (waitResponse(60000L, GF(GSM_NL "+NETCLOSE: 0")) != 1) {
       return false;
+    }
 
     sendAT(GF("+CGACT=1,0"));  // Deactivate PDP context 1
     if (waitResponse(40000L) != 1) {
