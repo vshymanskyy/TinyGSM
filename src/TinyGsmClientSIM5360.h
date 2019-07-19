@@ -400,6 +400,13 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
   }
 
   bool gprsDisconnect() {
+    // Close any open sockets
+    for (int mux = 0; mux < TINY_GSM_MUX_COUNT; mux++) {
+      GsmClient *sock = sockets[mux];
+      if (sock) {
+        sock->stop();
+      }
+    }
 
     // Stop the socket service
     // Note: all sockets should be closed first
@@ -422,13 +429,11 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
 
   bool isGprsConnected() {
     sendAT(GF("+NETOPEN?"));
-    if (waitResponse(GF(GSM_NL "+NETOPEN:")) != 1) {
+    // May return +NETOPEN: 1, 0.  We just confirm that the first number is 1
+    if (waitResponse(GF(GSM_NL "+NETOPEN: 1")) != 1) {
       return false;
     }
-    int res = stream.readStringUntil('\n').toInt();
     waitResponse();
-    if (res != 1)
-      return false;
 
     sendAT(GF("+IPADDR")); // Inquire Socket PDP address
     // sendAT(GF("+CGPADDR=1")); // Show PDP address
