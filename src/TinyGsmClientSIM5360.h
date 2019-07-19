@@ -392,7 +392,7 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
     // We to ignore any immediate response and wait for the
     // URC to show it's really connected.
     sendAT(GF("+NETOPEN"));
-    if (waitResponse(75000L, GF(GSM_NL "+NETOPEN: 1")) != 1) {
+    if (waitResponse(75000L, GF(GSM_NL "+NETOPEN: 0")) != 1) {
       return false;
     }
 
