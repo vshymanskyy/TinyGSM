@@ -635,10 +635,11 @@ protected:
 
     // Establish connection in multi-socket mode
     sendAT(GF("+CIPOPEN="), mux, ',', GF("\"TCP"), GF("\",\""), host, GF("\","), port);
-    if (waitResponse(GF(GSM_NL "+CIPOPEN:")) != 1) {  // reply is +USOCR: ## of socket created
+    // reply is +CIPOPEN: ## of socket created
+    if (waitResponse(15000L, GF(GSM_NL "+CIPOPEN:")) != 1) {
       return false;
     }
-    return waitResponse() == 1;
+    return true;
   }
 
   int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
