@@ -40,7 +40,9 @@
   typedef TinyGsmSim7000::GsmClient TinyGsmClient;
   // typedef TinyGsmSim7000::GsmClientSecure TinyGsmClientSecure; TODO!
 
-#elif defined(TINY_GSM_MODEM_SIM5360) || defined(TINY_GSM_MODEM_SIM5320)
+#elif defined(TINY_GSM_MODEM_SIM5320) || defined(TINY_GSM_MODEM_SIM5360) || \
+      defined(TINY_GSM_MODEM_SIM5300) || defined(TINY_GSM_MODEM_SIM7100) || \
+      defined(TINY_GSM_MODEM_SIM7500) || defined(TINY_GSM_MODEM_SIM7600)
   #define TINY_GSM_MODEM_HAS_GPRS
   #include <TinyGsmClientSIM5360.h>
   typedef TinyGsmSim5360 TinyGsm;

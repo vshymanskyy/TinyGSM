@@ -316,49 +316,46 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
 
     // Define the PDP context
 
-    // Using CGDCONT sets up an "external" PCP context, i.e. a data connection
-    // using the external IP stack (e.g. Windows dial up) and PPP link over the
-    // serial interface.  Is this preferred?
+    // The CGDCONT commands set up the "external" PDP context
 
-    // Set the authentication
+    // Set the external authentication
     if (user && strlen(user) > 0) {
       sendAT(GF("+CGAUTH=1,0,\""), user, GF("\",\""), pwd, '"');
       waitResponse();
     }
 
     // Define PDP context 1
-    sendAT(GF("+CGDCONT=1,\"IP\",\""), apn, '"');
+    sendAT(GF("+CGDCONT=1,\"IP\",\""), apn, '"',",\"0.0.0.0\",0,0");
     waitResponse();
 
-    sendAT(GF("+CGACT=1,1"));  // activate PDP profile/context 1
-    if (waitResponse(75000L) != 1) {
-      return false;
-    }
+    // The CGSOCKCONT commands define the "embedded" PDP context for TCP/IP
 
-    // Using CGSOCKCONT commands defines a PDP context for  Embedded  TCP/IP application
-    // CGDCONT commands could be used for an external PDP context
-
-    //  ?? Unsure if this step is needed - redundant with +CGDCONT
+    // Define the socket PDP context
     sendAT(GF("+CGSOCKCONT=1,\"IP\",\""), apn, '"');
     waitResponse();
 
-    // Set the user name and password
-    //  ?? Unsure if this step is needed - redundant with +CGAUTH
+    // Set the embedded authentication
     if (user && strlen(user) > 0) {
       sendAT(GF("+CSOCKAUTH=1,1,\""), user, "\",\"", pwd, '"');
       waitResponse();
     }
 
     // Set active PDP context’s profile number
-    //  ?? Unsure if this step is needed - redundant with +CGAUTH
+    // This ties the embedded TCP/IP application to the external PDP context
     sendAT(GF("+CSOCKSETPN=1"));
+    waitResponse();
+
+    // Configure TCP parameters
+
+    // Select TCP/IP application mode (command mode)
+    sendAT(GF("+CIPMODE=0"));
     waitResponse();
 
     // Set Sending Mode - send without waiting for peer TCP ACK
     sendAT(GF("+CIPSENDMODE=0"));
     waitResponse();
 
-    // Configure TCP parameters
+    // Configure socket parameters
     //AT+CIPCCFG= [<NmRetry>][,[<DelayTm>][,[<Ack>][,[<errMode>][,]<HeaderType>][,[[<AsyncMode>][,[<TimeoutVal>]]]]]]]]
     // NmRetry = number of retransmission to be made for an IP packet = 10 (default)
     // DelayTm = number of milliseconds to delay to output data of Receiving = 0 (default)
@@ -372,23 +369,16 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
       return false;
     }
 
-    // Select TCP/IP application mode (command mode)
-    sendAT(GF("+CIPMODE=0"));
-    waitResponse();
-
-    // Configure timeouts for open and close socket
+    // Configure timeouts for opening and closing sockets
     // AT+CIPTIMEOUT=[<netopen_timeout>][, [<cipopen_timeout>][, [<cipsend_timeout>]]]
     sendAT(GF("+CIPTIMEOUT="), 75000, ',', 15000, ',', 15000);
     waitResponse();
 
-    // attach to GPRS
-    sendAT(GF("+CGATT=1"));
-    if (waitResponse(360000L) != 1) {
-      return false;
-    }
-
     // Start the socket service
-    // Response may be an immediate "OK" followed later by "+NETOPEN: 1".
+
+    // This activates and attaches to the external PDP context that is tied
+    // to the embedded context for TCP/IP (ie AT+CGACT=1,1 and AT+CGATT=1)
+    // Response may be an immediate "OK" followed later by "+NETOPEN: 0".
     // We to ignore any immediate response and wait for the
     // URC to show it's really connected.
     sendAT(GF("+NETOPEN"));
@@ -415,12 +405,14 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
       return false;
     }
 
-    sendAT(GF("+CGACT=1,0"));  // Deactivate PDP context 1
+    // Deactivate PDP context 1
+    sendAT(GF("+CGACT=1,0"));
     if (waitResponse(40000L) != 1) {
       return false;
     }
 
-    sendAT(GF("+CGATT=0"));  // detach from GPRS
+    // Detach from GPRS
+    sendAT(GF("+CGATT=0"));
     if (waitResponse(360000L) != 1) {
       return false;
     }
@@ -438,8 +430,9 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
 
     sendAT(GF("+IPADDR")); // Inquire Socket PDP address
     // sendAT(GF("+CGPADDR=1")); // Show PDP address
-    if (waitResponse() != 1)
+    if (waitResponse() != 1) {
       return false;
+    }
 
     return true;
   }
@@ -624,6 +617,10 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
   }
 
   float getTemperature() TINY_GSM_ATTR_NOT_AVAILABLE;
+    // ToDo:
+    // # Enable Temparature Reading:
+    //AT+CMTE=1
+    //AT+CMTE?
 
   /*
    * Client related functions
@@ -639,9 +636,9 @@ protected:
       return false;
     }
 
-    // Establish connection in multi-socket mode
+        // Establish a connection in multi-socket mode
     sendAT(GF("+CIPOPEN="), mux, ',', GF("\"TCP"), GF("\",\""), host, GF("\","), port);
-    // reply is +CIPOPEN: ## of socket created
+        // The reply is +CIPOPEN: ## of socket created
     if (waitResponse(15000L, GF(GSM_NL "+CIPOPEN:")) != 1) {
       return false;
     }
@@ -696,6 +693,7 @@ protected:
 #endif
       sockets[mux]->rx.put(c);
     }
+
     DBG("### READ:", len_requested, "from", mux);
     // sockets[mux]->sock_available = modemGetAvailable(mux);
     sockets[mux]->sock_available = len_confirmed;
@@ -722,7 +720,7 @@ protected:
   bool modemGetConnected(uint8_t mux) {
     // Read the status of all sockets at once
     sendAT(GF("+CIPCLOSE?"), mux);
-    if (waitResponse(GFP(GSM_OK), GF(GSM_NL "+CIPCLOSE: ")) != 2)
+    if (waitResponse(GFP(GSM_OK), GF("+CIPCLOSE: ")) != 2)
       return false;
     for (int muxNo = 0; muxNo <= TINY_GSM_MUX_COUNT; muxNo++) {
       // +CIPCLOSE:<link0_state>,<link1_state>,...,<link9_state>
@@ -805,6 +803,14 @@ TINY_GSM_MODEM_STREAM_UTILITIES()
           }
           data = "";
           DBG("### Closed: ", mux);
+        } else if (data.endsWith(GF("+CIPEVENT:"))) {
+          // Need to close all open sockets and release the network library.
+          // User will then need to reconnect.
+          DBG("### Network error!");
+          if (!isGprsConnected()) {
+            gprsDisconnect();
+          }
+          data = "";
         }
       }
     } while (millis() - startMillis < timeout_ms);
