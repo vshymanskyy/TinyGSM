@@ -16,6 +16,7 @@
 // #define TINY_GSM_MODEM_SIM900
 // #define TINY_GSM_MODEM_SIM7000
 // #define TINY_GSM_MODEM_SIM5360
+// #define TINY_GSM_MODEM_SIM7600
 // #define TINY_GSM_MODEM_UBLOX
 // #define TINY_GSM_MODEM_SARAR4
 // #define TINY_GSM_MODEM_M95
@@ -56,7 +57,7 @@
 #define GSM_AUTOBAUD_MIN 9600
 #define GSM_AUTOBAUD_MAX 115200
 
-// Add a reception delay, if needed
+// Add a reception delay - may be needed for a fast processor at a slow baud rate
 //#define TINY_GSM_YIELD() { delay(2); }
 
 // Uncomment this if you want to use SSL

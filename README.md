@@ -33,52 +33,24 @@ Arduino GSM library uses 15868 bytes (49%) of Flash and 1113 bytes (54%) of RAM 
 TinyGSM also pulls data gently from the modem (whenever possible), so it can operate on very little RAM.
 **Now, you have more space for your experiments.**
 
-## Features
-
-Feature \ Modem              | SIM8xx | u-Blox | A6/A7/A20 | Neoway M590| ESP8266 |Digi XBee|Quectel BG96|Quectel M95|Quectel MC60(E)| SIM7000 | Monarch |
----                          | ---    | ---    | ---       | ---        | ---     | ---     | ---        | ---       | ---           | ---     | ---     |
-**Data connections**
-TCP (HTTP, MQTT, Blynk, ...) | ✔      | ✔      | ✔         | ✔         | ✔        | ✔       | ✔          | ✔         | ✔             | ✔       | ✔       |
-UDP                          | ◌      | ◌      |           |           |          | ◌       | ◌          |           |               | ◌       | ◌       |
-SSL/TLS (HTTPS)              | ✔¹     | ✔      | x         | x         | ✔        | ✔       | ◌          |           |               | ◌       | ✔       |
-**USSD**
-Sending USSD requests        | ✔      |        | ✔         | ✔         | x        |          |             |         |               | ✔       |         |
-Decoding 7,8,16-bit response | ✔      |        | ✔         | ✔         | x        |          |             |         |               | ✔       |         |
-**SMS**
-Sending                      | ✔      | ✔      | ✔         | ✔         | x        | ✔        | ✔          | ✔        | ✔             | ✔       | ✔       |
-Sending Unicode              | ✔      |        | ◌         | x         | x        |          | ✔           | ✔       | ✔             | ✔       |         |
-Reading                      |        |        |           |           | x        |          |             |         |               |         |         |
-Incoming message event       |        |        |           | ?         | x        |          |             |         |               |         |         |
-**Calls**
-Dial, hangup                 | ✔      |        | ✔         | x         | x        | x        |             |         |               |         |         |
-Receiving calls              | ✔      |        | ✔         | x         | x        | x        |             |         |               |         |         |
-Incoming event (RING)        | ◌      |        | ◌         | x         | x        | x        |             |         |               |         |         |
-DTMF sending                 | ✔      |        | ✔         | x         | x        | x        |             |         |               |         |         |
-DTMF decoding                | ◌      |        | x         | x         | x        | x        |             |         |               |         |         |
-**Location**
-GSM location service         | ✔      | ✔      | x         | x         | x        | x        |             | x       | ✔             | ✔       | x       |
-GPS/GNSS                     | ✔¹     | x      | ◌¹        | x         | x        | x        |             | x       |               | ✔       | x       |
-**Credits**
-Primary Author/Contributor   |[vshymanskyy](https://github.com/vshymanskyy)|[vshymanskyy](https://github.com/vshymanskyy)|[vshymanskyy](https://github.com/vshymanskyy)|[vshymanskyy](https://github.com/vshymanskyy)|[vshymanskyy](https://github.com/vshymanskyy)|[SRGDamia1](https://github.com/SRGDamia1/)|[vshymanskyy](https://github.com/vshymanskyy)  |[replicadeltd](https://github.com/replicadeltd)|[V1pr](https://github.com/V1pr)|[captFuture](https://github.com/captFuture/)|[nootropicdesign](https://github.com/nootropicdesign/)|
-
-✔ - implemented  ◌ - planned  x - not available on this modem
-¹ - only some device models or firmware revisions have this feature (SIM8xx R14.18, A7, etc.)
 
 ## Supported modems
 
 - SIMCom SIM800 series (SIM800A, SIM800C, SIM800L, SIM800H, SIM808, SIM868)
 - SIMCom SIM900 series (SIM900A, SIM900D, SIM908, SIM968)
+- SIMCom WCDMA/HSPA/HSPA+ Modules (SIM5360, SIM5320, SIM5300E, SIM5300EA)
+- SIMCom LTE Modules (SIM7100E, SIM7500E, SIM7500A, SIM7600C, SIM7600E)
+- SIMCom SIM7000E CAT-M1/NB-IoT Module
 - AI-Thinker A6, A6C, A7, A20
 - ESP8266 (AT commands interface, similar to GSM modems)
 - Digi XBee WiFi and Cellular (using XBee command mode)
 - Neoway M590
-- u-blox Cellular Modems (many modules including LEON-G100, LISA-U2xx, SARA-G3xx, SARA-U2xx, TOBY-L2xx, LARA-R2xx, MPCI-L2xx, SARA-R4xx, SARA-N4xx, _but NOT SARA-N2xx_)
+- u-blox 2G, 3G, 4G, and LTE Cat1 Cellular Modems (many modules including LEON-G100, LISA-U2xx, SARA-G3xx, SARA-U2xx, TOBY-L2xx, LARA-R2xx, MPCI-L2xx)
+- u-blox LTE-M Modems (SARA-R4xx, SARA-N4xx, _but NOT SARA-N2xx_)
 - Sequans Monarch LTE Cat M1/NB1
 - Quectel BG96
 - Quectel M95
 - Quectel MC60 ***(alpha)***
-- SIMCom SIM7000 ***(alpha)***
-- SIMCom SIM5360 ***(alpha)***
 
 ### Supported boards/modules
 - Arduino MKR GSM 1400
@@ -92,13 +64,61 @@ Primary Author/Contributor   |[vshymanskyy](https://github.com/vshymanskyy)|[vsh
 
 More modems may be supported later:
 - [ ] Quectel M10, UG95
-- [ ] SIMCom SIM5320, SIM5360, SIM5216
-- [ ] SIMCom SIM7020, SIM7100
+- [ ] SIMCom SIM7020
 - [ ] Telit GL865
 - [ ] ZTE MG2639
 - [ ] Hi-Link HLK-RM04
 
 Watch this repo for new updates! And of course, contributions are welcome ;)
+
+## Features
+
+**Data connections**
+- TCP (HTTP, MQTT, Blynk, ...)
+    - ALL modules support TCP connections
+- UDP
+    - Not yet supported on any module, though it may be some day
+- SSL/TLS (HTTPS)
+    - Supported on¹:
+        - SIM800, u-Blox, XBee _cellular_, ESP8266, and Sequans Monarch
+        ¹ - only some device models or firmware revisions have this feature (SIM8xx R14.18, A7, etc.)
+    - Not yet supported on:
+        - Quectel modems, SIM7000, SIM5360/5320/7100/7500/7600
+    - Not possible on:
+        - SIM900, A6/A7, M560, XBee _WiFi_
+
+**USSD**
+Sending USSD requests and decoding 7,8,16-bit responses
+    - Supported on:
+        - SIM800/SIM900, SIM7000
+    - Not yet supported on:
+        - Quectel modems, SIM5360/5320/7100/7500/7600, XBee
+
+**SMS**
+Only _sending_ SMS is supported, not receiving
+    - Supported on:
+        - SIM800/SIM900, SIM7000, XBee
+    - Not yet supported on:
+        - Quectel modems, SIM5360/5320/7100/7500/7600
+
+**Calls**
+- Only Supported on SIM800 and A6/A7/A20
+    - Dial, hangup
+    - Receiving calls
+    - Incoming event (RING)
+    - DTMF sending
+    - DTMF decoding
+
+**Location**
+- GPS/GNSS
+    - SIM808 and SIM7000 only
+- GSM location service
+    - SIM800, SIM and SIM7000 only
+
+**Credits**
+Primary Author/Contributor   |[vshymanskyy](https://github.com/vshymanskyy)|[vshymanskyy](https://github.com/vshymanskyy)|[vshymanskyy](https://github.com/vshymanskyy)|[vshymanskyy](https://github.com/vshymanskyy)|[vshymanskyy](https://github.com/vshymanskyy)|[SRGDamia1](https://github.com/SRGDamia1/)|[vshymanskyy](https://github.com/vshymanskyy)  |[replicadeltd](https://github.com/replicadeltd)|[V1pr](https://github.com/V1pr)|[captFuture](https://github.com/captFuture/)|[nootropicdesign](https://github.com/nootropicdesign/)|
+
+✔ - implemented  ◌ - planned  x - not available on this modem
 
 ## Donation
 
@@ -166,10 +186,15 @@ In some cases **9600** is unstable, but using **38400** helps, etc.
 Be sure to set correct TX/RX pins in the sketch. Please note that not every Arduino pin can serve as TX or RX pin.
 **Read more about SoftSerial options and configuration [here](https://www.pjrc.com/teensy/td_libs_AltSoftSerial.html) and [here](https://www.arduino.cc/en/Reference/SoftwareSerial).**
 
-### ESP32 HardwareSerial
+### ESP32 Notes
+
+#### HardwareSerial
 
 When using ESP32 `HardwareSerial`, you may need to specify additional parameters to the `.begin()` call.
 Please [refer to this comment](https://github.com/vshymanskyy/TinyGSM/issues/91#issuecomment-356024747).
+
+#### HttpClient
+If you are using an ESP32, you must will not be able to compile the HttpClient or HttpsClient examples if you are using ESP32 core >1.0.1.  Downgrade to version 1.0.1 or use the WebClient example.  Please comment on the issue on the ESP32 core, not in this library:  https://github.com/espressif/arduino-esp32/issues/2755
 
 ### SAMD21
 

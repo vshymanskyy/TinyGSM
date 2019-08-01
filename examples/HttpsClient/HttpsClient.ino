@@ -55,7 +55,7 @@
 #define TINY_GSM_DEBUG SerialMon
 //#define LOGGING  // <- Logging is for the HTTP library
 
-// Add a reception delay, if needed
+// Add a reception delay - may be needed for a fast processor at a slow baud rate
 //#define TINY_GSM_YIELD() { delay(2); }
 
 #define TINY_GSM_USE_GPRS true
