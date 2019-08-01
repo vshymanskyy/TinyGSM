@@ -116,9 +116,21 @@ Only _sending_ SMS is supported, not receiving
     - SIM800, SIM and SIM7000 only
 
 **Credits**
-Primary Author/Contributor   |[vshymanskyy](https://github.com/vshymanskyy)|[vshymanskyy](https://github.com/vshymanskyy)|[vshymanskyy](https://github.com/vshymanskyy)|[vshymanskyy](https://github.com/vshymanskyy)|[vshymanskyy](https://github.com/vshymanskyy)|[SRGDamia1](https://github.com/SRGDamia1/)|[vshymanskyy](https://github.com/vshymanskyy)  |[replicadeltd](https://github.com/replicadeltd)|[V1pr](https://github.com/V1pr)|[captFuture](https://github.com/captFuture/)|[nootropicdesign](https://github.com/nootropicdesign/)|
+Primary Author/Contributor:
+    - [vshymanskyy](https://github.com/vshymanskyy)
+Digi XBee, editing of all modules:
+    - [SRGDamia1](https://github.com/SRGDamia1/)
+SIM7000:
+    - [captFuture](https://github.com/captFuture/)
+Sequans Monarch:
+    - [nootropicdesign](https://github.com/nootropicdesign/)
+Quectel M9C60
+    - [V1pr](https://github.com/V1pr)
+Quectel M95
+    - [replicadeltd](https://github.com/replicadeltd)
+Other Contributors:
+    - https://github.com/vshymanskyy/TinyGSM/graphs/contributors
 
-✔ - implemented  ◌ - planned  x - not available on this modem
 
 ## Donation
 
