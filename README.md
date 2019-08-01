@@ -88,20 +88,20 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
         - SIM900, A6/A7, M560, XBee _WiFi_
 
 **USSD**
-Sending USSD requests and decoding 7,8,16-bit responses
+- Sending USSD requests and decoding 7,8,16-bit responses
     - Supported on:
         - SIM800/SIM900, SIM7000
     - Not yet supported on:
         - Quectel modems, SIM5360/5320/7100/7500/7600, XBee
 
 **SMS**
-Only _sending_ SMS is supported, not receiving
+- Only _sending_ SMS is supported, not receiving
     - Supported on:
         - SIM800/SIM900, SIM7000, XBee
     - Not yet supported on:
         - Quectel modems, SIM5360/5320/7100/7500/7600
 
-**Calls**
+**Voice Calls**
 - Only Supported on SIM800 and A6/A7/A20
     - Dial, hangup
     - Receiving calls
@@ -116,19 +116,19 @@ Only _sending_ SMS is supported, not receiving
     - SIM800, SIM and SIM7000 only
 
 **Credits**
-Primary Author/Contributor:
+- Primary Author/Contributor:
     - [vshymanskyy](https://github.com/vshymanskyy)
-Digi XBee, editing of all modules:
+- Digi XBee, editing of all modules:
     - [SRGDamia1](https://github.com/SRGDamia1/)
-SIM7000:
+- SIM7000:
     - [captFuture](https://github.com/captFuture/)
-Sequans Monarch:
+- Sequans Monarch:
     - [nootropicdesign](https://github.com/nootropicdesign/)
-Quectel M9C60
+- Quectel M9C60
     - [V1pr](https://github.com/V1pr)
-Quectel M95
+- Quectel M95
     - [replicadeltd](https://github.com/replicadeltd)
-Other Contributors:
+- Other Contributors:
     - https://github.com/vshymanskyy/TinyGSM/graphs/contributors
 
 
@@ -206,7 +206,7 @@ When using ESP32 `HardwareSerial`, you may need to specify additional parameters
 Please [refer to this comment](https://github.com/vshymanskyy/TinyGSM/issues/91#issuecomment-356024747).
 
 #### HttpClient
-If you are using an ESP32, you must will not be able to compile the HttpClient or HttpsClient examples if you are using ESP32 core >1.0.1.  Downgrade to version 1.0.1 or use the WebClient example.  Please comment on the issue on the ESP32 core, not in this library:  https://github.com/espressif/arduino-esp32/issues/2755
+You will not be able to compile the HttpClient or HttpsClient examples with ESP32 core >1.0.1.  Downgrade to version 1.0.1 or use the WebClient example.  Please comment on the issue on the ESP32 core, not in this library:  https://github.com/espressif/arduino-esp32/issues/2755
 
 ### SAMD21
 
