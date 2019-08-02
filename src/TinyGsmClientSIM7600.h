@@ -316,41 +316,29 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
 
     // Define the PDP context
 
-    // Using CGDCONT sets up an "external" PCP context, i.e. a data connection
-    // using the external IP stack (e.g. Windows dial up) and PPP link over the
-    // serial interface.  Is this preferred?
+    // The CGDCONT commands set up the "external" PDP context
 
-    // Set the authentication
+    // Set the external authentication
     if (user && strlen(user) > 0) {
       sendAT(GF("+CGAUTH=1,0,\""), user, GF("\",\""), pwd, '"');
       waitResponse();
     }
 
-    // Define PDP context 1
-    sendAT(GF("+CGSOCKCONT=1,\"IP\",\""), apn, '"');
+    // Define external PDP context 1
+    sendAT(GF("+CGDCONT=1,\"IP\",\""), apn, '"',",\"0.0.0.0\",0,0");
     waitResponse();
 
-    sendAT(GF("+CSOCKSETPN=1"));  // activate PDP profile/context 1
-    if (waitResponse(75000L) != 1) {
-      return false;
-    }
+    // Configure TCP parameters
 
-    // Using CGSOCKCONT commands defines a PDP context for  Embedded  TCP/IP application
-    // CGDCONT commands could be used for an external PDP context
-
-
-    // Set the user name and password
-    //  ?? Unsure if this step is needed - redundant with +CGAUTH
-    if (user && strlen(user) > 0) {
-      sendAT(GF("+CSOCKAUTH=1,1,\""), user, "\",\"", pwd, '"');
-      waitResponse();
-    }
+    // Select TCP/IP application mode (command mode)
+    sendAT(GF("+CIPMODE=0"));
+    waitResponse();
 
     // Set Sending Mode - send without waiting for peer TCP ACK
     sendAT(GF("+CIPSENDMODE=0"));
     waitResponse();
 
-    // Configure TCP parameters
+    // Configure socket parameters
     //AT+CIPCCFG= [<NmRetry>][,[<DelayTm>][,[<Ack>][,[<errMode>][,]<HeaderType>][,[[<AsyncMode>][,[<TimeoutVal>]]]]]]]]
     // NmRetry = number of retransmission to be made for an IP packet = 10 (default)
     // DelayTm = number of milliseconds to delay to output data of Receiving = 0 (default)
@@ -364,18 +352,16 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
       return false;
     }
 
-    // Select TCP/IP application mode (command mode)
-    sendAT(GF("+CIPMODE=0"));
-    waitResponse();
-
-    // Configure timeouts for open and close socket
+    // Configure timeouts for opening and closing sockets
     // AT+CIPTIMEOUT=[<netopen_timeout>][, [<cipopen_timeout>][, [<cipsend_timeout>]]]
     sendAT(GF("+CIPTIMEOUT="), 75000, ',', 15000, ',', 15000);
     waitResponse();
 
-    // attach to GPRS
-       // Start the socket service
-    // Response may be an immediate "OK" followed later by "+NETOPEN: 1".
+    // Start the socket service
+
+    // This activates and attaches to the external PDP context that is tied
+    // to the embedded context for TCP/IP (ie AT+CGACT=1,1 and AT+CGATT=1)
+    // Response may be an immediate "OK" followed later by "+NETOPEN: 0".
     // We to ignore any immediate response and wait for the
     // URC to show it's really connected.
     sendAT(GF("+NETOPEN"));
@@ -388,29 +374,29 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
 
   bool gprsDisconnect() {
 
-    // Stop the socket service
-    // Note: all sockets should be closed first
+    // Close all sockets and stop the socket service
+    // Note: On the LTE models, this single command closes all sockets and the service
     sendAT(GF("+NETCLOSE"));
-    if (waitResponse(60000L) != 1)
+    if (waitResponse(60000L, GF(GSM_NL "+NETCLOSE: 0")) != 1) {
       return false;
+    }
 
     return true;
   }
 
   bool isGprsConnected() {
     sendAT(GF("+NETOPEN?"));
+    // May return +NETOPEN: 1, 0.  We just confirm that the first number is 1
     if (waitResponse(GF(GSM_NL "+NETOPEN: 1")) != 1) {
       return false;
     }
-    int res = stream.readStringUntil('\n').toInt();
     waitResponse();
-    if (res != 1)
-      return false;
 
     sendAT(GF("+IPADDR")); // Inquire Socket PDP address
     // sendAT(GF("+CGPADDR=1")); // Show PDP address
-    if (waitResponse() != 1)
+    if (waitResponse() != 1) {
       return false;
+    }
 
     return true;
   }
@@ -451,8 +437,10 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
    */
 
   String sendUSSD(const String& code) {
+    // Select message format (1=text)
     sendAT(GF("+CMGF=1"));
     waitResponse();
+    // Select TE character set
     sendAT(GF("+CSCS=\"HEX\""));
     waitResponse();
     sendAT(GF("+CUSD=1,\""), code, GF("\""));
@@ -477,14 +465,16 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
   }
 
   bool sendSMS(const String& number, const String& text) {
-
+    // Get SMS service centre address
     sendAT(GF("+AT+CSCA?"));
     waitResponse();
+    // Select message format (1=text)
     sendAT(GF("+CMGF=1"));
     waitResponse();
     //Set GSM 7 bit default alphabet (3GPP TS 23.038)
     sendAT(GF("+CSCS=\"GSM\""));
     waitResponse();
+    // Send the message!
     sendAT(GF("+CMGS=\""), number, GF("\""));
     if (waitResponse(GF(">")) != 1) {
       return false;
@@ -496,13 +486,16 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
   }
 
   bool sendSMS_UTF16(const String& number, const void* text, size_t len) {
+    // Select message format (1=text)
     sendAT(GF("+CMGF=1"));
     waitResponse();
+    // Select TE character set
     sendAT(GF("+CSCS=\"HEX\""));
     waitResponse();
+    // Set text mode parameters
     sendAT(GF("+CSMP=17,167,0,8"));
     waitResponse();
-
+    // Send the message
     sendAT(GF("+CMGS=\""), number, GF("\""));
     if (waitResponse(GF(">")) != 1) {
       return false;
@@ -605,46 +598,41 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
    * Battery & temperature functions
    */
 
-  // Use: float vBatt = modem.getBattVoltage()/1000;
+  // Use: float vBatt = modem.getBattVoltage() / 1000.0;
   uint16_t getBattVoltage() {
-	  float voltage=0;
     sendAT(GF("+CBC"));
     if (waitResponse(GF(GSM_NL "+CBC:")) != 1) {
       return 0;
     }
 
-    // return voltage in mV
-    voltage = stream.readStringUntil('\n').toFloat();
+    // get voltage in VOLTS
+    float voltage = stream.readStringUntil('\n').toFloat();
     // Wait for final OK
     waitResponse();
+    // Return millivolts
 	uint16_t res = voltage*1000;
     return res;
   }
 
-  int8_t getBattPercent() {
-    //unsupported
-    return 0;
-  }
+  int8_t getBattPercent()  TINY_GSM_ATTR_NOT_AVAILABLE;
 
-  uint8_t getBattChargeState() {
-    //unsupported
-    return 0;
-  }
+  uint8_t getBattChargeState()  TINY_GSM_ATTR_NOT_AVAILABLE;
 
   bool getBattStats(uint8_t &chargeState, int8_t &percent, uint16_t &milliVolts) {
     sendAT(GF("+CBC?"));
     if (waitResponse(GF(GSM_NL "+CBC:")) != 1) {
       return false;
     }
-    milliVolts = stream.readStringUntil('\n').toInt()*1000;
+    // get voltage in VOLTS
+    float voltage = stream.readStringUntil('\n').toFloat();
+    milliVolts = voltage*1000;
     // Wait for final OK
     waitResponse();
     return true;
   }
 
-// get temperature in degree celsius
-  uint16_t getTemperature()
-  {
+  // get temperature in degree celsius
+  uint16_t getTemperature() {
     sendAT(GF("+CPMUTEMP"));
     if (waitResponse(GF(GSM_NL "+CPMUTEMP:")) != 1) {
       return 0;
@@ -653,11 +641,9 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
     uint16_t res = stream.readStringUntil('\n').toInt();
     // Wait for final OK
     waitResponse();
-
     return res;
   }
-  
-  
+
   /*
    * Client related functions
    */
@@ -672,14 +658,13 @@ protected:
       return false;
     }
 
-    // Establish connection in multi-socket mode
+    // Establish a connection in multi-socket mode
     sendAT(GF("+CIPOPEN="), mux, ',', GF("\"TCP"), GF("\",\""), host, GF("\","), port);
-    // reply is +CIPOPEN: ## of socket created
+    // The reply is +CIPOPEN: ## of socket created
     if (waitResponse(15000L, GF(GSM_NL "+CIPOPEN:")) != 1) {
-	
       return false;
     }
-   return true;
+    return true;
   }
 
   int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
@@ -756,12 +741,12 @@ protected:
   bool modemGetConnected(uint8_t mux) {
     // Read the status of all sockets at once
     sendAT(GF("+CIPCLOSE?"));
-    if (waitResponse(GF("+CIPCLOSE:")) != 1)	
-      //return false;
+    if (waitResponse(GF("+CIPCLOSE:")) != 1) {
+      // return false;  // TODO:  Why does this not read correctly?
+    }
     for (int muxNo = 0; muxNo <= TINY_GSM_MUX_COUNT; muxNo++) {
       // +CIPCLOSE:<link0_state>,<link1_state>,...,<link9_state>
       sockets[muxNo]->sock_connected = stream.parseInt();
-	  streamSkipUntil(',');
     }
     waitResponse();  // Should be an OK at the end
     return sockets[mux]->sock_connected;
@@ -840,6 +825,14 @@ TINY_GSM_MODEM_STREAM_UTILITIES()
           }
           data = "";
           DBG("### Closed: ", mux);
+        } else if (data.endsWith(GF("+CIPEVENT:"))) {
+          // Need to close all open sockets and release the network library.
+          // User will then need to reconnect.
+          DBG("### Network error!");
+          if (!isGprsConnected()) {
+            gprsDisconnect();
+          }
+          data = "";
         }
       }
     } while (millis() - startMillis < timeout_ms);

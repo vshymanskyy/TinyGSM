@@ -58,13 +58,13 @@ class GsmClient : public Client
 public:
   GsmClient() {}
 
-  GsmClient(TinyGsmSim5360& modem, uint8_t mux = 1) {
+  GsmClient(TinyGsmSim5360& modem, uint8_t mux = 0) {
     init(&modem, mux);
   }
 
   virtual ~GsmClient(){}
 
-  bool init(TinyGsmSim5360* modem, uint8_t mux = 1) {
+  bool init(TinyGsmSim5360* modem, uint8_t mux = 0) {
     this->at = modem;
     this->mux = mux;
     sock_available = 0;
@@ -324,7 +324,7 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
       waitResponse();
     }
 
-    // Define PDP context 1
+    // Define external PDP context 1
     sendAT(GF("+CGDCONT=1,\"IP\",\""), apn, '"',",\"0.0.0.0\",0,0");
     waitResponse();
 
@@ -399,21 +399,9 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
     }
 
     // Stop the socket service
-    // Note: all sockets should be closed first
+    // Note: all sockets should be closed first - on 3G/4G models the sockets must be closed manually
     sendAT(GF("+NETCLOSE"));
     if (waitResponse(60000L, GF(GSM_NL "+NETCLOSE: 0")) != 1) {
-      return false;
-    }
-
-    // Deactivate PDP context 1
-    sendAT(GF("+CGACT=1,0"));
-    if (waitResponse(40000L) != 1) {
-      return false;
-    }
-
-    // Detach from GPRS
-    sendAT(GF("+CGATT=0"));
-    if (waitResponse(360000L) != 1) {
       return false;
     }
 
@@ -473,8 +461,10 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
    */
 
   String sendUSSD(const String& code) {
+    // Select message format (1=text)
     sendAT(GF("+CMGF=1"));
     waitResponse();
+    // Select TE character set
     sendAT(GF("+CSCS=\"HEX\""));
     waitResponse();
     sendAT(GF("+CUSD=1,\""), code, GF("\""));
@@ -499,14 +489,16 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
   }
 
   bool sendSMS(const String& number, const String& text) {
-
+    // Get SMS service centre address
     sendAT(GF("+AT+CSCA?"));
     waitResponse();
+    // Select message format (1=text)
     sendAT(GF("+CMGF=1"));
     waitResponse();
     //Set GSM 7 bit default alphabet (3GPP TS 23.038)
     sendAT(GF("+CSCS=\"GSM\""));
     waitResponse();
+    // Send the message!
     sendAT(GF("+CMGS=\""), number, GF("\""));
     if (waitResponse(GF(">")) != 1) {
       return false;
@@ -518,13 +510,16 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
   }
 
   bool sendSMS_UTF16(const String& number, const void* text, size_t len) {
+    // Select message format (1=text)
     sendAT(GF("+CMGF=1"));
     waitResponse();
+    // Select TE character set
     sendAT(GF("+CSCS=\"HEX\""));
     waitResponse();
+    // Set text mode parameters
     sendAT(GF("+CSMP=17,167,0,8"));
     waitResponse();
-
+    // Send the message
     sendAT(GF("+CMGS=\""), number, GF("\""));
     if (waitResponse(GF(">")) != 1) {
       return false;
@@ -571,10 +566,12 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
     }
     streamSkipUntil(','); // Skip battery charge status
     streamSkipUntil(','); // Skip battery charge level
-    // return voltage in mV
-    uint16_t res = stream.readStringUntil(',').toInt();
+    // get voltage in VOLTS
+    float voltage = stream.readStringUntil('\n').toFloat();
     // Wait for final OK
     waitResponse();
+    // Return millivolts
+	uint16_t res = voltage*1000;
     return res;
   }
 
@@ -610,17 +607,31 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
     }
     chargeState = stream.readStringUntil(',').toInt();
     percent = stream.readStringUntil(',').toInt();
-    milliVolts = stream.readStringUntil('\n').toInt();
+    // get voltage in VOLTS
+    float voltage = stream.readStringUntil('\n').toFloat();
+    milliVolts = voltage*1000;
     // Wait for final OK
     waitResponse();
     return true;
   }
 
-  float getTemperature() TINY_GSM_ATTR_NOT_AVAILABLE;
-    // ToDo:
-    // # Enable Temparature Reading:
-    //AT+CMTE=1
-    //AT+CMTE?
+  // get temperature in degree celsius
+  float getTemperature() {
+    // Enable Temparature Reading
+    sendAT(GF("+CMTE=1"));
+    if (waitResponse() != 1) {
+      return 0;
+    }
+    // Get Temparature Value
+    sendAT(GF("+CMTE?"));
+    if (waitResponse(GF(GSM_NL "+CMTE:")) != 1) {
+      return false;
+    }
+    float res = stream.readStringUntil('\n').toFloat();
+    // Wait for final OK
+    waitResponse();
+    return res;
+  }
 
   /*
    * Client related functions
@@ -636,9 +647,9 @@ protected:
       return false;
     }
 
-        // Establish a connection in multi-socket mode
+    // Establish a connection in multi-socket mode
     sendAT(GF("+CIPOPEN="), mux, ',', GF("\"TCP"), GF("\",\""), host, GF("\","), port);
-        // The reply is +CIPOPEN: ## of socket created
+    // The reply is +CIPOPEN: ## of socket created
     if (waitResponse(15000L, GF(GSM_NL "+CIPOPEN:")) != 1) {
       return false;
     }
@@ -693,7 +704,6 @@ protected:
 #endif
       sockets[mux]->rx.put(c);
     }
-
     DBG("### READ:", len_requested, "from", mux);
     // sockets[mux]->sock_available = modemGetAvailable(mux);
     sockets[mux]->sock_available = len_confirmed;
@@ -719,9 +729,10 @@ protected:
 
   bool modemGetConnected(uint8_t mux) {
     // Read the status of all sockets at once
-    sendAT(GF("+CIPCLOSE?"), mux);
-    if (waitResponse(GFP(GSM_OK), GF("+CIPCLOSE: ")) != 2)
+    sendAT(GF("+CIPCLOSE?"));
+    if (waitResponse(GF("+CIPCLOSE:")) != 1) {
       return false;
+    }
     for (int muxNo = 0; muxNo <= TINY_GSM_MUX_COUNT; muxNo++) {
       // +CIPCLOSE:<link0_state>,<link1_state>,...,<link9_state>
       sockets[muxNo]->sock_connected = stream.parseInt();
