@@ -175,7 +175,7 @@ public:
       return false;
     }
     DBG(GF("### Modem:"), getModemName());
-    getSimStatus();
+    DBG(GF("### Sim status:"), getSimStatus());
     return true;
   }
 
