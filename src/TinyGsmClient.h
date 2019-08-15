@@ -32,6 +32,15 @@
   typedef TinyGsmSim800 TinyGsm;
   typedef TinyGsmSim800::GsmClient TinyGsmClient;
 
+#elif defined(TINY_GSM_MODEM_SIM5320)
+  #define TINY_GSM_MODEM_HAS_GPRS
+  #define TINY_GSM_MODEM_HAS_SSL
+  #define TINY_GSM_MODEM_HAS_GPS
+  #include <TinyGsmClientSIM5320.h>
+  typedef TinyGsmSim5320 TinyGsm;
+  typedef TinyGsmSim5320::GsmClient TinyGsmClient;
+  typedef TinyGsmSim5320::GsmClientSecure TinyGsmClientSecure;
+
 #elif defined(TINY_GSM_MODEM_SIM7000)
   #define TINY_GSM_MODEM_HAS_GPRS
   #define TINY_GSM_MODEM_HAS_GPS
