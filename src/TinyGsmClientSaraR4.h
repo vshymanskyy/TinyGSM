@@ -525,7 +525,7 @@ TINY_GSM_MODEM_GET_GPRS_IP_CONNECTED()
     streamSkipUntil(','); // Skip units (C/F)
     int16_t res = stream.readStringUntil('\n').toInt();
     float temp = -9999;
-    if (res != 655355) {
+    if (res != 65535) {
       temp = ((float)res)/10;
     }
     return temp;

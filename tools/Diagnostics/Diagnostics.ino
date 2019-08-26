@@ -84,9 +84,9 @@ const char resource[] = "/TinyGSM/logo.txt";
 #include <TinyGsmClient.h>
 
 #ifdef DUMP_AT_COMMANDS
-#include <StreamDebugger.h>
-StreamDebugger debugger(SerialAT, SerialMon);
-TinyGsm modem(debugger);
+  #include <StreamDebugger.h>
+  StreamDebugger debugger(SerialAT, SerialMon);
+  TinyGsm modem(debugger);
 #else
   TinyGsm modem(SerialAT);
 #endif
@@ -104,12 +104,9 @@ void setup() {
   SerialMon.begin(115200);
   delay(10);
 
+  // !!!!!!!!!!!
   // Set your reset, enable, power pins here
-  pinMode(20, OUTPUT);
-  digitalWrite(20, HIGH);
-
-  pinMode(23, OUTPUT);
-  digitalWrite(23, HIGH);
+  // !!!!!!!!!!!
 
   SerialMon.println("Wait...");
 
@@ -139,7 +136,7 @@ void loop() {
   SerialMon.println(F(" [OK]"));
 
   String modemInfo = modem.getModemInfo();
-  SerialMon.print("Modem: ");
+  SerialMon.print("Modem Info: ");
   SerialMon.println(modemInfo);
 
 #if TINY_GSM_USE_GPRS
