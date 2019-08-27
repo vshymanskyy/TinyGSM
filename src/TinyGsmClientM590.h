@@ -133,20 +133,36 @@ public:
 
   bool init(const char* pin = NULL) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
+
     if (!testAT()) {
       return false;
     }
+
     sendAT(GF("&FZE0"));  // Factory + Reset + Echo Off
     if (waitResponse() != 1) {
       return false;
     }
+
 #ifdef TINY_GSM_DEBUG
-    sendAT(GF("+CMEE=2"));
-    waitResponse();
+    sendAT(GF("+CMEE=2"));  // turn on verbose error codes
+#else
+    sendAT(GF("+CMEE=0"));  // turn off error codes
 #endif
+    waitResponse();
+
     DBG(GF("### Modem:"), getModemName());
-    getSimStatus();
-    return true;
+
+    int ret = getSimStatus();
+    // if the sim isn't ready and a pin has been provided, try to unlock the sim
+    if (ret != SIM_READY && pin != NULL && strlen(pin) > 0) {
+      simUnlock(pin);
+      return (getSimStatus() == SIM_READY);
+    }
+    // if the sim is ready, or it's locked but no pin has been provided, return
+    // true
+    else {
+      return (ret == SIM_READY || ret == SIM_LOCKED);
+    }
   }
 
   String getModemName() {

@@ -305,6 +305,10 @@ public:
       digitalWrite(resetPin, HIGH);
     }
 
+    if (pin != NULL) {
+      DBG("XBee's do not support SIMs that require an unlock pin!");
+    }
+
     XBEE_COMMAND_START_DECORATOR(10, false)
 
     sendAT(GF("AP0"));  // Put in transparent mode
@@ -524,6 +528,9 @@ public:
    */
 
   bool simUnlock(const char *pin) {  // Not supported
+    if (pin != NULL) {
+      DBG("XBee's do not support SIMs that require an unlock pin!");
+    }
     return false;
   }
 
@@ -535,7 +542,7 @@ public:
     return sendATGetString(GF("IM"));
   }
 
-  SimStatus getSimStatus(unsigned long timeout_ms = 10000L) {
+  SimStatus getSimStatus() {
     return SIM_READY;  // unsupported
   }
 
@@ -734,7 +741,14 @@ public:
    * GPRS functions
    */
 
-  bool gprsConnect(const char* apn, const char* user = NULL, const char* pwd = NULL) {
+  bool gprsConnect(const char* apn, const char* user = NULL,
+                   const char* pwd = NULL) {
+    if (user != NULL) {
+      DBG("XBee's do not support SIMs that a user name/password!");
+    }
+    if (pwd != NULL) {
+      DBG("XBee's do not support SIMs that a user name/password!");
+    }
     XBEE_COMMAND_START_DECORATOR(5, false)
     sendAT(GF("AN"), apn);  // Set the APN
     bool success = waitResponse() == 1;
@@ -922,6 +936,7 @@ protected:
   }
 
   int16_t modemSend(const void* buff, size_t len, uint8_t mux = 0) {
+    if (mux != 0) DBG("XBee only supports 1 IP channel in transparent mode!");
     stream.write((uint8_t*)buff, len);
     stream.flush();
     return len;

@@ -176,9 +176,11 @@ public:
 
   bool init(const char* pin = NULL) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
+
     if (!testAT()) {
       return false;
     }
+
     sendAT(GF("E0"));   // Echo Off
     if (waitResponse() != 1) {
       return false;
@@ -535,7 +537,9 @@ TINY_GSM_MODEM_GET_GPRS_IP_CONNECTED()
   uint8_t getBattChargeState() TINY_GSM_ATTR_NOT_AVAILABLE;
 
   bool getBattStats(uint8_t &chargeState, int8_t &percent, uint16_t &milliVolts) {
+    chargeState = 0;
     percent = getBattPercent();
+    milliVolts = 0;
     return true;
   }
 

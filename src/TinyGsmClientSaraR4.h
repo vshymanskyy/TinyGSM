@@ -176,9 +176,11 @@ public:
 
   bool init(const char* pin = NULL) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
+
     if (!testAT()) {
       return false;
     }
+
     sendAT(GF("E0"));   // Echo Off
     if (waitResponse() != 1) {
       return false;
@@ -191,7 +193,7 @@ public:
 #endif
     waitResponse();
 
-    getModemName();
+    DBG(GF("### Modem:"), getModemName());
 
     int ret = getSimStatus();
     // if the sim isn't ready and a pin has been provided, try to unlock the sim
@@ -509,6 +511,8 @@ TINY_GSM_MODEM_GET_GPRS_IP_CONNECTED()
 
   bool getBattStats(uint8_t &chargeState, int8_t &percent, uint16_t &milliVolts) {
     percent = getBattPercent();
+    chargeState = 0;
+    milliVolts = 0;
     return true;
   }
 
@@ -525,7 +529,7 @@ TINY_GSM_MODEM_GET_GPRS_IP_CONNECTED()
     streamSkipUntil(','); // Skip units (C/F)
     int16_t res = stream.readStringUntil('\n').toInt();
     float temp = -9999;
-    if (res != 65535) {
+    if (res != -1) {
       temp = ((float)res)/10;
     }
     return temp;

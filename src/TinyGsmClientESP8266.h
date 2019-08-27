@@ -31,13 +31,12 @@ static unsigned TINY_GSM_TCP_KEEP_ALIVE = 120;
 // 4 : the TCP or UDP transmission of ESP8266 station disconnected
 // 5 : ESP8266 station did NOT connect to an AP
 enum RegStatus {
-  REG_OK_IP        = 2,
-  REG_OK_TCP       = 3,
-  REG_UNREGISTERED = 4,
-  REG_DENIED       = 5,
-  REG_UNKNOWN      = 6,
+  REG_OK_IP     = 2,
+  REG_OK_TCP    = 3,
+  REG_OK_NO_TCP = 4,
+  REG_DENIED    = 5,
+  REG_UNKNOWN   = 6,
 };
-
 
 
 class TinyGsmESP8266
@@ -157,6 +156,9 @@ public:
     if (!testAT()) {
       return false;
     }
+    if (pin != NULL) {
+      DBG("ESP8266 modules do not use an unlock pin!");
+    }
     sendAT(GF("E0"));   // Echo Off
     if (waitResponse() != 1) {
       return false;
@@ -249,7 +251,8 @@ TINY_GSM_MODEM_MAINTAIN_LISTEN()
   RegStatus getRegistrationStatus() {
     sendAT(GF("+CIPSTATUS"));
     if (waitResponse(3000, GF("STATUS:")) != 1) return REG_UNKNOWN;
-    int status = waitResponse(GFP(GSM_ERROR), GF("2"), GF("3"), GF("4"), GF("5"));
+    int status =
+        waitResponse(GFP(GSM_ERROR), GF("2"), GF("3"), GF("4"), GF("5"));
     waitResponse();  // Returns an OK after the status
     return (RegStatus)status;
   }
