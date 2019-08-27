@@ -36,3 +36,7 @@ extras/Module Datasheets/*
 extras/Older Command Manuals/*
 extras/Older Command Manuals/*
 extras/At Command Manuals - Unsupported/*
+
+# Filters
+.gitconfig
+filters/*
