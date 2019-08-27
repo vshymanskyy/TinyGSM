@@ -69,11 +69,12 @@
 // set GSM PIN, if any
 #define GSM_PIN ""
 
-// Your GPRS credentials
-// Leave empty, if missing user or pass
+// Your GPRS credentials, if any
 const char apn[]  = "YourAPN";
 const char gprsUser[] = "";
 const char gprsPass[] = "";
+
+// Your WiFi connection credentials, if applicable
 const char wifiSSID[]  = "YourSSID";
 const char wifiPass[] = "YourWiFiPass";
 
@@ -82,6 +83,20 @@ const char server[] = "vsh.pp.ua";
 const char resource[] = "/TinyGSM/logo.txt";
 
 #include <TinyGsmClient.h>
+
+// Just in case someone defined the wrong thing..
+#if TINY_GSM_USE_GPRS && not defined TINY_GSM_MODEM_HAS_GPRS
+#undef TINY_GSM_USE_GPRS
+#undef TINY_GSM_USE_WIFI
+#define TINY_GSM_USE_GPRS false
+#define TINY_GSM_USE_WIFI true
+#endif
+#if TINY_GSM_USE_WIFI && not defined TINY_GSM_MODEM_HAS_WIFI
+#undef TINY_GSM_USE_GPRS
+#undef TINY_GSM_USE_WIFI
+#define TINY_GSM_USE_GPRS true
+#define TINY_GSM_USE_WIFI false
+#endif
 
 #ifdef DUMP_AT_COMMANDS
   #include <StreamDebugger.h>
@@ -111,8 +126,8 @@ void setup() {
   SerialMon.println("Wait...");
 
   // Set GSM module baud rate
-  TinyGsmAutoBaud(SerialAT,GSM_AUTOBAUD_MIN,GSM_AUTOBAUD_MAX);
-  // SerialAT.begin(115200);
+  // TinyGsmAutoBaud(SerialAT,GSM_AUTOBAUD_MIN,GSM_AUTOBAUD_MAX);
+  SerialAT.begin(115200);
   delay(3000);
 }
 
@@ -147,6 +162,7 @@ void loop() {
 #endif
 
 #if TINY_GSM_USE_WIFI
+  // Wifi connection parameters must be set before waiting for the network
   SerialMon.print(F("Setting SSID/password..."));
   if (!modem.networkConnect(wifiSSID, wifiPass)) {
     SerialMon.println(" fail");
@@ -175,7 +191,8 @@ void loop() {
   }
   SerialMon.println(F(" [OK]"));
 
-#if TINY_GSM_USE_GPRS && defined TINY_GSM_MODEM_HAS_GPRS
+#if TINY_GSM_USE_GPRS
+  // GPRS connection parameters are usually set after network registration
   SerialMon.print("Connecting to ");
   SerialMon.print(apn);
   if (!modem.gprsConnect(apn, gprsUser, gprsPass)) {
@@ -233,8 +250,14 @@ void loop() {
   client.stop();
   SerialMon.println(F("Server disconnected"));
 
+#if TINY_GSM_USE_WIFI
+  modem.networkDisconnect();
+  SerialMon.println(F("WiFi disconnected"));
+#endif
+#if TINY_GSM_USE_GPRS
   modem.gprsDisconnect();
   SerialMon.println(F("GPRS disconnected"));
+#endif
 
   SerialMon.println();
   SerialMon.println(F("************************"));

@@ -70,15 +70,28 @@
 //#define SMS_TARGET  "+380xxxxxxxxx"
 //#define CALL_TARGET "+380xxxxxxxxx"
 
-// Your GPRS credentials
-// Leave empty, if missing user or pass
+// Your GPRS credentials, if any
 const char apn[]  = "YourAPN";
 const char gprsUser[] = "";
 const char gprsPass[] = "";
+
+// Your WiFi connection credentials, if applicable
 const char wifiSSID[]  = "YourSSID";
 const char wifiPass[] = "YourWiFiPass";
 
 #include <TinyGsmClient.h>
+
+#if TINY_GSM_TEST_GPRS && not defined TINY_GSM_MODEM_HAS_GPRS
+#define TINY_GSM_TEST_GPRS false
+#define TINY_GSM_TEST_CALL false
+#define TINY_GSM_TEST_SMS false
+#define TINY_GSM_TEST_USSD false
+#define TINY_GSM_TEST_WIFI true
+#endif
+#if TINY_GSM_TEST_WIFI && not defined TINY_GSM_MODEM_HAS_WIFI
+#define TINY_GSM_USE_GPRS true
+#define TINY_GSM_USE_WIFI false
+#endif
 
 #ifdef DUMP_AT_COMMANDS
   #include <StreamDebugger.h>
