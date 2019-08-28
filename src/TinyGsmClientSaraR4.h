@@ -54,9 +54,7 @@ class GsmClient : public Client
 public:
   GsmClient() {}
 
-  GsmClient(TinyGsmSaraR4& modem, uint8_t mux = 0) {
-    init(&modem, mux);
-  }
+    GsmClient(TinyGsmSaraR4& modem, uint8_t mux = 0) { init(&modem, mux); }
 
   virtual ~GsmClient(){}
 
@@ -170,9 +168,7 @@ public:
    * Basic functions
    */
 
-  bool begin(const char* pin = NULL) {
-    return init(pin);
-  }
+  bool begin(const char* pin = NULL) { return init(pin); }
 
   bool init(const char* pin = NULL) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
@@ -181,7 +177,7 @@ public:
       return false;
     }
 
-    sendAT(GF("E0"));   // Echo Off
+    sendAT(GF("E0"));  // Echo Off
     if (waitResponse() != 1) {
       return false;
     }
@@ -226,7 +222,8 @@ public:
 
     String name = res1 + String(' ') + res2;
     DBG("### Modem:", name);
-    if (!name.startsWith("u-blox SARA-R4") && !name.startsWith("u-blox SARA-N4")) {
+    if (!name.startsWith("u-blox SARA-R4") &&
+        !name.startsWith("u-blox SARA-N4")) {
       DBG("### WARNING:  You are using the wrong TinyGSM modem!");
     }
 
@@ -310,13 +307,14 @@ TINY_GSM_MODEM_GET_SIMCCID_CCID()
   }
 
   SimStatus getSimStatus(unsigned long timeout_ms = 10000L) {
-    for (unsigned long start = millis(); millis() - start < timeout_ms; ) {
+    for (unsigned long start = millis(); millis() - start < timeout_ms;) {
       sendAT(GF("+CPIN?"));
       if (waitResponse(GF(GSM_NL "+CPIN:")) != 1) {
         delay(1000);
         continue;
       }
-      int status = waitResponse(GF("READY"), GF("SIM PIN"), GF("SIM PUK"), GF("NOT INSERTED"));
+      int status = waitResponse(GF("READY"), GF("SIM PIN"), GF("SIM PUK"),
+                                GF("NOT INSERTED"));
       waitResponse();
       switch (status) {
         case 2:
@@ -349,10 +347,10 @@ TINY_GSM_MODEM_GET_CSQ()
 
 TINY_GSM_MODEM_WAIT_FOR_NETWORK()
 
-  bool setURAT( uint8_t urat ) {
+  bool setURAT(uint8_t urat) {
     // AT+URAT=<SelectedAcT>[,<PreferredAct>[,<2ndPreferredAct>]]
 
-    sendAT(GF("+COPS=2"));        // Deregister from network
+    sendAT(GF("+COPS=2"));  // Deregister from network
     if (waitResponse() != 1) {
       return false;
     }
@@ -360,7 +358,7 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
     if (waitResponse() != 1) {
       return false;
     }
-    sendAT(GF("+COPS=0"));        // Auto-register to the network
+    sendAT(GF("+COPS=0"));  // Auto-register to the network
     if (waitResponse() != 1) {
       return false;
     }
@@ -542,11 +540,12 @@ TINY_GSM_MODEM_GET_GPRS_IP_CONNECTED()
 protected:
 
   bool modemConnect(const char* host, uint16_t port, uint8_t* mux,
-                    bool ssl = false, int timeout_s = 120)
-  {
+                    bool ssl = false, int timeout_s = 120) {
     uint32_t timeout_ms = ((uint32_t)timeout_s)*1000;
-    sendAT(GF("+USOCR=6"));  // create a socket
-    if (waitResponse(GF(GSM_NL "+USOCR:")) != 1) {  // reply is +USOCR: ## of socket created
+    // create a socket
+    sendAT(GF("+USOCR=6"));
+    // reply is +USOCR: ## of socket created
+    if (waitResponse(GF(GSM_NL "+USOCR:")) != 1) {  
       return false;
     }
     *mux = stream.readStringUntil('\n').toInt();
@@ -566,9 +565,22 @@ protected:
     //waitResponse();
 
     // connect on the allocated socket
-    sendAT(GF("+USOCO="), *mux, ",\"", host, "\",", port);
-    int rsp = waitResponse(timeout_ms);
-    return (1 == rsp);
+
+    // Use an asynchronous open to reduce the number of terminal freeze-ups
+    // This is still blocking until the URC arrives
+    // The SARA-R410M-02B with firmware revisions prior to L0.0.00.00.05.08
+    // has a nasty habit of locking up when opening a socket, especially if
+    // the cellular service is poor.
+    sendAT(GF("+USOCO="), *mux, ",\"", host, "\",", port, ",1");
+    waitResponse(timeout_ms, GF(GSM_NL "+UUSOCO: "));
+    stream.readStringUntil(',').toInt();  // skip repeated mux
+    int connection_status = stream.readStringUntil('\n').toInt();
+    return (0 == connection_status);
+
+    // use synchronous open
+    // sendAT(GF("+USOCO="), *mux, ",\"", host, "\",", port, ",0");
+    // int rsp = waitResponse(timeout_ms);
+    // return (1 == rsp);
   }
 
   int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
@@ -632,8 +644,7 @@ protected:
     // NOTE:  Querying a closed socket gives an error "operation not allowed"
     sendAT(GF("+USOCTL="), mux, ",10");
     uint8_t res = waitResponse(GF(GSM_NL "+USOCTL:"));
-    if (res != 1)
-      return false;
+    if (res != 1) return false;
 
     streamSkipUntil(','); // Skip mux
     streamSkipUntil(','); // Skip type
