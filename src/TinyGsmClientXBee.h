@@ -305,7 +305,7 @@ public:
       digitalWrite(resetPin, HIGH);
     }
 
-    if (pin != NULL) {
+    if (pin && strlen(pin) > 0) {
       DBG("XBee's do not support SIMs that require an unlock pin!");
     }
 
@@ -528,7 +528,7 @@ public:
    */
 
   bool simUnlock(const char *pin) {  // Not supported
-    if (pin != NULL) {
+    if (pin && strlen(pin) > 0) {
       DBG("XBee's do not support SIMs that require an unlock pin!");
     }
     return false;
@@ -687,7 +687,7 @@ public:
     //nh For no pwd don't set setscurity or pwd
     if (ssid == NULL) retVal = false;;
 
-    if (pwd != NULL)
+    if (pwd && strlen(pwd) > 0)
     {
       sendAT(GF("EE"), 2);  // Set security to WPA2
       if (waitResponse() != 1) retVal = false;
@@ -743,10 +743,10 @@ public:
 
   bool gprsConnect(const char* apn, const char* user = NULL,
                    const char* pwd = NULL) {
-    if (user != NULL) {
+    if (user && strlen(user) > 0) {
       DBG("XBee's do not support SIMs that a user name/password!");
     }
-    if (pwd != NULL) {
+    if (pwd && strlen(pwd) > 0) {
       DBG("XBee's do not support SIMs that a user name/password!");
     }
     XBEE_COMMAND_START_DECORATOR(5, false)

@@ -73,8 +73,8 @@
 //#define TINY_GSM_YIELD() { delay(2); }
 
 // Define how you're planning to connect to the internet
-#define TINY_GSM_USE_GPRS false
-#define TINY_GSM_USE_WIFI true
+#define TINY_GSM_USE_GPRS true
+#define TINY_GSM_USE_WIFI false
 
 // set GSM PIN, if any
 #define GSM_PIN ""

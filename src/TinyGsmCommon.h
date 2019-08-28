@@ -490,9 +490,12 @@ String TinyGsmDecodeHex16bit(String &instr) {
 
 // Unlocks a sim via the 3GPP TS command AT+CPIN
 #define TINY_GSM_MODEM_SIM_UNLOCK_CPIN() \
-  bool simUnlock(const char *pin) { \
-    sendAT(GF("+CPIN=\""), pin, GF("\"")); \
-    return waitResponse() == 1; \
+  bool simUnlock(const char *pin) {      \
+    if (pin && strlen(pin) > 0) { \
+      sendAT(GF("+CPIN=\""), pin, GF("\"")); \
+      return waitResponse() == 1; \
+    } \
+    return true; \
   }
 
 

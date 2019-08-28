@@ -156,7 +156,7 @@ public:
     if (!testAT()) {
       return false;
     }
-    if (pin != NULL) {
+    if (pin && strlen(pin) > 0) {
       DBG("ESP8266 modules do not use an unlock pin!");
     }
     sendAT(GF("E0"));   // Echo Off
