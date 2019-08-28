@@ -834,8 +834,9 @@ public:
 
 protected:
 
-  IPAddress getHostIP(const char* host, int timeout_s = 45) {
-    String strIP; strIP.reserve(16);
+  IPAddress lookupHostIP(const char* host, int timeout_s = 45) {
+    String strIP;
+    strIP.reserve(16);
     unsigned long startMillis = millis();
     uint32_t timeout_ms = ((uint32_t)timeout_s)*1000;
     bool gotIP = false;
@@ -879,7 +880,7 @@ protected:
 
     // If we don't have a good IP for the host, we need to do a DNS search
     if (savedHostIP == IPAddress(0,0,0,0)) {
-      savedHostIP = getHostIP(host, timeout_s);  // This will return 0.0.0.0 if lookup fails
+      savedHostIP = lookupHostIP(host, timeout_s);  // This will return 0.0.0.0 if lookup fails
     }
 
     // If we now have a valid IP address, use it to connect
