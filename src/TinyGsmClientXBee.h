@@ -131,7 +131,9 @@ public:
     // For cellular models, per documentation: If you change the TM (socket
     // timeout) value while in Transparent Mode, the current connection is
     // immediately closed.
-    at->sendAT(GF("TM64"));  // Set socket timeout (using Digi default of 10 seconds)
+    at->sendAT(GF("TM"));  // Get socket timeout
+    String timeoutUsed = at->readResponseString(5000L);
+    at->sendAT(GF("TM"), timeoutUsed);  // Re-set socket timeout
     at->waitResponse(maxWaitMs);  // This response can be slow
     at->writeChanges();
     at->exitCommand();
