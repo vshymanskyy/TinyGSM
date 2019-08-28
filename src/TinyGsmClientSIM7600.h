@@ -655,9 +655,12 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
    */
 
 protected:
+
  bool modemConnect(const char* host, uint16_t port, uint8_t mux,
                    bool ssl = false, int timeout_s = 15) {
-   if (ssl) DBG("SSL not yet supported on this module!");
+   if (ssl) {
+     DBG("SSL not yet supported on this module!");
+   }
    // Make sure we'll be getting data manually on this connection
    sendAT(GF("+CIPRXGET=1"));
    if (waitResponse() != 1) {

@@ -813,21 +813,22 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
 
 protected:
 
-  bool modemConnect(const char* host, uint16_t port, uint8_t mux,
-                    bool ssl = false, int timeout_s = 75) {
-    if (ssl) DBG("SSL not yet supported on this module!");
+ bool modemConnect(const char* host, uint16_t port, uint8_t mux,
+                   bool ssl = false, int timeout_s = 75) {
+   if (ssl) {
+     DBG("SSL not yet supported on this module!");
+   }
 
-    int rsp;
-    uint32_t timeout_ms = ((uint32_t)timeout_s)*1000;
-    sendAT(GF("+CIPSTART="), mux, ',', GF("\"TCP"), GF("\",\""), host, GF("\","), port);
-    rsp = waitResponse(timeout_ms,
-                       GF("CONNECT OK" GSM_NL),
-                       GF("CONNECT FAIL" GSM_NL),
-                       GF("ALREADY CONNECT" GSM_NL),
-                       GF("ERROR" GSM_NL),
-                       GF("CLOSE OK" GSM_NL)   // Happens when HTTPS handshake fails
-                      );
-    return (1 == rsp);
+   int rsp;
+   uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
+   sendAT(GF("+CIPSTART="), mux, ',', GF("\"TCP"), GF("\",\""), host, GF("\","),
+          port);
+   rsp = waitResponse(
+       timeout_ms, GF("CONNECT OK" GSM_NL), GF("CONNECT FAIL" GSM_NL),
+       GF("ALREADY CONNECT" GSM_NL), GF("ERROR" GSM_NL),
+       GF("CLOSE OK" GSM_NL)  // Happens when HTTPS handshake fails
+   );
+   return (1 == rsp);
   }
 
   int16_t modemSend(const void* buff, size_t len, uint8_t mux) {

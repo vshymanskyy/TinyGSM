@@ -509,10 +509,12 @@ TINY_GSM_MODEM_GET_GPRS_IP_CONNECTED()
 
 protected:
 
-  bool modemConnect(const char* host, uint16_t port, uint8_t mux,
+ bool modemConnect(const char* host, uint16_t port, uint8_t mux,
                    bool ssl = false, int timeout_s = 20) {
-   if (ssl) DBG("SSL not yet supported on this module!");
-    int rsp;
+   if (ssl) {
+     DBG("SSL not yet supported on this module!");
+   }
+   int rsp;
    uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
 
     // <PDPcontextID>(1-16), <connectID>(0-11),"TCP/UDP/TCP LISTENER/UDP SERVICE",
@@ -570,7 +572,9 @@ protected:
       streamSkipUntil(','); // Skip total received
       streamSkipUntil(','); // Skip have read
       result = stream.readStringUntil('\n').toInt();
-      if (result) DBG("### DATA AVAILABLE:", result, "on", mux);
+      if (result) {
+        DBG("### DATA AVAILABLE:", result, "on", mux);
+      }
       waitResponse();
     }
     if (!result) {

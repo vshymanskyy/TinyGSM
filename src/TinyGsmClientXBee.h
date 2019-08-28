@@ -925,7 +925,9 @@ public:
                     bool ssl = false, int timeout_s = 75) {
     bool success = true;
 
-    if (timeout_s != 75) DBG("Timeout doesn't apply here.");
+    if (timeout_s != 75) {
+      DBG("Timeout doesn't apply here.");
+    }
 
     // empty the saved currelty-in-use destination address
     savedOperatingIP = IPAddress(0, 0, 0, 0);
@@ -974,7 +976,9 @@ public:
   }
 
   int16_t modemSend(const void* buff, size_t len, uint8_t mux = 0) {
-    if (mux != 0) DBG("XBee only supports 1 IP channel in transparent mode!");
+    if (mux != 0) {
+      DBG("XBee only supports 1 IP channel in transparent mode!");
+    }
     stream.write((uint8_t*)buff, len);
     stream.flush();
 
