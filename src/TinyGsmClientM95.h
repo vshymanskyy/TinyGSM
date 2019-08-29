@@ -352,6 +352,12 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
       return false;
     }
 
+    // Select TCP/IP transfer mode
+    sendAT(GF("+QIMODE=0"));
+    if (waitResponse() != 1) {
+      return false;
+    }
+
     //Enable multiple TCP/IP connections
     sendAT(GF("+QIMUX=1"));
     if (waitResponse() != 1) {
