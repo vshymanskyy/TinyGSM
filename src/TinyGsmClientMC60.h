@@ -364,8 +364,13 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
       return false;
     }
 
-    //Enable multiple TCP/IP connections
-    sendAT(GF("+QIMUX=1"));
+    // Check that we have a local IP address
+    if (localIP() == IPAddress(0,0,0,0)) {
+      return false;
+    }
+
+    //Set Method to Handle Received TCP/IP Data - Retrieve Data by Command
+    sendAT(GF("+QINDI=1"));
     if (waitResponse() != 1) {
       return false;
     }
@@ -376,18 +381,19 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
       return false;
     }
 
-    //Set Method to Handle Received TCP/IP Data - Retrieve Data by Command
-    sendAT(GF("+QINDI=1"));
+    // Select TCP/IP transfer mode - NOT transparent mode
+    sendAT(GF("+QIMODE=0"));
     if (waitResponse() != 1) {
       return false;
     }
 
-    // Check that we have a local IP address
-    if (localIP() != IPAddress(0,0,0,0)) {
-      return true;
+    //Enable multiple TCP/IP connections
+    sendAT(GF("+QIMUX=1"));
+    if (waitResponse() != 1) {
+      return false;
     }
 
-    return false;
+    return true;
   }
 
   bool gprsDisconnect() {

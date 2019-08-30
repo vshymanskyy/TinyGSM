@@ -348,18 +348,17 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
 
     //Activate GPRS/CSD Context
     sendAT(GF("+QIACT"));
-    if (waitResponse(10000) != 1) {
+    if (waitResponse(60000L) != 1) {
       return false;
     }
 
-    // Select TCP/IP transfer mode
-    sendAT(GF("+QIMODE=0"));
-    if (waitResponse() != 1) {
+    // Check that we have a local IP address
+    if (localIP() == IPAddress(0,0,0,0)) {
       return false;
     }
 
-    //Enable multiple TCP/IP connections
-    sendAT(GF("+QIMUX=1"));
+    //Set Method to Handle Received TCP/IP Data - Retrieve Data by Command
+    sendAT(GF("+QINDI=1"));
     if (waitResponse() != 1) {
       return false;
     }
@@ -370,8 +369,14 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
       return false;
     }
 
-    //Set Method to Handle Received TCP/IP Data - Retrieve Data by Command
-    sendAT(GF("+QINDI=1"));
+    // Select TCP/IP transfer mode - NOT transparent mode
+    sendAT(GF("+QIMODE=0"));
+    if (waitResponse() != 1) {
+      return false;
+    }
+
+    //Enable multiple TCP/IP connections
+    sendAT(GF("+QIMUX=1"));
     if (waitResponse() != 1) {
       return false;
     }
