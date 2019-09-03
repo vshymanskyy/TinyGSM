@@ -358,6 +358,18 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
       return false;
     }
 
+    // Select TCP/IP transfer mode - NOT transparent mode
+    sendAT(GF("+QIMODE=0"));
+    if (waitResponse() != 1) {
+      return false;
+    }
+
+    // Enable multiple TCP/IP connections
+    sendAT(GF("+QIMUX=1"));
+    if (waitResponse() != 1) {
+      return false;
+    }
+
     //Activate GPRS/CSD Context
     sendAT(GF("+QIACT"));
     if (waitResponse(60000L) != 1) {
@@ -377,18 +389,6 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
 
     //Request an IP header for received data ("IPD(data length):")
     sendAT(GF("+QIHEAD=1"));
-    if (waitResponse() != 1) {
-      return false;
-    }
-
-    // Select TCP/IP transfer mode - NOT transparent mode
-    sendAT(GF("+QIMODE=0"));
-    if (waitResponse() != 1) {
-      return false;
-    }
-
-    //Enable multiple TCP/IP connections
-    sendAT(GF("+QIMUX=1"));
     if (waitResponse() != 1) {
       return false;
     }
