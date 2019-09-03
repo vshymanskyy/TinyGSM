@@ -584,9 +584,12 @@ protected:
 
   bool modemConnect(const char* host, uint16_t port, uint8_t mux,
                    bool ssl = false, int timeout_s = 75) {
-   if (ssl) DBG("SSL not yet supported on this module!");
+   if (ssl) {
+     DBG("SSL not yet supported on this module!");
+   }
    uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
-    sendAT(GF("+QIOPEN="), mux, GF("\"TCP"), GF("\",\""), host, GF("\","), port);
+   sendAT(GF("+QIOPEN="), mux, GF(",\""), , GF("TCP"), GF("\",\""), host,
+          GF("\","), port);
     int rsp = waitResponse(timeout_ms,
                            GF("CONNECT OK" GSM_NL),
                            GF("CONNECT FAIL" GSM_NL),

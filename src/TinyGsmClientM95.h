@@ -589,12 +589,13 @@ protected:
      DBG("SSL not yet supported on this module!");
    }
    uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
-    sendAT(GF("+QIOPEN="), mux, GF("\"TCP"), GF("\",\""), host, GF("\","), port);
+   sendAT(GF("+QIOPEN="), mux, GF(",\""), , GF("TCP"), GF("\",\""), host,
+          GF("\","), port);
     int rsp = waitResponse(timeout_ms,
                            GF("CONNECT OK" GSM_NL),
                            GF("CONNECT FAIL" GSM_NL),
                            GF("ALREADY CONNECT" GSM_NL));
-    return (1 == rsp);
+   return (1 == rsp);
   }
 
   int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
