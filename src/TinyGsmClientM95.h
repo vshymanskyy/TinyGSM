@@ -589,7 +589,7 @@ protected:
      DBG("SSL not yet supported on this module!");
    }
    uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
-   sendAT(GF("+QIOPEN="), mux, GF(",\""), , GF("TCP"), GF("\",\""), host,
+   sendAT(GF("+QIOPEN="), mux, GF(",\""), GF("TCP"), GF("\",\""), host,
           GF("\","), port);
     int rsp = waitResponse(timeout_ms,
                            GF("CONNECT OK" GSM_NL),
