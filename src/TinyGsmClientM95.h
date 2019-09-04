@@ -609,34 +609,33 @@ protected:
       return 0;
     }
 
-    bool allAcknowledged = false;
-    // bool failed = false;
-    while ( !allAcknowledged ) {
-      sendAT( GF("+QISACK"));
-      if (waitResponse(5000L, GF(GSM_NL "+QISACK:")) != 1) {
-        return -1;
-      } else {
-        streamSkipUntil(','); /** Skip total */
-        streamSkipUntil(','); /** Skip acknowledged data size */
-        if ( stream.readStringUntil('\n').toInt() == 0 ) {
-          allAcknowledged = true;
-        }
-      }
-    }
-    waitResponse(5000L);
+    // bool allAcknowledged = false;
+    // // bool failed = false;
+    // while ( !allAcknowledged ) {
+    //   sendAT( GF("+QISACK"));
+    //   if (waitResponse(5000L, GF(GSM_NL "+QISACK:")) != 1) {
+    //     return -1;
+    //   } else {
+    //     streamSkipUntil(',');  // Skip total length sent on connection
+    //     streamSkipUntil(',');  // Skip length already acknowledged by remote
+    //     // Make sure the total length un-acknowledged is 0
+    //     if ( stream.readStringUntil('\n').toInt() == 0 ) {
+    //       allAcknowledged = true;
+    //     }
+    //   }
+    // }
+    // waitResponse(5000L);
 
-    // streamSkipUntil(','); // Skip mux
-    // return stream.readStringUntil('\n').toInt();
     return len;  // TODO
   }
 
   size_t modemRead(size_t size, uint8_t mux) {
     // TODO:  Does this work????
     // AT+QIRD=<id>,<sc>,<sid>,<len>
-    // id = GPRS context number - 0, set in GPRS connect
-    // sc = roll in connection - 1, client of connection
-    // sid = index of connection - mux
-    // len = maximum length of data to send
+    // id = GPRS context number = 0, set in GPRS connect
+    // sc = role in connection = 1, client of connection
+    // sid = index of connection = mux
+    // len = maximum length of data to retrieve
     sendAT(GF("+QIRD=0,1,"), mux, ',', size);
     // sendAT(GF("+QIRD="), mux, ',', size);
     if (waitResponse(GF("+QIRD:")) != 1) {
@@ -720,7 +719,7 @@ TINY_GSM_MODEM_STREAM_UTILITIES()
         } else if (r5 && data.endsWith(r5)) {
           index = 5;
           goto finish;
-        } else if (data.endsWith(GF(GSM_NL "+QIRD:"))) {  // TODO:  QIRD? or QIRDI?
+        } else if (data.endsWith(GF(GSM_NL "+QIRDI:"))) {
           streamSkipUntil(',');  // Skip the context
           streamSkipUntil(',');  // Skip the role
           int mux = stream.readStringUntil('\n').toInt();
