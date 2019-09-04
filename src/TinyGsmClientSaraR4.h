@@ -524,7 +524,6 @@ TINY_GSM_MODEM_GET_GPRS_IP_CONNECTED()
     if (waitResponse(GF(GSM_NL "+UTEMP:")) != 1) {
       return (float)-9999;
     }
-    streamSkipUntil(','); // Skip units (C/F)
     int16_t res = stream.readStringUntil('\n').toInt();
     float temp = -9999;
     if (res != -1) {
@@ -545,7 +544,7 @@ protected:
     // create a socket
     sendAT(GF("+USOCR=6"));
     // reply is +USOCR: ## of socket created
-    if (waitResponse(GF(GSM_NL "+USOCR:")) != 1) {  
+    if (waitResponse(GF(GSM_NL "+USOCR:")) != 1) {
       return false;
     }
     *mux = stream.readStringUntil('\n').toInt();
