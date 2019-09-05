@@ -411,9 +411,10 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
   }
 
   bool gprsDisconnect() {
-    sendAT(GF("+CGACT=0,1"));  // Deactivate PDP context 1
+    // sendAT(GF("+CGACT=0,1"));  // Deactivate PDP context 1
+    sendAT(GF("+CGACT=0"));  // Deactivate all contexts
     if (waitResponse(40000L) != 1) {
-      return false;
+      // return false;
     }
 
     sendAT(GF("+CGATT=0"));  // detach from GPRS
