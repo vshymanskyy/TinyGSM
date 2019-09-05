@@ -93,8 +93,18 @@ TINY_GSM_CLIENT_CONNECT_OVERLOADS()
 
   virtual void stop(uint32_t maxWaitMs) {
     TINY_GSM_CLIENT_DUMP_MODEM_BUFFER()
-    at->sendAT(GF("+USOCL="), mux);
-    at->waitResponse((maxWaitMs - (millis() - startMillis)));  // NOTE:  can take up to 120s to get a response
+
+    // // synchronous close
+    // at->sendAT(GF("+USOCL="), mux);
+    // // NOTE:  can take up to 120s to get a response
+    // at->waitResponse((maxWaitMs - (millis() - startMillis)));
+    // sock_connected = false;
+
+    // faster asynchronous close
+    // NOT supported on SARA-R404M / SARA-R410M-01B
+    at->sendAT(GF("+USOCL="), mux, GF(",1"));
+    // NOTE:  can take up to 120s to get a response
+    at->waitResponse((maxWaitMs - (millis() - startMillis)));
     sock_connected = false;
   }
 
@@ -197,7 +207,8 @@ public:
       simUnlock(pin);
       return (getSimStatus() == SIM_READY);
     }
-    // if the sim is ready, or it's locked but no pin has been provided, return true
+    // if the sim is ready, or it's locked but no pin has been provided,return
+    // return true
     else {
       return (ret == SIM_READY || ret == SIM_LOCKED);
     }
@@ -382,8 +393,9 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
     // serial interface.  This is the only command set supported by the LTE-M
     // and LTE NB-IoT modules (SARA-R4xx, SARA-N4xx)
 
+    // Set the authentication
     if (user && strlen(user) > 0) {
-      sendAT(GF("+CGAUTH=1,0,\""), user, GF("\",\""), pwd, '"');  // Set the authentication
+      sendAT(GF("+CGAUTH=1,0,\""), user, GF("\",\""), pwd, '"');
       waitResponse();
     }
 
@@ -560,8 +572,8 @@ protected:
     waitResponse();
 
     // Enable KEEPALIVE, 30 sec
-    //sendAT(GF("+USOSO="), *mux, GF(",6,2,30000"));
-    //waitResponse();
+    // sendAT(GF("+USOSO="), *mux, GF(",6,2,30000"));
+    // waitResponse();
 
     // connect on the allocated socket
 
@@ -570,6 +582,7 @@ protected:
     // The SARA-R410M-02B with firmware revisions prior to L0.0.00.00.05.08
     // has a nasty habit of locking up when opening a socket, especially if
     // the cellular service is poor.
+    // NOT supported on SARA-R404M / SARA-R410M-01B
     sendAT(GF("+USOCO="), *mux, ",\"", host, "\",", port, ",1");
     waitResponse(timeout_ms, GF(GSM_NL "+UUSOCO: "));
     stream.readStringUntil(',').toInt();  // skip repeated mux
@@ -583,7 +596,7 @@ protected:
   }
 
   int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
-    sendAT(GF("+USOWR="), mux, ',', len);
+    sendAT(GF("+USOWR="), mux, ',', (uint16_t)len);
     if (waitResponse(GF("@")) != 1) {
       return 0;
     }
@@ -594,19 +607,19 @@ protected:
     if (waitResponse(GF(GSM_NL "+USOWR:")) != 1) {
       return 0;
     }
-    streamSkipUntil(','); // Skip mux
+    streamSkipUntil(',');  // Skip mux
     int sent = stream.readStringUntil('\n').toInt();
     waitResponse();  // sends back OK after the confirmation of number sent
     return sent;
   }
 
   size_t modemRead(size_t size, uint8_t mux) {
-    sendAT(GF("+USORD="), mux, ',', size);
+    sendAT(GF("+USORD="), mux, ',', (uint16_t)size);
     if (waitResponse(GF(GSM_NL "+USORD:")) != 1) {
       return 0;
     }
-    streamSkipUntil(','); // Skip mux
-    size_t len = stream.readStringUntil(',').toInt();
+    streamSkipUntil(',');  // Skip mux
+    int len = stream.readStringUntil(',').toInt();
     streamSkipUntil('\"');
 
     for (size_t i=0; i<len; i++) {
@@ -627,7 +640,7 @@ protected:
     // Will give error "operation not allowed" when attempting to read a socket
     // that you have already told to close
     if (res == 1) {
-      streamSkipUntil(','); // Skip mux
+      streamSkipUntil(',');  // Skip mux
       result = stream.readStringUntil('\n').toInt();
       // if (result) DBG("### DATA AVAILABLE:", result, "on", mux);
       waitResponse();
@@ -645,8 +658,8 @@ protected:
     uint8_t res = waitResponse(GF(GSM_NL "+USOCTL:"));
     if (res != 1) return false;
 
-    streamSkipUntil(','); // Skip mux
-    streamSkipUntil(','); // Skip type
+    streamSkipUntil(',');  // Skip mux
+    streamSkipUntil(',');  // Skip type
     int result = stream.readStringUntil('\n').toInt();
     // 0: the socket is in INACTIVE status (it corresponds to CLOSED status
     // defined in RFC793 "TCP Protocol Specification" [112])
@@ -674,9 +687,10 @@ TINY_GSM_MODEM_STREAM_UTILITIES()
 
   // TODO: Optimize this!
   uint8_t waitResponse(uint32_t timeout_ms, String& data,
-                       GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),
-                       GsmConstStr r3=GFP(GSM_CME_ERROR), GsmConstStr r4=NULL, GsmConstStr r5=NULL)
-  {
+                       GsmConstStr r1 = GFP(GSM_OK),
+                       GsmConstStr r2 = GFP(GSM_ERROR),
+                       GsmConstStr r3 = GFP(GSM_CME_ERROR),
+                       GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
     /*String r1s(r1); r1s.trim();
     String r2s(r2); r2s.trim();
     String r3s(r3); r3s.trim();
@@ -691,7 +705,7 @@ TINY_GSM_MODEM_STREAM_UTILITIES()
       while (stream.available() > 0) {
         TINY_GSM_YIELD();
         int a = stream.read();
-        if (a <= 0) continue; // Skip 0x00 bytes, just in case
+        if (a <= 0) continue;  // Skip 0x00 bytes, just in case
         data += (char)a;
         if (r1 && data.endsWith(r1)) {
           index = 1;
@@ -738,30 +752,32 @@ finish:
       }
       data = "";
     }
-    //data.replace(GSM_NL, "/");
-    //DBG('<', index, '>', data);
+    // data.replace(GSM_NL, "/");
+    // DBG('<', index, '>', data);
     return index;
   }
 
   uint8_t waitResponse(uint32_t timeout_ms,
-                       GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),
-                       GsmConstStr r3=GFP(GSM_CME_ERROR), GsmConstStr r4=NULL, GsmConstStr r5=NULL)
-  {
+                       GsmConstStr r1 = GFP(GSM_OK),
+                       GsmConstStr r2 = GFP(GSM_ERROR),
+                       GsmConstStr r3 = GFP(GSM_CME_ERROR),
+                       GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
     String data;
     return waitResponse(timeout_ms, data, r1, r2, r3, r4, r5);
   }
 
-  uint8_t waitResponse(GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),
-                       GsmConstStr r3=GFP(GSM_CME_ERROR), GsmConstStr r4=NULL, GsmConstStr r5=NULL)
-  {
+  uint8_t waitResponse(GsmConstStr r1 = GFP(GSM_OK),
+                       GsmConstStr r2 = GFP(GSM_ERROR),
+                       GsmConstStr r3 = GFP(GSM_CME_ERROR),
+                       GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
     return waitResponse(1000, r1, r2, r3, r4, r5);
   }
 
 public:
-  Stream&       stream;
+  Stream& stream;
 
 protected:
-  GsmClient*    sockets[TINY_GSM_MUX_COUNT];
+  GsmClient* sockets[TINY_GSM_MUX_COUNT];
 };
 
 #endif
