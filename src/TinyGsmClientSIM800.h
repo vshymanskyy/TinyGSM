@@ -626,7 +626,18 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
     res.trim();
     return res;
   }
-
+  
+  String getBaseStationGsmLocation() {
+    sendAT(GF("+CLBS=1,1"));
+    if (waitResponse(10000L, GF(GSM_NL "+CLBS:")) != 1) {
+      return "";
+    }
+    String res = stream.readStringUntil('\n');
+    waitResponse();
+    res.trim();
+    return res;
+  }
+  
   /*
    * Time functions
    */
