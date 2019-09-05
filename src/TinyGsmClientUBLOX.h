@@ -583,7 +583,7 @@ protected:
   }
 
   int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
-    sendAT(GF("+USOWR="), mux, ',', len);
+    sendAT(GF("+USOWR="), mux, ',', (uint16_t)len);
     if (waitResponse(GF("@")) != 1) {
       return 0;
     }
@@ -601,12 +601,12 @@ protected:
   }
 
   size_t modemRead(size_t size, uint8_t mux) {
-    sendAT(GF("+USORD="), mux, ',', size);
+    sendAT(GF("+USORD="), mux, ',', (uint16_t)size);
     if (waitResponse(GF(GSM_NL "+USORD:")) != 1) {
       return 0;
     }
     streamSkipUntil(','); // Skip mux
-    size_t len = stream.readStringUntil(',').toInt();
+    int len = stream.readStringUntil(',').toInt();
     streamSkipUntil('\"');
 
     for (size_t i=0; i<len; i++) {

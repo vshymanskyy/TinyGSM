@@ -374,7 +374,7 @@ protected:
   }
 
   int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
-    sendAT(GF("+CIPSEND="), mux, ',', len);
+    sendAT(GF("+CIPSEND="), mux, ',', (uint16_t)len);
     if (waitResponse(GF(">")) != 1) {
       return 0;
     }
@@ -403,7 +403,7 @@ protected:
     for (int muxNo = 0; muxNo < TINY_GSM_MUX_COUNT; muxNo++) {
       uint8_t has_status = waitResponse(GF("+CIPSTATUS:"), GFP(GSM_OK), GFP(GSM_ERROR));
       if (has_status == 1) {
-        size_t returned_mux = stream.readStringUntil(',').toInt();
+        int returned_mux = stream.readStringUntil(',').toInt();
         streamSkipUntil(',');  // Skip mux
         streamSkipUntil(',');  // Skip type
         streamSkipUntil(',');  // Skip remote IP

@@ -598,7 +598,7 @@ protected:
   }
 
   int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
-    sendAT(GF("+QISEND="), mux, ',', len);
+    sendAT(GF("+QISEND="), mux, ',', (uint16_t)len);
     if (waitResponse(GF(">")) != 1) {
       return 0;
     }
@@ -637,15 +637,15 @@ protected:
     // sc = roll in connection - 1, client of connection
     // sid = index of connection - mux
     // len = maximum length of data to send
-    sendAT(GF("+QIRD=0,1,"), mux, ',', size);
-    // sendAT(GF("+QIRD="), mux, ',', size);
+    sendAT(GF("+QIRD=0,1,"), mux, ',', (uint16_t)size);
+    // sendAT(GF("+QIRD="), mux, ',', (uint16_t)size);
     if (waitResponse(GF("+QIRD:")) != 1) {
       return 0;
     }
     streamSkipUntil(':');  // skip IP address
     streamSkipUntil(',');  // skip port
     streamSkipUntil(',');  // skip connection type (TCP/UDP)
-    size_t len = stream.readStringUntil('\n').toInt();  // read length
+    int len = stream.readStringUntil('\n').toInt();  // read length
     for (size_t i=0; i<len; i++) {
       TINY_GSM_MODEM_STREAM_TO_MUX_FIFO_WITH_DOUBLE_TIMEOUT
       sockets[mux]->sock_available--;

@@ -584,7 +584,7 @@ protected:
       return 0;
     }
 
-    sendAT(GF("+SQNSSENDEXT="), mux, ',', len);
+    sendAT(GF("+SQNSSENDEXT="), mux, ',', (uint16_t)len);
     waitResponse(10000L, GF(GSM_NL "> "));
     stream.write((uint8_t*)buff, len);
     stream.flush();
@@ -619,12 +619,12 @@ protected:
 
 
   size_t modemRead(size_t size, uint8_t mux) {
-    sendAT(GF("+SQNSRECV="), mux, ',', size);
+    sendAT(GF("+SQNSRECV="), mux, ',', (uint16_t)size);
     if (waitResponse(GF("+SQNSRECV: ")) != 1) {
       return 0;
     }
     streamSkipUntil(','); // Skip mux
-    size_t len = stream.readStringUntil('\n').toInt();
+    int len = stream.readStringUntil('\n').toInt();
     for (size_t i=0; i<len; i++) {
       uint32_t startMillis = millis(); \
       while (!stream.available() && ((millis() - startMillis) < sockets[mux % TINY_GSM_MUX_COUNT]->_timeout)) { TINY_GSM_YIELD(); } \

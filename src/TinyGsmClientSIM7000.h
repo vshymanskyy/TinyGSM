@@ -832,7 +832,7 @@ protected:
   }
 
   int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
-    sendAT(GF("+CIPSEND="), mux, ',', len);
+    sendAT(GF("+CIPSEND="), mux, ',', (uint16_t)len);
     if (waitResponse(GF(">")) != 1) {
       return 0;
     }
@@ -847,21 +847,21 @@ protected:
 
   size_t modemRead(size_t size, uint8_t mux) {
 #ifdef TINY_GSM_USE_HEX
-    sendAT(GF("+CIPRXGET=3,"), mux, ',', size);
+    sendAT(GF("+CIPRXGET=3,"), mux, ',', (uint16_t)size);
     if (waitResponse(GF("+CIPRXGET:")) != 1) {
       return 0;
     }
 #else
-    sendAT(GF("+CIPRXGET=2,"), mux, ',', size);
+    sendAT(GF("+CIPRXGET=2,"), mux, ',', (uint16_t)size);
     if (waitResponse(GF("+CIPRXGET:")) != 1) {
       return 0;
     }
 #endif
     streamSkipUntil(','); // Skip Rx mode 2/normal or 3/HEX
     streamSkipUntil(','); // Skip mux
-    size_t len_requested = stream.readStringUntil(',').toInt();
+    int len_requested = stream.readStringUntil(',').toInt();
     //  ^^ Requested number of data bytes (1-1460 bytes)to be read
-    size_t len_confirmed = stream.readStringUntil('\n').toInt();
+    int len_confirmed = stream.readStringUntil('\n').toInt();
     // ^^ Confirmed number of data bytes to be read, which may be less than requested.
     // 0 indicates that no data can be read.
     // This is actually be the number of bytes that will be remaining after the read

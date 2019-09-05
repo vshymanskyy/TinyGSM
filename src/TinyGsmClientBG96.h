@@ -536,7 +536,7 @@ protected:
   }
 
   int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
-    sendAT(GF("+QISEND="), mux, ',', len);
+    sendAT(GF("+QISEND="), mux, ',', (uint16_t)len);
     if (waitResponse(GF(">")) != 1) {
       return 0;
     }
@@ -550,11 +550,11 @@ protected:
   }
 
   size_t modemRead(size_t size, uint8_t mux) {
-    sendAT(GF("+QIRD="), mux, ',', size);
+    sendAT(GF("+QIRD="), mux, ',', (uint16_t)size);
     if (waitResponse(GF("+QIRD:")) != 1) {
       return 0;
     }
-    size_t len = stream.readStringUntil('\n').toInt();
+    int len = stream.readStringUntil('\n').toInt();
 
     for (size_t i=0; i<len; i++) {
       TINY_GSM_MODEM_STREAM_TO_MUX_FIFO_WITH_DOUBLE_TIMEOUT
