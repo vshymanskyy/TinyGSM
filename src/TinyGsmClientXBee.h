@@ -523,8 +523,13 @@ public:
     XBEE_COMMAND_END_DECORATOR
   }
 
-  bool poweroff() {  // Not supported
-    return false;
+  bool poweroff() {  // NOTE:  Not supported for WiFi or older cellular firmware
+    XBEE_COMMAND_START_DECORATOR(5, false)
+    sendAT(GF("SD"));
+    bool ret_val = waitResponse(120000L) == 1;
+    ret_val &= writeChanges();
+    XBEE_COMMAND_END_DECORATOR
+    return ret_val;
   }
 
   bool radioOff() TINY_GSM_ATTR_NOT_IMPLEMENTED;
