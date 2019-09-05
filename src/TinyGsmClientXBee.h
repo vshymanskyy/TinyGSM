@@ -527,7 +527,9 @@ public:
     XBEE_COMMAND_START_DECORATOR(5, false)
     sendAT(GF("SD"));
     bool ret_val = waitResponse(120000L) == 1;
-    ret_val &= writeChanges();
+    if (ret_val) {
+        ret_val &= (sendATGetString(GF("AI")) == "2D");
+    }
     XBEE_COMMAND_END_DECORATOR
     return ret_val;
   }
