@@ -622,7 +622,7 @@ protected:
     int len = stream.readStringUntil(',').toInt();
     streamSkipUntil('\"');
 
-    for (size_t i=0; i<len; i++) {
+    for (int i=0; i<len; i++) {
       TINY_GSM_MODEM_STREAM_TO_MUX_FIFO_WITH_DOUBLE_TIMEOUT
     }
     streamSkipUntil('\"');

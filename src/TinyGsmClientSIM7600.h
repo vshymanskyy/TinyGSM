@@ -712,7 +712,7 @@ protected:
     //  ^^ Requested number of data bytes (1-1460 bytes)to be read
     int len_confirmed = stream.readStringUntil('\n').toInt();
     // ^^ The data length which not read in the buffer
-    for (size_t i=0; i<len_requested; i++) {
+    for (int i=0; i<len_requested; i++) {
       uint32_t startMillis = millis();
 #ifdef TINY_GSM_USE_HEX
       while (stream.available() < 2 && (millis() - startMillis < sockets[mux]->_timeout)) { TINY_GSM_YIELD(); }

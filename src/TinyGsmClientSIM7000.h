@@ -865,7 +865,7 @@ protected:
     // ^^ Confirmed number of data bytes to be read, which may be less than requested.
     // 0 indicates that no data can be read.
     // This is actually be the number of bytes that will be remaining after the read
-    for (size_t i=0; i<len_requested; i++) {
+    for (int i=0; i<len_requested; i++) {
       uint32_t startMillis = millis();
 #ifdef TINY_GSM_USE_HEX
       while (stream.available() < 2 && (millis() - startMillis < sockets[mux]->_timeout)) { TINY_GSM_YIELD(); }

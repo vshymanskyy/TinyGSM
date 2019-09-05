@@ -625,7 +625,7 @@ protected:
     }
     streamSkipUntil(','); // Skip mux
     int len = stream.readStringUntil('\n').toInt();
-    for (size_t i=0; i<len; i++) {
+    for (int i=0; i<len; i++) {
       uint32_t startMillis = millis(); \
       while (!stream.available() && ((millis() - startMillis) < sockets[mux % TINY_GSM_MUX_COUNT]->_timeout)) { TINY_GSM_YIELD(); } \
       char c = stream.read(); \
