@@ -767,6 +767,8 @@ public:
     XBEE_COMMAND_START_DECORATOR(5, false)
     sendAT(GF("AN"), apn);  // Set the APN
     bool success = waitResponse() == 1;
+    sendAT(GF("AM0"));  // Airplane mode off
+    waitResponse(5000);
     writeChanges();
     XBEE_COMMAND_END_DECORATOR
     return success;
@@ -777,9 +779,9 @@ public:
     sendAT(GF("AM1"));  // Cheating and disconnecting by turning on airplane mode
     int8_t res = (1 == waitResponse(5000));
     writeChanges();
-    sendAT(GF("AM0"));  // Airplane mode off
-    waitResponse(5000);
-    writeChanges();
+    // sendAT(GF("AM0"));  // Airplane mode off
+    // waitResponse(5000);
+    // writeChanges();
     XBEE_COMMAND_END_DECORATOR
     return res;
   }
