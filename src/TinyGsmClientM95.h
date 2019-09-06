@@ -64,7 +64,6 @@ public:
     this->mux = mux;
     sock_available = 0;
     sock_connected = false;
-    got_data = false;
 
     at->sockets[mux] = this;
 
@@ -110,7 +109,6 @@ private:
   uint8_t         mux;
   uint16_t        sock_available;
   bool            sock_connected;
-  bool            got_data;
   RxFifo          rx;
 };
 
@@ -369,17 +367,41 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
       return false;
     }
 
-    //Set Method to Handle Received TCP/IP Data - Retrieve Data by Command
+    // Set Method to Handle Received TCP/IP Data
+    // Mode = 1 - Output a notification when data is received
+    // “+QIRDI: <id>,<sc>,<sid>”
     sendAT(GF("+QINDI=1"));
     if (waitResponse() != 1) {
       return false;
     }
 
-    //Request an IP header for received data ("IPD(data length):")
-    sendAT(GF("+QIHEAD=1"));
-    if (waitResponse() != 1) {
-      return false;
-    }
+    // // Request an IP header for received data
+    // // "IPD(data length):"
+    // sendAT(GF("+QIHEAD=1"));
+    // if (waitResponse() != 1) {
+    //   return false;
+    // }
+    //
+    // // Do NOT show the IP address of the sender when receiving data
+    // // The format to show the address is: RECV FROM: <IP ADDRESS>:<PORT>
+    // sendAT(GF("+QISHOWRA=0"));
+    // if (waitResponse() != 1) {
+    //   return false;
+    // }
+    //
+    // // Do NOT show the protocol type at the end of the header for received data
+    // // IPD(data length)(TCP/UDP):
+    // sendAT(GF("+QISHOWPT=0"));
+    // if (waitResponse() != 1) {
+    //   return false;
+    // }
+    //
+    // // Do NOT show the destination address before receiving data
+    // // The format to show the address is: TO:<IP ADDRESS>
+    // sendAT(GF("+QISHOWLA=0"));
+    // if (waitResponse() != 1) {
+    //   return false;
+    // }
 
     return true;
   }
@@ -637,22 +659,34 @@ protected:
     // sid = index of connection = mux
     // len = maximum length of data to retrieve
     sendAT(GF("+QIRD=0,1,"), mux, ',', (uint16_t)size);
-    // sendAT(GF("+QIRD="), mux, ',', (uint16_t)size);
-    if (waitResponse(GF("+QIRD:")) != 1) {
-      return 0;
+    // If it replies only OK for the write command, it means there is no
+    // received data in the buffer of the connection.
+    int res = waitResponse(GF("+QIRD:"), GFP(GSM_OK), GFP(GSM_ERROR));
+    if (res == 1) {
+      streamSkipUntil(':');  // skip IP address
+      streamSkipUntil(',');  // skip port
+      streamSkipUntil(',');  // skip connection type (TCP/UDP)
+      // read the real length of the retrieved data
+      uint16_t len = stream.readStringUntil('\n').toInt();
+      // We have no way of knowing in advance how much data will be in the buffer
+      // so when data is received we always assume the buffer is completely full.
+      // Chances are, this is not true and there's really not that much there.
+      // In that case, make sure we make sure we re-set the amount of data available.
+      if (len < size) {
+          sockets[mux]->sock_available = len;
+      }
+      for (uint16_t i=0; i<len; i++) {
+        TINY_GSM_MODEM_STREAM_TO_MUX_FIFO_WITH_DOUBLE_TIMEOUT
+        sockets[mux]->sock_available--;
+        // ^^ One less character available after moving from modem's FIFO to our FIFO
+      }
+      waitResponse();  // ends with an OK
+      DBG("### READ:", len, "from", mux);
+      return len;
+    } else {
+        sockets[mux]->sock_available = 0;
+        return 0;
     }
-    streamSkipUntil(':');  // skip IP address
-    streamSkipUntil(',');  // skip port
-    streamSkipUntil(',');  // skip connection type (TCP/UDP)
-    int len = stream.readStringUntil('\n').toInt();  // read length
-    for (int i=0; i<len; i++) {
-      TINY_GSM_MODEM_STREAM_TO_MUX_FIFO_WITH_DOUBLE_TIMEOUT
-      sockets[mux]->sock_available--;
-      // ^^ One less character available after moving from modem's FIFO to our FIFO
-    }
-    waitResponse();  // ends with an OK
-    DBG("### READ:", len, "from", mux);
-    return len;
   }
 
   bool modemGetConnected(uint8_t mux) {
@@ -725,7 +759,9 @@ TINY_GSM_MODEM_STREAM_UTILITIES()
           int mux = stream.readStringUntil('\n').toInt();
           DBG("### Got Data:", mux);
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
-            sockets[mux]->got_data = true;
+            // We have no way of knowing how much data actually came in, so
+            // we set the value to 1500, the maximum possible size.
+            sockets[mux]->sock_available = 1500;
           }
           data = "";
         } else if (data.endsWith(GF("CLOSED" GSM_NL))) {

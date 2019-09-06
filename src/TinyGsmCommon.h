@@ -10,7 +10,7 @@
 #define TinyGsmCommon_h
 
 // The current library version number
-#define TINYGSM_VERSION "0.9.14"
+#define TINYGSM_VERSION "0.9.15"
 
 #if defined(SPARK) || defined(PARTICLE)
   #include "Particle.h"
