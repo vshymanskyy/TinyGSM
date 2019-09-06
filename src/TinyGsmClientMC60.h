@@ -352,12 +352,6 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
     sendAT(GF("+CGACT=1,1"));
     waitResponse(60000L);
 
-    //Start TCPIP Task and Set APN, User Name and Password
-    sendAT("+QIREGAPP=\"", apn, "\",\"", user, "\",\"", pwd,  "\"" );
-    if (waitResponse() != 1) {
-      return false;
-    }
-
     // Select TCP/IP transfer mode - NOT transparent mode
     sendAT(GF("+QIMODE=0"));
     if (waitResponse() != 1) {
@@ -366,6 +360,12 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
 
     // Enable multiple TCP/IP connections
     sendAT(GF("+QIMUX=1"));
+    if (waitResponse() != 1) {
+      return false;
+    }
+
+    //Start TCPIP Task and Set APN, User Name and Password
+    sendAT("+QIREGAPP=\"", apn, "\",\"", user, "\",\"", pwd,  "\"" );
     if (waitResponse() != 1) {
       return false;
     }
@@ -732,6 +732,7 @@ TINY_GSM_MODEM_STREAM_UTILITIES()
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
             sockets[mux]->got_data = true;
           }
+          data = "";
         } else if (data.endsWith(GF("CLOSED" GSM_NL))) {
           int nl = data.lastIndexOf(GSM_NL, data.length()-8);
           int coma = data.indexOf(',', nl+2);
