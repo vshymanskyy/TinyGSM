@@ -381,7 +381,7 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
    */
 
   bool gprsConnect(const char* apn, const char* user = NULL, const char* pwd = NULL) {
-    gprsDisconnect();
+    // gprsDisconnect();
 
     sendAT(GF("+CGATT=1"));  // attach to GPRS
     if (waitResponse(360000L) != 1) {
