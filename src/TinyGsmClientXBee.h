@@ -959,6 +959,10 @@ public:
                     bool ssl = false) {
     bool success = true;
 
+    if (mux != 0) {
+      DBG("XBee only supports 1 IP channel in transparent mode!");
+    }
+
     // empty the saved currelty-in-use destination address
     savedOperatingIP = IPAddress(0, 0, 0, 0);
 
