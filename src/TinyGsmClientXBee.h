@@ -126,24 +126,29 @@ public:
     // empty the saved currently-in-use destination address
     at->savedOperatingIP = IPAddress(0, 0, 0, 0);
     at->commandMode();
+
+    // Get the current socket timeout
+    at->sendAT(GF("TM"));
+    String timeoutUsed = at->readResponseString(5000L);
+
     // For WiFi models, there's no direct way to close the socket.  This is a
     // hack to shut the socket by setting the timeout to zero.
     if (at->beeType == XBEE_S6B_WIFI) {
-      at->sendAT(GF("TM0"));  // Set socket timeout (using Digi default of 10 seconds)
+      at->sendAT(GF("TM0"));  // Set socket timeout to 0
       at->waitResponse(maxWaitMs);  // This response can be slow
       at->writeChanges();
     }
-    // For cellular models, per documentation: If you change the TM (socket
+
+    // For cellular models, per documentation: If you write the TM (socket
     // timeout) value while in Transparent Mode, the current connection is
-    // immediately closed.
-    at->sendAT(GF("TM"));  // Get socket timeout
-    String timeoutUsed = at->readResponseString(5000L);
+    // immediately closed - this works even if the TM values is unchanged
     at->sendAT(GF("TM"), timeoutUsed);  // Re-set socket timeout
     at->waitResponse(maxWaitMs);  // This response can be slow
     at->writeChanges();
     at->exitCommand();
     at->streamClear();  // Empty anything remaining in the buffer
     sock_connected = false;
+    
     // Note:  because settings are saved in flash, the XBEE will attempt to
     // reconnect to the previous socket if it receives any outgoing data.
     // Setting sock_connected to false after the stop ensures that connected()
@@ -1138,7 +1143,6 @@ public:
           // we force close so it can reopen
           case 0x21 :
           case 0x27 : {
-            Serial.println("Here!");
             sendAT(GF("TM"));  // Get socket timeout
             String timeoutUsed = readResponseString(5000L);
             sendAT(GF("TM"), timeoutUsed);  // Re-set socket timeout
