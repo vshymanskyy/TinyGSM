@@ -109,9 +109,12 @@ public:
   }
 
   virtual int connect(IPAddress ip, uint16_t port, int timeout_s) {
+    if (timeout_s != 75) {
+      DBG("Timeout [", timeout_s, "] doesn't apply here.");
+    }
     // NOTE:  Not caling stop() or yeild() here
     at->streamClear();  // Empty anything in the buffer before starting
-    sock_connected = at->modemConnect(ip, port, mux, false, timeout_s);
+    sock_connected = at->modemConnect(ip, port, mux, false);
     return sock_connected;
   }
   virtual int connect(IPAddress ip, uint16_t port) {
@@ -259,9 +262,12 @@ public:
   }
 
   virtual int connect(IPAddress ip, uint16_t port, int timeout_s) {
+    if (timeout_s != 75) {
+      DBG("Timeout [", timeout_s, "] doesn't apply here.");
+    }
     // NOTE:  Not caling stop() or yeild() here
     at->streamClear();  // Empty anything in the buffer before starting
-    sock_connected = at->modemConnect(ip, port, mux, true, timeout_s);
+    sock_connected = at->modemConnect(ip, port, mux, true);
     return sock_connected;
   }
 };
@@ -827,12 +833,30 @@ public:
    */
 
   // Use: float vBatt = modem.getBattVoltage() / 1000.0;
-  uint16_t getBattVoltage() TINY_GSM_ATTR_NOT_AVAILABLE;
+  uint16_t getBattVoltage() {
+    int16_t intRes = 0;
+    XBEE_COMMAND_START_DECORATOR(5, false)
+    if (beeType == XBEE_UNKNOWN) getSeries();
+    if (beeType == XBEE_S6B_WIFI) {
+      sendAT(GF("%V"));
+      intRes = readResponseInt();
+    }
+    XBEE_COMMAND_END_DECORATOR
+    return intRes;
+  }
+
   int8_t getBattPercent() TINY_GSM_ATTR_NOT_AVAILABLE;
   uint8_t getBattChargeState() TINY_GSM_ATTR_NOT_AVAILABLE;
-  bool getBattStats(uint8_t &chargeState, int8_t &percent, uint16_t &milliVolts) TINY_GSM_ATTR_NOT_AVAILABLE;
+
+  bool getBattStats(uint8_t &chargeState, int8_t &percent, uint16_t &milliVolts) {
+    chargeState = 0;
+    percent = 0;
+    milliVolts = getBattVoltage();
+    return true;
+  }
 
   float getTemperature() {
+    XBEE_COMMAND_START_DECORATOR(5, (float)-9999)
     String res = sendATGetString(GF("TP"));
     if (res == "") {
       return (float)-9999;
@@ -840,6 +864,7 @@ public:
     char buf[5] = {0,};
     res.toCharArray(buf, 5);
     int8_t intRes = (int8_t)strtol(buf, 0, 16); // degrees Celsius displayed in 8-bit two's complement format.
+    XBEE_COMMAND_END_DECORATOR
     return (float)intRes;
   }
 
@@ -907,7 +932,7 @@ public:
                     bool ssl = false, int timeout_s = 75)
   {
     bool retVal = false;
-     XBEE_COMMAND_START_DECORATOR(5, false)
+    XBEE_COMMAND_START_DECORATOR(5, false)
 
     // If this is a new host name, replace the saved host and wipe out the saved host IP
     if (this->savedHost != String(host)) {
@@ -931,12 +956,8 @@ public:
   }
 
   bool modemConnect(IPAddress ip, uint16_t port, uint8_t mux = 0,
-                    bool ssl = false, int timeout_s = 75) {
+                    bool ssl = false) {
     bool success = true;
-
-    if (timeout_s != 75) {
-      DBG("Timeout doesn't apply here.");
-    }
 
     // empty the saved currelty-in-use destination address
     savedOperatingIP = IPAddress(0, 0, 0, 0);
@@ -972,8 +993,10 @@ public:
     }
 
     // we'll accept either unknown or connected
-    uint16_t ci = getConnectionIndicator();
-    success &= (ci == 0x00 || ci == 0xFF || ci == 0x28);
+    if (beeType != XBEE_S6B_WIFI) {
+      uint16_t ci = getConnectionIndicator();
+      success &= (ci == 0x00 || ci == 0xFF || ci == 0x28);
+    }
 
     if (success) {
       sockets[mux]->sock_connected = true;
