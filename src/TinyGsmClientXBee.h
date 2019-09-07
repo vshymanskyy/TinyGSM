@@ -109,7 +109,7 @@ public:
   }
 
   virtual int connect(IPAddress ip, uint16_t port, int timeout_s) {
-    if (timeout_s != 75) {
+    if (timeout_s != 0) {
       DBG("Timeout [", timeout_s, "] doesn't apply here.");
     }
     // NOTE:  Not caling stop() or yeild() here
@@ -118,7 +118,7 @@ public:
     return sock_connected;
   }
   virtual int connect(IPAddress ip, uint16_t port) {
-    return connect(ip, port, 75);
+    return connect(ip, port, 0);
   }
 
   virtual void stop(uint32_t maxWaitMs) {
@@ -262,7 +262,7 @@ public:
   }
 
   virtual int connect(IPAddress ip, uint16_t port, int timeout_s) {
-    if (timeout_s != 75) {
+    if (timeout_s != 0) {
       DBG("Timeout [", timeout_s, "] doesn't apply here.");
     }
     // NOTE:  Not caling stop() or yeild() here
@@ -1018,14 +1018,16 @@ public:
     stream.write((uint8_t*)buff, len);
     stream.flush();
 
-    // After a send, verify the outgoing ip if it isn't set
-    if (savedOperatingIP == IPAddress(0, 0, 0, 0)) {
-      modemGetConnected();
-    }
-    // After sending several characters, also re-check
-    // NOTE:  I'm intentionally not checking after every single character!
-    else if (len > 5) {
-      modemGetConnected();
+    if (beeType != XBEE_S6B_WIFI) {
+      // After a send, verify the outgoing ip if it isn't set
+      if (savedOperatingIP == IPAddress(0, 0, 0, 0)) {
+        modemGetConnected();
+      }
+      // After sending several characters, also re-check
+      // NOTE:  I'm intentionally not checking after every single character!
+      else if (len > 5) {
+        modemGetConnected();
+      }
     }
 
     return len;
