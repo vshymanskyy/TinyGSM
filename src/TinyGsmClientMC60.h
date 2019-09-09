@@ -68,7 +68,6 @@ public:
     this->mux = mux;
     sock_available = 0;
     sock_connected = false;
-    got_data = false;
 
     at->sockets[mux] = this;
 
@@ -114,7 +113,6 @@ private:
   uint8_t         mux;
   uint16_t        sock_available;
   bool            sock_connected;
-  bool            got_data;
   RxFifo          rx;
 };
 
@@ -161,18 +159,32 @@ public:
 
   bool init(const char* pin = NULL) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
+
     if (!testAT()) {
       return false;
     }
+
     sendAT(GF("&FZ"));  // Factory + Reset
     waitResponse();
+
     sendAT(GF("E0"));   // Echo Off
     if (waitResponse() != 1) {
       return false;
     }
+
     DBG(GF("### Modem:"), getModemName());
-    getSimStatus();
-    return true;
+
+    int ret = getSimStatus();
+    // if the sim isn't ready and a pin has been provided, try to unlock the sim
+    if (ret != SIM_READY && pin != NULL && strlen(pin) > 0) {
+      simUnlock(pin);
+      return (getSimStatus() == SIM_READY);
+    }
+    // if the sim is ready, or it's locked but no pin has been provided, return
+    // true
+    else {
+      return (ret == SIM_READY || ret == SIM_LOCKED);
+    }
   }
 
   String getModemName() {
@@ -338,6 +350,18 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
     sendAT(GF("+CGACT=1,1"));
     waitResponse(60000L);
 
+    // Select TCP/IP transfer mode - NOT transparent mode
+    sendAT(GF("+QIMODE=0"));
+    if (waitResponse() != 1) {
+      return false;
+    }
+
+    // Enable multiple TCP/IP connections
+    sendAT(GF("+QIMUX=1"));
+    if (waitResponse() != 1) {
+      return false;
+    }
+
     //Start TCPIP Task and Set APN, User Name and Password
     sendAT("+QIREGAPP=\"", apn, "\",\"", user, "\",\"", pwd,  "\"" );
     if (waitResponse() != 1) {
@@ -350,30 +374,20 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
       return false;
     }
 
-    //Enable multiple TCP/IP connections
-    sendAT(GF("+QIMUX=1"));
-    if (waitResponse() != 1) {
-      return false;
-    }
-
-    //Request an IP header for received data ("IPD(data length):")
-    sendAT(GF("+QIHEAD=1"));
-    if (waitResponse() != 1) {
-      return false;
-    }
-
-    //Set Method to Handle Received TCP/IP Data - Retrieve Data by Command
-    sendAT(GF("+QINDI=1"));
-    if (waitResponse() != 1) {
-      return false;
-    }
-
     // Check that we have a local IP address
-    if (localIP() != IPAddress(0,0,0,0)) {
-      return true;
+    if (localIP() == IPAddress(0,0,0,0)) {
+      return false;
     }
 
-    return false;
+    //Set Method to Handle Received TCP/IP Data
+    // Mode=2 - Output a notification statement:
+    // “+QIRDI: <id>,<sc>,<sid>,<num>,<len>,< tlen>”
+    sendAT(GF("+QINDI=2"));
+    if (waitResponse() != 1) {
+      return false;
+    }
+
+    return true;
   }
 
   bool gprsDisconnect() {
@@ -563,10 +577,12 @@ TINY_GSM_MODEM_GET_GPRS_IP_CONNECTED()
 protected:
 
   bool modemConnect(const char* host, uint16_t port, uint8_t mux,
-                    bool ssl = false, int timeout_s = 75)
- {
-    uint32_t timeout_ms = ((uint32_t)timeout_s)*1000;
-    sendAT(GF("+QIOPEN="), mux, GF("\"TCP"), GF("\",\""), host, GF("\","), port);
+                   bool ssl = false, int timeout_s = 75) {
+   if (ssl) {
+     DBG("SSL not yet supported on this module!");
+   }
+   uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
+   sendAT(GF("+QIOPEN="), mux, GF(",\""), GF("TCP"), GF("\",\""), host, GF("\","), port);
     int rsp = waitResponse(timeout_ms,
                            GF("CONNECT OK" GSM_NL),
                            GF("CONNECT FAIL" GSM_NL),
@@ -575,7 +591,7 @@ protected:
   }
 
   int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
-    sendAT(GF("+QISEND="), mux, ',', len);
+    sendAT(GF("+QISEND="), mux, ',', (uint16_t)len);
     if (waitResponse(GF(">")) != 1) {
       return 0;
     }
@@ -614,23 +630,35 @@ protected:
     // sc = roll in connection - 1, client of connection
     // sid = index of connection - mux
     // len = maximum length of data to send
-    sendAT(GF("+QIRD=0,1,"), mux, ',', size);
-    // sendAT(GF("+QIRD="), mux, ',', size);
-    if (waitResponse(GF("+QIRD:")) != 1) {
-      return 0;
+    sendAT(GF("+QIRD=0,1,"), mux, ',', (uint16_t)size);
+    // If it replies only OK for the write command, it means there is no
+    // received data in the buffer of the connection.
+    int res = waitResponse(GF("+QIRD:"), GFP(GSM_OK), GFP(GSM_ERROR));
+    if (res == 1) {
+      streamSkipUntil(':');  // skip IP address
+      streamSkipUntil(',');  // skip port
+      streamSkipUntil(',');  // skip connection type (TCP/UDP)
+      // read the real length of the retrieved data
+      uint16_t len = stream.readStringUntil('\n').toInt();
+      // It's possible that the real length available is less than expected
+      // This is quite likely if the buffer is broken into packets - which may
+      // be different sizes.
+      // If so, make sure we make sure we re-set the amount of data available.
+      if (len < size) {
+          sockets[mux]->sock_available = len;
+      }
+      for (uint16_t i=0; i<len; i++) {
+        TINY_GSM_MODEM_STREAM_TO_MUX_FIFO_WITH_DOUBLE_TIMEOUT
+        sockets[mux]->sock_available--;
+        // ^^ One less character available after moving from modem's FIFO to our FIFO
+      }
+      waitResponse();
+      DBG("### READ:", len, "from", mux);
+      return len;
+    } else {
+        sockets[mux]->sock_available = 0;
+        return 0;
     }
-    streamSkipUntil(':');  // skip IP address
-    streamSkipUntil(',');  // skip port
-    streamSkipUntil(',');  // skip connection type (TCP/UDP)
-    size_t len = stream.readStringUntil('\n').toInt();  // read length
-    for (size_t i=0; i<len; i++) {
-      TINY_GSM_MODEM_STREAM_TO_MUX_FIFO_WITH_DOUBLE_TIMEOUT
-      sockets[mux]->sock_available--;
-      // ^^ One less character available after moving from modem's FIFO to our FIFO
-    }
-    waitResponse();
-    DBG("### READ:", len, "from", mux);
-    return len;
   }
 
   bool modemGetConnected(uint8_t mux) {
@@ -702,13 +730,20 @@ TINY_GSM_MODEM_STREAM_UTILITIES()
           index = 6;
           goto finish;
         } else if (data.endsWith(GF(GSM_NL "+QIRD:"))) {  // TODO:  QIRD? or QIRDI?
+          // +QIRDI: <id>,<sc>,<sid>,<num>,<len>,< tlen>
           streamSkipUntil(',');  // Skip the context
           streamSkipUntil(',');  // Skip the role
-          int mux = stream.readStringUntil('\n').toInt();
-          DBG("### Got Data:", mux);
+          // read the connection id
+          int mux = stream.readStringUntil(',').toInt();
+          // read the number of packets in the buffer
+          int num_packets = stream.readStringUntil(',').toInt();
+          // read the length of the current packet
+          int len_packet = stream.readStringUntil('\n').toInt();
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
-            sockets[mux]->got_data = true;
+            sockets[mux]->sock_available = len_packet*num_packets;
           }
+          data = "";
+          DBG("### Got Data:", len, "on", mux);
         } else if (data.endsWith(GF("CLOSED" GSM_NL))) {
           int nl = data.lastIndexOf(GSM_NL, data.length()-8);
           int coma = data.indexOf(',', nl+2);

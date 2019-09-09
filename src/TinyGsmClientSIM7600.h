@@ -142,16 +142,29 @@ public:
 
   bool init(const char* pin = NULL) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
+
     if (!testAT()) {
       return false;
     }
+
     sendAT(GF("E0"));   // Echo Off
     if (waitResponse() != 1) {
       return false;
     }
+
     DBG(GF("### Modem:"), getModemName());
-    getSimStatus();
-    return true;
+
+    int ret = getSimStatus();
+    // if the sim isn't ready and a pin has been provided, try to unlock the sim
+    if (ret != SIM_READY && pin != NULL && strlen(pin) > 0) {
+      simUnlock(pin);
+      return (getSimStatus() == SIM_READY);
+    }
+    // if the sim is ready, or it's locked but no pin has been provided, return
+    // true
+    else {
+      return (ret == SIM_READY || ret == SIM_LOCKED);
+    }
   }
 
   String getModemName() {
@@ -555,7 +568,7 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
   }
 
   // get GPS informations
-  bool getGPS(float *lat, float *lon, float *speed=0, int *alt=0, int *vsat=0, int *usat=0) {
+  bool getGPS(float *lat, float *lon, float *speed=0, int *alt=0) {
     //String buffer = "";
     bool fix = false;
 
@@ -567,14 +580,14 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
     //stream.readStringUntil(','); // mode
     if ( stream.readStringUntil(',').toInt() == 1 ) fix = true;
     stream.readStringUntil(','); //gps
-	stream.readStringUntil(','); // glonass
-	stream.readStringUntil(','); // beidu
+    stream.readStringUntil(','); // glonass
+    stream.readStringUntil(','); // beidu
     *lat =  stream.readStringUntil(',').toFloat(); //lat
-	stream.readStringUntil(','); // N/S
+    stream.readStringUntil(','); // N/S
     *lon =  stream.readStringUntil(',').toFloat(); //lon
-	stream.readStringUntil(','); // E/W
-	stream.readStringUntil(','); // date
-	stream.readStringUntil(','); // UTC time
+    stream.readStringUntil(','); // E/W
+    stream.readStringUntil(','); // date
+    stream.readStringUntil(','); // UTC time
     if (alt != NULL) *alt =  stream.readStringUntil(',').toFloat(); //alt
     if (speed != NULL) *speed = stream.readStringUntil(',').toFloat(); //speed
     stream.readStringUntil(','); //course
@@ -582,8 +595,6 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
     stream.readStringUntil(',');//PDOP
     stream.readStringUntil(',');//HDOP
     stream.readStringUntil(',');//VDOP
-    //if (vsat != NULL) *vsat = stream.readStringUntil(',').toInt(); //viewed satelites
-    //if (usat != NULL) *usat = stream.readStringUntil(',').toInt(); //used satelites
     stream.readStringUntil('\n');
 
     waitResponse();
@@ -610,7 +621,7 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
     // Wait for final OK
     waitResponse();
     // Return millivolts
-	uint16_t res = voltage*1000;
+    uint16_t res = voltage*1000;
     return res;
   }
 
@@ -618,16 +629,11 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
 
   uint8_t getBattChargeState()  TINY_GSM_ATTR_NOT_AVAILABLE;
 
-  bool getBattStats(uint8_t &chargeState, int8_t &percent, uint16_t &milliVolts) {
-    sendAT(GF("+CBC?"));
-    if (waitResponse(GF(GSM_NL "+CBC:")) != 1) {
-      return false;
-    }
-    // get voltage in VOLTS
-    float voltage = stream.readStringUntil('\n').toFloat();
-    milliVolts = voltage*1000;
-    // Wait for final OK
-    waitResponse();
+  bool getBattStats(uint8_t& chargeState, int8_t& percent,
+                    uint16_t& milliVolts) {
+    chargeState = 0;
+    percent = 0;
+    milliVolts = getBattVoltage();
     return true;
   }
 
@@ -650,25 +656,30 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
 
 protected:
 
-  bool modemConnect(const char* host, uint16_t port, uint8_t mux,
-                    bool ssl = false, int timeout_s = 75) {
-    // Make sure we'll be getting data manually on this connection
-    sendAT(GF("+CIPRXGET=1"));
-    if (waitResponse() != 1) {
-      return false;
-    }
+ bool modemConnect(const char* host, uint16_t port, uint8_t mux,
+                   bool ssl = false, int timeout_s = 15) {
+   if (ssl) {
+     DBG("SSL not yet supported on this module!");
+   }
+   // Make sure we'll be getting data manually on this connection
+   sendAT(GF("+CIPRXGET=1"));
+   if (waitResponse() != 1) {
+     return false;
+   }
 
-    // Establish a connection in multi-socket mode
-    sendAT(GF("+CIPOPEN="), mux, ',', GF("\"TCP"), GF("\",\""), host, GF("\","), port);
-    // The reply is +CIPOPEN: ## of socket created
-    if (waitResponse(15000L, GF(GSM_NL "+CIPOPEN:")) != 1) {
-      return false;
-    }
-    return true;
+   // Establish a connection in multi-socket mode
+   uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
+   sendAT(GF("+CIPOPEN="), mux, ',', GF("\"TCP"), GF("\",\""), host, GF("\","),
+          port);
+   // The reply is +CIPOPEN: ## of socket created
+   if (waitResponse(timeout_ms, GF(GSM_NL "+CIPOPEN:")) != 1) {
+     return false;
+   }
+   return true;
   }
 
   int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
-    sendAT(GF("+CIPSEND="), mux, ',', len);
+    sendAT(GF("+CIPSEND="), mux, ',', (uint16_t)len);
     if (waitResponse(GF(">")) != 1) {
       return 0;
     }
@@ -685,23 +696,23 @@ protected:
 
   size_t modemRead(size_t size, uint8_t mux) {
 #ifdef TINY_GSM_USE_HEX
-    sendAT(GF("+CIPRXGET=3,"), mux, ',', size);
+    sendAT(GF("+CIPRXGET=3,"), mux, ',', (uint16_t)size);
     if (waitResponse(GF("+CIPRXGET:")) != 1) {
       return 0;
     }
 #else
-    sendAT(GF("+CIPRXGET=2,"), mux, ',', size);
+    sendAT(GF("+CIPRXGET=2,"), mux, ',', (uint16_t)size);
     if (waitResponse(GF("+CIPRXGET:")) != 1) {
       return 0;
     }
 #endif
     streamSkipUntil(','); // Skip Rx mode 2/normal or 3/HEX
     streamSkipUntil(','); // Skip mux/cid (connecion id)
-    size_t len_requested = stream.readStringUntil(',').toInt();
+    int len_requested = stream.readStringUntil(',').toInt();
     //  ^^ Requested number of data bytes (1-1460 bytes)to be read
-    size_t len_confirmed = stream.readStringUntil('\n').toInt();
+    int len_confirmed = stream.readStringUntil('\n').toInt();
     // ^^ The data length which not read in the buffer
-    for (size_t i=0; i<len_requested; i++) {
+    for (int i=0; i<len_requested; i++) {
       uint32_t startMillis = millis();
 #ifdef TINY_GSM_USE_HEX
       while (stream.available() < 2 && (millis() - startMillis < sockets[mux]->_timeout)) { TINY_GSM_YIELD(); }

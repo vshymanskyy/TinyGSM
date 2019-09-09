@@ -79,9 +79,9 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
 - UDP
     - Not yet supported on any module, though it may be some day
 - SSL/TLS (HTTPS)
-    - Supported on¹:
+    - Supported on:
         - SIM800, u-Blox, XBee _cellular_, ESP8266, and Sequans Monarch
-        ¹ - only some device models or firmware revisions have this feature (SIM8xx R14.18, A7, etc.)
+        - Note:  only some device models or firmware revisions have this feature (SIM8xx R14.18, A7, etc.)
     - Not yet supported on:
         - Quectel modems, SIM7000, SIM5360/5320/7100/7500/7600
     - Not possible on:

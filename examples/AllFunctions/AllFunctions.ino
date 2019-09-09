@@ -60,6 +60,7 @@
 #define TINY_GSM_TEST_SMS true
 #define TINY_GSM_TEST_USSD true
 #define TINY_GSM_TEST_BATTERY true
+#define TINY_GSM_TEST_GPS false
 // powerdown modem after tests
 #define TINY_GSM_POWERDOWN false
 
@@ -70,15 +71,39 @@
 //#define SMS_TARGET  "+380xxxxxxxxx"
 //#define CALL_TARGET "+380xxxxxxxxx"
 
-// Your GPRS credentials
-// Leave empty, if missing user or pass
+// Your GPRS credentials, if any
 const char apn[]  = "YourAPN";
 const char gprsUser[] = "";
 const char gprsPass[] = "";
+
+// Your WiFi connection credentials, if applicable
 const char wifiSSID[]  = "YourSSID";
 const char wifiPass[] = "YourWiFiPass";
 
 #include <TinyGsmClient.h>
+
+#if TINY_GSM_TEST_GPRS && not defined TINY_GSM_MODEM_HAS_GPRS
+#undef TINY_GSM_TEST_GPRS
+#undef TINY_GSM_TEST_CALL
+#undef TINY_GSM_TEST_SMS
+#undef TINY_GSM_TEST_USSD
+#undef TINY_GSM_TEST_WIFI
+#define TINY_GSM_TEST_GPRS false
+#define TINY_GSM_TEST_CALL false
+#define TINY_GSM_TEST_SMS false
+#define TINY_GSM_TEST_USSD false
+#define TINY_GSM_TEST_WIFI true
+#endif
+#if TINY_GSM_TEST_WIFI && not defined TINY_GSM_MODEM_HAS_WIFI
+#undef TINY_GSM_USE_GPRS
+#undef TINY_GSM_USE_WIFI
+#define TINY_GSM_USE_GPRS true
+#define TINY_GSM_USE_WIFI false
+#endif
+#if TINY_GSM_TEST_GPS && not defined TINY_GSM_MODEM_HAS_GPS
+#undef TINY_GSM_TEST_GPS
+#define TINY_GSM_TEST_GPS false
+#endif
 
 #ifdef DUMP_AT_COMMANDS
   #include <StreamDebugger.h>
@@ -202,7 +227,7 @@ void loop() {
   DBG("Phone number (USSD):", ussd_phone_num);
 #endif
 
-#if defined(TINY_GSM_MODEM_HAS_GPS)
+#if TINY_GSM_TEST_GPS
   modem.enableGPS();
   String gps_raw = modem.getGPSraw();
   modem.disableGPS();

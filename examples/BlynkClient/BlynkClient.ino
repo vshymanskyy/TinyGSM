@@ -63,8 +63,7 @@
 //SoftwareSerial SerialAT(2, 3); // RX, TX
 
 
-// Your GPRS credentials
-// Leave empty, if missing user or pass
+// Your GPRS credentials, if any
 const char apn[]  = "YourAPN";
 const char user[] = "";
 const char pass[] = "";
@@ -91,7 +90,7 @@ void setup()
   modem.restart();
 
   String modemInfo = modem.getModemInfo();
-  SerialMon.print("Modem: ");
+  SerialMon.print("Modem Info: ");
   SerialMon.println(modemInfo);
 
   // Unlock your SIM card with a PIN

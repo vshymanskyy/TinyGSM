@@ -142,16 +142,29 @@ public:
 
   bool init(const char* pin = NULL) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
+
     if (!testAT()) {
       return false;
     }
+
     sendAT(GF("E0"));   // Echo Off
     if (waitResponse() != 1) {
       return false;
     }
+
     DBG(GF("### Modem:"), getModemName());
-    getSimStatus();
-    return true;
+
+    int ret = getSimStatus();
+    // if the sim isn't ready and a pin has been provided, try to unlock the sim
+    if (ret != SIM_READY && pin != NULL && strlen(pin) > 0) {
+      simUnlock(pin);
+      return (getSimStatus() == SIM_READY);
+    }
+    // if the sim is ready, or it's locked but no pin has been provided, return
+    // true
+    else {
+      return (ret == SIM_READY || ret == SIM_LOCKED);
+    }
   }
 
   String getModemName() {
@@ -640,24 +653,29 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
 protected:
 
   bool modemConnect(const char* host, uint16_t port, uint8_t mux,
-                    bool ssl = false, int timeout_s = 75) {
+                    bool ssl = false, int timeout_s = 15) {
     // Make sure we'll be getting data manually on this connection
     sendAT(GF("+CIPRXGET=1"));
     if (waitResponse() != 1) {
       return false;
     }
 
+    if (ssl) {
+        DBG("SSL not yet supported on this module!");
+    }
+
     // Establish a connection in multi-socket mode
+    uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
     sendAT(GF("+CIPOPEN="), mux, ',', GF("\"TCP"), GF("\",\""), host, GF("\","), port);
     // The reply is +CIPOPEN: ## of socket created
-    if (waitResponse(15000L, GF(GSM_NL "+CIPOPEN:")) != 1) {
+    if (waitResponse(timeout_ms, GF(GSM_NL "+CIPOPEN:")) != 1) {
       return false;
     }
     return true;
   }
 
   int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
-    sendAT(GF("+CIPSEND="), mux, ',', len);
+    sendAT(GF("+CIPSEND="), mux, ',', (uint16_t)len);
     if (waitResponse(GF(">")) != 1) {
       return 0;
     }
@@ -674,23 +692,23 @@ protected:
 
   size_t modemRead(size_t size, uint8_t mux) {
 #ifdef TINY_GSM_USE_HEX
-    sendAT(GF("+CIPRXGET=3,"), mux, ',', size);
+    sendAT(GF("+CIPRXGET=3,"), mux, ',', (uint16_t)size);
     if (waitResponse(GF("+CIPRXGET:")) != 1) {
       return 0;
     }
 #else
-    sendAT(GF("+CIPRXGET=2,"), mux, ',', size);
+    sendAT(GF("+CIPRXGET=2,"), mux, ',', (uint16_t)size);
     if (waitResponse(GF("+CIPRXGET:")) != 1) {
       return 0;
     }
 #endif
     streamSkipUntil(','); // Skip Rx mode 2/normal or 3/HEX
     streamSkipUntil(','); // Skip mux/cid (connecion id)
-    size_t len_requested = stream.readStringUntil(',').toInt();
+    int len_requested = stream.readStringUntil(',').toInt();
     //  ^^ Requested number of data bytes (1-1460 bytes)to be read
-    size_t len_confirmed = stream.readStringUntil('\n').toInt();
+    int len_confirmed = stream.readStringUntil('\n').toInt();
     // ^^ The data length which not read in the buffer
-    for (size_t i=0; i<len_requested; i++) {
+    for (int i=0; i<len_requested; i++) {
       uint32_t startMillis = millis();
 #ifdef TINY_GSM_USE_HEX
       while (stream.available() < 2 && (millis() - startMillis < sockets[mux]->_timeout)) { TINY_GSM_YIELD(); }

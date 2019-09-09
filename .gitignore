@@ -22,6 +22,9 @@
 platformio.ini
 lib/readme.txt
 include/readme.txt
+.atomrc.cson
+
+# VSCode
 .vscode/*
 .vscode/.browse.c_cpp.db*
 .vscode/c_cpp_properties.json
@@ -36,3 +39,7 @@ extras/Module Datasheets/*
 extras/Older Command Manuals/*
 extras/Older Command Manuals/*
 extras/At Command Manuals - Unsupported/*
+
+# Filters
+.gitconfig
+filters/*

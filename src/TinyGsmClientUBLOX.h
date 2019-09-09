@@ -176,9 +176,11 @@ public:
 
   bool init(const char* pin = NULL) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
+
     if (!testAT()) {
       return false;
     }
+
     sendAT(GF("E0"));   // Echo Off
     if (waitResponse() != 1) {
       return false;
@@ -535,7 +537,9 @@ TINY_GSM_MODEM_GET_GPRS_IP_CONNECTED()
   uint8_t getBattChargeState() TINY_GSM_ATTR_NOT_AVAILABLE;
 
   bool getBattStats(uint8_t &chargeState, int8_t &percent, uint16_t &milliVolts) {
+    chargeState = 0;
     percent = getBattPercent();
+    milliVolts = 0;
     return true;
   }
 
@@ -579,7 +583,7 @@ protected:
   }
 
   int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
-    sendAT(GF("+USOWR="), mux, ',', len);
+    sendAT(GF("+USOWR="), mux, ',', (uint16_t)len);
     if (waitResponse(GF("@")) != 1) {
       return 0;
     }
@@ -597,15 +601,15 @@ protected:
   }
 
   size_t modemRead(size_t size, uint8_t mux) {
-    sendAT(GF("+USORD="), mux, ',', size);
+    sendAT(GF("+USORD="), mux, ',', (uint16_t)size);
     if (waitResponse(GF(GSM_NL "+USORD:")) != 1) {
       return 0;
     }
     streamSkipUntil(','); // Skip mux
-    size_t len = stream.readStringUntil(',').toInt();
+    int len = stream.readStringUntil(',').toInt();
     streamSkipUntil('\"');
 
-    for (size_t i=0; i<len; i++) {
+    for (int i=0; i<len; i++) {
       TINY_GSM_MODEM_STREAM_TO_MUX_FIFO_WITH_DOUBLE_TIMEOUT
     }
     streamSkipUntil('\"');

@@ -31,13 +31,12 @@ static unsigned TINY_GSM_TCP_KEEP_ALIVE = 120;
 // 4 : the TCP or UDP transmission of ESP8266 station disconnected
 // 5 : ESP8266 station did NOT connect to an AP
 enum RegStatus {
-  REG_OK_IP        = 2,
-  REG_OK_TCP       = 3,
-  REG_UNREGISTERED = 4,
-  REG_DENIED       = 5,
-  REG_UNKNOWN      = 6,
+  REG_OK_IP     = 2,
+  REG_OK_TCP    = 3,
+  REG_OK_NO_TCP = 4,
+  REG_DENIED    = 5,
+  REG_UNKNOWN   = 6,
 };
-
 
 
 class TinyGsmESP8266
@@ -157,6 +156,9 @@ public:
     if (!testAT()) {
       return false;
     }
+    if (pin && strlen(pin) > 0) {
+      DBG("ESP8266 modules do not use an unlock pin!");
+    }
     sendAT(GF("E0"));   // Echo Off
     if (waitResponse() != 1) {
       return false;
@@ -249,7 +251,8 @@ TINY_GSM_MODEM_MAINTAIN_LISTEN()
   RegStatus getRegistrationStatus() {
     sendAT(GF("+CIPSTATUS"));
     if (waitResponse(3000, GF("STATUS:")) != 1) return REG_UNKNOWN;
-    int status = waitResponse(GFP(GSM_ERROR), GF("2"), GF("3"), GF("4"), GF("5"));
+    int status =
+        waitResponse(GFP(GSM_ERROR), GF("2"), GF("3"), GF("4"), GF("5"));
     waitResponse();  // Returns an OK after the status
     return (RegStatus)status;
   }
@@ -275,24 +278,25 @@ TINY_GSM_MODEM_MAINTAIN_LISTEN()
 
   bool isNetworkConnected()  {
     RegStatus s = getRegistrationStatus();
-    return (s == REG_OK_IP || s == REG_OK_TCP);
+    if (s == REG_OK_IP || s == REG_OK_TCP) {
+      // with these, we're definitely connected
+      return true;
+    }
+    else if (s == REG_OK_NO_TCP) {
+      // with this, we may or may not be connected
+      if (getLocalIP() == "") {
+        return false;
+      }
+      else {
+        return true;
+      }
+    }
+    else {
+      return false;
+    }
   }
 
-  bool waitForNetwork(unsigned long timeout_ms = 60000L) {
-    for (unsigned long start = millis(); millis() - start < timeout_ms; ) {
-      sendAT(GF("+CIPSTATUS"));
-      int res1 = waitResponse(3000, GF("busy p..."), GF("STATUS:"));
-      if (res1 == 2) {
-        int res2 = waitResponse(GFP(GSM_ERROR), GF("2"), GF("3"), GF("4"), GF("5"));
-        if (res2 == 2 || res2 == 3) {
-            waitResponse();
-            return true;
-         }
-        }
-      delay(250);
-    }
-    return false;
-  }
+  TINY_GSM_MODEM_WAIT_FOR_NETWORK()
 
   /*
    * WiFi functions
@@ -370,7 +374,7 @@ protected:
   }
 
   int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
-    sendAT(GF("+CIPSEND="), mux, ',', len);
+    sendAT(GF("+CIPSEND="), mux, ',', (uint16_t)len);
     if (waitResponse(GF(">")) != 1) {
       return 0;
     }
@@ -383,8 +387,37 @@ protected:
   }
 
   bool modemGetConnected(uint8_t mux) {
-    RegStatus s = getRegistrationStatus();
-    return (s == REG_OK_IP || s == REG_OK_TCP);
+    sendAT(GF("+CIPSTATUS"));
+    if (waitResponse(3000, GF("STATUS:")) != 1) return REG_UNKNOWN;
+    int status =
+        waitResponse(GFP(GSM_ERROR), GF("2"), GF("3"), GF("4"), GF("5"));
+    if (status != 3) {
+      // if the status is anything but 3, there are no connections open
+      waitResponse();  // Returns an OK after the status
+      for (int muxNo = 0; muxNo < TINY_GSM_MUX_COUNT; muxNo++) {
+        sockets[muxNo]->sock_connected = false;
+      }
+      return false;
+    }
+    bool verified_connections[TINY_GSM_MUX_COUNT] = {0, 0, 0, 0, 0};
+    for (int muxNo = 0; muxNo < TINY_GSM_MUX_COUNT; muxNo++) {
+      uint8_t has_status = waitResponse(GF("+CIPSTATUS:"), GFP(GSM_OK), GFP(GSM_ERROR));
+      if (has_status == 1) {
+        int returned_mux = stream.readStringUntil(',').toInt();
+        streamSkipUntil(',');  // Skip mux
+        streamSkipUntil(',');  // Skip type
+        streamSkipUntil(',');  // Skip remote IP
+        streamSkipUntil(',');  // Skip remote port
+        streamSkipUntil(',');  // Skip local port
+        streamSkipUntil('\n');  // Skip client/server type
+        verified_connections[returned_mux] = 1;
+      }
+      if (has_status == 2) break;  // once we get to the ok, stop
+    }
+    for (int muxNo = 0; muxNo < TINY_GSM_MUX_COUNT; muxNo++) {
+      sockets[muxNo]->sock_connected = verified_connections[muxNo];
+    }
+    return verified_connections[mux];
   }
 
 public:

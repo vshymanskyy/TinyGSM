@@ -195,15 +195,29 @@ public:
 
   bool init(const char* pin = NULL) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
+
     if (!testAT()) {
       return false;
     }
+
     sendAT(GF("E0"));   // Echo Off
     if (waitResponse() != 1) {
       return false;
     }
-    getSimStatus();
-    return true;
+
+    DBG(GF("### Modem:"), getModemName());
+
+    int ret = getSimStatus();
+    // if the sim isn't ready and a pin has been provided, try to unlock the sim
+    if (ret != SIM_READY && pin != NULL && strlen(pin) > 0) {
+      simUnlock(pin);
+      return (getSimStatus() == SIM_READY);
+    }
+    // if the sim is ready, or it's locked but no pin has been provided, return
+    // true
+    else {
+      return (ret == SIM_READY || ret == SIM_LOCKED);
+    }
   }
 
   String getModemName() {
@@ -570,7 +584,7 @@ protected:
       return 0;
     }
 
-    sendAT(GF("+SQNSSENDEXT="), mux, ',', len);
+    sendAT(GF("+SQNSSENDEXT="), mux, ',', (uint16_t)len);
     waitResponse(10000L, GF(GSM_NL "> "));
     stream.write((uint8_t*)buff, len);
     stream.flush();
@@ -605,13 +619,13 @@ protected:
 
 
   size_t modemRead(size_t size, uint8_t mux) {
-    sendAT(GF("+SQNSRECV="), mux, ',', size);
+    sendAT(GF("+SQNSRECV="), mux, ',', (uint16_t)size);
     if (waitResponse(GF("+SQNSRECV: ")) != 1) {
       return 0;
     }
     streamSkipUntil(','); // Skip mux
-    size_t len = stream.readStringUntil('\n').toInt();
-    for (size_t i=0; i<len; i++) {
+    int len = stream.readStringUntil('\n').toInt();
+    for (int i=0; i<len; i++) {
       uint32_t startMillis = millis(); \
       while (!stream.available() && ((millis() - startMillis) < sockets[mux % TINY_GSM_MUX_COUNT]->_timeout)) { TINY_GSM_YIELD(); } \
       char c = stream.read(); \

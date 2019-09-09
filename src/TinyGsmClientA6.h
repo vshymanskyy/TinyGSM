@@ -122,7 +122,7 @@ public:
   {
     memset(sockets, 0, sizeof(sockets));
   }
-  
+
   virtual ~TinyGsmA6() {}
 
   /*
@@ -135,20 +135,38 @@ public:
 
   bool init(const char* pin = NULL) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
+
     if (!testAT()) {
       return false;
     }
+
     sendAT(GF("&FZE0"));  // Factory + Reset + Echo Off
     if (waitResponse() != 1) {
       return false;
     }
-    sendAT(GF("+CMEE=0"));  // Turn off verbose errors
+
+#ifdef TINY_GSM_DEBUG
+    sendAT(GF("+CMEE=2"));  // turn on verbose error codes
+#else
+    sendAT(GF("+CMEE=0"));  // turn off error codes
+#endif
     waitResponse();
     sendAT(GF("+CMER=3,0,0,2"));  // Set unsolicited result code output destination
     waitResponse();
+
     DBG(GF("### Modem:"), getModemName());
-    getSimStatus();
-    return true;
+
+    int ret = getSimStatus();
+    // if the sim isn't ready and a pin has been provided, try to unlock the sim
+    if (ret != SIM_READY && pin != NULL && strlen(pin) > 0) {
+      simUnlock(pin);
+      return (getSimStatus() == SIM_READY);
+    }
+    // if the sim is ready, or it's locked but no pin has been provided, return
+    // true
+    else {
+      return (ret == SIM_READY || ret == SIM_LOCKED);
+    }
   }
 
   String getModemName() {
@@ -525,6 +543,7 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
     }
     chargeState = stream.readStringUntil(',').toInt();
     percent = stream.readStringUntil('\n').toInt();
+    milliVolts = 0;
     // Wait for final OK
     waitResponse();
     return true;
@@ -562,7 +581,7 @@ protected:
   }
 
   int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
-    sendAT(GF("+CIPSEND="), mux, ',', len);
+    sendAT(GF("+CIPSEND="), mux, ',', (uint16_t)len);
     if (waitResponse(2000L, GF(GSM_NL ">")) != 1) {
       return 0;
     }

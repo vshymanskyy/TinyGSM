@@ -158,16 +158,29 @@ public:
 
   bool init(const char* pin = NULL) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
+
     if (!testAT()) {
       return false;
     }
+
     sendAT(GF("&FZE0"));  // Factory + Reset + Echo Off
     if (waitResponse() != 1) {
       return false;
     }
+
     DBG(GF("### Modem:"), getModemName());
-    getSimStatus();
-    return true;
+
+    int ret = getSimStatus();
+    // if the sim isn't ready and a pin has been provided, try to unlock the sim
+    if (ret != SIM_READY && pin != NULL && strlen(pin) > 0) {
+      simUnlock(pin);
+      return (getSimStatus() == SIM_READY);
+    }
+    // if the sim is ready, or it's locked but no pin has been provided, return
+    // true
+    else {
+      return (ret == SIM_READY || ret == SIM_LOCKED);
+    }
   }
 
   String getModemName() {
@@ -496,11 +509,13 @@ TINY_GSM_MODEM_GET_GPRS_IP_CONNECTED()
 
 protected:
 
-  bool modemConnect(const char* host, uint16_t port, uint8_t mux,
-                    bool ssl = false, int timeout_s = 20)
- {
-    int rsp;
-    uint32_t timeout_ms = ((uint32_t)timeout_s)*1000;
+ bool modemConnect(const char* host, uint16_t port, uint8_t mux,
+                   bool ssl = false, int timeout_s = 20) {
+   if (ssl) {
+     DBG("SSL not yet supported on this module!");
+   }
+   int rsp;
+   uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
 
     // <PDPcontextID>(1-16), <connectID>(0-11),"TCP/UDP/TCP LISTENER/UDP SERVICE",
     // "<IP_address>/<domain_name>",<remote_port>,<local_port>,<access_mode>(0-2 0=buffer)
@@ -521,7 +536,7 @@ protected:
   }
 
   int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
-    sendAT(GF("+QISEND="), mux, ',', len);
+    sendAT(GF("+QISEND="), mux, ',', (uint16_t)len);
     if (waitResponse(GF(">")) != 1) {
       return 0;
     }
@@ -535,13 +550,13 @@ protected:
   }
 
   size_t modemRead(size_t size, uint8_t mux) {
-    sendAT(GF("+QIRD="), mux, ',', size);
+    sendAT(GF("+QIRD="), mux, ',', (uint16_t)size);
     if (waitResponse(GF("+QIRD:")) != 1) {
       return 0;
     }
-    size_t len = stream.readStringUntil('\n').toInt();
+    int len = stream.readStringUntil('\n').toInt();
 
-    for (size_t i=0; i<len; i++) {
+    for (int i=0; i<len; i++) {
       TINY_GSM_MODEM_STREAM_TO_MUX_FIFO_WITH_DOUBLE_TIMEOUT
     }
     waitResponse();
@@ -557,7 +572,9 @@ protected:
       streamSkipUntil(','); // Skip total received
       streamSkipUntil(','); // Skip have read
       result = stream.readStringUntil('\n').toInt();
-      if (result) DBG("### DATA AVAILABLE:", result, "on", mux);
+      if (result) {
+        DBG("### DATA AVAILABLE:", result, "on", mux);
+      }
       waitResponse();
     }
     if (!result) {
