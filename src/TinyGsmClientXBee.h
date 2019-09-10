@@ -663,7 +663,16 @@ public:
 
   bool isNetworkConnected() {
     RegStatus s = getRegistrationStatus();
-    return (s == REG_OK);
+    if (s == REG_OK) {
+      IPAddress ip = localIP();
+      if (ip != IPAddress(0, 0, 0, 0)) {
+        return true;
+      } else {
+        return false;
+      }
+    } else {
+      return false;
+    }
   }
 
   bool waitForNetwork(unsigned long timeout_ms = 60000L) {
