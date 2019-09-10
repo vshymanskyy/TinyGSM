@@ -657,10 +657,16 @@ public:
     XBEE_COMMAND_END_DECORATOR
 
     if (beeType == XBEE3_LTEM_ATT && intRes == 105) intRes = 0;  // tends to reply with "69" when signal is unknown
-    if (beeType == XBEE_S6B_WIFI && intRes == 0xFF) intRes = 0;  // 0xFF returned for unknown
 
-    if (beeType == XBEE_S6B_WIFI) return -93 + intRes;  // the maximum sensitivity is -93dBm
-    else return -1*intRes; // need to convert to negative number
+    if (beeType == XBEE_S6B_WIFI) {
+      if (intRes == 0xFF) {
+         return 0;  // 0xFF returned for unknown
+      } else {
+        return -93 + intRes;  // the maximum sensitivity is -93dBm
+      }
+    } else {
+      return -1*intRes; // need to convert to negative number
+    }
   }
 
   bool isNetworkConnected() {
