@@ -203,6 +203,9 @@ public:
   virtual uint8_t connected() {
     if (available()) {
       return true;
+    // if we never got an IP, it can't be connected
+    } else if (at->savedIP == IPAddress(0, 0, 0, 0)){
+      return false;
     }
     return sock_connected;
     // NOTE:  We dont't check or return
