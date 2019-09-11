@@ -1181,6 +1181,7 @@ public:
           // 0x02 = Invalid parameters (bad IP/host)
           // 0x12 = DNS query lookup failure
           // 0x25 = Unknown server - DNS lookup failed (0x22 for UDP socket!)
+          // fall through
           case 0x02:
           case 0x12:
           case 0x25: {
@@ -1189,6 +1190,7 @@ public:
 
           // If it's anything else (inc 0x02, 0x12, and 0x25)...
           // it's definitely NOT connected
+          // fall through
           default: {
             sockets[0]->sock_connected = false;
             savedOperatingIP = od;

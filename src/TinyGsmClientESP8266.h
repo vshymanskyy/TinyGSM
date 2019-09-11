@@ -388,7 +388,7 @@ protected:
 
   bool modemGetConnected(uint8_t mux) {
     sendAT(GF("+CIPSTATUS"));
-    if (waitResponse(3000, GF("STATUS:")) != 1) return REG_UNKNOWN;
+    if (waitResponse(3000, GF("STATUS:")) != 1) return false;
     int status =
         waitResponse(GFP(GSM_ERROR), GF("2"), GF("3"), GF("4"), GF("5"));
     if (status != 3) {
