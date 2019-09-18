@@ -203,9 +203,12 @@ public:
   virtual uint8_t connected() {
     if (available()) {
       return true;
+    // if we never got an IP, it can't be connected
+    } else if (at->savedIP == IPAddress(0, 0, 0, 0)){
+      return false;
     }
     return sock_connected;
-    // NOTE:  We dont't check or return
+    // NOTE:  We don't check or return
     // modemGetConnected() because we don't
     // want to go into command mode.
     // return at->modemGetConnected();
@@ -657,13 +660,30 @@ public:
     XBEE_COMMAND_END_DECORATOR
 
     if (beeType == XBEE3_LTEM_ATT && intRes == 105) intRes = 0;  // tends to reply with "69" when signal is unknown
-    if (beeType == XBEE_S6B_WIFI) return -93 + intRes;  // the maximum sensitivity is -93dBm
-    else return -1*intRes; // need to convert to negative number
+
+    if (beeType == XBEE_S6B_WIFI) {
+      if (intRes == 0xFF) {
+         return 0;  // 0xFF returned for unknown
+      } else {
+        return -93 + intRes;  // the maximum sensitivity is -93dBm
+      }
+    } else {
+      return -1*intRes; // need to convert to negative number
+    }
   }
 
   bool isNetworkConnected() {
     RegStatus s = getRegistrationStatus();
-    return (s == REG_OK);
+    if (s == REG_OK) {
+      IPAddress ip = localIP();
+      if (ip != IPAddress(0, 0, 0, 0)) {
+        return true;
+      } else {
+        return false;
+      }
+    } else {
+      return false;
+    }
   }
 
   bool waitForNetwork(unsigned long timeout_ms = 60000L) {
@@ -1161,6 +1181,7 @@ public:
           // 0x02 = Invalid parameters (bad IP/host)
           // 0x12 = DNS query lookup failure
           // 0x25 = Unknown server - DNS lookup failed (0x22 for UDP socket!)
+          // fall through
           case 0x02:
           case 0x12:
           case 0x25: {
@@ -1169,6 +1190,7 @@ public:
 
           // If it's anything else (inc 0x02, 0x12, and 0x25)...
           // it's definitely NOT connected
+          // fall through
           default: {
             sockets[0]->sock_connected = false;
             savedOperatingIP = od;

@@ -206,7 +206,7 @@ When using ESP32 `HardwareSerial`, you may need to specify additional parameters
 Please [refer to this comment](https://github.com/vshymanskyy/TinyGSM/issues/91#issuecomment-356024747).
 
 #### HttpClient
-You will not be able to compile the HttpClient or HttpsClient examples with ESP32 core >1.0.1.  Downgrade to version 1.0.1 or use the WebClient example.  Please comment on the issue on the ESP32 core, not in this library:  https://github.com/espressif/arduino-esp32/issues/2755
+You will not be able to compile the HttpClient or HttpsClient examples with ESP32 core 1.0.2.  Upgrade to 1.0.3, downgrade to version 1.0.1 or use the WebClient example.
 
 ### SAMD21
 
