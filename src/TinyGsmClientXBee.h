@@ -208,7 +208,7 @@ public:
       return false;
     }
     return sock_connected;
-    // NOTE:  We dont't check or return
+    // NOTE:  We don't check or return
     // modemGetConnected() because we don't
     // want to go into command mode.
     // return at->modemGetConnected();
