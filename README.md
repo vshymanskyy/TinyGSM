@@ -116,9 +116,8 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
     - SIM800, SIM and SIM7000 only
 
 **Credits**
-- Primary Author/Contributor:
+- Primary Authors/Contributors:
     - [vshymanskyy](https://github.com/vshymanskyy)
-- Digi XBee, editing of all modules:
     - [SRGDamia1](https://github.com/SRGDamia1/)
 - SIM7000:
     - [captFuture](https://github.com/captFuture/)
