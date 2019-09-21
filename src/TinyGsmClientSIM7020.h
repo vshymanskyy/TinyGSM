@@ -123,28 +123,6 @@ private:
 };
 
 
-class GsmClientSecure : public GsmClient
-{
-public:
-  GsmClientSecure() {}
-
-  GsmClientSecure(TinyGsmSim7020& modem, uint8_t mux = 1)
-    : GsmClient(modem, mux)
-  {}
-
-  virtual ~GsmClientSecure(){}
-
-public:
-  virtual int connect(const char *host, uint16_t port, int timeout_s) {
-    stop();
-    TINY_GSM_YIELD();
-    rx.clear();
-    sock_connected = at->modemConnect(host, port, mux, true, timeout_s);
-    return sock_connected;
-  }
-};
-
-
 public:
 
   TinyGsmSim7020(Stream& stream)
@@ -225,15 +203,7 @@ TINY_GSM_MODEM_MAINTAIN_CHECK_SOCKS()
 TINY_GSM_MODEM_GET_INFO_ATI()
 
   bool hasSSL() {
-#if defined(TINY_GSM_MODEM_SIM900)
     return false;
-#else
-    sendAT(GF("+CIPSSL=?"));
-    if (waitResponse(GF(GSM_NL "+CIPSSL:")) != 1) {
-      return false;
-    }
-    return waitResponse() == 1;
-#endif
   }
 
   bool hasWifi() {
@@ -252,37 +222,15 @@ TINY_GSM_MODEM_GET_INFO_ATI()
     if (!testAT()) {
       return false;
     }
-    //Enable Local Time Stamp for getting network time
-    // TODO: Find a better place for this
-    sendAT(GF("+CLTS=1"));
-    if (waitResponse(10000L) != 1) {
+    sendAT(GF("Z"));
+    if (waitResponse(10000) != 1) {
       return false;
     }
-#ifdef TINY_GSM_DEBUG
-    sendAT(GF("+CMEE=2"));
+    sendAT(GF("+CPSMS=0"));
     if (waitResponse() != 1) {
       return false;
     }
-#endif
-   
-    /*sendAT(GF("+CFUN=0"));
-    if (waitResponse(10000L) != 1) {
-      return false;
-    }
-    sendAT(GF("+CFUN=1"));
-    if (waitResponse(10000L) != 1) {
-      return false;
-    }*/
-   
-    sendAT(GF("+CRESET"));
-    if (waitResponse(10000L) != 1) {
-      return false;
-    }
-    delay(3000);
-    sendAT(GF("Z")); 
-    if (waitResponse(GSM_OK) != 1) {
-      return false;
-    }
+    delay(2000);
     return init();
   }
 
@@ -339,7 +287,7 @@ TINY_GSM_MODEM_GET_IMEI_GSN()
     return SIM_ERROR;
   }
 
-TINY_GSM_MODEM_GET_REGISTRATION_XREG(CEREG)
+TINY_GSM_MODEM_GET_REGISTRATION_XREG(CGREG)
 
 TINY_GSM_MODEM_GET_OPERATOR_COPS()
 
@@ -350,6 +298,9 @@ TINY_GSM_MODEM_GET_OPERATOR_COPS()
 TINY_GSM_MODEM_GET_CSQ()
 
   bool isNetworkConnected() {
+    if (!testAT()) {
+      return false;
+    }
     RegStatus s = getRegistrationStatus();
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
   }
@@ -365,28 +316,29 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
   bool gprsConnect(const char* apn, const char* user = NULL, const char* pwd = NULL) {
     if(apn && strlen(apn)>0) {
       sendAT(GF("+CFUN=0"));
-      if (waitResponse(5000L) != 1) {
+      if (waitResponse(15000L) != 1) {
         return false;
       }
       if(user && strlen(user)>0) {
-        sendAT(GF("+MCGDEFCONT=1,\"IP\",\""), apn, GF("\",\""), user, GF("\",\""), pwd, '"');
+        sendAT(GF("*MCGDEFCONT=\"IP\",\""), apn, GF("\",\""), user, GF("\",\""), pwd, GF("\""));
       } else {
-        sendAT(GF("+MCGDEFCONT=1,\"IP\",\""), apn, '"');
+        sendAT(GF("*MCGDEFCONT=\"IP\",\""), apn, '"');
       }
       if (waitResponse(1000L) != 1) {
         return false;
       }
       sendAT(GF("+CFUN=1"));
-      if (waitResponse() != 1) {
+      if (waitResponse(10000L) != 1) {
         return false;
       }
     }
     
-    sendAT(GF("+CGCONTRDP")); 
+    sendAT(GF("+CSQ")); 
     if (waitResponse(GSM_OK) != 1) {
       return false;
     }
-    sendAT(GF("+CSQ")); 
+
+    sendAT(GF("+CGCONTRDP")); 
     if (waitResponse(GSM_OK) != 1) {
       return false;
     }
@@ -449,10 +401,13 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
     if (waitResponse(60000L) != 1)
       return false;
 
-    sendAT(GF("+CGATT=0"));  // Deactivate the bearer context
+    sendAT(GF("+CGACT=0,1"));  // Deactivate cid 
     if (waitResponse(60000L) != 1)
       return false;
     
+    sendAT(GF("+CGCONTRDP"));  // Release IP
+    if (waitResponse(60000L) != 1)
+      return false;
     return true;
   }
 
@@ -752,13 +707,12 @@ protected:
   bool modemConnect(const char* host, uint16_t port, uint8_t mux,
                     bool ssl = false, int timeout_s = 75)
  {
+    if (ssl) {
+      DBG("SSL not yet supported on this module!");
+    }
     int rsp;
     uint32_t timeout_ms = ((uint32_t)timeout_s)*1000;
-    sendAT(GF("+CIPSSL="), ssl);
-    rsp = waitResponse();
-    if (ssl && rsp != 1) {
-      return false;
-    }
+    
     sendAT(GF("+CIPSTART="), mux, ',', GF("\"TCP"), GF("\",\""), host, GF("\","), port);
     rsp = waitResponse(timeout_ms,
                        GF("CONNECT OK" GSM_NL),
@@ -935,7 +889,7 @@ finish:
       data = "";
     }
     //data.replace(GSM_NL, "/");
-    DBG('<', index, '>', data);
+    //DBG('<', index, '>', data);
     return index;
   }
 
