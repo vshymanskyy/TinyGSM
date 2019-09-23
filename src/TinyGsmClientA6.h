@@ -593,7 +593,7 @@ protected:
     return len;
   }
 
-  bool modemGetConnected(uint8_t mux) {
+  bool modemGetConnected(uint8_t) {
     sendAT(GF("+CIPSTATUS")); //TODO mux?
     int res = waitResponse(GF(",\"CONNECTED\""), GF(",\"CLOSED\""), GF(",\"CLOSING\""), GF(",\"INITIAL\""));
     waitResponse();
