@@ -125,7 +125,7 @@ TINY_GSM_CLIENT_PEEK_FLUSH_CONNECTED()
   String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
 private:
-  TinyGsmSaraR4*   at;
+  TinyGsmSaraR4*  at;
   uint8_t         mux;
   uint16_t        sock_available;
   uint32_t        prev_check;
@@ -199,7 +199,13 @@ public:
 #endif
     waitResponse();
 
-    DBG(GF("### Modem:"), getModemName());
+    String modemName = getModemName();
+    DBG(GF("### Modem:"), modemName);
+    if (modemName.startsWith("u-blox SARA-R412")) {
+      has2GFallback = true;
+    } else {
+      has2GFallback = false;
+    }
 
     int ret = getSimStatus();
     // if the sim isn't ready and a pin has been provided, try to unlock the sim
@@ -337,9 +343,25 @@ TINY_GSM_MODEM_GET_SIMCCID_CCID()
     return SIM_ERROR;
   }
 
-TINY_GSM_MODEM_GET_REGISTRATION_XREG(CREG)
+  RegStatus getRegistrationStatus() {
+    if (has2GFallback) {
+      sendAT(GF("+CREG?"));
+      if (waitResponse(GF(GSM_NL "+CREG:")) != 1) {
+        return REG_UNKNOWN;
+      }
+    } else {
+      sendAT(GF("+CEREG?"));
+      if (waitResponse(GF(GSM_NL "+CEREG:")) != 1) {
+        return REG_UNKNOWN;
+      }
+    }
+    streamSkipUntil(','); /* Skip format (0) */
+    int status = stream.readStringUntil('\n').toInt();
+    waitResponse();
+    return (RegStatus)status;
+  }
 
-TINY_GSM_MODEM_GET_OPERATOR_COPS()
+  TINY_GSM_MODEM_GET_OPERATOR_COPS()
 
   /*
    * Generic network functions
@@ -779,6 +801,7 @@ public:
 
 protected:
   GsmClient* sockets[TINY_GSM_MUX_COUNT];
+  bool       has2GFallback;
 };
 
 #endif
