@@ -169,8 +169,10 @@ public:
     if (!testAT()) {
       return false;
     }
-    sendAT(GF("&FZ"));  // Factory + Reset
-    waitResponse();
+
+    // sendAT(GF("&FZ"));  // Factory + Reset
+    // waitResponse();
+
     sendAT(GF("E0"));   // Echo Off
     if (waitResponse() != 1) {
       return false;
