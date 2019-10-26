@@ -18,7 +18,7 @@
 
 #define TINY_GSM_MUX_COUNT 7
 
-#include <TinyGsmCommon.h>
+#include "TinyGsmCommon.h"
 
 #define GSM_NL "\r\n"
 static const char GSM_OK[] TINY_GSM_PROGMEM = "OK" GSM_NL;
