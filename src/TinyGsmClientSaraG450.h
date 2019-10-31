@@ -273,12 +273,21 @@ public:
     if (!testAT()) {
       return false;
     }
+
+    delay(1000);
+    clearRxStreamBuffer();
+
     sendAT(GF("E0"));   // Echo Off
+    if (waitResponse() != 1) {
+      return false;
+    }
+    sendAT(GF("&W"));   // Echo Off sometimes only takes affect after we force a save
     if (waitResponse() != 1) {
       return false;
     }
     // Echo off takes a while to be affective
     delay(200);
+    clearRxStreamBuffer();
 
 #ifdef TINY_GSM_DEBUG
     sendAT(GF("+CMEE=2"));  // turn on verbose error codes
@@ -363,10 +372,13 @@ public:
   }
 
   bool testAT(unsigned long timeout_ms = 10000L) {
+    delay(1000);
     for (unsigned long start = millis(); millis() - start < timeout_ms; ) {
       sendAT(GF(""));
-      if (waitResponse(200) == 1) return true;
-      delay(100);
+      if (waitResponse(500) == 1) {
+        return true;
+      }
+      delay(200);
     }
     return false;
   }
@@ -379,6 +391,10 @@ public:
         sock->sock_available = modemGetAvailable(mux);
       }
     }
+    clearRxStreamBuffer();
+  }
+
+  void clearRxStreamBuffer() {
     while (stream.available()) {
       waitResponse(15, NULL, NULL);
     }
@@ -392,6 +408,7 @@ public:
   }
 
   String getModemInfo() {
+    clearRxStreamBuffer();
     sendAT(GF("I"));
     String res;
     if (waitResponse(1000L, res) != 1) {
@@ -1025,18 +1042,20 @@ public:
   template<typename T>
   void streamWrite(T last) {
     stream.print(last);
+    delay(sizeof(last)); // delay 1ms per char sent out to be safe
   }
  
   template<typename T, typename... Args>
   void streamWrite(T head, Args... tail) {
     stream.print(head);
+    delay(sizeof(head)); // delay 1ms per char sent out to be safe
     streamWrite(tail...);
   }
  
   template<typename... Args>
   void sendAT(Args... cmd) {
     streamWrite("AT", cmd..., GSM_NL);
-    stream.flush();
+    stream.flush(); // flush does not seem to work on SAMD boards
     TINY_GSM_YIELD();
     /* DBG("### AT:", cmd...); */
   }
