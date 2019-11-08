@@ -282,7 +282,7 @@ public:
       return false;
     }
     sendAT(GF("&W"));   // Echo Off sometimes only takes affect after we force a save
-    if (waitResponse() != 1) {
+    if (waitResponse(30000) != 1) { // Takes long to save
       return false;
     }
     // Echo off takes a while to be affective
