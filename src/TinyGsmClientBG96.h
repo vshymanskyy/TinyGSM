@@ -338,7 +338,21 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
     return true;
   }
 
-TINY_GSM_MODEM_GET_GPRS_IP_CONNECTED()
+  // TINY_GSM_MODEM_GET_GPRS_IP_CONNECTED()
+  bool isGprsConnected()
+  {
+    sendAT(GF("+CGATT?"));
+    if (waitResponse(GF(GSM_NL "+CGATT:")) != 1)
+    {
+      return false;
+    }
+    int res = stream.readStringUntil('\n').toInt();
+    waitResponse();
+    if (res != 1)
+      return false;
+
+    return true;
+  }
 
   /*
    * IP Address functions
@@ -587,7 +601,7 @@ protected:
     sendAT(GF("+QISTATE=1,"), mux);
     //+QISTATE: 0,"TCP","151.139.237.11",80,5087,4,1,0,0,"uart1"
 
-    if (waitResponse(GF("+QISTATE:")))
+    if (waitResponse(GF("+QISTATE:")) != 1)
       return false;
 
     streamSkipUntil(','); // Skip mux
