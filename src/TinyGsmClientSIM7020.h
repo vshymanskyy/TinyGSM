@@ -4,6 +4,7 @@
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Bostjan Sorgo
  * @date       Nov 2016
+ * 29.11.2019 Battery support
  */
 
 #ifndef TinyGsmClientSIM7020_h
@@ -230,7 +231,6 @@ TINY_GSM_MODEM_GET_INFO_ATI()
     if (waitResponse() != 1) {
       return false;
     }
-    delay(2000);
     return init();
   }
 
@@ -412,19 +412,10 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
   }
 
   bool isGprsConnected() {
-    sendAT(GF("+CGATT?"));
-    if (waitResponse(GF(GSM_NL "+CGATT:")) != 1) {
+    sendAT(GF("AT+CGCONTRDP"));
+    if (waitResponse(1000L)!=1) {
       return false;
     }
-    int res = stream.readStringUntil('\n').toInt();
-    waitResponse();
-    if (res != 1)
-      return false;
-
-    sendAT(GF("+CIFSR;E0")); // Another option is to use AT+CGPADDR=1
-    if (waitResponse() != 1)
-      return false;
-
     return true;
   }
 
@@ -591,10 +582,9 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
     if (waitResponse(GF(GSM_NL "+CBC:")) != 1) {
       return 0;
     }
-    streamSkipUntil(','); // Skip battery charge status
     streamSkipUntil(','); // Skip battery charge level
     // return voltage in mV
-    uint16_t res = stream.readStringUntil(',').toInt();
+    uint16_t res = stream.readStringUntil('\n').toInt();
     // Wait for final OK
     waitResponse();
     return res;
@@ -605,7 +595,6 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
     if (waitResponse(GF(GSM_NL "+CBC:")) != 1) {
       return false;
     }
-    streamSkipUntil(','); // Skip battery charge status
     // Read battery charge level
     int res = stream.readStringUntil(',').toInt();
     // Wait for final OK
@@ -613,24 +602,13 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
     return res;
   }
 
-  uint8_t getBattChargeState() {
-    sendAT(GF("+CBC?"));
-    if (waitResponse(GF(GSM_NL "+CBC:")) != 1) {
-      return false;
-    }
-    // Read battery charge status
-    int res = stream.readStringUntil(',').toInt();
-    // Wait for final OK
-    waitResponse();
-    return res;
-  }
+  uint8_t getBattChargeState() TINY_GSM_ATTR_NOT_AVAILABLE;
 
   bool getBattStats(uint8_t &chargeState, int8_t &percent, uint16_t &milliVolts) {
     sendAT(GF("+CBC?"));
     if (waitResponse(GF(GSM_NL "+CBC:")) != 1) {
       return false;
     }
-    chargeState = stream.readStringUntil(',').toInt();
     percent = stream.readStringUntil(',').toInt();
     milliVolts = stream.readStringUntil('\n').toInt();
     // Wait for final OK
