@@ -45,7 +45,7 @@ enum TinyGSMDateTimeFormat {
   DATE_DATE = 2
 };
 
-class TinyGsmSim7600
+class TinyGsmSim7600: public TinyGsmUTFSMS<TinyGsmSim7600>
 {
 
 public:
@@ -491,36 +491,6 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
       return false;
     }
     stream.print(text);
-    stream.write((char)0x1A);
-    stream.flush();
-    return waitResponse(60000L) == 1;
-  }
-
-  bool sendSMS_UTF16(const String& number, const void* text, size_t len) {
-    // Select message format (1=text)
-    sendAT(GF("+CMGF=1"));
-    waitResponse();
-    // Select TE character set
-    sendAT(GF("+CSCS=\"HEX\""));
-    waitResponse();
-    // Set text mode parameters
-    sendAT(GF("+CSMP=17,167,0,8"));
-    waitResponse();
-    // Send the message
-    sendAT(GF("+CMGS=\""), number, GF("\""));
-    if (waitResponse(GF(">")) != 1) {
-      return false;
-    }
-
-    uint16_t* t = (uint16_t*)text;
-    for (size_t i=0; i<len; i++) {
-      uint8_t c = t[i] >> 8;
-      if (c < 0x10) { stream.print('0'); }
-      stream.print(c, HEX);
-      c = t[i] & 0xFF;
-      if (c < 0x10) { stream.print('0'); }
-      stream.print(c, HEX);
-    }
     stream.write((char)0x1A);
     stream.flush();
     return waitResponse(60000L) == 1;
