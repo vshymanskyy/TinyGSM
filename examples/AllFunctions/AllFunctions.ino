@@ -239,8 +239,15 @@ void loop() {
   DBG("SMS:", res ? "OK" : "fail");
 
   // This is only supported on SIMxxx series
-  res = modem.sendSMS_UTF16(SMS_TARGET, u"Привіііт!", 9);
-  DBG("UTF16 SMS:", res ? "OK" : "fail");
+  res = modem.sendSMS_UTF8_begin(SMS_TARGET);
+  if(res) {
+    auto stream = modem.sendSMS_UTF8_stream();
+    stream.print(F("Привіііт! Print number: "));
+    stream.print(595);
+    res = modem.sendSMS_UTF8_end();
+  } 
+  DBG("UTF8 SMS:", res ? "OK" : "fail");
+  
 #endif
 
 #if TINY_GSM_TEST_CALL && defined(CALL_TARGET)
