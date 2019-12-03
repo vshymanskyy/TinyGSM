@@ -172,8 +172,6 @@ public:
     memset(sockets, 0, sizeof(sockets));
   }
 
-  virtual ~TinyGsmSaraR4(){}
-
   /*
    * Basic functions
    */

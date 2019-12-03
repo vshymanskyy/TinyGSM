@@ -154,8 +154,6 @@ public:
     memset(sockets, 0, sizeof(sockets));
   }
 
-  virtual ~TinyGsmSim7000() {}
-
   /*
    * Basic functions
    */

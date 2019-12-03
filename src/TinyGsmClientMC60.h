@@ -147,8 +147,6 @@ public:
     memset(sockets, 0, sizeof(sockets));
   }
 
-  virtual ~TinyGsmMC60() {}
-
   /*
    * Basic functions
    */
