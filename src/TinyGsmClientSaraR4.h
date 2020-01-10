@@ -94,18 +94,21 @@ TINY_GSM_CLIENT_CONNECT_OVERLOADS()
   virtual void stop(uint32_t maxWaitMs) {
     TINY_GSM_CLIENT_DUMP_MODEM_BUFFER()
 
-    // // synchronous close
-    // at->sendAT(GF("+USOCL="), mux);
-    // // NOTE:  can take up to 120s to get a response
-    // at->waitResponse((maxWaitMs - (millis() - startMillis)));
-    // sock_connected = false;
-
-    // faster asynchronous close
-    // NOT supported on SARA-R404M / SARA-R410M-01B
-    at->sendAT(GF("+USOCL="), mux, GF(",1"));
-    // NOTE:  can take up to 120s to get a response
-    at->waitResponse((maxWaitMs - (millis() - startMillis)));
-    sock_connected = false;
+    if (at->supportsAsyncSockets) {
+      DBG("### Closing socket asynchronously!  Socket might remain open until arrival of +UUSOCL: ", mux);
+      // faster asynchronous close
+      // NOT supported on SARA-R404M / SARA-R410M-01B
+      at->sendAT(GF("+USOCL="), mux, GF(",1"));
+      // NOTE:  can take up to 120s to get a response
+      at->waitResponse((maxWaitMs - (millis() - startMillis)));
+      sock_connected = false;
+    } else {
+      // synchronous close
+      at->sendAT(GF("+USOCL="), mux);
+      // NOTE:  can take up to 120s to get a response
+      at->waitResponse((maxWaitMs - (millis() - startMillis)));
+      sock_connected = false;
+    }
   }
 
   virtual void stop() { stop(135000L); }
@@ -205,6 +208,12 @@ public:
       has2GFallback = true;
     } else {
       has2GFallback = false;
+    }
+    if (modemName.startsWith("u-blox SARA-R404M") ||
+        modemName.startsWith("u-blox SARA-R410M-01B")) {
+      supportsAsyncSockets = false;
+    } else {
+      supportsAsyncSockets = true;
     }
 
     int ret = getSimStatus();
@@ -591,8 +600,11 @@ protected:
     }
 
     // Enable NODELAY
-    sendAT(GF("+USOSO="), *mux, GF(",6,1,1"));
-    waitResponse();
+    // AT+USOSO=<socket>,<level>,<opt_name>,<opt_val>[,<opt_val2>]
+    // <level> - 0 for IP, 6 for TCP, 65535 for socket level options
+    // <opt_name> TCP/1 = no delay (do not delay send to coalesce packets)
+    // sendAT(GF("+USOSO="), *mux, GF(",6,1,1"));
+    // waitResponse();
 
     // Enable KEEPALIVE, 30 sec
     // sendAT(GF("+USOSO="), *mux, GF(",6,2,30000"));
@@ -606,16 +618,21 @@ protected:
     // has a nasty habit of locking up when opening a socket, especially if
     // the cellular service is poor.
     // NOT supported on SARA-R404M / SARA-R410M-01B
-    sendAT(GF("+USOCO="), *mux, ",\"", host, "\",", port, ",1");
-    waitResponse(timeout_ms, GF(GSM_NL "+UUSOCO: "));
-    stream.readStringUntil(',').toInt();  // skip repeated mux
-    int connection_status = stream.readStringUntil('\n').toInt();
-    return (0 == connection_status);
-
-    // use synchronous open
-    // sendAT(GF("+USOCO="), *mux, ",\"", host, "\",", port, ",0");
-    // int rsp = waitResponse(timeout_ms);
-    // return (1 == rsp);
+    if (supportsAsyncSockets) {
+      DBG("### Opening socket asynchronously!  Socket cannot be used until "
+          "arrival of +UUSOCO: ",
+          mux);
+      sendAT(GF("+USOCO="), *mux, ",\"", host, "\",", port, ",1");
+      waitResponse(timeout_ms, GF(GSM_NL "+UUSOCO: "));
+      stream.readStringUntil(',').toInt();  // skip repeated mux
+      int connection_status = stream.readStringUntil('\n').toInt();
+      return (0 == connection_status);
+    } else {
+      // use synchronous open
+      sendAT(GF("+USOCO="), *mux, ",\"", host, "\",", port);
+      int rsp = waitResponse(timeout_ms);
+      return (1 == rsp);
+    }
   }
 
   int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
@@ -764,6 +781,13 @@ TINY_GSM_MODEM_STREAM_UTILITIES()
           }
           data = "";
           DBG("### URC Sock Closed: ", mux);
+        } else if (data.endsWith(GF("+UUSOCO:"))) {
+          int mux = stream.readStringUntil('\n').toInt();
+          if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+            sockets[mux]->sock_connected = true;
+          }
+          data = "";
+          DBG("### URC Sock Opened: ", mux);
         }
       }
     } while (millis() - startMillis < timeout_ms);
@@ -802,6 +826,7 @@ public:
 protected:
   GsmClient* sockets[TINY_GSM_MUX_COUNT];
   bool       has2GFallback;
+  bool       supportsAsyncSockets;
 };
 
 #endif
