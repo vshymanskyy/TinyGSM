@@ -623,10 +623,13 @@ protected:
           "arrival of +UUSOCO: ",
           mux);
       sendAT(GF("+USOCO="), *mux, ",\"", host, "\",", port, ",1");
-      waitResponse(timeout_ms, GF(GSM_NL "+UUSOCO: "));
-      stream.readStringUntil(',').toInt();  // skip repeated mux
-      int connection_status = stream.readStringUntil('\n').toInt();
-      return (0 == connection_status);
+      if (waitResponse(timeout_ms, GF(GSM_NL "+UUSOCO: ")) == 1) {
+        stream.readStringUntil(',').toInt();  // skip repeated mux
+        int connection_status = stream.readStringUntil('\n').toInt();
+        return (0 == connection_status);
+      } else {
+        return false;
+      }
     } else {
       // use synchronous open
       sendAT(GF("+USOCO="), *mux, ",\"", host, "\",", port);
