@@ -88,8 +88,24 @@ public:
 
     return sock_connected;
   }
-
-TINY_GSM_CLIENT_CONNECT_OVERLOADS()
+  virtual int connect(IPAddress ip, uint16_t port, int timeout_s) {
+    String host;
+    host.reserve(16);
+    host += ip[0];
+    host += ".";
+    host += ip[1];
+    host += ".";
+    host += ip[2];
+    host += ".";
+    host += ip[3];
+    return connect(host.c_str(), port, timeout_s);
+  }
+  virtual int connect(const char* host, uint16_t port) {
+    return connect(host, port, 120);
+  }
+  virtual int connect(IPAddress ip, uint16_t port) {
+    return connect(ip, port, 120);
+  }
 
   virtual void stop(uint32_t maxWaitMs) {
     TINY_GSM_CLIENT_DUMP_MODEM_BUFFER()
