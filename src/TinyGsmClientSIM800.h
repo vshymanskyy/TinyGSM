@@ -851,7 +851,7 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
   }
 
   bool setPreferredMessageStorage(const MessageStorageType type[3]) {
-    const auto convertMstToString = [](const MessageStorageType &type) -> auto {
+    const auto convertMstToString = [](const MessageStorageType &type) {
       switch (type) {
       case MessageStorageType::SIM:
         return GF("\"SM\"");
