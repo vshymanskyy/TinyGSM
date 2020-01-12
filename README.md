@@ -24,7 +24,7 @@ You can also join our chat:
 [![Gitter](https://img.shields.io/gitter/room/vshymanskyy/TinyGSM.svg)](https://gitter.im/tinygsm)
 
 ### Arduino Client interface support
-This library is easy to integrate with lots of sketches, which use Ethernet or WiFi.
+This library is easy to integrate with lots of sketches which use Ethernet or WiFi.
 **PubSubClient ([MQTT](http://mqtt.org/))**, **[Blynk](http://blynk.cc)**, **HTTP Client** and **File Download** examples are provided.
 
 ![examples](/extras/examples.png)
@@ -39,53 +39,24 @@ Arduino GSM library uses 15868 bytes (49%) of Flash and 1113 bytes (54%) of RAM 
 TinyGSM also pulls data gently from the modem (whenever possible), so it can operate on very little RAM.
 **Now, you have more space for your experiments.**
 
-## Features
-
-Feature \ Modem              | SIM8xx | u-Blox | A6/A7/A20 | M590 | ESP8266 | XBee
----                          | ---    | ---    | ---       | ---  | ---     | ---
-**Data connections**
-TCP (HTTP, MQTT, Blynk, ...) | ✔      | ✔      | ✔         | ✔    | ✔       | ✔
-UDP                          | ◌      | ◌      |           |      |         | ◌
-SSL/TLS (HTTPS)              | ✔¹     | ✔      | ✘         | ✘    | ✔¹      | ✔¹
-**USSD**
-Sending USSD requests        | ✔      |        | ✔         | ✔    | ✘       |
-Decoding 7,8,16-bit response | ✔      |        | ✔         | ✔    | ✘       |
-**SMS**
-Sending                      | ✔      |        | ✔         | ✔    | ✘       | ✔
-Sending Unicode              | ✔      |        | ◌         | ✘    | ✘       |
-Reading                      | ✔      |        |           |      | ✘       |
-Reading Unicode              | ✔      |        |           |      | ✘       |
-Incoming message event       | ✔      |        |           | ?    | ✘       |
-**Phonebook**
-Add entry                    | ✔      |        |           |      |         |
-Delete entry                 | ✔      |        |           |      |         |
-Read entry                   | ✔      |        |           |      |         |
-Find entries                 | ✔      |        |           |      |         |
-**Calls**
-Dial, hangup                 | ✔      |        | ✔         | ✘    | ✘       | ✘
-Receiving calls              | ✔      |        | ✔         | ✘    | ✘       | ✘
-Incoming event (RING)        | ◌      |        | ◌         | ✘    | ✘       | ✘
-DTMF sending                 | ✔      |        | ✔         | ✘    | ✘       | ✘
-DTMF decoding                | ◌      |        | ✘         | ✘    | ✘       | ✘
-**Location**
-GSM location service         | ✔      | ✔      | ✘         | ✘    | ✘       | ✔
-GPS/GNSS                     | ✔¹     | ✘      | ◌¹        | ✘    | ✘       | ✘
-**Misc**
-NETLIGHT (LED) control       | ✔      |        |           |      |         |
-
-✔ - implemented  ◌ - planned  ✘ - not available on this modem
-¹ - only some device models or firmware revisions have this feature (SIM8xx R14.18, A7, etc.)
 
 ## Supported modems
 
 - SIMCom SIM800 series (SIM800A, SIM800C, SIM800L, SIM800H, SIM808, SIM868)
 - SIMCom SIM900 series (SIM900A, SIM900D, SIM908, SIM968)
+- SIMCom WCDMA/HSPA/HSPA+ Modules (SIM5360, SIM5320, SIM5300E, SIM5300EA)
+- SIMCom LTE Modules (SIM7100E, SIM7500E, SIM7500A, SIM7600C, SIM7600E)
+- SIMCom SIM7000E CAT-M1/NB-IoT Module
 - AI-Thinker A6, A6C, A7, A20
 - ESP8266 (AT commands interface, similar to GSM modems)
 - Digi XBee WiFi and Cellular (using XBee command mode)
 - Neoway M590
-- u-blox Cellular Modems (LEON-G100, LISA-U2xx, SARA-G3xx, SARA-U2xx, TOBY-L2xx, LARA-R2xx, MPCI-L2xx)
-- Quectel BG96 ***(alpha)***
+- u-blox 2G, 3G, 4G, and LTE Cat1 Cellular Modems (many modules including LEON-G100, LISA-U2xx, SARA-G3xx, SARA-U2xx, TOBY-L2xx, LARA-R2xx, MPCI-L2xx)
+- u-blox LTE-M Modems (SARA-R4xx, SARA-N4xx, _but NOT SARA-N2xx_)
+- Sequans Monarch LTE Cat M1/NB1
+- Quectel BG96
+- Quectel M95
+- Quectel MC60 ***(alpha)***
 
 ### Supported boards/modules
 - Arduino MKR GSM 1400
@@ -98,14 +69,73 @@ NETLIGHT (LED) control       | ✔      |        |           |      |         |
 - ... other modules, based on supported modems. Some boards require [**special configuration**](https://github.com/vshymanskyy/TinyGSM/wiki/Board-configuration).
 
 More modems may be supported later:
-- [ ] Quectel M10, M35, M95, UG95, EC21
-- [ ] Sequans Monarch LTE Cat M1/NB1
-- [ ] SIMCom SIM5320, SIM5360, SIM5216, SIM7xxx
+- [ ] Quectel M10, UG95
+- [ ] SIMCom SIM7020
 - [ ] Telit GL865
 - [ ] ZTE MG2639
 - [ ] Hi-Link HLK-RM04
 
 Watch this repo for new updates! And of course, contributions are welcome ;)
+
+## Features
+
+**Data connections**
+- TCP (HTTP, MQTT, Blynk, ...)
+    - ALL modules support TCP connections
+- UDP
+    - Not yet supported on any module, though it may be some day
+- SSL/TLS (HTTPS)
+    - Supported on:
+        - SIM800, u-Blox, XBee _cellular_, ESP8266, and Sequans Monarch
+        - Note:  only some device models or firmware revisions have this feature (SIM8xx R14.18, A7, etc.)
+    - Not yet supported on:
+        - Quectel modems, SIM7000, SIM5360/5320/7100/7500/7600
+    - Not possible on:
+        - SIM900, A6/A7, M560, XBee _WiFi_
+
+**USSD**
+- Sending USSD requests and decoding 7,8,16-bit responses
+    - Supported on:
+        - SIM800/SIM900, SIM7000
+    - Not yet supported on:
+        - Quectel modems, SIM5360/5320/7100/7500/7600, XBee
+
+**SMS**
+- Only _sending_ SMS is supported, not receiving
+    - Supported on:
+        - SIM800/SIM900, SIM7000, XBee
+    - Not yet supported on:
+        - Quectel modems, SIM5360/5320/7100/7500/7600
+
+**Voice Calls**
+- Only Supported on SIM800 and A6/A7/A20
+    - Dial, hangup
+    - Receiving calls
+    - Incoming event (RING)
+    - DTMF sending
+    - DTMF decoding
+
+**Location**
+- GPS/GNSS
+    - SIM808 and SIM7000 only
+- GSM location service
+    - SIM800, SIM and SIM7000 only
+
+**Credits**
+- Primary Authors/Contributors:
+    - [vshymanskyy](https://github.com/vshymanskyy)
+    - [SRGDamia1](https://github.com/SRGDamia1/)
+- SIM7000:
+    - [captFuture](https://github.com/captFuture/)
+- Sequans Monarch:
+    - [nootropicdesign](https://github.com/nootropicdesign/)
+- Quectel M9C60
+    - [V1pr](https://github.com/V1pr)
+- Quectel M95
+    - [replicadeltd](https://github.com/replicadeltd)
+- Other Contributors:
+    - https://github.com/vshymanskyy/TinyGSM/graphs/contributors
+
 
 ## Donation
 
@@ -114,7 +144,7 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
 
 If you have found TinyGSM to be useful in your work, research or company, please consider making a donation to the project commensurate with your resources. Any amount helps!
 **All donations will be used strictly to fund the development of TinyGSM:**
-- Covering cellular network expences
+- Covering cellular network expenses
 - Buying new hardware and modems for integration
 - Bounty Budget (to reward other developers for their contributions)
 - Implementing new features
@@ -125,10 +155,10 @@ If you have found TinyGSM to be useful in your work, research or company, please
   1. Using your phone:
     - Disable PIN code on the SIM card
     - Check your balance
-    - Check that APN,User,Pass are correct and you have internet
+    - Check that APN, User, Pass are correct and you have internet
   2. Ensure the SIM card is correctly inserted into the module
   3. Ensure that GSM antenna is firmly attached
-  4. Check if serial connection is working (Hardware Serial is recommended)  
+  4. Check if serial connection is working (Hardware Serial is recommended)
      Send an ```AT``` command using [this sketch](tools/AT_Debug/AT_Debug.ino)
 
 If you have any issues:
@@ -154,7 +184,7 @@ For additional functions, please refer to [this example sketch](examples/AllFunc
 ### Diagnostics sketch
 
 Use this sketch to diagnose your SIM card and GPRS connection:
-  File -> Examples -> TynyGSM -> tools -> [Diagnostics](https://github.com/vshymanskyy/TinyGSM/blob/master/tools/Diagnostics/Diagnostics.ino)
+  File -> Examples -> TinyGSM -> tools -> [Diagnostics](https://github.com/vshymanskyy/TinyGSM/blob/master/tools/Diagnostics/Diagnostics.ino)
 
 ### Ensure stable data & power connection
 
@@ -169,14 +199,19 @@ So this actually solves stability problems in **many** cases:
 
 When using ```SoftwareSerial``` (on Uno, Nano, etc), the speed **115200** may not work.
 Try selecting **57600**, **38400**, or even lower - the one that works best for you.
-In some cases **9600** is unstable, but using **38400** helps, etc.  
+In some cases **9600** is unstable, but using **38400** helps, etc.
 Be sure to set correct TX/RX pins in the sketch. Please note that not every Arduino pin can serve as TX or RX pin.
 **Read more about SoftSerial options and configuration [here](https://www.pjrc.com/teensy/td_libs_AltSoftSerial.html) and [here](https://www.arduino.cc/en/Reference/SoftwareSerial).**
 
-### ESP32 HardwareSerial
+### ESP32 Notes
+
+#### HardwareSerial
 
 When using ESP32 `HardwareSerial`, you may need to specify additional parameters to the `.begin()` call.
 Please [refer to this comment](https://github.com/vshymanskyy/TinyGSM/issues/91#issuecomment-356024747).
+
+#### HttpClient
+You will not be able to compile the HttpClient or HttpsClient examples with ESP32 core 1.0.2.  Upgrade to 1.0.3, downgrade to version 1.0.1 or use the WebClient example.
 
 ### SAMD21
 
@@ -185,12 +220,12 @@ Please [refer to this comment](https://github.com/vshymanskyy/TinyGSM/issues/102
 
 ### Broken initial configuration
 
-Sometimes (especially if you played with AT comands), your module configuration may become invalid.
+Sometimes (especially if you played with AT commands), your module configuration may become invalid.
 This may result in problems such as:
 
  * Can't connect to the GPRS network
  * Can't connect to the server
- * Sent/recieved data contains invalid bytes
+ * Sent/received data contains invalid bytes
  * etc.
 
 To return module to **Factory Defaults**, use this sketch:

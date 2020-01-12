@@ -2,23 +2,41 @@
  * @file       TinyGsmClientXBee.h
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0
- * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
+ * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy, XBee module by Sara Damiano
  * @date       Nov 2016
  */
 
 #ifndef TinyGsmClientXBee_h
 #define TinyGsmClientXBee_h
+//#pragma message("TinyGSM:  TinyGsmClientXBee")
 
 //#define TINY_GSM_DEBUG Serial
 
-
-#define TINY_GSM_MUX_COUNT 1  // Multi-plexing isn't supported using command mode
+// XBee's do not support multi-plexing in transparent/command mode
+// The much more complicated API mode is needed for multi-plexing
+#define TINY_GSM_MUX_COUNT 1
+// XBee's have a default guard time of 1 second (1000ms, 10 extra for safety here)
+#define TINY_GSM_XBEE_GUARD_TIME 1010
 
 #include <TinyGsmCommon.h>
 
 #define GSM_NL "\r"
 static const char GSM_OK[] TINY_GSM_PROGMEM = "OK" GSM_NL;
 static const char GSM_ERROR[] TINY_GSM_PROGMEM = "ERROR" GSM_NL;
+
+// Use this to avoid too many entrances and exits from command mode.
+// The cellular Bee's often freeze up and won't respond when attempting
+// to enter command mode too many times.
+#define XBEE_COMMAND_START_DECORATOR(nAttempts, failureReturn) \
+  bool wasInCommandMode = inCommandMode; \
+  if (!wasInCommandMode) {  /* don't re-enter command mode if already in it */ \
+    if (!commandMode(nAttempts)) return failureReturn;  /* Return immediately if fails */ \
+  }
+#define XBEE_COMMAND_END_DECORATOR \
+  if (!wasInCommandMode) {  /* only exit if we weren't in command mode */ \
+    exitCommand(); \
+  }
+
 
 enum SimStatus {
   SIM_ERROR = 0,
@@ -36,35 +54,24 @@ enum RegStatus {
 
 // These are responses to the HS command to get "hardware series"
 enum XBeeType {
+  XBEE_UNKNOWN  = 0,
   XBEE_S6B_WIFI  = 0x601,  // Digi XBee® Wi-Fi
   XBEE_LTE1_VZN  = 0xB01,  // Digi XBee® Cellular LTE Cat 1
   XBEE_3G        = 0xB02,  // Digi XBee® Cellular 3G
-  XBEE3_LTE1_ATT = 1,  // Digi XBee3™ Cellular LTE CAT 1  -- HS unknown to SRGD
-  XBEE3_LTEM_ATT = 2,  // Digi XBee3™ Cellular LTE-M  -- HS unknown to SRGD
-  XBEE3_LTENB    = 3,  // Digi XBee3™ Cellular NB-IoT  -- HS unknown to SRGD
+  XBEE3_LTE1_ATT = 0xB06,  // Digi XBee3™ Cellular LTE CAT 1
+  XBEE3_LTEM_ATT = 0xB08,  // Digi XBee3™ Cellular LTE-M
 };
 
-//============================================================================//
-//============================================================================//
-//                   Declaration of the TinyGsmXBee Class
-//============================================================================//
-//============================================================================//
 
 class TinyGsmXBee
 {
-
-//============================================================================//
-//============================================================================//
-//                          The XBee Internal Client Class
-//============================================================================//
-//============================================================================//
-
 
 public:
 
 class GsmClient : public Client
 {
   friend class TinyGsmXBee;
+  // typedef TinyGsmFifo<uint8_t, TINY_GSM_RX_BUFFER> RxFifo;
 
 public:
   GsmClient() {}
@@ -72,6 +79,8 @@ public:
   GsmClient(TinyGsmXBee& modem, uint8_t mux = 0) {
     init(&modem, mux);
   }
+
+  virtual ~GsmClient(){}
 
   bool init(TinyGsmXBee* modem, uint8_t mux = 0) {
     this->at = modem;
@@ -84,48 +93,49 @@ public:
   }
 
 public:
+  // NOTE:  The XBee saves all connection information (ssid/pwd or apn AND last used IP address)
+  // in flash (NVM).  When you turn it on it immediately prepares to re-connect to whatever was
+  // last set.  The TCP connection itself is not opened until you attempt to send data.
+  // Because all settings are saved to flash, it is possible (or likely) that
+  // you could send data even if you haven't "made" any connection.
+  virtual int connect(const char *host, uint16_t port, int timeout_s) {
+    // NOTE:  Not caling stop() or yeild() here
+    at->streamClear();  // Empty anything in the buffer before starting
+    sock_connected = at->modemConnect(host, port, mux, false, timeout_s);
+    return sock_connected;
+  }
   virtual int connect(const char *host, uint16_t port) {
-    at->streamClear();  // Empty anything remaining in the buffer;
-    bool sock_connected = false;
-    if (at->commandMode())  {  // Don't try if we didn't successfully get into command mode
-      sock_connected = at->modemConnect(host, port, mux, false);
-      at->writeChanges();
-      at->exitCommand();
-    }
-    at->streamClear();  // Empty anything remaining in the buffer;
-    return sock_connected;
+    return connect(host, port, 75);
   }
 
+  virtual int connect(IPAddress ip, uint16_t port, int timeout_s) {
+    if (timeout_s != 0) {
+      DBG("Timeout [", timeout_s, "] doesn't apply here.");
+    }
+    // NOTE:  Not caling stop() or yeild() here
+    at->streamClear();  // Empty anything in the buffer before starting
+    sock_connected = at->modemConnect(ip, port, mux, false);
+    return sock_connected;
+  }
   virtual int connect(IPAddress ip, uint16_t port) {
-    at->streamClear();  // Empty anything remaining in the buffer;
-    bool sock_connected = false;
-    if (at->commandMode())  {  // Don't try if we didn't successfully get into command mode
-      sock_connected = at->modemConnect(ip, port, mux, false);
-      at->writeChanges();
-      at->exitCommand();
-    }
-    at->streamClear();  // Empty anything remaining in the buffer;
-    return sock_connected;
+    return connect(ip, port, 0);
   }
 
-  // This is a hack to shut the socket by setting the timeout to zero and
-  //  then sending an empty line to the server.
-  virtual void stop() {
-    at->streamClear();  // Empty anything remaining in the buffer;
-    at->commandMode();
-    at->sendAT(GF("TM0"));  // Set socket timeout to 0;
-    at->waitResponse();
-    at->writeChanges();
-    at->exitCommand();
-    at->modemSend("", 1, mux);
-    at->commandMode();
-    at->sendAT(GF("TM64"));  // Set socket timeout back to 10 seconds;
-    at->waitResponse();
-    at->writeChanges();
-    at->exitCommand();
-    at->streamClear();  // Empty anything remaining in the buffer;
+  virtual void stop(uint32_t maxWaitMs) {
+    at->streamClear();  // Empty anything in the buffer
+    // empty the saved currently-in-use destination address
+    at->modemStop(maxWaitMs);
+    at->streamClear();  // Empty anything in the buffer
     sock_connected = false;
+
+    // Note:  because settings are saved in flash, the XBEE will attempt to
+    // reconnect to the previous socket if it receives any outgoing data.
+    // Setting sock_connected to false after the stop ensures that connected()
+    // will return false after a stop has been ordered.  This makes it play
+    // much more nicely with libraries like PubSubClient.
   }
+
+  virtual void stop() { stop(5000L); }
 
   virtual size_t write(const uint8_t *buf, size_t size) {
     TINY_GSM_YIELD();
@@ -144,16 +154,47 @@ public:
   virtual int available() {
     TINY_GSM_YIELD();
     return at->stream.available();
+    /*
+    if (!rx.size() || at->stream.available()) {
+      at->maintain();
+    }
+    return at->stream.available() + rx.size();
+    */
   }
 
   virtual int read(uint8_t *buf, size_t size) {
     TINY_GSM_YIELD();
-    return at->stream.readBytes((char*)buf, size);
+    return at->stream.readBytes((char *)buf, size);
+    /*
+    size_t cnt = 0;
+    uint32_t _startMillis = millis();
+    while (cnt < size && millis() - _startMillis < _timeout) {
+      size_t chunk = TinyGsmMin(size-cnt, rx.size());
+      if (chunk > 0) {
+        rx.get(buf, chunk);
+        buf += chunk;
+        cnt += chunk;
+        continue;
+      }
+      // TODO: Read directly into user buffer?
+      if (!rx.size() || at->stream.available()) {
+        at->maintain();
+      }
+    }
+    return cnt;
+    */
   }
 
   virtual int read() {
     TINY_GSM_YIELD();
     return at->stream.read();
+    /*
+    uint8_t c;
+    if (read(&c, 1) == 1) {
+      return c;
+    }
+    return -1;
+    */
   }
 
   virtual int peek() { return at->stream.peek(); }
@@ -162,8 +203,15 @@ public:
   virtual uint8_t connected() {
     if (available()) {
       return true;
+    // if we never got an IP, it can't be connected
+    } else if (at->savedIP == IPAddress(0, 0, 0, 0)){
+      return false;
     }
     return sock_connected;
+    // NOTE:  We don't check or return
+    // modemGetConnected() because we don't
+    // want to go into command mode.
+    // return at->modemGetConnected();
   }
   virtual operator bool() { return connected(); }
 
@@ -174,16 +222,11 @@ public:
   String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
 private:
-  TinyGsmXBee*  at;
-  uint8_t       mux;
-  bool          sock_connected;
+  TinyGsmXBee*    at;
+  uint8_t         mux;
+  bool            sock_connected;
+  // RxFifo          rx;
 };
-
-//============================================================================//
-//============================================================================//
-//                          The Secure XBee Client Class
-//============================================================================//
-//============================================================================//
 
 
 class GsmClientSecure : public GsmClient
@@ -191,87 +234,111 @@ class GsmClientSecure : public GsmClient
 public:
   GsmClientSecure() {}
 
-  GsmClientSecure(TinyGsmXBee& modem, uint8_t mux = 1)
+  GsmClientSecure(TinyGsmXBee& modem, uint8_t mux = 0)
     : GsmClient(modem, mux)
   {}
 
+  virtual ~GsmClientSecure(){}
+
 public:
-  virtual int connect(const char *host, uint16_t port) {
-    at->streamClear();  // Empty anything remaining in the buffer;
-    bool sock_connected = false;
-    if (at->commandMode())  {  // Don't try if we didn't successfully get into command mode
-      sock_connected = at->modemConnect(host, port, mux, true);
-      at->writeChanges();
-      at->exitCommand();
-    }
-    at->streamClear();  // Empty anything remaining in the buffer;
+  virtual int connect(const char *host, uint16_t port, int timeout_s) {
+    // NOTE:  Not caling stop() or yeild() here
+    at->streamClear();  // Empty anything in the buffer before starting
+    sock_connected = at->modemConnect(host, port, mux, true, timeout_s);
     return sock_connected;
   }
 
-  virtual int connect(IPAddress ip, uint16_t port) {
-    at->streamClear();  // Empty anything remaining in the buffer;
-    bool sock_connected = false;
-    if (at->commandMode())  {  // Don't try if we didn't successfully get into command mode
-      sock_connected = at->modemConnect(ip, port, mux, true);
-      at->writeChanges();
-      at->exitCommand();
+  virtual int connect(IPAddress ip, uint16_t port, int timeout_s) {
+    if (timeout_s != 0) {
+      DBG("Timeout [", timeout_s, "] doesn't apply here.");
     }
-    at->streamClear();  // Empty anything remaining in the buffer;
+    // NOTE:  Not caling stop() or yeild() here
+    at->streamClear();  // Empty anything in the buffer before starting
+    sock_connected = at->modemConnect(ip, port, mux, true);
     return sock_connected;
   }
 };
 
 
-//============================================================================//
-//============================================================================//
-//                          The XBee Modem Functions
-//============================================================================//
-//============================================================================//
-
 public:
 
-#ifdef GSM_DEFAULT_STREAM
-  TinyGsmXBee(Stream& stream = GSM_DEFAULT_STREAM)
-#else
   TinyGsmXBee(Stream& stream)
-#endif
     : stream(stream)
-  {}
+  {
+      beeType = XBEE_UNKNOWN;  // Start not knowing what kind of bee it is
+      guardTime = TINY_GSM_XBEE_GUARD_TIME;  // Start with the default guard time of 1 second
+      resetPin = -1;
+      savedIP = IPAddress(0,0,0,0);
+      savedHost = "";
+      savedHostIP = IPAddress(0,0,0,0);
+      inCommandMode = false;
+      memset(sockets, 0, sizeof(sockets));
+  }
+
+  TinyGsmXBee(Stream& stream, int8_t resetPin)
+    : stream(stream)
+  {
+      beeType = XBEE_UNKNOWN;  // Start not knowing what kind of bee it is
+      guardTime = TINY_GSM_XBEE_GUARD_TIME;  // Start with the default guard time of 1 second
+      this->resetPin = resetPin;
+      savedIP = IPAddress(0,0,0,0);
+      savedHost = "";
+      savedHostIP = IPAddress(0,0,0,0);
+      inCommandMode = false;
+      memset(sockets, 0, sizeof(sockets));
+  }
+
+  virtual ~TinyGsmXBee() {}
 
   /*
    * Basic functions
    */
-  bool begin() {
-    return init();
+
+  bool begin(const char* pin = NULL) {
+    return init(pin);
   }
 
-  bool init() {
-    guardTime = 1100;  // Start with a default guard time of 1 second
+  bool init(const char* pin = NULL) {
+    DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
 
-    if (!commandMode(10)) return false;  // Try up to 10 times for the init
+    if (resetPin >= 0) {
+      pinMode(resetPin, OUTPUT);
+      digitalWrite(resetPin, HIGH);
+    }
+
+    if (pin && strlen(pin) > 0) {
+      DBG("XBee's do not support SIMs that require an unlock pin!");
+    }
+
+    XBEE_COMMAND_START_DECORATOR(10, false)
 
     sendAT(GF("AP0"));  // Put in transparent mode
     bool ret_val = waitResponse() == 1;
-    ret_val &= writeChanges();
 
     sendAT(GF("GT64")); // shorten the guard time to 100ms
-    ret_val &= waitResponse();
+    ret_val &= waitResponse() == 1;
+    if (ret_val) guardTime = 110;
+
+   // Make sure the command mode drop-out time is long enough that we won't fall
+   // out of command mode without intentionally leaving it.  This is the default
+   // drop out time of 0x64 x 100ms (10 seconds)
+    sendAT(GF("CT64"));
+    ret_val &= waitResponse() == 1;
     ret_val &= writeChanges();
-    if (ret_val) guardTime = 125;
 
-    sendAT(GF("HS"));  // Get the "Hardware Series";
-    String res = readResponse();
-    char buf[4] = {0,};  // Set up buffer for response
-    res.toCharArray(buf, 4);
-    int intRes = strtol(buf, 0, 16);
-    beeType = (XBeeType)intRes;
+    getSeries();  // Get the "Hardware Series";
 
-    exitCommand();
+    XBEE_COMMAND_END_DECORATOR
+
     return ret_val;
   }
 
+  String getModemName() {
+    return getBeeName();
+  }
+
   void setBaud(unsigned long baud) {
-    if (!commandMode()) return;
+    XBEE_COMMAND_START_DECORATOR(5, )
     switch(baud)
     {
       case 2400: sendAT(GF("BD1")); break;
@@ -292,47 +359,69 @@ public:
     }
     waitResponse();
     writeChanges();
-    exitCommand();
+    XBEE_COMMAND_END_DECORATOR
   }
 
-  bool testAT(unsigned long timeout = 10000L) {
-    for (unsigned long start = millis(); millis() - start < timeout; ) {
-      if (commandMode())
-      {
+  bool testAT(unsigned long timeout_ms = 10000L) {
+    unsigned long start = millis();
+    bool success = false;
+    while (!success && millis() - start < timeout_ms) {
+      if (!inCommandMode) {
+        success = commandMode();
+        if (success) exitCommand();
+      }
+      else {
           sendAT();
           if (waitResponse(200) == 1) {
-              return true;
+              success =  true;
           }
-          exitCommand();
+          // if we didn't respond to the AT, assume we're not in command mode
+          else inCommandMode = false;
       }
-      delay(100);
+      delay(250);
     }
-    return false;
+    return success;
   }
 
-  void maintain() {}
+  void maintain() {
+    // this only happens OUTSIDE command mode, so if we're getting characters
+    // they should be data received from the TCP connection
+    // TINY_GSM_YIELD();
+    // if (!inCommandMode) {
+    //   while (stream.available()) {
+    //     char c = stream.read();
+    //     if (c > 0) sockets[0]->rx.put(c);
+    //   }
+    // }
+  }
 
   bool factoryDefault() {
-    if (!commandMode()) return false;  // Return immediately
+    XBEE_COMMAND_START_DECORATOR(5, false)
     sendAT(GF("RE"));
     bool ret_val = waitResponse() == 1;
     ret_val &= writeChanges();
-    exitCommand();
+    XBEE_COMMAND_END_DECORATOR
+    // Make sure the guard time for the modem object is set back to default
+    // otherwise communication would fail after the reset
+    guardTime = 1010;
     return ret_val;
   }
 
   String getModemInfo() {
-    String modemInf = "";
-    if (!commandMode()) return modemInf;  // Try up to 10 times for the init
-
-    sendAT(GF("HS"));  // Get the "Hardware Series"
-    modemInf += readResponse();
-
-    exitCommand();
-    return modemInf;
+    return sendATGetString(GF("HS"));
   }
 
   bool hasSSL() {
+    if (beeType == XBEE_S6B_WIFI) return false;
+    else return true;
+  }
+
+  bool hasWifi() {
+    if (beeType == XBEE_S6B_WIFI) return true;
+    else return false;
+  }
+
+  bool hasGPRS() {
     if (beeType == XBEE_S6B_WIFI) return false;
     else return true;
   }
@@ -343,12 +432,12 @@ public:
 
   String getBeeName() {
     switch (beeType){
-      case XBEE_S6B_WIFI: return "Digi XBee® Wi-Fi";
-      case XBEE_LTE1_VZN: return "Digi XBee® Cellular LTE Cat 1";
-      case XBEE_3G: return "Digi XBee® Cellular 3G";
-      case XBEE3_LTE1_ATT: return "Digi XBee3™ Cellular LTE CAT 1";
-      case XBEE3_LTEM_ATT: return "Digi XBee3™ Cellular LTE-M";
-      case XBEE3_LTENB: return "Digi XBee3™ Cellular NB-IoT";
+      case XBEE_S6B_WIFI: return "Digi XBee Wi-Fi";
+      case XBEE_LTE1_VZN: return "Digi XBee Cellular LTE Cat 1";
+      case XBEE_3G: return "Digi XBee Cellular 3G";
+      case XBEE3_LTE1_ATT: return "Digi XBee3 Cellular LTE CAT 1";
+      case XBEE3_LTEM_ATT: return "Digi XBee3 Cellular LTE-M";
+      default:  return "Digi XBee";
     }
   }
 
@@ -356,52 +445,87 @@ public:
    * Power functions
    */
 
-  bool restart() {
-    if (!commandMode()) return false;  // Return immediately
-    sendAT(GF("AM1"));  // Digi suggests putting into airplane mode before restarting
-                       // This allows the sockets and connections to close cleanly
-    writeChanges();
-    if (waitResponse() != 1) goto fail;
-    sendAT(GF("FR"));
-    if (waitResponse() != 1) goto fail;
+  // The XBee's have a bad habit of getting into an unresponsive funk
+  // This uses the board's hardware reset pin to force it to reset
+  void pinReset() {
+    if (resetPin >= 0) {
+      DBG("### Forcing a modem reset!\r\n");
+      digitalWrite(resetPin, LOW);
+      delay(1);
+      digitalWrite(resetPin, HIGH);
+    }
+  }
 
-    delay (2000);  // Actually resets about 2 seconds later
+  bool restart() {
+
+    if (!commandMode()) return false;  // Return immediately
+
+    if (beeType == XBEE_UNKNOWN) getSeries();  // how we restart depends on this
+
+    if (beeType != XBEE_S6B_WIFI) {
+      sendAT(GF("AM1"));  // Digi suggests putting cellular modules into airplane mode before restarting
+                          // This allows the sockets and connections to close cleanly
+      if (waitResponse() != 1) return exitAndFail();
+      if (!writeChanges()) return exitAndFail();
+    }
+
+    sendAT(GF("FR"));
+    if (waitResponse() != 1) return exitAndFail();
+    else inCommandMode = false;  // Reset effectively exits command mode
+
+    if (beeType == XBEE_S6B_WIFI) delay(2000);  // Wifi module actually resets about 2 seconds later
+    else delay(100);  // cellular modules wait 100ms before reset happens
 
     // Wait until reboot complete and responds to command mode call again
     for (unsigned long start = millis(); millis() - start < 60000L; ) {
-      if (commandMode(1)) {
-        sendAT(GF("AM0"));  // Turn off airplane mode
-        writeChanges();
-        exitCommand();
-        delay(250);  // wait a litle before trying again
-      }
+      if (commandMode(1)) break;
+      delay(250);  // wait a litle before trying again
     }
-    return true;
 
+    if (beeType != XBEE_S6B_WIFI) {
+      sendAT(GF("AM0"));  // Turn off airplane mode
+      if (waitResponse() != 1) return exitAndFail();
+      if (!writeChanges()) return exitAndFail();
+    }
 
-    fail:
-      exitCommand();
-      return false;
+    exitCommand();
+
+    return init();
   }
 
   void setupPinSleep(bool maintainAssociation = false) {
-    if (!commandMode()) return;  // Return immediately
+    XBEE_COMMAND_START_DECORATOR(5, )
+
+    if (beeType == XBEE_UNKNOWN) getSeries();  // Command depends on series
+
     sendAT(GF("SM"),1);  // Pin sleep
     waitResponse();
+
     if (beeType == XBEE_S6B_WIFI && !maintainAssociation) {
         sendAT(GF("SO"),200);  // For lowest power, dissassociated deep sleep
         waitResponse();
     }
+
     else if (!maintainAssociation){
-        sendAT(GF("SO"),1);  // For lowest power, dissassociated deep sleep
+        sendAT(GF("SO"),1);  // For supported cellular modules, maintain association
                              // Not supported by all modules, will return "ERROR"
         waitResponse();
     }
+
     writeChanges();
-    exitCommand();
+    XBEE_COMMAND_END_DECORATOR
   }
 
-  bool poweroff() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool poweroff() {  // NOTE:  Not supported for WiFi or older cellular firmware
+    XBEE_COMMAND_START_DECORATOR(5, false)
+    sendAT(GF("SD"));
+    bool ret_val = waitResponse(120000L) == 1;
+    if (ret_val) {
+        ret_val &= (sendATGetString(GF("AI")) == "2D");
+    }
+    XBEE_COMMAND_END_DECORATOR
+    return ret_val;
+  }
 
   bool radioOff() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
@@ -412,184 +536,224 @@ public:
    */
 
   bool simUnlock(const char *pin) {  // Not supported
+    if (pin && strlen(pin) > 0) {
+      DBG("XBee's do not support SIMs that require an unlock pin!");
+    }
     return false;
   }
 
   String getSimCCID() {
-    if (!commandMode()) return "";  // Return immediately
-    sendAT(GF("S#"));
-    String res = readResponse();
-    exitCommand();
-    return res;
+    return sendATGetString(GF("S#"));
   }
 
   String getIMEI() {
-    if (!commandMode()) return "";  // Return immediately
-    sendAT(GF("IM"));
-    String res = readResponse();
-    exitCommand();
-    return res;
+    return sendATGetString(GF("IM"));
   }
 
-  SimStatus getSimStatus(unsigned long timeout = 10000L) {
+  SimStatus getSimStatus() {
     return SIM_READY;  // unsupported
   }
 
   RegStatus getRegistrationStatus() {
-    if (!commandMode()) return REG_UNKNOWN;  // Return immediately
+
+    XBEE_COMMAND_START_DECORATOR(5, REG_UNKNOWN)
+
+    if (!inCommandMode) return REG_UNKNOWN;  // Return immediately
+
+    if (beeType == XBEE_UNKNOWN) getSeries();  // Need to know the bee type to interpret response
 
     sendAT(GF("AI"));
-    String res = readResponse();
-    char buf[3] = {0,};  // Set up buffer for response
-    res.toCharArray(buf, 3);
-    int intRes = strtol(buf, 0, 16);
+    int16_t intRes = readResponseInt(10000L);
     RegStatus stat = REG_UNKNOWN;
 
     switch (beeType){
       case XBEE_S6B_WIFI: {
-        if(intRes == 0x00)  // 0x00 Successfully joined an access point, established IP addresses and IP listening sockets
-          stat = REG_OK;
-        else if(intRes == 0x01)  // 0x01 Wi-Fi transceiver initialization in progress.
-          stat = REG_SEARCHING;
-        else if(intRes == 0x02)  // 0x02 Wi-Fi transceiver initialized, but not yet scanning for access point.
-          stat = REG_SEARCHING;
-        else if(intRes == 0x13) { // 0x13 Disconnecting from access point.
-          restart();  // Restart the device; the S6B tends to get stuck "disconnecting"
-          stat = REG_UNREGISTERED;
+        switch (intRes) {
+          case 0x00:  // 0x00 Successfully joined an access point, established IP addresses and IP listening sockets
+            stat = REG_OK;
+            break;
+          case 0x01:  // 0x01 Wi-Fi transceiver initialization in progress.
+          case 0x02:  // 0x02 Wi-Fi transceiver initialized, but not yet scanning for access point.
+          case 0x40:  // 0x40 Waiting for WPA or WPA2 Authentication.
+          case 0x41:  // 0x41 Device joined a network and is waiting for IP configuration to complete
+          case 0x42:  // 0x42 Device is joined, IP is configured, and listening sockets are being set up.
+          case 0xFF:  // 0xFF Device is currently scanning for the configured SSID.
+            stat = REG_SEARCHING;
+            break;
+          case 0x13:  // 0x13 Disconnecting from access point.
+            restart();  // Restart the device; the S6B tends to get stuck "disconnecting"
+            stat = REG_UNREGISTERED;
+            break;
+          case 0x23:  // 0x23 SSID not configured.
+            stat = REG_UNREGISTERED;
+            break;
+          case 0x24:  // 0x24 Encryption key invalid (either NULL or invalid length for WEP).
+          case 0x27:  // 0x27 SSID was found, but join failed.
+            stat = REG_DENIED;
+            break;
+          default:
+            stat = REG_UNKNOWN;
+            break;
         }
-        else if(intRes == 0x23)  // 0x23 SSID not configured.
-          stat = REG_UNREGISTERED;
-        else if(intRes == 0x24)  // 0x24 Encryption key invalid (either NULL or invalid length for WEP).
-          stat = REG_DENIED;
-        else if(intRes == 0x27)  // 0x27 SSID was found, but join failed.
-          stat = REG_DENIED;
-        else if(intRes == 0x40)  // 0x40 Waiting for WPA or WPA2 Authentication.
-          stat = REG_SEARCHING;
-        else if(intRes == 0x41)  // 0x41 Device joined a network and is waiting for IP configuration to complete
-          stat = REG_SEARCHING;
-        else if(intRes == 0x42)  // 0x42 Device is joined, IP is configured, and listening sockets are being set up.
-          stat = REG_SEARCHING;
-        else if(intRes == 0xFF)  // 0xFF Device is currently scanning for the configured SSID.
-          stat = REG_SEARCHING;
-        else stat = REG_UNKNOWN;
         break;
       }
-      default: {
-        if(intRes == 0x00)  // 0x00 Connected to the Internet.
-          stat = REG_OK;
-        else if(intRes == 0x22)  // 0x22 Registering to cellular network.
-          stat = REG_SEARCHING;
-        else if(intRes == 0x23)  // 0x23 Connecting to the Internet.
-          stat = REG_SEARCHING;
-        else if(intRes == 0x24)  // 0x24 The cellular component is missing, corrupt, or otherwise in error.
-          stat = REG_UNKNOWN;
-        else if(intRes == 0x25)  // 0x25 Cellular network registration denied.
-          stat = REG_DENIED;
-        else if(intRes == 0x2A) {  // 0x2A Airplane mode.
-          sendAT(GF("AM0"));  // Turn off airplane mode
-          waitResponse();
-          writeChanges();
-          stat = REG_UNKNOWN;
-        }
-        else if(intRes == 0x2F) {  // 0x2F Bypass mode active.
-          sendAT(GF("AP0"));  // Set back to transparent mode
-          waitResponse();
-          writeChanges();
-          stat = REG_UNKNOWN;
-        }
-        else if(intRes == 0xFF)  // 0xFF Device is currently scanning for the configured SSID.
-          stat = REG_SEARCHING;
-        else stat = REG_UNKNOWN;
+      default: {  // Cellular XBee's
+        switch (intRes) {
+          case 0x00:  // 0x00 Connected to the Internet.
+            stat = REG_OK;
+            break;
+          case 0x22:  // 0x22 Registering to cellular network.
+          case 0x23:  // 0x23 Connecting to the Internet.
+          case 0xFF:  // 0xFF Initializing.
+            stat = REG_SEARCHING;
           break;
+          case 0x24:  // 0x24 The cellular component is missing, corrupt, or otherwise in error.
+          case 0x2B:  // 0x2B USB Direct active.
+          case 0x2C:  // 0x2C Cellular component is in PSM (power save mode).
+            stat = REG_UNKNOWN;
+            break;
+          case 0x25:  // 0x25 Cellular network registration denied.
+            stat = REG_DENIED;
+            break;
+          case  0x2A:  // 0x2A Airplane mode.
+            sendAT(GF("AM0"));  // Turn off airplane mode
+            waitResponse();
+            writeChanges();
+            stat = REG_UNKNOWN;
+            break;
+          case 0x2F:  // 0x2F Bypass mode active.
+            sendAT(GF("AP0"));  // Set back to transparent mode
+            waitResponse();
+            writeChanges();
+            stat = REG_UNKNOWN;
+            break;
+          default:
+            stat = REG_UNKNOWN;
+            break;
         }
+        break;
+      }
     }
 
-    exitCommand();
+    XBEE_COMMAND_END_DECORATOR
     return stat;
   }
 
   String getOperator() {
-    if (!commandMode()) return "";  // Return immediately
-    sendAT(GF("MN"));
-    String res = readResponse();
-    exitCommand();
-    return res;
+    return sendATGetString(GF("MN"));
   }
 
  /*
   * Generic network functions
   */
 
-  int getSignalQuality() {
-    if (!commandMode()) return 0;  // Return immediately
+  int16_t getSignalQuality() {
+
+    XBEE_COMMAND_START_DECORATOR(5, 0);
+
+    if (beeType == XBEE_UNKNOWN) getSeries();  // Need to know what type of bee so we know how to ask
+
     if (beeType == XBEE_S6B_WIFI) sendAT(GF("LM"));  // ask for the "link margin" - the dB above sensitivity
     else sendAT(GF("DB"));  // ask for the cell strength in dBm
-    String res = readResponse();  // it works better if we read in as a string
-    exitCommand();
-    char buf[3] = {0,};  // Set up buffer for response
-    res.toCharArray(buf, 3);
-    int intRes = strtol(buf, 0, 16);
-    if (beeType == XBEE_S6B_WIFI) return -93 + intRes;  // the maximum sensitivity is -93dBm
-    else return -1*intRes; // need to convert to negative number
+    int16_t intRes = readResponseInt();
+
+    XBEE_COMMAND_END_DECORATOR
+
+    if (beeType == XBEE3_LTEM_ATT && intRes == 105) intRes = 0;  // tends to reply with "69" when signal is unknown
+
+    if (beeType == XBEE_S6B_WIFI) {
+      if (intRes == 0xFF) {
+         return 0;  // 0xFF returned for unknown
+      } else {
+        return -93 + intRes;  // the maximum sensitivity is -93dBm
+      }
+    } else {
+      return -1*intRes; // need to convert to negative number
+    }
   }
 
   bool isNetworkConnected() {
     RegStatus s = getRegistrationStatus();
-    return (s == REG_OK);
+    if (s == REG_OK) {
+      IPAddress ip = localIP();
+      if (ip != IPAddress(0, 0, 0, 0)) {
+        return true;
+      } else {
+        return false;
+      }
+    } else {
+      return false;
+    }
   }
 
-  bool waitForNetwork(unsigned long timeout = 60000L) {
-    for (unsigned long start = millis(); millis() - start < timeout; ) {
+  bool waitForNetwork(unsigned long timeout_ms = 60000L) {
+    bool retVal = false;
+    XBEE_COMMAND_START_DECORATOR(5, false)
+    for (unsigned long start = millis(); millis() - start < timeout_ms; ) {
       if (isNetworkConnected()) {
-        return true;
+        retVal = true;
+        break;
       }
-      // delay(250);  // Enough delay going in and out of command mode
+      delay(250);  // per Neil H. - more stable with delay
     }
-    return false;
+    XBEE_COMMAND_END_DECORATOR
+    return retVal;
   }
 
   /*
    * WiFi functions
    */
+
   bool networkConnect(const char* ssid, const char* pwd) {
 
-    if (!commandMode()) return false;  // return immediately
+    bool retVal = true;
+    XBEE_COMMAND_START_DECORATOR(5, false)
 
-    sendAT(GF("EE"), 2);  // Set security to WPA2
-    if (waitResponse() != 1) goto fail;
+    //nh For no pwd don't set setscurity or pwd
+    if (ssid == NULL) retVal = false;;
+
+    if (pwd && strlen(pwd) > 0)
+    {
+      sendAT(GF("EE"), 2);  // Set security to WPA2
+      if (waitResponse() != 1) retVal = false;
+      sendAT(GF("PK"), pwd);
+    } else {
+      sendAT(GF("EE"), 0);  // Set No security
+    }
+    if (waitResponse() != 1) retVal = false;
 
     sendAT(GF("ID"), ssid);
-    if (waitResponse() != 1) goto fail;
+    if (waitResponse() != 1) retVal = false;
 
-    sendAT(GF("PK"), pwd);
-    if (waitResponse() != 1) goto fail;
+    if (!writeChanges()) retVal = false;
 
-    writeChanges();
-    exitCommand();
+    XBEE_COMMAND_END_DECORATOR
 
-    return true;
-
-fail:
-    exitCommand();
-    return false;
+    return retVal;
   }
 
   bool networkDisconnect() {
-    if (!commandMode()) return false;  // return immediately
+    XBEE_COMMAND_START_DECORATOR(5, false)
     sendAT(GF("NR0"));  // Do a network reset in order to disconnect
-    int res = (1 == waitResponse(5000));
+    // WARNING:  On wifi modules, using a network reset will not
+    // allow the same ssid to re-join without rebooting the module.
+    int8_t res = (1 == waitResponse(5000));
     writeChanges();
-    exitCommand();
+    XBEE_COMMAND_END_DECORATOR
     return res;
   }
 
+  /*
+   * IP Address functions
+   */
+
   String getLocalIP() {
-    if (!commandMode()) return "";  // Return immediately
+    XBEE_COMMAND_START_DECORATOR(5, "")
     sendAT(GF("MY"));
     String IPaddr; IPaddr.reserve(16);
     // wait for the response - this response can be very slow
-    IPaddr = readResponse(30000);
-    exitCommand();
+    IPaddr = readResponseString(30000);
+    XBEE_COMMAND_END_DECORATOR
     IPaddr.trim();
     return IPaddr;
   }
@@ -601,24 +765,34 @@ fail:
   /*
    * GPRS functions
    */
-  bool gprsConnect(const char* apn, const char* user = NULL, const char* pwd = NULL) {
-    if (!commandMode()) return false;  // Return immediately
-    sendAT(GF("AN"), apn);  // Set the APN
-    waitResponse();
-    writeChanges();
-    exitCommand();
-    return true;
-  }
 
-  bool gprsDisconnect() {
-    if (!commandMode()) return false;  // return immediately
-    sendAT(GF("AM1"));  // Cheating and disconnecting by turning on airplane mode
-    int res = (1 == waitResponse(5000));
-    writeChanges();
+  bool gprsConnect(const char* apn, const char* user = NULL,
+                   const char* pwd = NULL) {
+    if (user && strlen(user) > 0) {
+      DBG("XBee's do not support SIMs that a user name/password!");
+    }
+    if (pwd && strlen(pwd) > 0) {
+      DBG("XBee's do not support SIMs that a user name/password!");
+    }
+    XBEE_COMMAND_START_DECORATOR(5, false)
+    sendAT(GF("AN"), apn);  // Set the APN
+    bool success = waitResponse() == 1;
     sendAT(GF("AM0"));  // Airplane mode off
     waitResponse(5000);
     writeChanges();
-    exitCommand();
+    XBEE_COMMAND_END_DECORATOR
+    return success;
+  }
+
+  bool gprsDisconnect() {
+    XBEE_COMMAND_START_DECORATOR(5, false)
+    sendAT(GF("AM1"));  // Cheating and disconnecting by turning on airplane mode
+    int8_t res = (1 == waitResponse(5000));
+    writeChanges();
+    // sendAT(GF("AM0"));  // Airplane mode off
+    // waitResponse(5000);
+    // writeChanges();
+    XBEE_COMMAND_END_DECORATOR
     return res;
   }
 
@@ -636,21 +810,20 @@ fail:
     if (!commandMode()) return false;  // Return immediately
 
     sendAT(GF("IP"), 2);  // Put in text messaging mode
-    if (waitResponse() !=1) goto fail;
+    if (waitResponse() !=1) return exitAndFail();
     sendAT(GF("PH"), number);  // Set the phone number
-    if (waitResponse() !=1) goto fail;
+    if (waitResponse() !=1) return exitAndFail();
     sendAT(GF("TDD"));  // Set the text delimiter to the standard 0x0D (carriage return)
-    if (waitResponse() !=1) goto fail;
-    if (!writeChanges()) goto fail;
+    if (waitResponse() !=1) return exitAndFail();
 
+    if (!writeChanges()) return exitAndFail();
+    // Get out of command mode to actually send the text
     exitCommand();
+
     streamWrite(text);
     stream.write((char)0x0D);  // close off with the carriage return
-    return true;
 
-    fail:
-      exitCommand();
-      return false;
+    return true;
   }
 
   /*
@@ -660,145 +833,394 @@ fail:
   String getGsmLocation() TINY_GSM_ATTR_NOT_AVAILABLE;
 
   /*
-   * Battery functions
+   * Battery & temperature functions
    */
 
-  uint16_t getBattVoltage() TINY_GSM_ATTR_NOT_AVAILABLE;
-
-  int getBattPercent() TINY_GSM_ATTR_NOT_AVAILABLE;
-
-protected:
-
-  bool modemConnect(const char* host, uint16_t port, uint8_t mux = 0, bool ssl = false) {
-    String strIP; strIP.reserve(16);
-    unsigned long startMillis = millis();
-    bool gotIP = false;
-    // XBee's require a numeric IP address for connection, but do provide the
-    // functionality to look up the IP address from a fully qualified domain name
-    while (!gotIP && millis() - startMillis < 45000L)  // the lookup can take a while
-    {
-      sendAT(GF("LA"), host);
-      while (stream.available() < 4) {};  // wait for any response
-      strIP = stream.readStringUntil('\r');  // read result
-      strIP.trim();
-      DBG("<<< ", strIP);
-      if (!strIP.endsWith(GF("ERROR"))) gotIP = true;
-      delay(100);  // short wait before trying again
+  // Use: float vBatt = modem.getBattVoltage() / 1000.0;
+  uint16_t getBattVoltage() {
+    int16_t intRes = 0;
+    XBEE_COMMAND_START_DECORATOR(5, false)
+    if (beeType == XBEE_UNKNOWN) getSeries();
+    if (beeType == XBEE_S6B_WIFI) {
+      sendAT(GF("%V"));
+      intRes = readResponseInt();
     }
-    if (gotIP) {  // No reason to continue if we don't know the IP address
-      IPAddress ip = TinyGsmIpFromString(strIP);
-      return modemConnect(ip, port, mux, ssl);
-    }
-    else return false;
+    XBEE_COMMAND_END_DECORATOR
+    return intRes;
   }
 
-  bool modemConnect(IPAddress ip, uint16_t port, uint8_t mux = 0, bool ssl = false) {
-    bool success = true;
-    String host; host.reserve(16);
-    host += ip[0];
-    host += ".";
-    host += ip[1];
-    host += ".";
-    host += ip[2];
-    host += ".";
-    host += ip[3];
-    if (ssl) {
-      sendAT(GF("IP"), 4);  // Put in SSL over TCP communication mode
-      success &= (1 == waitResponse());
-    } else {
-      sendAT(GF("IP"), 1);  // Put in TCP mode
-      success &= (1 == waitResponse());
+  int8_t getBattPercent() TINY_GSM_ATTR_NOT_AVAILABLE;
+  uint8_t getBattChargeState() TINY_GSM_ATTR_NOT_AVAILABLE;
+
+  bool getBattStats(uint8_t &chargeState, int8_t &percent, uint16_t &milliVolts) {
+    chargeState = 0;
+    percent = 0;
+    milliVolts = getBattVoltage();
+    return true;
+  }
+
+  float getTemperature() {
+    XBEE_COMMAND_START_DECORATOR(5, (float)-9999)
+    String res = sendATGetString(GF("TP"));
+    if (res == "") {
+      return (float)-9999;
     }
-    sendAT(GF("DL"), host);  // Set the "Destination Address Low"
-    success &= (1 == waitResponse());
-    sendAT(GF("DE"), String(port, HEX));  // Set the destination port
-    success &= (1 == waitResponse());
+    char buf[5] = {0,};
+    res.toCharArray(buf, 5);
+    int8_t intRes = (int8_t)strtol(buf, 0, 16); // degrees Celsius displayed in 8-bit two's complement format.
+    XBEE_COMMAND_END_DECORATOR
+    return (float)intRes;
+  }
+
+  /*
+   * Client related functions
+   */
+
+ protected:
+
+  int16_t getConnectionIndicator() {
+    XBEE_COMMAND_START_DECORATOR(5, false)
+    sendAT(GF("CI"));
+    int16_t intRes = readResponseInt();
+    XBEE_COMMAND_END_DECORATOR
+    return intRes;
+  }
+
+  IPAddress getOperatingIP() {
+    String strIP;
+    strIP.reserve(16);
+
+    XBEE_COMMAND_START_DECORATOR(5, IPAddress(0, 0, 0, 0))
+    sendAT(GF("OD"));
+    strIP = stream.readStringUntil('\r');  // read result
+    strIP.trim();
+    XBEE_COMMAND_END_DECORATOR
+
+    if (strIP != "" && strIP != GF("ERROR")) {
+      return TinyGsmIpFromString(strIP);
+    } else
+      return IPAddress(0, 0, 0, 0);
+  }
+
+  IPAddress lookupHostIP(const char* host, int timeout_s = 45) {
+    String strIP;
+    strIP.reserve(16);
+    unsigned long startMillis = millis();
+    uint32_t timeout_ms = ((uint32_t)timeout_s)*1000;
+    bool gotIP = false;
+    XBEE_COMMAND_START_DECORATOR(5, IPAddress(0,0,0,0))
+    // XBee's require a numeric IP address for connection, but do provide the
+    // functionality to look up the IP address from a fully qualified domain name
+    while ((millis() - startMillis) < timeout_ms)  // the lookup can take a while
+    {
+      sendAT(GF("LA"), host);
+      while (stream.available() < 4 && (millis() - startMillis < timeout_ms)) {TINY_GSM_YIELD()};
+      strIP = stream.readStringUntil('\r');  // read result
+      strIP.trim();
+      if (strIP != "" && strIP != GF("ERROR")) {
+        gotIP = true;
+        break;
+      }
+      delay(2500);  // wait a bit before trying again
+    }
+
+    XBEE_COMMAND_END_DECORATOR
+
+    if (gotIP) {
+      return TinyGsmIpFromString(strIP);
+    }
+    else return IPAddress(0,0,0,0);
+  }
+
+  bool modemConnect(const char* host, uint16_t port, uint8_t mux = 0,
+                    bool ssl = false, int timeout_s = 75)
+  {
+    bool retVal = false;
+    XBEE_COMMAND_START_DECORATOR(5, false)
+
+    // If this is a new host name, replace the saved host and wipe out the saved host IP
+    if (this->savedHost != String(host)) {
+      this->savedHost = String(host);
+      savedHostIP = IPAddress(0,0,0,0);
+    }
+
+    // If we don't have a good IP for the host, we need to do a DNS search
+    if (savedHostIP == IPAddress(0,0,0,0)) {
+      savedHostIP = lookupHostIP(host, timeout_s);  // This will return 0.0.0.0 if lookup fails
+    }
+
+    // If we now have a valid IP address, use it to connect
+    if (savedHostIP != IPAddress(0,0,0,0)) {  // Only re-set connection information if we have an IP address
+      retVal = modemConnect(savedHostIP, port, mux, ssl);
+    }
+
+    XBEE_COMMAND_END_DECORATOR
+
+    return retVal;
+  }
+
+  bool modemConnect(IPAddress ip, uint16_t port, uint8_t mux = 0,
+                    bool ssl = false) {
+    bool success = true;
+
+    if (mux != 0) {
+      DBG("XBee only supports 1 IP channel in transparent mode!");
+    }
+
+    // empty the saved currelty-in-use destination address
+    savedOperatingIP = IPAddress(0, 0, 0, 0);
+
+    XBEE_COMMAND_START_DECORATOR(5, false)
+
+    if (ip != savedIP) {  // Can skip almost everything if there's no
+                          // change in the IP address
+      savedIP = ip;  // Set the newly requested IP address
+      String host; host.reserve(16);
+      host += ip[0];
+      host += ".";
+      host += ip[1];
+      host += ".";
+      host += ip[2];
+      host += ".";
+      host += ip[3];
+
+      if (ssl) {
+        sendAT(GF("IP"), 4);  // Put in SSL over TCP communication mode
+        success &= (1 == waitResponse());
+      } else {
+        sendAT(GF("IP"), 1);  // Put in TCP mode
+        success &= (1 == waitResponse());
+      }
+
+      sendAT(GF("DL"), host);  // Set the "Destination Address Low"
+      success &= (1 == waitResponse());
+      sendAT(GF("DE"), String(port, HEX));  // Set the destination port
+      success &= (1 == waitResponse());
+
+      success &= writeChanges();
+    }
+
+    // we'll accept either unknown or connected
+    if (beeType != XBEE_S6B_WIFI) {
+      uint16_t ci = getConnectionIndicator();
+      success &= (ci == 0x00 || ci == 0xFF || ci == 0x28);
+    }
+
+    if (success) {
+      sockets[mux]->sock_connected = true;
+    }
+
+    XBEE_COMMAND_END_DECORATOR
+
     return success;
   }
 
-  int modemSend(const void* buff, size_t len, uint8_t mux = 0) {
+  bool modemStop(uint32_t maxWaitMs) {
+    streamClear();  // Empty anything in the buffer
+    // empty the saved currently-in-use destination address
+    savedOperatingIP = IPAddress(0, 0, 0, 0);
+
+    XBEE_COMMAND_START_DECORATOR(5, false)
+
+    // Get the current socket timeout
+    sendAT(GF("TM"));
+    String timeoutUsed = readResponseString(5000L);
+
+    // For WiFi models, there's no direct way to close the socket.  This is a
+    // hack to shut the socket by setting the timeout to zero.
+    if (beeType == XBEE_S6B_WIFI) {
+      sendAT(GF("TM0"));  // Set socket timeout to 0
+      waitResponse(maxWaitMs);  // This response can be slow
+      writeChanges();
+    }
+
+    // For cellular models, per documentation: If you write the TM (socket
+    // timeout) value while in Transparent Mode, the current connection is
+    // immediately closed - this works even if the TM values is unchanged
+    sendAT(GF("TM"), timeoutUsed);  // Re-set socket timeout
+    waitResponse(maxWaitMs);  // This response can be slow
+    writeChanges();
+
+    XBEE_COMMAND_END_DECORATOR
+    return true;
+  }
+
+  int16_t modemSend(const void* buff, size_t len, uint8_t mux = 0) {
+    if (mux != 0) {
+      DBG("XBee only supports 1 IP channel in transparent mode!");
+    }
     stream.write((uint8_t*)buff, len);
     stream.flush();
+
+    if (beeType != XBEE_S6B_WIFI) {
+      // After a send, verify the outgoing ip if it isn't set
+      if (savedOperatingIP == IPAddress(0, 0, 0, 0)) {
+        modemGetConnected();
+      }
+      // After sending several characters, also re-check
+      // NOTE:  I'm intentionally not checking after every single character!
+      else if (len > 5) {
+        modemGetConnected();
+      }
+    }
+
     return len;
   }
 
-  bool modemGetConnected(uint8_t mux = 0) {
-    if (!commandMode()) return false;
-    sendAT(GF("AI"));
-    int res = waitResponse(GF("0"));
-    exitCommand();
-    return 1 == res;
+  // NOTE:  The CI command returns the status of the TCP connection as open only
+  // after data has been sent on the socket.  If it returns 0xFF the socket may
+  // really be open, but no data has yet been sent.  We return this unknown value
+  // as true so there's a possibility it's wrong.
+  bool modemGetConnected() {
+    // If the IP address is 0, it's not valid so we can't be connected
+    if (savedIP == IPAddress(0,0,0,0)) return false;
+
+     XBEE_COMMAND_START_DECORATOR(5, false)
+
+    if (beeType == XBEE_UNKNOWN) getSeries();  // Need to know the bee type to interpret response
+
+    switch (beeType){
+
+      // The wifi be can only say if it's connected to the netowrk
+      case XBEE_S6B_WIFI: {
+        RegStatus s = getRegistrationStatus();
+        XBEE_COMMAND_END_DECORATOR
+        if (s != REG_OK) {
+          sockets[0]->sock_connected = false;  // no multiplex
+        }
+        return (s == REG_OK);  // if it's connected, we hope the sockets are too
+      }
+
+      // Cellular XBee's
+      default: {
+        int16_t ci = getConnectionIndicator();
+        // Get the operating destination address
+        IPAddress od = getOperatingIP();
+        XBEE_COMMAND_END_DECORATOR
+
+        switch(ci) {
+
+          // 0x00 = The socket is definitely open
+          case 0x00: {
+            savedOperatingIP = od;
+            // but it's possible the socket is set to the wrong place
+            if (od != IPAddress(0, 0, 0, 0) && od != savedIP) {
+              sockets[0]->stop();
+              return false;
+            }
+            return true;
+          }
+
+          // 0x28 = "Unknown."
+          // 0xFF = No known status - always returned prior to sending data
+          case 0x28:
+          case 0xFF: {
+            // If we previously had an operating destination and we no longer do,
+            // the socket must have closed
+            if (od == IPAddress(0, 0, 0, 0) && savedOperatingIP != IPAddress(0, 0, 0, 0)) {
+              savedOperatingIP = od;
+              sockets[0]->sock_connected = false;
+              return false;
+            }
+            // else if the operating destination exists, but is wrong
+            // we need to close and re-open
+            else if (od != IPAddress(0, 0, 0, 0) && od != savedIP) {
+              sockets[0]->stop();
+              return false;
+            }
+            // else if the operating destination exists and matches, we're
+            // good to go
+            else if (od != IPAddress(0, 0, 0, 0) && od == savedIP) {
+              savedOperatingIP = od;
+              return true;
+            }
+            // If we never had an operating destination, then sock may be open
+            // but data never sent - this is the dreaded "we don't know"
+            else {
+              savedOperatingIP = od;
+              return true;
+            }
+
+            // // Ask for information about any open sockets
+            // sendAT(GF("SI"));
+            // String open_socks = stream.readStringUntil('\r');
+            // open_socks.replace(GSM_NL, "");
+            // open_socks.trim();
+            // if (open_socks != "") {
+            //   // In transparent mode, only socket 0 should be possible
+            //   sendAT(GF("SI0"));
+            //   // read socket it
+            //   String sock_id = stream.readStringUntil('\r');
+            //   // read socket state
+            //   String sock_state = stream.readStringUntil('\r');
+            //   // read socket protocol (TCP/UDP)
+            //   String sock_protocol = stream.readStringUntil('\r');
+            //   // read local port number
+            //   String local_port = stream.readStringUntil('\r');
+            //   // read remote port number
+            //   String remote_port = stream.readStringUntil('\r');
+            //   // read remote ip address
+            //   String remoted_address =
+            //       stream.readStringUntil('\r');  // read result
+            //   stream.readStringUntil('\r');      // final carriage return
+            // }
+          }
+
+          // 0x21 = User closed
+          // 0x27 = Connection lost
+          // If the connection is lost or timed out on our side,
+          // we force close so it can reopen
+          case 0x21 :
+          case 0x27 : {
+            sendAT(GF("TM"));  // Get socket timeout
+            String timeoutUsed = readResponseString(5000L);
+            sendAT(GF("TM"), timeoutUsed);  // Re-set socket timeout
+            waitResponse(5000L);  // This response can be slow
+          }
+
+          // 0x02 = Invalid parameters (bad IP/host)
+          // 0x12 = DNS query lookup failure
+          // 0x25 = Unknown server - DNS lookup failed (0x22 for UDP socket!)
+          // fall through
+          case 0x02:
+          case 0x12:
+          case 0x25: {
+            savedIP = IPAddress(0, 0, 0, 0);  // force a lookup next time!
+          }
+
+          // If it's anything else (inc 0x02, 0x12, and 0x25)...
+          // it's definitely NOT connected
+          // fall through
+          default: {
+            sockets[0]->sock_connected = false;
+            savedOperatingIP = od;
+            return false;
+          }
+        }
+      }
+    }
   }
 
 public:
 
-  /* Utilities */
-
-  template<typename T>
-  void streamWrite(T last) {
-    stream.print(last);
-  }
-
-  template<typename T, typename... Args>
-  void streamWrite(T head, Args... tail) {
-    stream.print(head);
-    streamWrite(tail...);
-  }
+  /*
+   Utilities
+   */
 
   void streamClear(void) {
-    TINY_GSM_YIELD();
-    while (stream.available()) { stream.read(); }
-  }
-
-  bool commandMode(int retries = 2) {
-    int triesMade = 0;
-    bool success = false;
-    streamClear();  // Empty everything in the buffer before starting
-    while (!success and triesMade < retries) {
-      // Cannot send anything for 1 "guard time" before entering command mode
-      // Default guard time is 1s, but the init fxn decreases it to 250 ms
-      delay(guardTime);
-      streamWrite(GF("+++"));  // enter command mode
-      DBG("+++");
-      success = (1 == waitResponse(guardTime*2));
-      triesMade ++;
+    while (stream.available()) {
+      stream.read();
+      TINY_GSM_YIELD();
     }
-    return success;
   }
 
-  bool writeChanges(void) {
-    sendAT(GF("WR"));  // Write changes to flash
-    if (1 != waitResponse()) return false;
-    sendAT(GF("AC"));  // Apply changes
-    if (1 != waitResponse()) return false;
-    return true;
-  }
-
-  void exitCommand(void) {
-    sendAT(GF("CN"));  // Exit command mode
-    waitResponse();
-  }
-
-  String readResponse(uint32_t timeout = 1000) {
-    TINY_GSM_YIELD();
-    unsigned long startMillis = millis();
-    while (!stream.available() && millis() - startMillis < timeout) {};
-    String res = stream.readStringUntil('\r');  // lines end with carriage returns
-    res.trim();
-    DBG("<<< ", res);
-    return res;
-  }
-
-  template<typename... Args>
-  void sendAT(Args... cmd) {
-    streamWrite("AT", cmd..., GSM_NL);
-    stream.flush();
-    TINY_GSM_YIELD();
-    //DBG("### AT:", cmd...);
-  }
+TINY_GSM_MODEM_STREAM_UTILITIES()
 
   // TODO: Optimize this!
-  uint8_t waitResponse(uint32_t timeout, String& data,
+  // NOTE:  This function is used while INSIDE command mode, so we're only
+  // waiting for requested responses.  The XBee has no unsoliliced responses
+  // (URC's) when in command mode.
+  uint8_t waitResponse(uint32_t timeout_ms, String& data,
                        GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),
                        GsmConstStr r3=NULL, GsmConstStr r4=NULL, GsmConstStr r5=NULL)
   {
@@ -809,11 +1231,12 @@ public:
     String r5s(r5); r5s.trim();
     DBG("### ..:", r1s, ",", r2s, ",", r3s, ",", r4s, ",", r5s);*/
     data.reserve(16);  // Should never be getting much here for the XBee
-    int index = 0;
+    int8_t index = 0;
     unsigned long startMillis = millis();
     do {
       TINY_GSM_YIELD();
       while (stream.available() > 0) {
+        TINY_GSM_YIELD();
         int a = stream.read();
         if (a <= 0) continue; // Skip 0x00 bytes, just in case
         data += (char)a;
@@ -834,7 +1257,7 @@ public:
           goto finish;
         }
       }
-    } while (millis() - startMillis < timeout);
+    } while (millis() - startMillis < timeout_ms);
 finish:
     if (!index) {
       data.trim();
@@ -843,25 +1266,26 @@ finish:
       if (data.length()) {
         DBG("### Unhandled:", data, "\r\n");
       } else {
-        DBG("### NO RESPONSE!\r\n");
+        DBG("### NO RESPONSE FROM MODEM!\r\n");
       }
     } else {
       data.trim();
       data.replace(GSM_NL GSM_NL, GSM_NL);
       data.replace(GSM_NL, "\r\n    ");
       if (data.length()) {
-        // DBG("<<< ", data);
       }
     }
+    //data.replace(GSM_NL, "/");
+    //DBG('<', index, '>', data);
     return index;
   }
 
-  uint8_t waitResponse(uint32_t timeout,
+  uint8_t waitResponse(uint32_t timeout_ms,
                        GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),
                        GsmConstStr r3=NULL, GsmConstStr r4=NULL, GsmConstStr r5=NULL)
   {
     String data;
-    return waitResponse(timeout, data, r1, r2, r3, r4, r5);
+    return waitResponse(timeout_ms, data, r1, r2, r3, r4, r5);
   }
 
   uint8_t waitResponse(GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),
@@ -870,12 +1294,114 @@ finish:
     return waitResponse(1000, r1, r2, r3, r4, r5);
   }
 
+  bool commandMode(uint8_t retries = 5) {
+
+    // If we're already in command mode, move on
+    if (inCommandMode && (millis() - lastCommandModeMillis) < 10000L) return true;
+
+    uint8_t triesMade = 0;
+    uint8_t triesUntilReset = 4;  // only reset after 4 failures
+    bool success = false;
+    streamClear();  // Empty everything in the buffer before starting
+
+    while (!success and triesMade < retries) {
+      // Cannot send anything for 1 "guard time" before entering command mode
+      // Default guard time is 1s, but the init fxn decreases it to 100 ms
+      delay(guardTime + 10);
+      streamWrite(GF("+++"));  // enter command mode
+      int res = waitResponse(guardTime*2);
+      success = (1 == res);
+      if (0 == res) {
+        triesUntilReset--;
+        if (triesUntilReset == 0) {
+          triesUntilReset = 4;
+          pinReset();  // if it's unresponsive, reset
+          delay(250);  // a short delay to allow it to come back up
+          // TODO-optimize this
+        }
+      }
+      triesMade ++;
+    }
+
+    if (success) {
+      inCommandMode = true;
+      lastCommandModeMillis = millis();
+    }
+    return success;
+  }
+
+  bool writeChanges(void) {
+    sendAT(GF("WR"));  // Write changes to flash
+    if (1 != waitResponse()) return false;
+    sendAT(GF("AC"));  // Apply changes
+    if (1 != waitResponse()) return false;
+    return true;
+  }
+
+  void exitCommand(void) {
+    // NOTE:  Here we explicitely try to exit command mode
+    // even if the internal flag inCommandMode was already false
+    sendAT(GF("CN"));  // Exit command mode
+    waitResponse();
+    inCommandMode = false;
+  }
+
+  bool exitAndFail(void) {
+    exitCommand();  // Exit command mode
+    return false;
+  }
+
+  void getSeries(void) {
+    sendAT(GF("HS"));  // Get the "Hardware Series";
+    int16_t intRes = readResponseInt();
+    beeType = (XBeeType)intRes;
+    DBG(GF("### Modem: "), getModemName());
+  }
+
+  String readResponseString(uint32_t timeout_ms = 1000) {
+    TINY_GSM_YIELD();
+    unsigned long startMillis = millis();
+    while (!stream.available() && millis() - startMillis < timeout_ms) {};
+    String res = stream.readStringUntil('\r');  // lines end with carriage returns
+    res.trim();
+    return res;
+  }
+
+  int16_t readResponseInt(uint32_t timeout_ms = 1000) {
+    String res = readResponseString(timeout_ms);  // it just works better reading a string first
+    if (res == "") res = "FF";
+    char buf[5] = {0,};
+    res.toCharArray(buf, 5);
+    int16_t intRes = strtol(buf, 0, 16);
+    return intRes;
+  }
+
+  String sendATGetString(GsmConstStr cmd) {
+    XBEE_COMMAND_START_DECORATOR(5, "")
+    sendAT(cmd);
+    String res = readResponseString();
+    XBEE_COMMAND_END_DECORATOR
+    return res;
+  }
+
+  bool gotIPforSavedHost() {
+    if (savedHost != "" && savedHostIP != IPAddress(0,0,0,0)) return true;
+    else return false;
+  }
+
 public:
   Stream&       stream;
 
 protected:
-  int           guardTime;
+  int16_t       guardTime;
+  int8_t        resetPin;
   XBeeType      beeType;
+  IPAddress     savedIP;
+  String        savedHost;
+  IPAddress     savedHostIP;
+  IPAddress     savedOperatingIP;
+  bool          inCommandMode;
+  uint32_t      lastCommandModeMillis;
   GsmClient*    sockets[TINY_GSM_MUX_COUNT];
 };
 

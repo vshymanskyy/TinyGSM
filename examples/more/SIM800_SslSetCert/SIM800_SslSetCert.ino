@@ -3,7 +3,7 @@
  * This sketch uploads SSL certificates to the SIM8xx
  *
  * TinyGSM Getting Started guide:
- *   http://tiny.cc/tiny-gsm-readme
+ *   https://tiny.cc/tinygsm-readme
  *
  **************************************************************/
 
