@@ -101,11 +101,16 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
         - Quectel modems, SIM5360/5320/7100/7500/7600, XBee
 
 **SMS**
+- Sending, receiving (both also in Unicode), and being notified about incoming messages:
+    - SIM800
 - Only _sending_ SMS is supported, not receiving
-    - Supported on:
-        - SIM800/SIM900, SIM7000, XBee
-    - Not yet supported on:
-        - Quectel modems, SIM5360/5320/7100/7500/7600
+    - SIM900, SIM7000, XBee
+- Not yet supported on:
+    - Quectel modems, SIM5360/5320/7100/7500/7600
+
+**Phonebook**
+- Add, delete, read, and find entries
+    - SIM800
 
 **Voice Calls**
 - Only Supported on SIM800 and A6/A7/A20
@@ -120,6 +125,10 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
     - SIM808 and SIM7000 only
 - GSM location service
     - SIM800, SIM and SIM7000 only
+
+**Miscellaneous**
+- NETLIGHT (blinking LED) control
+    - SIM800
 
 **Credits**
 - Primary Authors/Contributors:
