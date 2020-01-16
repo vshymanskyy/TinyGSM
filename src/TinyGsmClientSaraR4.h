@@ -636,8 +636,7 @@ protected:
     // NOT supported on SARA-R404M / SARA-R410M-01B
     if (supportsAsyncSockets) {
       DBG("### Opening socket asynchronously!  Socket cannot be used until "
-          "arrival of +UUSOCO: ",
-          mux);
+          "the URC '+UUSOCO' appears.");
       sendAT(GF("+USOCO="), *mux, ",\"", host, "\",", port, ",1");
       if (waitResponse(timeout_ms, GF(GSM_NL "+UUSOCO: ")) == 1) {
         stream.readStringUntil(',').toInt();  // skip repeated mux
