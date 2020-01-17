@@ -855,6 +855,10 @@ protected:
       char c = strtol(buf, NULL, 16);
 #else
       while (!stream.available() && (millis() - startMillis < sockets[mux]->_timeout)) { TINY_GSM_YIELD(); }
+      if(millis() - startMillis >= sockets[mux]->_timeout){
+        DBG("### Timeout. Aborting read");
+        break;
+      }
       char c = stream.read();
 #endif
       sockets[mux]->rx.put(c);
