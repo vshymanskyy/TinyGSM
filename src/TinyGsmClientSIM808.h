@@ -73,7 +73,7 @@ public:
 
     sendAT(GF("+CGNSINF"));
     if (waitResponse(GF(GSM_NL "+CGNSINF:")) != 1) {
-      return false;
+      fix = false;
     }
 
     stream.readStringUntil(','); // mode
