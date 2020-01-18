@@ -314,6 +314,23 @@ TINY_GSM_MODEM_GET_INFO_ATI()
   /*
    * SIM card functions
    */
+   
+  bool simLock(const char *oldpin, const char *newpin) {
+	//first set SIM LOCK with current pin
+    sendAT(GF("+CLCK=\"SC\",1,\""), oldpin, GF("\""));
+    if (waitResponse() == 1){
+		sendAT(GF("+CPWD=\"SC\",\""),oldpin, GF("\""),GF(",\""),newpin,GF("\""));
+		return waitResponse() == 1;
+	}
+	return  false;
+  }
+  
+  bool simDisableLock(const char *pin){
+    sendAT(GF("+CLCK=\"SC\",0,\""), pin, GF("\",1"));
+    return waitResponse() == 1;
+  }
+
+   
 
 TINY_GSM_MODEM_SIM_UNLOCK_CPIN()
 
