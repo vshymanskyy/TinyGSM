@@ -111,7 +111,7 @@ public:
     TINY_GSM_CLIENT_DUMP_MODEM_BUFFER()
 
     if (at->supportsAsyncSockets) {
-      DBG("### Closing socket asynchronously!  Socket might remain open until arrival of +UUSOCL: ", mux);
+      DBG("### Closing socket asynchronously!  Socket might remain open until arrival of +UUSOCL:", mux);
       // faster asynchronous close
       // NOT supported on SARA-R404M / SARA-R410M-01B
       at->sendAT(GF("+USOCL="), mux, GF(",1"));
@@ -643,14 +643,14 @@ protected:
           "the URC '+UUSOCO' appears.");
       sendAT(GF("+USOCO="), *mux, ",\"", host, "\",", port, ",1");
       while (millis() - startMillis < timeout_ms &&
-                 sockets[*mux]->sock_connected == false) {}
-      }
-      else {
-        // use synchronous open
-        sendAT(GF("+USOCO="), *mux, ",\"", host, "\",", port);
-        int rsp = waitResponse(timeout_ms);
-        return (1 == rsp);
-      }
+             sockets[*mux]->sock_connected == false) {}
+      return sockets[*mux]->sock_connected == true;
+    } else {
+      // use synchronous open
+      sendAT(GF("+USOCO="), *mux, ",\"", host, "\",", port);
+      int rsp = waitResponse(timeout_ms);
+      return (1 == rsp);
+    }
   }
 
   int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
