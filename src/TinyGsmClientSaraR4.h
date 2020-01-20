@@ -117,6 +117,7 @@ public:
       at->sendAT(GF("+USOCL="), mux, GF(",1"));
       // NOTE:  can take up to 120s to get a response
       at->waitResponse((maxWaitMs - (millis() - startMillis)));
+      // We set the sock as disconnected right away because it can no longer be used
       sock_connected = false;
     } else {
       // synchronous close
@@ -600,7 +601,9 @@ protected:
 
   bool modemConnect(const char* host, uint16_t port, uint8_t* mux,
                     bool ssl = false, int timeout_s = 120) {
-    uint32_t timeout_ms = ((uint32_t)timeout_s)*1000;
+    uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
+    unsigned long startMillis = millis();
+
     // create a socket
     sendAT(GF("+USOCR=6"));
     // reply is +USOCR: ## of socket created
@@ -619,6 +622,7 @@ protected:
     // AT+USOSO=<socket>,<level>,<opt_name>,<opt_val>[,<opt_val2>]
     // <level> - 0 for IP, 6 for TCP, 65535 for socket level options
     // <opt_name> TCP/1 = no delay (do not delay send to coalesce packets)
+    // NOTE:  Enabling this may increase data plan usage
     // sendAT(GF("+USOSO="), *mux, GF(",6,1,1"));
     // waitResponse();
 
@@ -638,19 +642,15 @@ protected:
       DBG("### Opening socket asynchronously!  Socket cannot be used until "
           "the URC '+UUSOCO' appears.");
       sendAT(GF("+USOCO="), *mux, ",\"", host, "\",", port, ",1");
-      if (waitResponse(timeout_ms, GF(GSM_NL "+UUSOCO: ")) == 1) {
-        stream.readStringUntil(',').toInt();  // skip repeated mux
-        int connection_status = stream.readStringUntil('\n').toInt();
-        return (0 == connection_status);
-      } else {
-        return false;
+      while (millis() - startMillis < timeout_ms &&
+                 sockets[*mux]->sock_connected == false) {}
       }
-    } else {
-      // use synchronous open
-      sendAT(GF("+USOCO="), *mux, ",\"", host, "\",", port);
-      int rsp = waitResponse(timeout_ms);
-      return (1 == rsp);
-    }
+      else {
+        // use synchronous open
+        sendAT(GF("+USOCO="), *mux, ",\"", host, "\",", port);
+        int rsp = waitResponse(timeout_ms);
+        return (1 == rsp);
+      }
   }
 
   int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
@@ -801,7 +801,9 @@ TINY_GSM_MODEM_STREAM_UTILITIES()
           DBG("### URC Sock Closed: ", mux);
         } else if (data.endsWith(GF("+UUSOCO:"))) {
           int mux = stream.readStringUntil('\n').toInt();
-          if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+          int socket_error = stream.readStringUntil('\n').toInt();
+          if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux] &&
+              socket_error == 0) {
             sockets[mux]->sock_connected = true;
           }
           data = "";
