@@ -109,15 +109,25 @@ public:
 
   virtual void stop(uint32_t maxWaitMs) {
     TINY_GSM_CLIENT_DUMP_MODEM_BUFFER()
-
-    if (at->supportsAsyncSockets) {
-      DBG("### Closing socket asynchronously!  Socket might remain open until arrival of +UUSOCL:", mux);
+    // We want to use an async socket close because the syncrhonous close of an
+    // open socket is INCREDIBLY SLOW and the modem can freeze up.  But we only
+    // attempt the async close if we already KNOW the socket is open because
+    // calling the async close on a closed socket and then attempting opening a
+    // new socket causes the board to lock up for 2-3 minutes and then finally
+    // return with a "new" socket that is immediately closed.
+    // Attempting to close a socket that is already closed with a synchronous
+    // close quickly returns an error.
+    if (at->supportsAsyncSockets && sock_connected) {
+      DBG("### Closing socket asynchronously!  Socket might remain open "
+          "until arrival of +UUSOCL:",
+          mux);
       // faster asynchronous close
       // NOT supported on SARA-R404M / SARA-R410M-01B
       at->sendAT(GF("+USOCL="), mux, GF(",1"));
       // NOTE:  can take up to 120s to get a response
       at->waitResponse((maxWaitMs - (millis() - startMillis)));
-      // We set the sock as disconnected right away because it can no longer be used
+      // We set the sock as disconnected right away because it can no longer
+      // be used
       sock_connected = false;
     } else {
       // synchronous close
@@ -370,21 +380,30 @@ TINY_GSM_MODEM_GET_SIMCCID_CCID()
   }
 
   RegStatus getRegistrationStatus() {
-    if (has2GFallback) {
-      sendAT(GF("+CREG?"));
-      if (waitResponse(GF(GSM_NL "+CREG:")) != 1) {
-        return REG_UNKNOWN;
-      }
-    } else {
-      sendAT(GF("+CEREG?"));
-      if (waitResponse(GF(GSM_NL "+CEREG:")) != 1) {
-        return REG_UNKNOWN;
-      }
+    // Check first for EPS registration
+    sendAT(GF("+CEREG?"));
+    if (waitResponse(GF(GSM_NL "+CEREG:")) != 1) {
+      return REG_UNKNOWN;
     }
     streamSkipUntil(','); /* Skip format (0) */
     int status = stream.readStringUntil('\n').toInt();
     waitResponse();
-    return (RegStatus)status;
+
+    // If we're connected on EPS, great!
+    if ((RegStatus)status == REG_OK_HOME ||
+        (RegStatus)status == REG_OK_ROAMING) {
+      return (RegStatus)status;
+    } else {
+      // Otherwise, check generic network status
+      sendAT(GF("+CREG?"));
+      if (waitResponse(GF(GSM_NL "+CREG:")) != 1) {
+        return REG_UNKNOWN;
+      }
+      streamSkipUntil(','); /* Skip format (0) */
+      int status = stream.readStringUntil('\n').toInt();
+      waitResponse();
+      return (RegStatus)status;
+    }
   }
 
   TINY_GSM_MODEM_GET_OPERATOR_COPS()
@@ -459,6 +478,15 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
   }
 
   bool gprsDisconnect() {
+    // Mark all the sockets as closed
+    // This ensures that asynchronously closed sockets are marked closed
+    for (int mux = 0; mux < TINY_GSM_MUX_COUNT; mux++) {
+      GsmClient* sock = sockets[mux];
+      if (sock && sock->sock_connected) {
+        sock->sock_connected = false;
+      }
+    }
+
     // sendAT(GF("+CGACT=0,1"));  // Deactivate PDP context 1
     sendAT(GF("+CGACT=0"));  // Deactivate all contexts
     if (waitResponse(40000L) != 1) {
@@ -642,9 +670,15 @@ protected:
       DBG("### Opening socket asynchronously!  Socket cannot be used until "
           "the URC '+UUSOCO' appears.");
       sendAT(GF("+USOCO="), *mux, ",\"", host, "\",", port, ",1");
-      while (millis() - startMillis < timeout_ms &&
-             sockets[*mux]->sock_connected == false) {}
-      return sockets[*mux]->sock_connected == true;
+      if (waitResponse(timeout_ms, GF(GSM_NL "+UUSOCO:")) == 1) {
+        stream.readStringUntil(',').toInt();  // skip repeated mux
+        int connection_status = stream.readStringUntil('\n').toInt();
+        DBG("### Waited", millis() - startMillis, "ms for socket to open");
+        return (0 == connection_status);
+      } else {
+        DBG("### Waited", millis() - startMillis, "but never got socket open notice");
+        return false;
+      }
     } else {
       // use synchronous open
       sendAT(GF("+USOCO="), *mux, ",\"", host, "\",", port);
