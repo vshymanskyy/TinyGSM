@@ -66,7 +66,7 @@ public:
     init(&modem, mux);
   }
 
-  virtual ~GsmClient(){}
+    virtual ~GsmClient() {}
 
   bool init(TinyGsmSequansMonarch* modem, uint8_t mux = 1) {
     this->at = modem;
@@ -84,7 +84,7 @@ public:
   }
 
 public:
-  virtual int connect(const char *host, uint16_t port, int timeout_s) {
+    virtual int connect(const char* host, uint16_t port, int timeout_s) {
     if (sock_connected) stop();
     TINY_GSM_YIELD();
     rx.clear();
@@ -127,9 +127,7 @@ private:
   RxFifo          rx;
 };
 
-
-class GsmClientSecure : public GsmClient
-{
+  class GsmClientSecure : public GsmClient {
 public:
   GsmClientSecure() {}
 
@@ -137,13 +135,13 @@ public:
     : GsmClient(modem, mux)
   {}
 
-  virtual ~GsmClientSecure(){}
+    virtual ~GsmClientSecure() {}
 
 protected:
-  bool          strictSSL = false;
+    bool strictSSL = false;
 
 public:
-  virtual int connect(const char *host, uint16_t port, int timeout_s) {
+    virtual int connect(const char* host, uint16_t port, int timeout_s) {
     stop();
     TINY_GSM_YIELD();
     rx.clear();
@@ -152,7 +150,8 @@ public:
     if (strictSSL) {
       // require minimum of TLS 1.2 (3)
       // only support cipher suite 0x3D: TLS_RSA_WITH_AES_256_CBC_SHA256
-      // verify server certificate against imported CA certs 0 and enforce validity period (3)
+      // verify server certificate against imported CA certs 0 and enforce
+      // validity period (3)
       at->sendAT(GF("+SQNSPCFG=1,3,\"0x3D\",3,0,,,\"\",\"\""));
     } else {
       // use TLS 1.0 or higher (1)
@@ -176,10 +175,7 @@ public:
 };
 
 public:
-
-  TinyGsmSequansMonarch(Stream& stream)
-    : stream(stream)
-  {
+  TinyGsmSequansMonarch(Stream& stream) : stream(stream) {
     memset(sockets, 0, sizeof(sockets));
   }
 
@@ -200,10 +196,17 @@ public:
       return false;
     }
 
-    sendAT(GF("E0"));   // Echo Off
+    sendAT(GF("E0"));  // Echo Off
     if (waitResponse() != 1) {
       return false;
     }
+
+#ifdef TINY_GSM_DEBUG
+    sendAT(GF("+CMEE=2"));  // turn on verbose error codes
+#else
+    sendAT(GF("+CMEE=0"));  // turn off error codes
+#endif
+    waitResponse();
 
     DBG(GF("### Modem:"), getModemName());
 
@@ -221,7 +224,25 @@ public:
   }
 
   String getModemName() {
-    return "Sequans Monarch";
+    //   return "Sequans Monarch";
+    sendAT(GF("+CGMI"));
+    String res1;
+    if (waitResponse(1000L, res1) != 1) {
+      return "u-blox Cellular Modem";
+  }
+    res1.replace(GSM_NL "OK" GSM_NL, "");
+    res1.trim();
+
+    sendAT(GF("+CGMM"));
+    String res2;
+    if (waitResponse(1000L, res2) != 1) {
+      return "u-blox Cellular Modem";
+    }
+    res2.replace(GSM_NL "OK" GSM_NL, "");
+    res2.trim();
+
+    String name = res1 + String(' ') + res2;
+    return name;
   }
 
 TINY_GSM_MODEM_SET_BAUD_IPR()
@@ -280,7 +301,7 @@ TINY_GSM_MODEM_GET_INFO_ATI()
     }
 
     sendAT(GF("+CFUN=1,1"));
-    res = waitResponse(20000L, GF("+SYSSTART"), GFP(GSM_ERROR)) ;
+    res = waitResponse(20000L, GF("+SYSSTART"), GFP(GSM_ERROR));
     if (res != 1 && res != 3) {
       return false;
     }
@@ -461,7 +482,7 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
   bool sendSMS(const String& number, const String& text) {
     sendAT(GF("+CMGF=1"));
     waitResponse();
-    //Set GSM 7 bit default alphabet (3GPP TS 23.038)
+    // Set GSM 7 bit default alphabet (3GPP TS 23.038)
     sendAT(GF("+CSCS=\"GSM\""));
     waitResponse();
     sendAT(GF("+CMGS=\""), number, GF("\""));
@@ -490,7 +511,8 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
   uint16_t getBattVoltage() TINY_GSM_ATTR_NOT_AVAILABLE;
   int8_t getBattPercent() TINY_GSM_ATTR_NOT_AVAILABLE;
   uint8_t getBattChargeState() TINY_GSM_ATTR_NOT_AVAILABLE;
-  bool getBattStats(uint8_t &chargeState, int8_t &percent, uint16_t &milliVolts) TINY_GSM_ATTR_NOT_AVAILABLE;
+  bool getBattStats(uint8_t& chargeState, int8_t& percent,
+                    uint16_t& milliVolts) TINY_GSM_ATTR_NOT_AVAILABLE;
 
   float getTemperature() {
     sendAT(GF("+SMDTH"));
@@ -501,24 +523,22 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
     if (waitResponse(1000L, res) != 1) {
       return (float)-9999;
     }
-    if (res.indexOf("ERROR") >=0) {
+    if (res.indexOf("ERROR") >= 0) {
       return (float)-9999;
     }
     return res.toFloat();
   }
 
 protected:
-
   bool modemConnect(const char* host, uint16_t port, uint8_t mux,
-                    bool ssl = false, int timeout_s = 75)
- {
+                    bool ssl = false, int timeout_s = 75) {
     int rsp;
     unsigned long startMillis = millis();
-    uint32_t timeout_ms = ((uint32_t)timeout_s)*1000;
+    uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
 
     if (ssl) {
       // enable SSl and use security profile 1
-      //AT+SQNSSCFG=<connId>,<enable>,<spId>
+      // AT+SQNSSCFG=<connId>,<enable>,<spId>
       sendAT(GF("+SQNSSCFG="), mux, GF(",1,1"));
       if (waitResponse() != 1) {
         DBG("### WARNING: failed to configure secure socket");
@@ -549,7 +569,7 @@ protected:
     waitResponse(5000L);
 
     // Socket dial
-    //AT+SQNSD=<connId>,<txProt>,<rPort>,<IPaddr>[,<closureType>[,<lPort>[,<connMode>[,acceptAnyRemote]]]]
+    // AT+SQNSD=<connId>,<txProt>,<rPort>,<IPaddr>[,<closureType>[,<lPort>[,<connMode>[,acceptAnyRemote]]]]
     // <connId> = Connection ID = mux
     // <txProt> = Transmission protocol = 0 - TCP (1 for UDP)
     // <rPort> = Remote host port to contact
@@ -572,7 +592,7 @@ protected:
     bool connected = false;
     while (!connected && ((millis() - startMillis) < timeout_ms)) {
       connected = modemGetConnected(mux);
-      delay(100); // socket may be in opening state
+      delay(100);  // socket may be in opening state
     }
     return connected;
   }
@@ -623,12 +643,16 @@ protected:
     if (waitResponse(GF("+SQNSRECV: ")) != 1) {
       return 0;
     }
-    streamSkipUntil(','); // Skip mux
+    streamSkipUntil(',');  // Skip mux
     int len = stream.readStringUntil('\n').toInt();
-    for (int i=0; i<len; i++) {
-      uint32_t startMillis = millis(); \
-      while (!stream.available() && ((millis() - startMillis) < sockets[mux % TINY_GSM_MUX_COUNT]->_timeout)) { TINY_GSM_YIELD(); } \
-      char c = stream.read(); \
+    for (int i = 0; i < len; i++) {
+      uint32_t startMillis = millis();
+      while (!stream.available() &&
+             ((millis() - startMillis) <
+              sockets[mux % TINY_GSM_MUX_COUNT]->_timeout)) {
+        TINY_GSM_YIELD();
+      }
+      char c = stream.read();
       sockets[mux % TINY_GSM_MUX_COUNT]->rx.put(c);
     }
     DBG("### Read:", len, "from", mux);
@@ -663,7 +687,7 @@ protected:
       // if (stream.readStringUntil(',').toInt() != muxNo) { // check the mux no
       //   DBG("### Warning: misaligned mux numbers!");
       // }
-      streamSkipUntil(',');  // skip mux [use muxNo]
+      streamSkipUntil(',');        // skip mux [use muxNo]
       status = stream.parseInt();  // Read the status
       // if mux is in use, will have comma then other info after the status
       // if not, there will be new line immediately after status
@@ -692,9 +716,9 @@ TINY_GSM_MODEM_STREAM_UTILITIES()
 
   // TODO: Optimize this!
   uint8_t waitResponse(uint32_t timeout_ms, String& data,
-                       GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),
-                       GsmConstStr r3=NULL, GsmConstStr r4=NULL, GsmConstStr r5=NULL)
-  {
+                       GsmConstStr r1 = GFP(GSM_OK),
+                       GsmConstStr r2 = GFP(GSM_ERROR), GsmConstStr r3 = NULL,
+                       GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
     /*String r1s(r1); r1s.trim();
     String r2s(r2); r2s.trim();
     String r3s(r3); r3s.trim();
@@ -709,7 +733,7 @@ TINY_GSM_MODEM_STREAM_UTILITIES()
       while (stream.available() > 0) {
         TINY_GSM_YIELD();
         int a = stream.read();
-        if (a <= 0) continue; // Skip 0x00 bytes, just in case
+        if (a <= 0) continue;  // Skip 0x00 bytes, just in case
         data += (char)a;
         if (r1 && data.endsWith(r1)) {
           index = 1;
@@ -729,7 +753,8 @@ TINY_GSM_MODEM_STREAM_UTILITIES()
         } else if (data.endsWith(GF(GSM_NL "+SQNSRING:"))) {
           int mux = stream.readStringUntil(',').toInt();
           int len = stream.readStringUntil('\n').toInt();
-          if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux % TINY_GSM_MUX_COUNT]) {
+          if (mux >= 0 && mux < TINY_GSM_MUX_COUNT &&
+              sockets[mux % TINY_GSM_MUX_COUNT]) {
             sockets[mux % TINY_GSM_MUX_COUNT]->got_data = true;
             sockets[mux % TINY_GSM_MUX_COUNT]->sock_available = len;
           }
@@ -737,7 +762,8 @@ TINY_GSM_MODEM_STREAM_UTILITIES()
           DBG("### URC Data Received:", len, "on", mux);
         } else if (data.endsWith(GF("SQNSH: "))) {
           int mux = stream.readStringUntil('\n').toInt();
-          if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux % TINY_GSM_MUX_COUNT]) {
+          if (mux >= 0 && mux < TINY_GSM_MUX_COUNT &&
+              sockets[mux % TINY_GSM_MUX_COUNT]) {
             sockets[mux % TINY_GSM_MUX_COUNT]->sock_connected = false;
           }
           data = "";
@@ -753,30 +779,29 @@ finish:
       }
       data = "";
     }
-    //data.replace(GSM_NL, "/");
-    //DBG('<', index, '>', data);
+    // data.replace(GSM_NL, "/");
+    // DBG('<', index, '>', data);
     return index;
   }
 
-  uint8_t waitResponse(uint32_t timeout_ms,
-                       GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),
-                       GsmConstStr r3=NULL, GsmConstStr r4=NULL, GsmConstStr r5=NULL)
-  {
+  uint8_t waitResponse(uint32_t timeout_ms, GsmConstStr r1 = GFP(GSM_OK),
+                       GsmConstStr r2 = GFP(GSM_ERROR), GsmConstStr r3 = NULL,
+                       GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
     String data;
     return waitResponse(timeout_ms, data, r1, r2, r3, r4, r5);
   }
 
-  uint8_t waitResponse(GsmConstStr r1=GFP(GSM_OK), GsmConstStr r2=GFP(GSM_ERROR),
-                       GsmConstStr r3=NULL, GsmConstStr r4=NULL, GsmConstStr r5=NULL)
-  {
+  uint8_t waitResponse(GsmConstStr r1 = GFP(GSM_OK),
+                       GsmConstStr r2 = GFP(GSM_ERROR), GsmConstStr r3 = NULL,
+                       GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
     return waitResponse(1000, r1, r2, r3, r4, r5);
   }
 
 public:
-  Stream&       stream;
+  Stream& stream;
 
 protected:
-  GsmClient*    sockets[TINY_GSM_MUX_COUNT];
+  GsmClient* sockets[TINY_GSM_MUX_COUNT];
 };
 
 #endif
