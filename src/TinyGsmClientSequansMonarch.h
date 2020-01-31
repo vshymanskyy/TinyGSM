@@ -214,7 +214,7 @@ public:
     // with CFUN=0 not CFUN=1 (that is, at minimum functionality instead of full functionality
     // The module cannot even detect the sim card if the cellular functionality is disabled so
     // unless we explicitly enable the functionality the init will fail.
-    sendAT(GF("+CFUN=1"));  // turn off error codes
+    sendAT(GF("+CFUN=1"));
     waitResponse();
 
     int ret = getSimStatus();

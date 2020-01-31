@@ -231,7 +231,7 @@ TINY_GSM_MODEM_GET_INFO_ATI()
     if (waitResponse(60000L, GF("POWERED DOWN")) != 1) {
       return false;
     }
-    delay(3000);
+    waitResponse(5000L, GF("RDY"));
     return init();
   }
 
@@ -348,8 +348,11 @@ TINY_GSM_MODEM_GET_GPRS_IP_CONNECTED()
    */
 
   String getLocalIP() {
-    sendAT(GF("+QILOCIP"));
-    stream.readStringUntil('\n');
+    sendAT(GF("+CGPADDR=1"));
+    if (waitResponse(GF(GSM_NL "+CGPADDR:")) != 1) {
+      return "";
+    }
+    streamSkipUntil(',');  // Skip context id
     String res = stream.readStringUntil('\n');
     if (waitResponse() != 1) {
       return "";
@@ -590,7 +593,7 @@ protected:
     sendAT(GF("+QISTATE=1,"), mux);
     //+QISTATE: 0,"TCP","151.139.237.11",80,5087,4,1,0,0,"uart1"
 
-    if (waitResponse(GF("+QISTATE:")))
+    if (waitResponse(GF("+QISTATE:")) != 1)
       return false;
 
     streamSkipUntil(','); // Skip mux
