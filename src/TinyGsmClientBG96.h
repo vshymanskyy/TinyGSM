@@ -341,21 +341,7 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
     return true;
   }
 
-  // TINY_GSM_MODEM_GET_GPRS_IP_CONNECTED()
-  bool isGprsConnected()
-  {
-    sendAT(GF("+CGATT?"));
-    if (waitResponse(GF(GSM_NL "+CGATT:")) != 1)
-    {
-      return false;
-    }
-    int res = stream.readStringUntil('\n').toInt();
-    waitResponse();
-    if (res != 1)
-      return false;
-
-    return true;
-  }
+  TINY_GSM_MODEM_GET_GPRS_IP_CONNECTED()
 
   /*
    * IP Address functions
