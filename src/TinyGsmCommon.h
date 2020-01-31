@@ -645,4 +645,77 @@ String TinyGsmDecodeHex16bit(String &instr) {
   }
 
 
+//Common methods for UTF8/UTF16 SMS. 
+//Supported by: BG96, M95, MC60, SIM5360, SIM7000, SIM7600, SIM800
+template<class T>
+class TinyGsmUTFSMS {
+public:
+
+  class UTF8Print : public Print {
+  public:
+    UTF8Print(Print& p) : p(p) {}
+    virtual size_t write(const uint8_t c) override {
+      if(prv < 0xC0) {
+        if(c < 0xC0) printHex(c);
+        prv = c;
+      } else {
+        uint16_t v = uint16_t(prv)<<8 | c;
+        v -= (v>>8 == 0xD0)? 0xCC80 : 0xCD40;
+        printHex(v);
+        prv = 0;
+      }
+      return 1;
+    }
+  private:
+    Print& p;
+    uint8_t prv = 0;
+    void printHex(const uint16_t v) {
+      uint8_t c = v >> 8;
+      if (c < 0x10) p.print('0');
+      p.print(c, HEX);
+      c = v & 0xFF;
+      if (c < 0x10) p.print('0');
+      p.print(c, HEX);
+    }
+  };
+
+  bool sendSMS_UTF8_begin(const char* const number) {
+    static_cast<T*>(this)->sendAT(GF("+CMGF=1"));
+    static_cast<T*>(this)->waitResponse();
+    static_cast<T*>(this)->sendAT(GF("+CSCS=\"HEX\""));
+    static_cast<T*>(this)->waitResponse();
+    static_cast<T*>(this)->sendAT(GF("+CSMP=17,167,0,8"));
+    static_cast<T*>(this)->waitResponse();
+
+    static_cast<T*>(this)->sendAT(GF("+CMGS=\""), number, GF("\""));
+    return static_cast<T*>(this)->waitResponse(GF(">")) == 1;
+  }
+  bool sendSMS_UTF8_end() {
+    static_cast<T*>(this)->stream.write((char)0x1A);
+    static_cast<T*>(this)->stream.flush();
+    return static_cast<T*>(this)->waitResponse(60000L) == 1;
+  }
+  UTF8Print sendSMS_UTF8_stream() {
+    return UTF8Print(static_cast<T*>(this)->stream);
+  }
+
+  bool sendSMS_UTF16(const char* const number, const void* text, size_t len) {
+    if (!sendSMS_UTF8_begin(number)) {
+      return false;
+    }
+
+    uint16_t* t = (uint16_t*)text;
+    for (size_t i=0; i<len; i++) {
+      uint8_t c = t[i] >> 8;
+      if (c < 0x10) { static_cast<T*>(this)->stream.print('0'); }
+      static_cast<T*>(this)->stream.print(c, HEX);
+      c = t[i] & 0xFF;
+      if (c < 0x10) { static_cast<T*>(this)->stream.print('0'); }
+      static_cast<T*>(this)->stream.print(c, HEX);
+    }
+    
+    return sendSMS_UTF8_end();
+  }
+};
+
 #endif

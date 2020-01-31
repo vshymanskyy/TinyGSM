@@ -40,7 +40,7 @@ enum RegStatus {
 };
 
 
-class TinyGsmM95
+class TinyGsmM95: public TinyGsmUTFSMS<TinyGsmM95>
 {
 
 public:
@@ -142,8 +142,6 @@ public:
   {
     memset(sockets, 0, sizeof(sockets));
   }
-
-  virtual ~TinyGsmM95() {}
 
   /*
    * Basic functions
@@ -474,33 +472,6 @@ TINY_GSM_MODEM_GET_GPRS_IP_CONNECTED()
       return false;
     }
     stream.print(text);
-    stream.write((char)0x1A);
-    stream.flush();
-    return waitResponse(60000L) == 1;
-  }
-
-  bool sendSMS_UTF16(const String& number, const void* text, size_t len) {
-    sendAT(GF("+CMGF=1"));
-    waitResponse();
-    sendAT(GF("+CSCS=\"HEX\""));
-    waitResponse();
-    sendAT(GF("+CSMP=17,167,0,8"));
-    waitResponse();
-
-    sendAT(GF("+CMGS=\""), number, GF("\""));
-    if (waitResponse(GF(">")) != 1) {
-      return false;
-    }
-
-    uint16_t* t = (uint16_t*)text;
-    for (size_t i=0; i<len; i++) {
-      uint8_t c = t[i] >> 8;
-      if (c < 0x10) { stream.print('0'); }
-      stream.print(c, HEX);
-      c = t[i] & 0xFF;
-      if (c < 0x10) { stream.print('0'); }
-      stream.print(c, HEX);
-    }
     stream.write((char)0x1A);
     stream.flush();
     return waitResponse(60000L) == 1;
