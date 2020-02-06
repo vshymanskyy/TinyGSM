@@ -538,6 +538,15 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
     return waitResponse() == 1;
   }
 
+  bool receiveCallerIdentification(const bool receive) {
+    sendAT(GF("+CLIP="), receive); // Calling Line Identification Presentation
+
+    // Unsolicited result code format:
+    // +CLIP: <number>,<type>[,<subaddr>,<satype>,<alphaId>,<CLIvalidity>]
+
+    return waitResponse(15000L) == 1;
+  }
+
   // 0-9,*,#,A,B,C,D
   bool dtmfSend(char cmd, int duration_ms = 100) {
     duration_ms = constrain(duration_ms, 100, 1000);
