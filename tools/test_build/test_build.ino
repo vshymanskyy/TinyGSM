@@ -3,7 +3,7 @@
  *  DO NOT USE THIS - this is just a compilation test!
  *
  **************************************************************/
-// #define TINY_GSM_MODEM_SIM800
+#define TINY_GSM_MODEM_SIM800
 
 #include <TinyGsmClient.h>
 
@@ -20,13 +20,12 @@ char resource[] = "something";
 void setup() {
   Serial.begin(115200);
   delay(3000);
-  modem.restart();
 }
 
 void loop() {
 
   // Test the basic functions
-  modem.init();
+  // modem.init();
   modem.begin();
   modem.setBaud(115200);
   modem.testAT();
@@ -62,7 +61,7 @@ void loop() {
     modem.gprsConnect("YourAPN", "", "");
   #endif
   #if defined(TINY_GSM_MODEM_HAS_WIFI)
-    modem.networkConnect("YourSSID", "YourPWD");
+    modem.networkConnect("YourSSID", "YourWiFiPass");
     modem.waitForNetwork();
   #endif
 

@@ -48,7 +48,7 @@
 #define TINY_GSM_RX_BUFFER 1024
 
 // See all AT commands, if wanted
-//#define DUMP_AT_COMMANDS
+// #define DUMP_AT_COMMANDS
 
 // Define the serial console for debug prints, if needed
 #define TINY_GSM_DEBUG SerialMon
@@ -58,10 +58,10 @@
 #define GSM_AUTOBAUD_MAX 115200
 
 // Add a reception delay - may be needed for a fast processor at a slow baud rate
-//#define TINY_GSM_YIELD() { delay(2); }
+// #define TINY_GSM_YIELD() { delay(2); }
 
 // Uncomment this if you want to use SSL
-//#define USE_SSL
+// #define USE_SSL
 
 #define TINY_GSM_USE_GPRS true
 #define TINY_GSM_USE_WIFI false
@@ -236,8 +236,8 @@ void loop() {
   client.find("\r\n\r\n");
 
   // Read data
-  unsigned long timeout = millis();
-  unsigned long bytesReceived = 0;
+  uint32_t timeout = millis();
+  uint32_t bytesReceived = 0;
   while (client.connected() && millis() - timeout < 10000L) {
     while (client.available()) {
       char c = client.read();

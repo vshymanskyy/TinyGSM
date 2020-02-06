@@ -113,7 +113,7 @@ class TinyGsmBG96
 
 
   public:
-    virtual int connect(const char *host, uint16_t port, int timeout_s) {
+    int connect(const char* host, uint16_t port, int timeout_s) {
       stop();
       TINY_GSM_YIELD();
       rx.clear();
