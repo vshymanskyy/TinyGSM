@@ -25,23 +25,35 @@ void setup() {
 
 void loop() {
 
-  // Test the start/restart functions
-  modem.restart();
+  // Test the basic functions
+  modem.init();
   modem.begin();
+  modem.setBaud(115200);
   modem.testAT();
   modem.factoryDefault();
+  modem.getModemInfo();
+  modem.getModemName();
+  modem.maintain();
+  modem.hasSSL();
+  modem.hasWifi();
+  modem.hasGPRS();
+
+  // Test Power functions
+  modem.restart();
+  // modem.sleepEnable();
+  modem.radioOff();
+  modem.poweroff();
 
   // Test the SIM card functions
   #if defined(TINY_GSM_MODEM_HAS_GPRS)
   modem.getSimCCID();
   modem.getIMEI();
   modem.getSimStatus();
-  modem.getRegistrationStatus();
   modem.getOperator();
   #endif
 
-
   // Test the Networking functions
+  modem.getRegistrationStatus();
   modem.getSignalQuality();
   modem.localIP();
 
@@ -61,7 +73,7 @@ void loop() {
   client.print(String("Host: ") + server + "\r\n");
   client.print("Connection: close\r\n\r\n");
 
-  unsigned long timeout = millis();
+  uint32_t timeout = millis();
   while (client.connected() && millis() - timeout < 10000L) {
     while (client.available()) {
       client.read();
@@ -77,4 +89,9 @@ void loop() {
   #if defined(TINY_GSM_MODEM_HAS_WIFI)
     modem.networkDisconnect();
   #endif
+
+  // Test battery and temperature functions
+  // modem.getBattVoltage();
+  // modem.getBattPercent();
+  // modem.getTemperature();
 }

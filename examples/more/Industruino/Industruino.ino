@@ -18,16 +18,16 @@
 #define TINY_GSM_MODEM_SIM800
 
 // Increase RX buffer if needed
-//#define TINY_GSM_RX_BUFFER 512
+// #define TINY_GSM_RX_BUFFER 512
 
 #include <TinyGsmClient.h>
 #include <ArduinoHttpClient.h>
 
 // Uncomment this if you want to see all AT commands
-//#define DUMP_AT_COMMANDS
+// #define DUMP_AT_COMMANDS
 
 // Uncomment this if you want to use SSL
-//#define USE_SSL
+// #define USE_SSL
 
 // Set serial for debug console (to the Serial Monitor, speed 115200)
 #define SerialMon SerialUSB

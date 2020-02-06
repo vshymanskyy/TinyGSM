@@ -52,14 +52,14 @@
 #define TINY_GSM_RX_BUFFER 1024
 
 // See all AT commands, if wanted
-//#define DUMP_AT_COMMANDS
+// #define DUMP_AT_COMMANDS
 
 // Define the serial console for debug prints, if needed
 #define TINY_GSM_DEBUG SerialMon
-//#define LOGGING  // <- Logging is for the HTTP library
+// #define LOGGING  // <- Logging is for the HTTP library
 
 // Add a reception delay - may be needed for a fast processor at a slow baud rate
-//#define TINY_GSM_YIELD() { delay(2); }
+// #define TINY_GSM_YIELD() { delay(2); }
 
 // Define how you're planning to connect to the internet
 #define TINY_GSM_USE_GPRS true
@@ -217,7 +217,7 @@ void loop() {
   client.print("Connection: close\r\n\r\n");
 
   // Let's see what the entire elapsed time is, from after we send the request.
-  unsigned long timeElapsed = millis();
+  uint32_t timeElapsed = millis();
 
   SerialMon.println(F("Waiting for response header"));
 
@@ -246,7 +246,7 @@ void loop() {
         // SerialMon.print(c, HEX);
         // SerialMon.print(' ');
         // if (isprint(c))
-        //   SerialMon.print((char) c);
+        //   SerialMon.print(reinterpret_cast<char> c);
         // else
         //   SerialMon.print('*');
         // SerialMon.print(' ');
@@ -301,7 +301,7 @@ void loop() {
     while (readLength < contentLength && client.connected() && millis() - clientReadStartTime < clientReadTimeout) {
       while (client.available()) {
         uint8_t c = client.read();
-        //SerialMon.print((char)c);       // Uncomment this to show data
+        //SerialMon.print(reinterpret_cast<char>c);  // Uncomment this to show data
         crc.update(c);
         readLength++;
         if (readLength % (contentLength / 13) == 0) {

@@ -42,7 +42,7 @@
 //SoftwareSerial SerialAT(2, 3); // RX, TX
 
 // See all AT commands, if wanted
-//#define DUMP_AT_COMMANDS
+// #define DUMP_AT_COMMANDS
 
 // Define the serial console for debug prints, if needed
 #define TINY_GSM_DEBUG SerialMon
@@ -68,8 +68,8 @@
 #define GSM_PIN ""
 
 // Set phone numbers, if you want to test SMS and Calls
-//#define SMS_TARGET  "+380xxxxxxxxx"
-//#define CALL_TARGET "+380xxxxxxxxx"
+// #define SMS_TARGET  "+380xxxxxxxxx"
+// #define CALL_TARGET "+380xxxxxxxxx"
 
 // Your GPRS credentials, if any
 const char apn[]  = "YourAPN";

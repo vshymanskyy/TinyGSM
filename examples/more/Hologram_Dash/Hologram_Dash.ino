@@ -12,15 +12,15 @@
 #define TINY_GSM_MODEM_UBLOX
 
 // Increase RX buffer if needed
-//#define TINY_GSM_RX_BUFFER 512
+// #define TINY_GSM_RX_BUFFER 512
 
 #include <TinyGsmClient.h>
 
 // Uncomment this if you want to see all AT commands
-//#define DUMP_AT_COMMANDS
+// #define DUMP_AT_COMMANDS
 
 // Uncomment this if you want to use SSL
-//#define USE_SSL
+// #define USE_SSL
 
 // Set serial for debug console (to the Serial Monitor, speed 115200)
 #define SerialMon Serial
@@ -108,7 +108,7 @@ void loop() {
   client.print(String("Host: ") + server + "\r\n");
   client.print("Connection: close\r\n\r\n");
 
-  unsigned long timeout = millis();
+  uint32_t timeout = millis();
   while (client.connected() && millis() - timeout < 10000L) {
     // Print available data
     while (client.available()) {
