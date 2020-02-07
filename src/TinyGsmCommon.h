@@ -1136,7 +1136,7 @@ class TinyGsmModem {
   }
 
   uint8_t getBattChargeStateImpl() {
-    thisModem().sendAT(GF("+CBC?"));
+    thisModem().sendAT(GF("+CBC"));
     if (thisModem().waitResponse(GF("+CBC:")) != 1) { return false; }
     // Read battery charge status
     int res = thisModem().stream.readStringUntil(',').toInt();
@@ -1147,7 +1147,7 @@ class TinyGsmModem {
 
   bool getBattStatsImpl(uint8_t& chargeState, int8_t& percent,
                         uint16_t& milliVolts) {
-    thisModem().sendAT(GF("+CBC?"));
+    thisModem().sendAT(GF("+CBC"));
     if (thisModem().waitResponse(GF("+CBC:")) != 1) { return false; }
     chargeState = thisModem().stream.readStringUntil(',').toInt();
     percent     = thisModem().stream.readStringUntil(',').toInt();

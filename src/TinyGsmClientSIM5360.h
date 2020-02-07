@@ -438,6 +438,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360, READ_AND_CHECK_SIZE,
    * Battery & temperature functions
    */
  protected:
+  // SRGD Note:  Returns voltage in VOLTS instead of millivolts
   uint16_t getBattVoltageImpl() {
     sendAT(GF("+CBC"));
     if (waitResponse(GF(GSM_NL "+CBC:")) != 1) { return 0; }
@@ -452,9 +453,10 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360, READ_AND_CHECK_SIZE,
     return res;
   }
 
+  // SRGD Note:  Returns voltage in VOLTS instead of millivolts
   bool getBattStatsImpl(uint8_t& chargeState, int8_t& percent,
                         uint16_t& milliVolts) {
-    sendAT(GF("+CBC?"));
+    sendAT(GF("+CBC"));
     if (waitResponse(GF(GSM_NL "+CBC:")) != 1) { return false; }
     chargeState = stream.readStringUntil(',').toInt();
     percent     = stream.readStringUntil(',').toInt();

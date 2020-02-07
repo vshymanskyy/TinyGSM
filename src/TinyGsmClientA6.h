@@ -401,6 +401,7 @@ class TinyGsmA6
  protected:
   uint16_t getBattVoltageImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
 
+  // Needs a '?' after CBC, unlike most
   int8_t getBattPercentImpl() {
     sendAT(GF("+CBC?"));
     if (waitResponse(GF(GSM_NL "+CBC:")) != 1) { return false; }
@@ -412,6 +413,7 @@ class TinyGsmA6
     return res;
   }
 
+  // Needs a '?' after CBC, unlike most
   bool getBattStatsImpl(uint8_t& chargeState, int8_t& percent,
                         uint16_t& milliVolts) {
     sendAT(GF("+CBC?"));

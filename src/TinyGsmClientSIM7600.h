@@ -445,7 +445,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600, READ_AND_CHECK_SIZE,
    * Battery & temperature functions
    */
  protected:
-  // Use: float vBatt = modem.getBattVoltage() / 1000.0;
+  // returns volts, multiply by 1000 to get mV
   uint16_t getBattVoltageImpl() {
     sendAT(GF("+CBC"));
     if (waitResponse(GF(GSM_NL "+CBC:")) != 1) { return 0; }
