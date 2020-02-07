@@ -23,9 +23,8 @@
 #include "TinyGsmCommon.h"
 
 #define GSM_NL "\r"
-static const char GSM_OK[] TINY_GSM_PROGMEM        = "OK" GSM_NL;
-static const char GSM_ERROR[] TINY_GSM_PROGMEM     = "ERROR" GSM_NL;
-static const char GSM_CME_ERROR[] TINY_GSM_PROGMEM = GSM_NL "+CME ERROR:";
+static const char GSM_OK[] TINY_GSM_PROGMEM    = "OK" GSM_NL;
+static const char GSM_ERROR[] TINY_GSM_PROGMEM = "ERROR" GSM_NL;
 
 // Use this to avoid too many entrances and exits from command mode.
 // The cellular Bee's often freeze up and won't respond when attempting
@@ -1269,8 +1268,7 @@ class TinyGsmXBee
   // (URC's) when in command mode.
   uint8_t waitResponse(uint32_t timeout_ms, String& data,
                        GsmConstStr r1 = GFP(GSM_OK),
-                       GsmConstStr r2 = GFP(GSM_ERROR),
-                       GsmConstStr r3 = GFP(GSM_CME_ERROR),
+                       GsmConstStr r2 = GFP(GSM_ERROR), GsmConstStr r3 = NULL,
                        GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
     /*String r1s(r1); r1s.trim();
     String r2s(r2); r2s.trim();
@@ -1327,16 +1325,14 @@ class TinyGsmXBee
   }
 
   uint8_t waitResponse(uint32_t timeout_ms, GsmConstStr r1 = GFP(GSM_OK),
-                       GsmConstStr r2 = GFP(GSM_ERROR),
-                       GsmConstStr r3 = GFP(GSM_CME_ERROR),
+                       GsmConstStr r2 = GFP(GSM_ERROR), GsmConstStr r3 = NULL,
                        GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
     String data;
     return waitResponse(timeout_ms, data, r1, r2, r3, r4, r5);
   }
 
   uint8_t waitResponse(GsmConstStr r1 = GFP(GSM_OK),
-                       GsmConstStr r2 = GFP(GSM_ERROR),
-                       GsmConstStr r3 = GFP(GSM_CME_ERROR),
+                       GsmConstStr r2 = GFP(GSM_ERROR), GsmConstStr r3 = NULL,
                        GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
     return waitResponse(1000, r1, r2, r3, r4, r5);
   }

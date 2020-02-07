@@ -417,6 +417,9 @@ class TinyGsmM590
           index = 2;
           goto finish;
         } else if (r3 && data.endsWith(r3)) {
+          if (r3 == GFP(GSM_CME_ERROR)) {
+            streamSkipUntil('\n');  // Read out the error
+          }
           index = 3;
           goto finish;
         } else if (r4 && data.endsWith(r4)) {

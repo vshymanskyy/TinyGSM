@@ -644,6 +644,9 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000, READ_AND_CHECK_SIZE,
           index = 2;
           goto finish;
         } else if (r3 && data.endsWith(r3)) {
+          if (r3 == GFP(GSM_CME_ERROR)) {
+            streamSkipUntil('\n');  // Read out the error
+          }
           index = 3;
           goto finish;
         } else if (r4 && data.endsWith(r4)) {
