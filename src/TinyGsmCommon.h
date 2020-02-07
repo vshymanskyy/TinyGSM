@@ -755,7 +755,7 @@ class TinyGsmModem {
                                         GF("+CEREG:"));
     if (resp != 1 && resp != 2 && resp != 3) { return -1; }
     thisModem().streamSkipUntil(','); /* Skip format (0) */
-    int status = thisModem().stream.readStringUntil('\n').toInt();
+    int status = thisModem().streamGetInt('\n');
     thisModem().waitResponse();
     return status;
   }
@@ -772,7 +772,7 @@ class TinyGsmModem {
   int16_t getSignalQualityImpl() {
     thisModem().sendAT(GF("+CSQ"));
     if (thisModem().waitResponse(GF("+CSQ:")) != 1) { return 99; }
-    int res = thisModem().stream.readStringUntil(',').toInt();
+    int res = thisModem().streamGetInt(',');
     thisModem().waitResponse();
     return res;
   }
@@ -785,7 +785,7 @@ class TinyGsmModem {
   bool isGprsConnectedImpl() {
     thisModem().sendAT(GF("+CGATT?"));
     if (thisModem().waitResponse(GF("+CGATT:")) != 1) { return false; }
-    int res = thisModem().stream.readStringUntil('\n').toInt();
+    int res = thisModem().streamGetInt('\n');
     thisModem().waitResponse();
     if (res != 1) { return false; }
 
@@ -975,7 +975,7 @@ class TinyGsmModem {
     thisModem().stream.readStringUntil('"');
     String hex = thisModem().stream.readStringUntil('"');
     thisModem().stream.readStringUntil(',');
-    int dcs = thisModem().stream.readStringUntil('\n').toInt();
+    int dcs = thisModem().streamGetInt('\n');
 
     if (dcs == 15) {
       return TinyGsmDecodeHex8bit(hex);
@@ -1118,7 +1118,7 @@ class TinyGsmModem {
     thisModem().streamSkipUntil(',');  // Skip battery charge status
     thisModem().streamSkipUntil(',');  // Skip battery charge level
     // return voltage in mV
-    uint16_t res = thisModem().stream.readStringUntil(',').toInt();
+    uint16_t res = thisModem().streamGetInt(',');
     // Wait for final OK
     thisModem().waitResponse();
     return res;
@@ -1129,7 +1129,7 @@ class TinyGsmModem {
     if (thisModem().waitResponse(GF("+CBC:")) != 1) { return false; }
     thisModem().streamSkipUntil(',');  // Skip battery charge status
     // Read battery charge level
-    int res = thisModem().stream.readStringUntil(',').toInt();
+    int res = thisModem().streamGetInt(',');
     // Wait for final OK
     thisModem().waitResponse();
     return res;
@@ -1139,7 +1139,7 @@ class TinyGsmModem {
     thisModem().sendAT(GF("+CBC"));
     if (thisModem().waitResponse(GF("+CBC:")) != 1) { return false; }
     // Read battery charge status
-    int res = thisModem().stream.readStringUntil(',').toInt();
+    int res = thisModem().streamGetInt(',');
     // Wait for final OK
     thisModem().waitResponse();
     return res;
@@ -1149,9 +1149,9 @@ class TinyGsmModem {
                         uint16_t& milliVolts) {
     thisModem().sendAT(GF("+CBC"));
     if (thisModem().waitResponse(GF("+CBC:")) != 1) { return false; }
-    chargeState = thisModem().stream.readStringUntil(',').toInt();
-    percent     = thisModem().stream.readStringUntil(',').toInt();
-    milliVolts  = thisModem().stream.readStringUntil('\n').toInt();
+    chargeState = thisModem().streamGetInt(',');
+    percent     = thisModem().streamGetInt(',');
+    milliVolts  = thisModem().streamGetInt('\n');
     // Wait for final OK
     thisModem().waitResponse();
     return true;
@@ -1179,11 +1179,29 @@ class TinyGsmModem {
     thisModem().streamWrite(tail...);
   }
 
-  // template <typename... Args> void sendAT(Args... cmd) {
-  //   thisModem().streamWrite("AT", cmd..., thisModem().gsmNL);
-  //   thisModem().stream.flush();
-  //   TINY_GSM_YIELD(); /* DBG("### AT:", cmd...); */
-  // }
+  int16_t streamGetInt(char lastChar) {
+    char   buf[6];
+    size_t bytesRead = thisModem().stream.readBytesUntil(
+        lastChar, buf, static_cast<size_t>(6));
+    if (bytesRead) {
+      int16_t res = atoi(buf);
+      return res;
+    } else {
+      return -9999;
+    }
+  }
+
+  float streamGetFloat(char lastChar) {
+    char   buf[12];
+    size_t bytesRead = thisModem().stream.readBytesUntil(
+        lastChar, buf, static_cast<size_t>(12));
+    if (bytesRead) {
+      float res = atof(buf);
+      return res;
+    } else {
+      return static_cast<float>(-9999);
+    }
+  }
 
   bool streamSkipUntil(const char c, const uint32_t timeout_ms = 1000L) {
     uint32_t startMillis = millis();

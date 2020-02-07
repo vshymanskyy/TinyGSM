@@ -331,7 +331,7 @@ class TinyGsmMC60
  protected:
   String getLocalIPImpl() {
     sendAT(GF("+QILOCIP"));
-    stream.readStringUntil('\n');
+    streamSkipUntil('\n');
     String res = stream.readStringUntil('\n');
     res.trim();
     return res;
@@ -415,15 +415,13 @@ class TinyGsmMC60
       } else {
         streamSkipUntil(','); /** Skip total */
         streamSkipUntil(','); /** Skip acknowledged data size */
-        if (stream.readStringUntil('\n').toInt() == 0) {
-          allAcknowledged = true;
-        }
+        if (streamGetInt('\n') == 0) { allAcknowledged = true; }
       }
     }
     waitResponse(5000L);
 
     // streamSkipUntil(','); // Skip mux
-    // return stream.readStringUntil('\n').toInt();
+    // return streamGetInt('\n');
 
     return len;  // TODO(?): verify len/ack
   }
@@ -444,7 +442,7 @@ class TinyGsmMC60
       streamSkipUntil(',');  // skip port
       streamSkipUntil(',');  // skip connection type (TCP/UDP)
       // read the real length of the retrieved data
-      uint16_t len = stream.readStringUntil('\n').toInt();
+      uint16_t len = streamGetInt('\n');
       // It's possible that the real length available is less than expected
       // This is quite likely if the buffer is broken into packets - which may
       // be different sizes.
@@ -475,12 +473,12 @@ class TinyGsmMC60
 
     if (waitResponse(GF("+QISTATE:")) != 1) { return false; }
 
-    streamSkipUntil(',');                           // Skip mux
-    streamSkipUntil(',');                           // Skip socket type
-    streamSkipUntil(',');                           // Skip remote ip
-    streamSkipUntil(',');                           // Skip remote port
-    streamSkipUntil(',');                           // Skip local port
-    int res = stream.readStringUntil(',').toInt();  // socket state
+    streamSkipUntil(',');         // Skip mux
+    streamSkipUntil(',');         // Skip socket type
+    streamSkipUntil(',');         // Skip remote ip
+    streamSkipUntil(',');         // Skip remote port
+    streamSkipUntil(',');         // Skip local port
+    int res = streamGetInt(',');  // socket state
 
     waitResponse();
 
@@ -543,11 +541,11 @@ class TinyGsmMC60
           streamSkipUntil(',');  // Skip the context
           streamSkipUntil(',');  // Skip the role
           // read the connection id
-          int mux = stream.readStringUntil(',').toInt();
+          int mux = streamGetInt(',');
           // read the number of packets in the buffer
-          int num_packets = stream.readStringUntil(',').toInt();
+          int num_packets = streamGetInt(',');
           // read the length of the current packet
-          int len_packet = stream.readStringUntil('\n').toInt();
+          int len_packet = streamGetInt('\n');
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
             sockets[mux]->sock_available = len_packet * num_packets;
           }

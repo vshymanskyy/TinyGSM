@@ -398,9 +398,7 @@ class TinyGsmUBLOX
     // <accuracy> - Target accuracy in meters (1 - 999999)
     sendAT(GF("+ULOC=2,2,0,120,1"));
     // wait for first "OK"
-    if (waitResponse(10000L) != 1) {
-      return "";
-    }
+    if (waitResponse(10000L) != 1) { return ""; }
     // wait for the final result - wait full timeout time
     if (waitResponse(120000L, GF(GSM_NL "+UULOC:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
@@ -431,7 +429,7 @@ class TinyGsmUBLOX
     sendAT(GF("+CIND?"));
     if (waitResponse(GF(GSM_NL "+CIND:")) != 1) { return 0; }
 
-    int    res     = stream.readStringUntil(',').toInt();
+    int    res     = streamGetInt(',');
     int8_t percent = res * 20;  // return is 0-5
     // Wait for final OK
     waitResponse();
@@ -464,7 +462,7 @@ class TinyGsmUBLOX
         1) {  // reply is +USOCR: ## of socket created
       return false;
     }
-    *mux = stream.readStringUntil('\n').toInt();
+    *mux = streamGetInt('\n');
     waitResponse();
 
     if (ssl) {
@@ -495,7 +493,7 @@ class TinyGsmUBLOX
     stream.flush();
     if (waitResponse(GF(GSM_NL "+USOWR:")) != 1) { return 0; }
     streamSkipUntil(',');  // Skip mux
-    int sent = stream.readStringUntil('\n').toInt();
+    int sent = streamGetInt('\n');
     waitResponse();  // sends back OK after the confirmation of number sent
     return sent;
   }
@@ -504,7 +502,7 @@ class TinyGsmUBLOX
     sendAT(GF("+USORD="), mux, ',', (uint16_t)size);
     if (waitResponse(GF(GSM_NL "+USORD:")) != 1) { return 0; }
     streamSkipUntil(',');  // Skip mux
-    int len = stream.readStringUntil(',').toInt();
+    int len = streamGetInt(',');
     streamSkipUntil('\"');
 
     for (int i = 0; i < len; i++) { moveCharFromStreamToFifo(mux); }
@@ -524,7 +522,7 @@ class TinyGsmUBLOX
     // that you have already told to close
     if (res == 1) {
       streamSkipUntil(',');  // Skip mux
-      result = stream.readStringUntil('\n').toInt();
+      result = streamGetInt('\n');
       // if (result) DBG("### DATA AVAILABLE:", result, "on", mux);
       waitResponse();
     }
@@ -541,7 +539,7 @@ class TinyGsmUBLOX
 
     streamSkipUntil(',');  // Skip mux
     streamSkipUntil(',');  // Skip type
-    int result = stream.readStringUntil('\n').toInt();
+    int result = streamGetInt('\n');
     // 0: the socket is in INACTIVE status (it corresponds to CLOSED status
     // defined in RFC793 "TCP Protocol Specification" [112])
     // 1: the socket is in LISTEN status
@@ -603,8 +601,8 @@ class TinyGsmUBLOX
           index = 5;
           goto finish;
         } else if (data.endsWith(GF("+UUSORD:"))) {
-          int mux = stream.readStringUntil(',').toInt();
-          int len = stream.readStringUntil('\n').toInt();
+          int mux = streamGetInt(',');
+          int len = streamGetInt('\n');
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
             sockets[mux]->got_data       = true;
             sockets[mux]->sock_available = len;
@@ -612,7 +610,7 @@ class TinyGsmUBLOX
           data = "";
           DBG("### URC Data Received:", len, "on", mux);
         } else if (data.endsWith(GF("+UUSOCL:"))) {
-          int mux = stream.readStringUntil('\n').toInt();
+          int mux = streamGetInt('\n');
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
             sockets[mux]->sock_connected = false;
           }

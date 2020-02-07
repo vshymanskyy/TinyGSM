@@ -362,10 +362,10 @@ class TinyGsmA6
     sendAT(GF("+CUSD=1,\""), code, GF("\",15"));
     if (waitResponse(10000L) != 1) { return ""; }
     if (waitResponse(GF(GSM_NL "+CUSD:")) != 1) { return ""; }
-    stream.readStringUntil('"');
+    streamSkipUntil('"');
     String hex = stream.readStringUntil('"');
-    stream.readStringUntil(',');
-    int dcs = stream.readStringUntil('\n').toInt();
+    streamSkipUntil(',');
+    int dcs = streamGetInt('\n');
 
     if (dcs == 15) {
       return TinyGsmDecodeHex7bit(hex);
@@ -407,7 +407,7 @@ class TinyGsmA6
     if (waitResponse(GF(GSM_NL "+CBC:")) != 1) { return false; }
     streamSkipUntil(',');  // Skip battery charge status
     // Read battery charge level
-    int res = stream.readStringUntil('\n').toInt();
+    int res = streamGetInt('\n');
     // Wait for final OK
     waitResponse();
     return res;
@@ -418,8 +418,8 @@ class TinyGsmA6
                         uint16_t& milliVolts) {
     sendAT(GF("+CBC?"));
     if (waitResponse(GF(GSM_NL "+CBC:")) != 1) { return false; }
-    chargeState = stream.readStringUntil(',').toInt();
-    percent     = stream.readStringUntil('\n').toInt();
+    chargeState = streamGetInt(',');
+    percent     = streamGetInt('\n');
     milliVolts  = 0;
     // Wait for final OK
     waitResponse();
@@ -439,7 +439,7 @@ class TinyGsmA6
 
     sendAT(GF("+CIPSTART="), GF("\"TCP"), GF("\",\""), host, GF("\","), port);
     if (waitResponse(timeout_ms, GF(GSM_NL "+CIPNUM:")) != 1) { return false; }
-    int newMux = stream.readStringUntil('\n').toInt();
+    int newMux = streamGetInt('\n');
 
     int rsp = waitResponse((timeout_ms - (millis() - startMillis)),
                            GF("CONNECT OK" GSM_NL), GF("CONNECT FAIL" GSM_NL),
@@ -519,8 +519,8 @@ class TinyGsmA6
           index = 5;
           goto finish;
         } else if (data.endsWith(GF("+CIPRCV:"))) {
-          int mux      = stream.readStringUntil(',').toInt();
-          int len      = stream.readStringUntil(',').toInt();
+          int mux      = streamGetInt(',');
+          int len      = streamGetInt(',');
           int len_orig = len;
           if (len > sockets[mux]->rx.free()) {
             DBG("### Buffer overflow: ", len, "->", sockets[mux]->rx.free());
@@ -535,7 +535,7 @@ class TinyGsmA6
           }
           data = "";
         } else if (data.endsWith(GF("+TCPCLOSED:"))) {
-          int mux = stream.readStringUntil('\n').toInt();
+          int mux = streamGetInt('\n');
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT) {
             sockets[mux]->sock_connected = false;
           }

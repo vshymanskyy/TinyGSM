@@ -490,7 +490,7 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800, READ_AND_CHECK_SIZE,
     stream.flush();
     if (waitResponse(GF(GSM_NL "DATA ACCEPT:")) != 1) { return 0; }
     streamSkipUntil(',');  // Skip mux
-    return stream.readStringUntil('\n').toInt();
+    return streamGetInt('\n');
   }
 
   size_t modemRead(size_t size, uint8_t mux) {
@@ -503,9 +503,9 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800, READ_AND_CHECK_SIZE,
 #endif
     streamSkipUntil(',');  // Skip Rx mode 2/normal or 3/HEX
     streamSkipUntil(',');  // Skip mux
-    int len_requested = stream.readStringUntil(',').toInt();
+    int len_requested = streamGetInt(',');
     //  ^^ Requested number of data bytes (1-1460 bytes)to be read
-    int len_confirmed = stream.readStringUntil('\n').toInt();
+    int len_confirmed = streamGetInt('\n');
     // ^^ Confirmed number of data bytes to be read, which may be less than
     // requested. 0 indicates that no data can be read. This is actually be the
     // number of bytes that will be remaining after the read
@@ -544,7 +544,7 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800, READ_AND_CHECK_SIZE,
     if (waitResponse(GF("+CIPRXGET:")) == 1) {
       streamSkipUntil(',');  // Skip mode 4
       streamSkipUntil(',');  // Skip mux
-      result = stream.readStringUntil('\n').toInt();
+      result = streamGetInt('\n');
       waitResponse();
     }
     DBG("### Available:", result, "on", mux);
@@ -607,9 +607,9 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800, READ_AND_CHECK_SIZE,
           index = 5;
           goto finish;
         } else if (data.endsWith(GF(GSM_NL "+CIPRXGET:"))) {
-          String mode = stream.readStringUntil(',');
-          if (mode.toInt() == 1) {
-            int mux = stream.readStringUntil('\n').toInt();
+          int mode = streamGetInt(',');
+          if (mode == 1) {
+            int mux = streamGetInt('\n');
             if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
               sockets[mux]->got_data = true;
             }
@@ -619,8 +619,8 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800, READ_AND_CHECK_SIZE,
             data += mode;
           }
         } else if (data.endsWith(GF(GSM_NL "+RECEIVE:"))) {
-          int mux = stream.readStringUntil(',').toInt();
-          int len = stream.readStringUntil('\n').toInt();
+          int mux = streamGetInt(',');
+          int len = streamGetInt('\n');
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
             sockets[mux]->got_data       = true;
             sockets[mux]->sock_available = len;

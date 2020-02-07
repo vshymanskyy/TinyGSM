@@ -261,7 +261,7 @@ class TinyGsmM590
   bool isGprsConnectedImpl() {
     sendAT(GF("+XIIC?"));
     if (waitResponse(GF(GSM_NL "+XIIC:")) != 1) { return false; }
-    int res = stream.readStringUntil(',').toInt();
+    int res = streamGetInt(',');
     waitResponse();
     return res == 1;
   }
@@ -273,7 +273,7 @@ class TinyGsmM590
   String getLocalIPImpl() {
     sendAT(GF("+XIIC?"));
     if (waitResponse(GF(GSM_NL "+XIIC:")) != 1) { return ""; }
-    stream.readStringUntil(',');
+    streamSkipUntil(',');
     String res = stream.readStringUntil('\n');
     waitResponse();
     res.trim();
@@ -356,7 +356,7 @@ class TinyGsmM590
     stream.write(static_cast<char>(0x0D));
     stream.flush();
     if (waitResponse(30000L, GF(GSM_NL "+TCPSEND:")) != 1) { return 0; }
-    stream.readStringUntil('\n');
+    streamSkipUntil('\n');
     return len;
   }
 
@@ -429,8 +429,8 @@ class TinyGsmM590
           index = 5;
           goto finish;
         } else if (data.endsWith(GF("+TCPRECV:"))) {
-          int mux      = stream.readStringUntil(',').toInt();
-          int len      = stream.readStringUntil(',').toInt();
+          int mux      = streamGetInt(',');
+          int len      = streamGetInt(',');
           int len_orig = len;
           if (len > sockets[mux]->rx.free()) {
             DBG("### Buffer overflow: ", len, "->", sockets[mux]->rx.free());
@@ -445,8 +445,8 @@ class TinyGsmM590
           }
           data = "";
         } else if (data.endsWith(GF("+TCPCLOSE:"))) {
-          int mux = stream.readStringUntil(',').toInt();
-          stream.readStringUntil('\n');
+          int mux = streamGetInt(',');
+          streamSkipUntil('\n');
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT) {
             sockets[mux]->sock_connected = false;
           }

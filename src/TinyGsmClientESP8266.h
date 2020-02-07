@@ -396,7 +396,7 @@ class TinyGsmESP8266
       uint8_t has_status = waitResponse(GF("+CIPSTATUS:"), GFP(GSM_OK),
                                         GFP(GSM_ERROR));
       if (has_status == 1) {
-        int returned_mux = stream.readStringUntil(',').toInt();
+        int returned_mux = streamGetInt(',');
         streamSkipUntil(',');   // Skip mux
         streamSkipUntil(',');   // Skip type
         streamSkipUntil(',');   // Skip remote IP
@@ -454,8 +454,8 @@ class TinyGsmESP8266
           index = 5;
           goto finish;
         } else if (data.endsWith(GF("+IPD,"))) {
-          int mux      = stream.readStringUntil(',').toInt();
-          int len      = stream.readStringUntil(':').toInt();
+          int mux      = streamGetInt(',');
+          int len      = streamGetInt(':');
           int len_orig = len;
           if (len > sockets[mux]->rx.free()) {
             DBG("### Buffer overflow: ", len, "received vs",

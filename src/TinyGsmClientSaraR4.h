@@ -304,7 +304,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4, READ_AND_CHECK_SIZE,
     sendAT(GF("+CEREG?"));
     if (waitResponse(GF(GSM_NL "+CEREG:")) != 1) { return REG_UNKNOWN; }
     streamSkipUntil(','); /* Skip format (0) */
-    int status = stream.readStringUntil('\n').toInt();
+    int status = streamGetInt('\n');
     waitResponse();
 
     // If we're connected on EPS, great!
@@ -316,7 +316,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4, READ_AND_CHECK_SIZE,
       sendAT(GF("+CREG?"));
       if (waitResponse(GF(GSM_NL "+CREG:")) != 1) { return REG_UNKNOWN; }
       streamSkipUntil(','); /* Skip format (0) */
-      status = stream.readStringUntil('\n').toInt();
+      status = streamGetInt('\n');
       waitResponse();
       return (RegStatus)status;
     }
@@ -453,7 +453,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4, READ_AND_CHECK_SIZE,
     sendAT(GF("+CIND?"));
     if (waitResponse(GF(GSM_NL "+CIND:")) != 1) { return 0; }
 
-    int    res     = stream.readStringUntil(',').toInt();
+    int    res     = streamGetInt(',');
     int8_t percent = res * 20;  // return is 0-5
     // Wait for final OK
     waitResponse();
@@ -478,7 +478,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4, READ_AND_CHECK_SIZE,
     if (waitResponse(GF(GSM_NL "+UTEMP:")) != 1) {
       return static_cast<float>(-9999);
     }
-    int16_t res  = stream.readStringUntil('\n').toInt();
+    int16_t res  = streamGetInt('\n');
     float   temp = -9999;
     if (res != -1) { temp = (static_cast<float>(res)) / 10; }
     return temp;
@@ -497,7 +497,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4, READ_AND_CHECK_SIZE,
     sendAT(GF("+USOCR=6"));
     // reply is +USOCR: ## of socket created
     if (waitResponse(GF(GSM_NL "+USOCR:")) != 1) { return false; }
-    *mux = stream.readStringUntil('\n').toInt();
+    *mux = streamGetInt('\n');
     waitResponse();
 
     if (ssl) {
@@ -531,8 +531,8 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4, READ_AND_CHECK_SIZE,
       sendAT(GF("+USOCO="), *mux, ",\"", host, "\",", port, ",1");
       if (waitResponse(timeout_ms - (millis() - startMillis),
                        GF(GSM_NL "+UUSOCO:")) == 1) {
-        stream.readStringUntil(',').toInt();  // skip repeated mux
-        int connection_status = stream.readStringUntil('\n').toInt();
+        streamGetInt(',');  // skip repeated mux
+        int connection_status = streamGetInt('\n');
         DBG("### Waited", millis() - startMillis, "ms for socket to open");
         return (0 == connection_status);
       } else {
@@ -557,7 +557,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4, READ_AND_CHECK_SIZE,
     stream.flush();
     if (waitResponse(GF(GSM_NL "+USOWR:")) != 1) { return 0; }
     streamSkipUntil(',');  // Skip mux
-    int sent = stream.readStringUntil('\n').toInt();
+    int sent = streamGetInt('\n');
     waitResponse();  // sends back OK after the confirmation of number sent
     return sent;
   }
@@ -566,7 +566,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4, READ_AND_CHECK_SIZE,
     sendAT(GF("+USORD="), mux, ',', (uint16_t)size);
     if (waitResponse(GF(GSM_NL "+USORD:")) != 1) { return 0; }
     streamSkipUntil(',');  // Skip mux
-    int len = stream.readStringUntil(',').toInt();
+    int len = streamGetInt(',');
     streamSkipUntil('\"');
 
     for (int i = 0; i < len; i++) { moveCharFromStreamToFifo(mux); }
@@ -586,7 +586,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4, READ_AND_CHECK_SIZE,
     // that you have already told to close
     if (res == 1) {
       streamSkipUntil(',');  // Skip mux
-      result = stream.readStringUntil('\n').toInt();
+      result = streamGetInt('\n');
       // if (result) DBG("### DATA AVAILABLE:", result, "on", mux);
       waitResponse();
     }
@@ -603,7 +603,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4, READ_AND_CHECK_SIZE,
 
     streamSkipUntil(',');  // Skip mux
     streamSkipUntil(',');  // Skip type
-    int result = stream.readStringUntil('\n').toInt();
+    int result = streamGetInt('\n');
     // 0: the socket is in INACTIVE status (it corresponds to CLOSED status
     // defined in RFC793 "TCP Protocol Specification" [112])
     // 1: the socket is in LISTEN status
@@ -665,8 +665,8 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4, READ_AND_CHECK_SIZE,
           index = 5;
           goto finish;
         } else if (data.endsWith(GF("+UUSORD:"))) {
-          int mux = stream.readStringUntil(',').toInt();
-          int len = stream.readStringUntil('\n').toInt();
+          int mux = streamGetInt(',');
+          int len = streamGetInt('\n');
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
             sockets[mux]->got_data       = true;
             sockets[mux]->sock_available = len;
@@ -674,15 +674,15 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4, READ_AND_CHECK_SIZE,
           data = "";
           DBG("### URC Data Received:", len, "on", mux);
         } else if (data.endsWith(GF("+UUSOCL:"))) {
-          int mux = stream.readStringUntil('\n').toInt();
+          int mux = streamGetInt('\n');
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
             sockets[mux]->sock_connected = false;
           }
           data = "";
           DBG("### URC Sock Closed: ", mux);
         } else if (data.endsWith(GF("+UUSOCO:"))) {
-          int mux          = stream.readStringUntil('\n').toInt();
-          int socket_error = stream.readStringUntil('\n').toInt();
+          int mux          = streamGetInt('\n');
+          int socket_error = streamGetInt('\n');
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux] &&
               socket_error == 0) {
             sockets[mux]->sock_connected = true;

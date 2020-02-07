@@ -327,9 +327,9 @@ class TinyGsmBG96
 
     if (waitResponse(timeout_ms, GF(GSM_NL "+QIOPEN:")) != 1) { return false; }
 
-    if (stream.readStringUntil(',').toInt() != mux) { return false; }
+    if (streamGetInt(',') != mux) { return false; }
     // Read status
-    rsp = stream.readStringUntil('\n').toInt();
+    rsp = streamGetInt('\n');
 
     return (0 == rsp);
   }
@@ -347,7 +347,7 @@ class TinyGsmBG96
   size_t modemRead(size_t size, uint8_t mux) {
     sendAT(GF("+QIRD="), mux, ',', (uint16_t)size);
     if (waitResponse(GF("+QIRD:")) != 1) { return 0; }
-    int len = stream.readStringUntil('\n').toInt();
+    int len = streamGetInt('\n');
 
     for (int i = 0; i < len; i++) { moveCharFromStreamToFifo(mux); }
     waitResponse();
@@ -362,7 +362,7 @@ class TinyGsmBG96
     if (waitResponse(GF("+QIRD:")) == 1) {
       streamSkipUntil(',');  // Skip total received
       streamSkipUntil(',');  // Skip have read
-      result = stream.readStringUntil('\n').toInt();
+      result = streamGetInt('\n');
       if (result) { DBG("### DATA AVAILABLE:", result, "on", mux); }
       waitResponse();
     }
@@ -376,12 +376,12 @@ class TinyGsmBG96
 
     if (waitResponse(GF("+QISTATE:")) != 1) { return false; }
 
-    streamSkipUntil(',');                           // Skip mux
-    streamSkipUntil(',');                           // Skip socket type
-    streamSkipUntil(',');                           // Skip remote ip
-    streamSkipUntil(',');                           // Skip remote port
-    streamSkipUntil(',');                           // Skip local port
-    int res = stream.readStringUntil(',').toInt();  // socket state
+    streamSkipUntil(',');         // Skip mux
+    streamSkipUntil(',');         // Skip socket type
+    streamSkipUntil(',');         // Skip remote ip
+    streamSkipUntil(',');         // Skip remote port
+    streamSkipUntil(',');         // Skip local port
+    int res = streamGetInt(',');  // socket state
 
     waitResponse();
 
@@ -434,23 +434,23 @@ class TinyGsmBG96
           index = 5;
           goto finish;
         } else if (data.endsWith(GF(GSM_NL "+QIURC:"))) {
-          stream.readStringUntil('\"');
+          streamSkipUntil('\"');
           String urc = stream.readStringUntil('\"');
-          stream.readStringUntil(',');
+          streamSkipUntil(',');
           if (urc == "recv") {
-            int mux = stream.readStringUntil('\n').toInt();
+            int mux = streamGetInt('\n');
             DBG("### URC RECV:", mux);
             if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
               sockets[mux]->got_data = true;
             }
           } else if (urc == "closed") {
-            int mux = stream.readStringUntil('\n').toInt();
+            int mux = streamGetInt('\n');
             DBG("### URC CLOSE:", mux);
             if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
               sockets[mux]->sock_connected = false;
             }
           } else {
-            stream.readStringUntil('\n');
+            streamSkipUntil('\n');
           }
           data = "";
         }

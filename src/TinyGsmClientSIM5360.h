@@ -445,7 +445,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360, READ_AND_CHECK_SIZE,
     streamSkipUntil(',');  // Skip battery charge status
     streamSkipUntil(',');  // Skip battery charge level
     // get voltage in VOLTS
-    float voltage = stream.readStringUntil('\n').toFloat();
+    float voltage = streamGetFloat('\n');
     // Wait for final OK
     waitResponse();
     // Return millivolts
@@ -458,10 +458,10 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360, READ_AND_CHECK_SIZE,
                         uint16_t& milliVolts) {
     sendAT(GF("+CBC"));
     if (waitResponse(GF(GSM_NL "+CBC:")) != 1) { return false; }
-    chargeState = stream.readStringUntil(',').toInt();
-    percent     = stream.readStringUntil(',').toInt();
+    chargeState = streamGetInt(',');
+    percent     = streamGetInt(',');
     // get voltage in VOLTS
-    float voltage = stream.readStringUntil('\n').toFloat();
+    float voltage = streamGetFloat('\n');
     milliVolts    = voltage * 1000;
     // Wait for final OK
     waitResponse();
@@ -476,7 +476,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360, READ_AND_CHECK_SIZE,
     // Get Temparature Value
     sendAT(GF("+CMTE?"));
     if (waitResponse(GF(GSM_NL "+CMTE:")) != 1) { return false; }
-    float res = stream.readStringUntil('\n').toFloat();
+    float res = streamGetFloat('\n');
     // Wait for final OK
     waitResponse();
     return res;
@@ -511,7 +511,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360, READ_AND_CHECK_SIZE,
     streamSkipUntil(',');  // Skip mux
     streamSkipUntil(',');  // Skip requested bytes to send
     // TODO(?):  make sure requested and confirmed bytes match
-    return stream.readStringUntil('\n').toInt();
+    return streamGetInt('\n');
   }
 
   size_t modemRead(size_t size, uint8_t mux) {
@@ -524,9 +524,9 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360, READ_AND_CHECK_SIZE,
 #endif
     streamSkipUntil(',');  // Skip Rx mode 2/normal or 3/HEX
     streamSkipUntil(',');  // Skip mux/cid (connecion id)
-    int len_requested = stream.readStringUntil(',').toInt();
+    int len_requested = streamGetInt(',');
     //  ^^ Requested number of data bytes (1-1460 bytes)to be read
-    int len_confirmed = stream.readStringUntil('\n').toInt();
+    int len_confirmed = streamGetInt('\n');
     // ^^ The data length which not read in the buffer
     for (int i = 0; i < len_requested; i++) {
       uint32_t startMillis = millis();
@@ -563,7 +563,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360, READ_AND_CHECK_SIZE,
     if (waitResponse(GF("+CIPRXGET:")) == 1) {
       streamSkipUntil(',');  // Skip mode 4
       streamSkipUntil(',');  // Skip mux
-      result = stream.readStringUntil('\n').toInt();
+      result = streamGetInt('\n');
       waitResponse();
     }
     DBG("### Available:", result, "on", mux);
@@ -628,9 +628,9 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360, READ_AND_CHECK_SIZE,
           index = 5;
           goto finish;
         } else if (data.endsWith(GF(GSM_NL "+CIPRXGET:"))) {
-          String mode = stream.readStringUntil(',');
-          if (mode.toInt() == 1) {
-            int mux = stream.readStringUntil('\n').toInt();
+          int mode = streamGetInt(',');
+          if (mode == 1) {
+            int mux = streamGetInt('\n');
             if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
               sockets[mux]->got_data = true;
             }
@@ -640,8 +640,8 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360, READ_AND_CHECK_SIZE,
             data += mode;
           }
         } else if (data.endsWith(GF(GSM_NL "+RECEIVE:"))) {
-          int mux = stream.readStringUntil(',').toInt();
-          int len = stream.readStringUntil('\n').toInt();
+          int mux = streamGetInt(',');
+          int len = streamGetInt('\n');
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
             sockets[mux]->got_data       = true;
             sockets[mux]->sock_available = len;
@@ -649,7 +649,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360, READ_AND_CHECK_SIZE,
           data = "";
           DBG("### Got Data:", len, "on", mux);
         } else if (data.endsWith(GF("+IPCLOSE:"))) {
-          int mux = stream.readStringUntil(',').toInt();
+          int mux = streamGetInt(',');
           streamSkipUntil('\n');  // Skip the reason code
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
             sockets[mux]->sock_connected = false;

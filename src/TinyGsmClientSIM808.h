@@ -61,25 +61,27 @@ class TinyGsmSim808 : public TinyGsmSim800 {
     sendAT(GF("+CGNSINF"));
     if (waitResponse(GF(GSM_NL "+CGNSINF:")) != 1) { return false; }
 
-    stream.readStringUntil(',');  // mode
-    if (stream.readStringUntil(',').toInt() == 1) fix = true;
-    stream.readStringUntil(',');                                    // utctime
-    *lat = stream.readStringUntil(',').toFloat();                   // lat
-    *lon = stream.readStringUntil(',').toFloat();                   // lon
-    if (alt != NULL) *alt = stream.readStringUntil(',').toFloat();  // lon
-    if (speed != NULL) *speed = stream.readStringUntil(',').toFloat();  // speed
-    stream.readStringUntil(',');
-    stream.readStringUntil(',');
-    stream.readStringUntil(',');
-    stream.readStringUntil(',');
-    stream.readStringUntil(',');
-    stream.readStringUntil(',');
-    stream.readStringUntil(',');
-    if (vsat != NULL)
-      *vsat = stream.readStringUntil(',').toInt();  // viewed satelites
-    if (usat != NULL)
-      *usat = stream.readStringUntil(',').toInt();  // used satelites
-    stream.readStringUntil('\n');
+    streamSkipUntil(',');                             // GNSS run status
+    if (streamGetInt(',') == 1) fix = true;           // fix status
+    streamSkipUntil(',');                             // UTC date & Time
+    *lat = streamGetFloat(',');                       // Latitude
+    *lon = streamGetFloat(',');                       // Longitude
+    if (alt != NULL) *alt = streamGetFloat(',');      // MSL Altitude
+    if (speed != NULL) *speed = streamGetFloat(',');  // Speed Over Ground
+    streamSkipUntil(',');                             // Course Over Ground
+    streamSkipUntil(',');                             // Fix Mode
+    streamSkipUntil(',');                             // Reserved1
+    streamSkipUntil(',');  // Horizontal Dilution Of Precision
+    streamSkipUntil(',');  // Position Dilution Of Precision
+    streamSkipUntil(',');  // Vertical Dilution Of Precision
+    streamSkipUntil(',');  // Reserved2
+    if (vsat != NULL) *vsat = streamGetInt(',');  // GNSS Satellites in View
+    if (usat != NULL) *usat = streamGetInt(',');  // GNSS Satellites Used
+    streamSkipUntil(',');                         // GLONASS Satellites Used
+    streamSkipUntil(',');                         // Reserved3
+    streamSkipUntil(',');                         // C/N0 max
+    streamSkipUntil(',');                         // HPA
+    streamSkipUntil('\n');                        // VPA
 
     waitResponse();
 
@@ -121,7 +123,7 @@ class TinyGsmSim808 : public TinyGsmSim800 {
           break;
       }
     }
-    stream.readStringUntil('\n');
+    streamSkipUntil('\n');
     waitResponse();
 
     if (fix) {

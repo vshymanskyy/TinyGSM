@@ -339,7 +339,7 @@ class TinyGsmM95
  protected:
   String getLocalIPImpl() {
     sendAT(GF("+QILOCIP"));
-    stream.readStringUntil('\n');
+    streamSkipUntil('\n');
     String res = stream.readStringUntil('\n');
     res.trim();
     return res;
@@ -396,9 +396,9 @@ class TinyGsmM95
     }
     streamSkipUntil(',');  // Skip mode
     // Read charge of thermistor
-    // milliVolts = stream.readStringUntil(',').toInt();
+    // milliVolts = streamGetInt(',');
     streamSkipUntil(',');  // Skip thermistor charge
-    float temp = stream.readStringUntil('\n').toFloat();
+    float temp = streamGetFloat('\n');
     // Wait for final OK
     waitResponse();
     return temp;
@@ -437,7 +437,7 @@ class TinyGsmM95
     //     streamSkipUntil(',');  // Skip total length sent on connection
     //     streamSkipUntil(',');  // Skip length already acknowledged by remote
     //     // Make sure the total length un-acknowledged is 0
-    //     if ( stream.readStringUntil('\n').toInt() == 0 ) {
+    //     if ( streamGetInt('\n') == 0 ) {
     //       allAcknowledged = true;
     //     }
     //   }
@@ -463,7 +463,7 @@ class TinyGsmM95
       streamSkipUntil(',');  // skip port
       streamSkipUntil(',');  // skip connection type (TCP/UDP)
       // read the real length of the retrieved data
-      uint16_t len = stream.readStringUntil('\n').toInt();
+      uint16_t len = streamGetInt('\n');
       // We have no way of knowing in advance how much data will be in the
       // buffer so when data is received we always assume the buffer is
       // completely full. Chances are, this is not true and there's really not
@@ -495,12 +495,12 @@ class TinyGsmM95
 
     if (waitResponse(GF("+QISTATE:")) != 1) { return false; }
 
-    streamSkipUntil(',');                           // Skip mux
-    streamSkipUntil(',');                           // Skip socket type
-    streamSkipUntil(',');                           // Skip remote ip
-    streamSkipUntil(',');                           // Skip remote port
-    streamSkipUntil(',');                           // Skip local port
-    int res = stream.readStringUntil(',').toInt();  // socket state
+    streamSkipUntil(',');         // Skip mux
+    streamSkipUntil(',');         // Skip socket type
+    streamSkipUntil(',');         // Skip remote ip
+    streamSkipUntil(',');         // Skip remote port
+    streamSkipUntil(',');         // Skip local port
+    int res = streamGetInt(',');  // socket state
 
     waitResponse();
 
@@ -555,7 +555,7 @@ class TinyGsmM95
         } else if (data.endsWith(GF(GSM_NL "+QIRDI:"))) {
           streamSkipUntil(',');  // Skip the context
           streamSkipUntil(',');  // Skip the role
-          int mux = stream.readStringUntil('\n').toInt();
+          int mux = streamGetInt('\n');
           DBG("### Got Data:", mux);
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
             // We have no way of knowing how much data actually came in, so

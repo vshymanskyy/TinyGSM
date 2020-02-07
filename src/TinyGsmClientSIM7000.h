@@ -436,25 +436,27 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000, READ_AND_CHECK_SIZE,
     sendAT(GF("+CGNSINF"));
     if (waitResponse(GF(GSM_NL "+CGNSINF:")) != 1) { return false; }
 
-    stream.readStringUntil(',');  // mode
-    if (stream.readStringUntil(',').toInt() == 1) fix = true;
-    stream.readStringUntil(',');                                    // utctime
-    *lat = stream.readStringUntil(',').toFloat();                   // lat
-    *lon = stream.readStringUntil(',').toFloat();                   // lon
-    if (alt != NULL) *alt = stream.readStringUntil(',').toFloat();  // lon
-    if (speed != NULL) *speed = stream.readStringUntil(',').toFloat();  // speed
-    stream.readStringUntil(',');
-    stream.readStringUntil(',');
-    stream.readStringUntil(',');
-    stream.readStringUntil(',');
-    stream.readStringUntil(',');
-    stream.readStringUntil(',');
-    stream.readStringUntil(',');
-    if (vsat != NULL)
-      *vsat = stream.readStringUntil(',').toInt();  // viewed satelites
-    if (usat != NULL)
-      *usat = stream.readStringUntil(',').toInt();  // used satelites
-    stream.readStringUntil('\n');
+    streamSkipUntil(',');                             // GNSS run status
+    if (streamGetInt(',') == 1) fix = true;           // fix status
+    streamSkipUntil(',');                             // UTC date & Time
+    *lat = streamGetFloat(',');                       // Latitude
+    *lon = streamGetFloat(',');                       // Longitude
+    if (alt != NULL) *alt = streamGetFloat(',');      // MSL Altitude
+    if (speed != NULL) *speed = streamGetFloat(',');  // Speed Over Ground
+    streamSkipUntil(',');                             // Course Over Ground
+    streamSkipUntil(',');                             // Fix Mode
+    streamSkipUntil(',');                             // Reserved1
+    streamSkipUntil(',');  // Horizontal Dilution Of Precision
+    streamSkipUntil(',');  // Position Dilution Of Precision
+    streamSkipUntil(',');  // Vertical Dilution Of Precision
+    streamSkipUntil(',');  // Reserved2
+    if (vsat != NULL) *vsat = streamGetInt(',');  // GNSS Satellites in View
+    if (usat != NULL) *usat = streamGetInt(',');  // GNSS Satellites Used
+    streamSkipUntil(',');                         // GLONASS Satellites Used
+    streamSkipUntil(',');                         // Reserved3
+    streamSkipUntil(',');                         // C/N0 max
+    streamSkipUntil(',');                         // HPA
+    streamSkipUntil('\n');                        // VPA
 
     waitResponse();
 
@@ -499,7 +501,7 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000, READ_AND_CHECK_SIZE,
           break;
       }
     }
-    stream.readStringUntil('\n');
+    streamSkipUntil('\n');
     waitResponse();
 
     if (fix) {
@@ -541,7 +543,7 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000, READ_AND_CHECK_SIZE,
     stream.flush();
     if (waitResponse(GF(GSM_NL "DATA ACCEPT:")) != 1) { return 0; }
     streamSkipUntil(',');  // Skip mux
-    return stream.readStringUntil('\n').toInt();
+    return streamGetInt('\n');
   }
 
   size_t modemRead(size_t size, uint8_t mux) {
@@ -554,9 +556,9 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000, READ_AND_CHECK_SIZE,
 #endif
     streamSkipUntil(',');  // Skip Rx mode 2/normal or 3/HEX
     streamSkipUntil(',');  // Skip mux
-    int len_requested = stream.readStringUntil(',').toInt();
+    int len_requested = streamGetInt(',');
     //  ^^ Requested number of data bytes (1-1460 bytes)to be read
-    int len_confirmed = stream.readStringUntil('\n').toInt();
+    int len_confirmed = streamGetInt('\n');
     // ^^ Confirmed number of data bytes to be read, which may be less than
     // requested. 0 indicates that no data can be read. This is actually be the
     // number of bytes that will be remaining after the read
@@ -595,7 +597,7 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000, READ_AND_CHECK_SIZE,
     if (waitResponse(GF("+CIPRXGET:")) == 1) {
       streamSkipUntil(',');  // Skip mode 4
       streamSkipUntil(',');  // Skip mux
-      result = stream.readStringUntil('\n').toInt();
+      result = streamGetInt('\n');
       waitResponse();
     }
     DBG("### Available:", result, "on", mux);
@@ -656,9 +658,9 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000, READ_AND_CHECK_SIZE,
           index = 5;
           goto finish;
         } else if (data.endsWith(GF(GSM_NL "+CIPRXGET:"))) {
-          String mode = stream.readStringUntil(',');
-          if (mode.toInt() == 1) {
-            int mux = stream.readStringUntil('\n').toInt();
+          int mode = streamGetInt(',');
+          if (mode == 1) {
+            int mux = streamGetInt('\n');
             if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
               sockets[mux]->got_data = true;
             }
@@ -668,8 +670,8 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000, READ_AND_CHECK_SIZE,
             data += mode;
           }
         } else if (data.endsWith(GF(GSM_NL "+RECEIVE:"))) {
-          int mux = stream.readStringUntil(',').toInt();
-          int len = stream.readStringUntil('\n').toInt();
+          int mux = streamGetInt(',');
+          int len = streamGetInt('\n');
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
             sockets[mux]->got_data       = true;
             sockets[mux]->sock_available = len;

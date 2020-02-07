@@ -1212,7 +1212,7 @@ class TinyGsmXBee
             //   // read remote ip address
             //   String remoted_address =
             //       stream.readStringUntil('\r');  // read result
-            //   stream.readStringUntil('\r');      // final carriage return
+            //   streamSkipUntil('\r');      // final carriage return
             // }
           }
 
