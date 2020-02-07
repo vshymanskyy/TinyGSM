@@ -360,8 +360,8 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600, READ_AND_CHECK_SIZE,
   bool callAnswerImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
   bool callNumberImpl(const String& number) TINY_GSM_ATTR_NOT_IMPLEMENTED;
   bool callHangupImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
-  bool
-  dtmfSendImpl(char cmd, int duration_ms = 100) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool dtmfSendImpl(char cmd,
+                    int  duration_ms = 100) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
   /*
    * Messaging functions
@@ -590,11 +590,11 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600, READ_AND_CHECK_SIZE,
    */
  public:
   // TODO(vshymanskyy): Optimize this!
-  uint8_t
-  waitResponse(uint32_t timeout_ms, String& data, GsmConstStr r1 = GFP(GSM_OK),
-               GsmConstStr r2 = GFP(GSM_ERROR),
-               GsmConstStr r3 = GFP(GSM_CME_ERROR), GsmConstStr r4 = NULL,
-               GsmConstStr r5 = NULL) {
+  uint8_t waitResponse(uint32_t timeout_ms, String& data,
+                       GsmConstStr r1 = GFP(GSM_OK),
+                       GsmConstStr r2 = GFP(GSM_ERROR),
+                       GsmConstStr r3 = GFP(GSM_CME_ERROR),
+                       GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
     /*String r1s(r1); r1s.trim();
     String r2s(r2); r2s.trim();
     String r3s(r3); r3s.trim();
@@ -602,7 +602,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600, READ_AND_CHECK_SIZE,
     String r5s(r5); r5s.trim();
     DBG("### ..:", r1s, ",", r2s, ",", r3s, ",", r4s, ",", r5s);*/
     data.reserve(64);
-    int      index       = 0;
+    uint8_t  index       = 0;
     uint32_t startMillis = millis();
     do {
       TINY_GSM_YIELD();
@@ -683,10 +683,10 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600, READ_AND_CHECK_SIZE,
     return waitResponse(timeout_ms, data, r1, r2, r3, r4, r5);
   }
 
-  uint8_t
-  waitResponse(GsmConstStr r1 = GFP(GSM_OK), GsmConstStr r2 = GFP(GSM_ERROR),
-               GsmConstStr r3 = GFP(GSM_CME_ERROR), GsmConstStr r4 = NULL,
-               GsmConstStr r5 = NULL) {
+  uint8_t waitResponse(GsmConstStr r1 = GFP(GSM_OK),
+                       GsmConstStr r2 = GFP(GSM_ERROR),
+                       GsmConstStr r3 = GFP(GSM_CME_ERROR),
+                       GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
     return waitResponse(1000, r1, r2, r3, r4, r5);
   }
 

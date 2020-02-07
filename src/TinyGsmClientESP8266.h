@@ -219,8 +219,8 @@ class TinyGsmESP8266
   RegStatus getRegistrationStatus() {
     sendAT(GF("+CIPSTATUS"));
     if (waitResponse(3000, GF("STATUS:")) != 1) return REG_UNKNOWN;
-    int status =
-        waitResponse(GFP(GSM_ERROR), GF("2"), GF("3"), GF("4"), GF("5"));
+    int status = waitResponse(GFP(GSM_ERROR), GF("2"), GF("3"), GF("4"),
+                              GF("5"));
     waitResponse();  // Returns an OK after the status
     return (RegStatus)status;
   }
@@ -298,8 +298,8 @@ class TinyGsmESP8266
   bool callAnswerImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
   bool callNumberImpl(const String& number) TINY_GSM_ATTR_NOT_AVAILABLE;
   bool callHangupImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
-  bool
-  dtmfSendImpl(char cmd, int duration_ms = 100) TINY_GSM_ATTR_NOT_AVAILABLE;
+  bool dtmfSendImpl(char cmd,
+                    int  duration_ms = 100) TINY_GSM_ATTR_NOT_AVAILABLE;
 
   /*
    * Messaging functions
@@ -382,8 +382,8 @@ class TinyGsmESP8266
   bool modemGetConnected(uint8_t mux) {
     sendAT(GF("+CIPSTATUS"));
     if (waitResponse(3000, GF("STATUS:")) != 1) { return false; }
-    int status =
-        waitResponse(GFP(GSM_ERROR), GF("2"), GF("3"), GF("4"), GF("5"));
+    int status = waitResponse(GFP(GSM_ERROR), GF("2"), GF("3"), GF("4"),
+                              GF("5"));
     if (status != 3) {
       // if the status is anything but 3, there are no connections open
       waitResponse();  // Returns an OK after the status
@@ -394,8 +394,8 @@ class TinyGsmESP8266
     }
     bool verified_connections[TINY_GSM_MUX_COUNT] = {0, 0, 0, 0, 0};
     for (int muxNo = 0; muxNo < TINY_GSM_MUX_COUNT; muxNo++) {
-      uint8_t has_status =
-          waitResponse(GF("+CIPSTATUS:"), GFP(GSM_OK), GFP(GSM_ERROR));
+      uint8_t has_status = waitResponse(GF("+CIPSTATUS:"), GFP(GSM_OK),
+                                        GFP(GSM_ERROR));
       if (has_status == 1) {
         int returned_mux = stream.readStringUntil(',').toInt();
         streamSkipUntil(',');   // Skip mux
@@ -419,11 +419,11 @@ class TinyGsmESP8266
    */
  public:
   // TODO(vshymanskyy): Optimize this!
-  uint8_t
-  waitResponse(uint32_t timeout_ms, String& data, GsmConstStr r1 = GFP(GSM_OK),
-               GsmConstStr r2 = GFP(GSM_ERROR),
-               GsmConstStr r3 = GFP(GSM_CME_ERROR), GsmConstStr r4 = NULL,
-               GsmConstStr r5 = NULL) {
+  uint8_t waitResponse(uint32_t timeout_ms, String& data,
+                       GsmConstStr r1 = GFP(GSM_OK),
+                       GsmConstStr r2 = GFP(GSM_ERROR),
+                       GsmConstStr r3 = GFP(GSM_CME_ERROR),
+                       GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
     /*String r1s(r1); r1s.trim();
     String r2s(r2); r2s.trim();
     String r3s(r3); r3s.trim();
@@ -431,7 +431,7 @@ class TinyGsmESP8266
     String r5s(r5); r5s.trim();
     DBG("### ..:", r1s, ",", r2s, ",", r3s, ",", r4s, ",", r5s);*/
     data.reserve(64);
-    int      index       = 0;
+    uint8_t  index       = 0;
     uint32_t startMillis = millis();
     do {
       TINY_GSM_YIELD();
@@ -504,10 +504,10 @@ class TinyGsmESP8266
     return waitResponse(timeout_ms, data, r1, r2, r3, r4, r5);
   }
 
-  uint8_t
-  waitResponse(GsmConstStr r1 = GFP(GSM_OK), GsmConstStr r2 = GFP(GSM_ERROR),
-               GsmConstStr r3 = GFP(GSM_CME_ERROR), GsmConstStr r4 = NULL,
-               GsmConstStr r5 = NULL) {
+  uint8_t waitResponse(GsmConstStr r1 = GFP(GSM_OK),
+                       GsmConstStr r2 = GFP(GSM_ERROR),
+                       GsmConstStr r3 = GFP(GSM_CME_ERROR),
+                       GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
     return waitResponse(1000, r1, r2, r3, r4, r5);
   }
 

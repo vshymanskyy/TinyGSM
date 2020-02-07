@@ -237,9 +237,9 @@ class TinyGsmMC60
         delay(1000);
         continue;
       }
-      int status =
-          waitResponse(GF("READY"), GF("SIM PIN"), GF("SIM PUK"),
-                       GF("NOT INSERTED"), GF("PH_SIM PIN"), GF("PH_SIM PUK"));
+      int status = waitResponse(GF("READY"), GF("SIM PIN"), GF("SIM PUK"),
+                                GF("NOT INSERTED"), GF("PH_SIM PIN"),
+                                GF("PH_SIM PUK"));
       waitResponse();
       switch (status) {
         case 2:
@@ -393,9 +393,9 @@ class TinyGsmMC60
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
     sendAT(GF("+QIOPEN="), mux, GF(",\""), GF("TCP"), GF("\",\""), host,
            GF("\","), port);
-    int rsp =
-        waitResponse(timeout_ms, GF("CONNECT OK" GSM_NL),
-                     GF("CONNECT FAIL" GSM_NL), GF("ALREADY CONNECT" GSM_NL));
+    int rsp = waitResponse(timeout_ms, GF("CONNECT OK" GSM_NL),
+                           GF("CONNECT FAIL" GSM_NL),
+                           GF("ALREADY CONNECT" GSM_NL));
     return (1 == rsp);
   }
 
@@ -493,11 +493,12 @@ class TinyGsmMC60
    */
  public:
   // TODO(vshymanskyy): Optimize this!
-  uint8_t
-  waitResponse(uint32_t timeout_ms, String& data, GsmConstStr r1 = GFP(GSM_OK),
-               GsmConstStr r2 = GFP(GSM_ERROR),
-               GsmConstStr r3 = GFP(GSM_CME_ERROR), GsmConstStr r4 = NULL,
-               GsmConstStr r5 = NULL, GsmConstStr r6 = NULL) {
+  uint8_t waitResponse(uint32_t timeout_ms, String& data,
+                       GsmConstStr r1 = GFP(GSM_OK),
+                       GsmConstStr r2 = GFP(GSM_ERROR),
+                       GsmConstStr r3 = GFP(GSM_CME_ERROR),
+                       GsmConstStr r4 = NULL, GsmConstStr r5 = NULL,
+                       GsmConstStr r6 = NULL) {
     /*String r1s(r1); r1s.trim();
     String r2s(r2); r2s.trim();
     String r3s(r3); r3s.trim();
@@ -506,7 +507,7 @@ class TinyGsmMC60
     String r6s(r6); r6s.trim();
     DBG("### ..:", r1s, ",", r2s, ",", r3s, ",", r4s, ",", r5s, ",", r6s);*/
     data.reserve(64);
-    int      index       = 0;
+    uint8_t  index       = 0;
     uint32_t startMillis = millis();
     do {
       TINY_GSM_YIELD();
@@ -572,19 +573,20 @@ class TinyGsmMC60
     return index;
   }
 
-  uint8_t
-  waitResponse(uint32_t timeout_ms, GsmConstStr r1 = GFP(GSM_OK),
-               GsmConstStr r2 = GFP(GSM_ERROR),
-               GsmConstStr r3 = GFP(GSM_CME_ERROR), GsmConstStr r4 = NULL,
-               GsmConstStr r5 = NULL, GsmConstStr r6 = NULL) {
+  uint8_t waitResponse(uint32_t timeout_ms, GsmConstStr r1 = GFP(GSM_OK),
+                       GsmConstStr r2 = GFP(GSM_ERROR),
+                       GsmConstStr r3 = GFP(GSM_CME_ERROR),
+                       GsmConstStr r4 = NULL, GsmConstStr r5 = NULL,
+                       GsmConstStr r6 = NULL) {
     String data;
     return waitResponse(timeout_ms, data, r1, r2, r3, r4, r5, r6);
   }
 
-  uint8_t
-  waitResponse(GsmConstStr r1 = GFP(GSM_OK), GsmConstStr r2 = GFP(GSM_ERROR),
-               GsmConstStr r3 = GFP(GSM_CME_ERROR), GsmConstStr r4 = NULL,
-               GsmConstStr r5 = NULL, GsmConstStr r6 = NULL) {
+  uint8_t waitResponse(GsmConstStr r1 = GFP(GSM_OK),
+                       GsmConstStr r2 = GFP(GSM_ERROR),
+                       GsmConstStr r3 = GFP(GSM_CME_ERROR),
+                       GsmConstStr r4 = NULL, GsmConstStr r5 = NULL,
+                       GsmConstStr r6 = NULL) {
     return waitResponse(1000, r1, r2, r3, r4, r5, r6);
   }
 

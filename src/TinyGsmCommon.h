@@ -341,8 +341,8 @@ class TinyGsmModem {
   uint8_t getBattChargeState() {
     return thisModem().getBattChargeStateImpl();
   }
-  bool
-  getBattStats(uint8_t& chargeState, int8_t& percent, uint16_t& milliVolts) {
+  bool getBattStats(uint8_t& chargeState, int8_t& percent,
+                    uint16_t& milliVolts) {
     return thisModem().getBattStatsImpl(chargeState, percent, milliVolts);
   }
   float getTemperature() {
@@ -590,11 +590,10 @@ class TinyGsmModem {
    * Constructor
    */
 
- protected:
   /*
    * Basic functions
    */
-
+ protected:
   void setBaudImpl(uint32_t baud) {
     thisModem().sendAT(GF("+IPR="), baud);
     thisModem().waitResponse();
@@ -727,9 +726,9 @@ class TinyGsmModem {
         delay(1000);
         continue;
       }
-      int status =
-          thisModem().waitResponse(GF("READY"), GF("SIM PIN"), GF("SIM PUK"),
-                                   GF("NOT INSERTED"), GF("NOT READY"));
+      int status = thisModem().waitResponse(GF("READY"), GF("SIM PIN"),
+                                            GF("SIM PUK"), GF("NOT INSERTED"),
+                                            GF("NOT READY"));
       thisModem().waitResponse();
       switch (status) {
         case 2:
@@ -752,8 +751,8 @@ class TinyGsmModem {
   int getRegistrationStatusXREG(const char* regCommand) {
     thisModem().sendAT('+', regCommand, '?');
     // check for any of the three for simplicity
-    int resp =
-        thisModem().waitResponse(GF("+CREG:"), GF("+CGREG:"), GF("+CEREG:"));
+    int resp = thisModem().waitResponse(GF("+CREG:"), GF("+CGREG:"),
+                                        GF("+CEREG:"));
     if (resp != 1 && resp != 2 && resp != 3) { return -1; }
     thisModem().streamSkipUntil(','); /* Skip format (0) */
     int status = thisModem().stream.readStringUntil('\n').toInt();
@@ -1053,8 +1052,8 @@ class TinyGsmModem {
     return UTF8Print(thisModem().stream);
   }
 
-  bool
-  sendSMS_UTF16Impl(const char* const number, const void* text, size_t len) {
+  bool sendSMS_UTF16Impl(const char* const number, const void* text,
+                         size_t len) {
     if (!sendSMS_UTF8_begin(number)) { return false; }
 
     uint16_t* t = reinterpret_cast<uint16_t*>(text);
@@ -1196,6 +1195,12 @@ class TinyGsmModem {
       if (thisModem().stream.read() == c) { return true; }
     }
     return false;
+  }
+
+  void streamClear() {
+    while (thisModem().stream.available()) {
+      thisModem().waitResponse(50, NULL, NULL);
+    }
   }
 
   // Yields up to a time-out period and then reads a character from the stream
