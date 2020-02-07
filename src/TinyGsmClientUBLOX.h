@@ -390,8 +390,19 @@ class TinyGsmUBLOX
    */
  protected:
   String getGsmLocationImpl() {
-    sendAT(GF("+ULOC=2,3,0,120,1"));
-    if (waitResponse(30000L, GF(GSM_NL "+UULOC:")) != 1) { return ""; }
+    // AT+ULOC=<mode>,<sensor>,<response_type>,<timeout>,<accuracy>
+    // <mode> - 2: single shot position
+    // <sensor> - 2: use cellular CellLocate® location information
+    // <response_type> - 0: standard (single-hypothesis) response
+    // <timeout> - Timeout period in seconds
+    // <accuracy> - Target accuracy in meters (1 - 999999)
+    sendAT(GF("+ULOC=2,2,0,120,1"));
+    // wait for first "OK"
+    if (waitResponse(10000L) != 1) {
+      return "";
+    }
+    // wait for the final result - wait full timeout time
+    if (waitResponse(120000L, GF(GSM_NL "+UULOC:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     waitResponse();
     res.trim();
