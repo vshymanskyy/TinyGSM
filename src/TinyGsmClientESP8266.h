@@ -19,7 +19,7 @@
 #define GSM_NL "\r\n"
 static const char GSM_OK[] TINY_GSM_PROGMEM    = "OK" GSM_NL;
 static const char GSM_ERROR[] TINY_GSM_PROGMEM = "ERROR" GSM_NL;
-static unsigned   TINY_GSM_TCP_KEEP_ALIVE      = 120;
+static uint8_t TINY_GSM_TCP_KEEP_ALIVE = 120;
 
 // <stat> status of ESP8266 station interface
 // 2 : ESP8266 station connected to an AP and has obtained IP

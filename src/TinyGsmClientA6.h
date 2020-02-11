@@ -318,7 +318,7 @@ class TinyGsmA6
   }
 
   // 0-9,*,#,A,B,C,D
-  bool dtmfSendImpl(char cmd, unsigned duration_ms = 100) {
+  bool dtmfSendImpl(char cmd, uint8_t duration_ms = 100) {
     duration_ms = constrain(duration_ms, 100, 1000);
 
     // The duration parameter is not working, so we simulate it using delay..
