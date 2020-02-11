@@ -321,6 +321,8 @@ TINY_GSM_MODEM_GET_SIMCCID_CCID()
 
 TINY_GSM_MODEM_GET_IMEI_GSN()
 
+TINY_GSM_MODEM_GET_IMSI_CIMI()
+
   SimStatus getSimStatus(unsigned long timeout_ms = 10000L) {
     for (unsigned long start = millis(); millis() - start < timeout_ms; ) {
       sendAT(GF("+CPIN?"));

@@ -527,6 +527,20 @@ String TinyGsmDecodeHex16bit(String &instr) {
   }
 
 
+// Asks for International Mobile Subscriber Identity IMSI via the AT+CIMI command
+#define TINY_GSM_MODEM_GET_IMSI_CIMI() \
+  String getIMSI() { \
+    sendAT(GF("+CIMI")); \
+    if (waitResponse(GF(GSM_NL)) != 1) { \
+      return ""; \
+    } \
+    String res = stream.readStringUntil('\n'); \
+    waitResponse(); \
+    res.trim(); \
+    return res; \
+  }
+
+
 // Gets the modem's registration status via CREG/CGREG/CEREG
 // CREG = Generic network registration
 // CGREG = GPRS service registration
