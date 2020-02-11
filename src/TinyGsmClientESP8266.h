@@ -258,6 +258,21 @@ class TinyGsmESP8266
   }
 
   /*
+   * IP Address functions
+   */
+ protected:
+  String getLocalIPImpl() {
+    sendAT(GF("+CIPSTA_CUR?"));
+    int res1 = waitResponse(GF("ERROR"), GF("+CWJAP_CUR:"));
+    if (res1 != 2) {
+      return "";
+    }
+    String res2 = stream.readStringUntil('"');
+    waitResponse();
+    return res2;
+  }
+
+  /*
    * WiFi functions
    */
  protected:
@@ -275,19 +290,6 @@ class TinyGsmESP8266
     bool retVal = waitResponse(10000L) == 1;
     waitResponse(GF("WIFI DISCONNECT"));
     return retVal;
-  }
-
-  /*
-   * IP Address functions
-   */
- protected:
-  String getLocalIPImpl() {
-    sendAT(GF("+CIPSTA_CUR?"));
-    int res1 = waitResponse(GF("ERROR"), GF("+CWJAP_CUR:"));
-    if (res1 != 2) { return ""; }
-    String res2 = stream.readStringUntil('"');
-    waitResponse();
-    return res2;
   }
 
   /*

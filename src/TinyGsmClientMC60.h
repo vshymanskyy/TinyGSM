@@ -227,33 +227,6 @@ class TinyGsmMC60
   }
 
   /*
-   * SIM card functions
-   */
- protected:
-  SimStatus getSimStatusImpl(uint32_t timeout_ms = 10000L) {
-    for (uint32_t start = millis(); millis() - start < timeout_ms;) {
-      sendAT(GF("+CPIN?"));
-      if (waitResponse(GF(GSM_NL "+CPIN:")) != 1) {
-        delay(1000);
-        continue;
-      }
-      int status = waitResponse(GF("READY"), GF("SIM PIN"), GF("SIM PUK"),
-                                GF("NOT INSERTED"), GF("PH_SIM PIN"),
-                                GF("PH_SIM PUK"));
-      waitResponse();
-      switch (status) {
-        case 2:
-        case 3: return SIM_LOCKED;
-        case 5:
-        case 6: return SIM_ANTITHEFT_LOCKED;
-        case 1: return SIM_READY;
-        default: return SIM_ERROR;
-      }
-    }
-    return SIM_ERROR;
-  }
-
-  /*
    * Generic network functions
    */
  public:
@@ -265,6 +238,18 @@ class TinyGsmMC60
   bool isNetworkConnectedImpl() {
     RegStatus s = getRegistrationStatus();
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
+  }
+
+  /*
+   * IP Address functions
+   */
+ protected:
+  String getLocalIPImpl() {
+    sendAT(GF("+QILOCIP"));
+    streamSkipUntil('\n');
+    String res = stream.readStringUntil('\n');
+    res.trim();
+    return res;
   }
 
   /*
@@ -326,15 +311,34 @@ class TinyGsmMC60
   }
 
   /*
-   * IP Address functions
+   * SIM card functions
    */
  protected:
-  String getLocalIPImpl() {
-    sendAT(GF("+QILOCIP"));
-    streamSkipUntil('\n');
-    String res = stream.readStringUntil('\n');
-    res.trim();
-    return res;
+  SimStatus getSimStatusImpl(uint32_t timeout_ms = 10000L) {
+    for (uint32_t start = millis(); millis() - start < timeout_ms;) {
+      sendAT(GF("+CPIN?"));
+      if (waitResponse(GF(GSM_NL "+CPIN:")) != 1) {
+        delay(1000);
+        continue;
+      }
+      int status =
+          waitResponse(GF("READY"), GF("SIM PIN"), GF("SIM PUK"),
+                       GF("NOT INSERTED"), GF("PH_SIM PIN"), GF("PH_SIM PUK"));
+      waitResponse();
+      switch (status) {
+        case 2:
+        case 3:
+          return SIM_LOCKED;
+        case 5:
+        case 6:
+          return SIM_ANTITHEFT_LOCKED;
+        case 1:
+          return SIM_READY;
+        default:
+          return SIM_ERROR;
+      }
+    }
+    return SIM_ERROR;
   }
 
   /*

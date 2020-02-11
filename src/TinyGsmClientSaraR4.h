@@ -282,20 +282,6 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4, READ_AND_CHECK_SIZE,
   bool sleepEnableImpl(bool enable = true) TINY_GSM_ATTR_NOT_AVAILABLE;
 
   /*
-   * SIM card functions
-   */
- protected:
-  // This uses "CGSN" instead of "GSN"
-  String getIMEIImpl() {
-    sendAT(GF("+CGSN"));
-    if (waitResponse(GF(GSM_NL)) != 1) { return ""; }
-    String res = stream.readStringUntil('\n');
-    waitResponse();
-    res.trim();
-    return res;
-  }
-
-  /*
    * Generic network functions
    */
  public:
@@ -340,6 +326,12 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4, READ_AND_CHECK_SIZE,
     if (waitResponse() != 1) { return false; }
     return restart();
   }
+
+  /*
+   * IP Address functions
+   */
+ protected:
+  // Can follow the template in all function
 
   /*
    * GPRS functions
@@ -393,10 +385,20 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4, READ_AND_CHECK_SIZE,
   }
 
   /*
-   * IP Address functions
+   * SIM card functions
    */
  protected:
-  // Can follow the template in all function
+  // This uses "CGSN" instead of "GSN"
+  String getIMEIImpl() {
+    sendAT(GF("+CGSN"));
+    if (waitResponse(GF(GSM_NL)) != 1) {
+      return "";
+    }
+    String res = stream.readStringUntil('\n');
+    waitResponse();
+    res.trim();
+    return res;
+  }
 
   /*
    * Phone Call functions

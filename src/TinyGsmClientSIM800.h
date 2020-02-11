@@ -255,12 +255,6 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800, READ_AND_CHECK_SIZE,
   }
 
   /*
-   * SIM card functions
-   */
- protected:
-  // Able to follow all SIM card functions as inherited from the template
-
-  /*
    * Generic network functions
    */
  public:
@@ -272,6 +266,22 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800, READ_AND_CHECK_SIZE,
   bool isNetworkConnectedImpl() {
     RegStatus s = getRegistrationStatus();
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
+  }
+
+  /*
+   * IP Address functions
+   */
+ protected:
+  String getLocalIPImpl() {
+    sendAT(GF("+CIFSR;E0"));
+    String res;
+    if (waitResponse(10000L, res) != 1) {
+      return "";
+    }
+    res.replace(GSM_NL "OK" GSM_NL, "");
+    res.replace(GSM_NL, "");
+    res.trim();
+    return res;
   }
 
   /*
@@ -364,18 +374,10 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800, READ_AND_CHECK_SIZE,
   }
 
   /*
-   * IP Address functions
+   * SIM card functions
    */
  protected:
-  String getLocalIPImpl() {
-    sendAT(GF("+CIFSR;E0"));
-    String res;
-    if (waitResponse(10000L, res) != 1) { return ""; }
-    res.replace(GSM_NL "OK" GSM_NL, "");
-    res.replace(GSM_NL, "");
-    res.trim();
-    return res;
-  }
+  // Able to follow all SIM card functions as inherited from the template
 
   /*
    * Phone Call functions

@@ -191,12 +191,6 @@ class TinyGsmM590
   }
 
   /*
-   * SIM card functions
-   */
- protected:
-  // Able to follow all SIM card functions as inherited from the template
-
-  /*
    * Generic network functions
    */
  public:
@@ -208,6 +202,22 @@ class TinyGsmM590
   bool isNetworkConnectedImpl() {
     RegStatus s = getRegistrationStatus();
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
+  }
+
+  /*
+   * IP Address functions
+   */
+ protected:
+  String getLocalIPImpl() {
+    sendAT(GF("+XIIC?"));
+    if (waitResponse(GF(GSM_NL "+XIIC:")) != 1) {
+      return "";
+    }
+    streamSkipUntil(',');
+    String res = stream.readStringUntil('\n');
+    waitResponse();
+    res.trim();
+    return res;
   }
 
   /*
@@ -267,18 +277,10 @@ class TinyGsmM590
   }
 
   /*
-   * IP Address functions
+   * SIM card functions
    */
  protected:
-  String getLocalIPImpl() {
-    sendAT(GF("+XIIC?"));
-    if (waitResponse(GF(GSM_NL "+XIIC:")) != 1) { return ""; }
-    streamSkipUntil(',');
-    String res = stream.readStringUntil('\n');
-    waitResponse();
-    res.trim();
-    return res;
-  }
+  // Able to follow all SIM card functions as inherited from the template
 
   /*
    * Phone Call functions

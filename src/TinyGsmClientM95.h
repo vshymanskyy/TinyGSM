@@ -218,19 +218,6 @@ class TinyGsmM95
   }
 
   /*
-   * SIM card functions
-   */
- protected:
-  String getSimCCIDImpl() {
-    sendAT(GF("+QCCID"));
-    if (waitResponse(GF(GSM_NL "+QCCID:")) != 1) { return ""; }
-    String res = stream.readStringUntil('\n');
-    waitResponse();
-    res.trim();
-    return res;
-  }
-
-  /*
    * Generic network functions
    */
  public:
@@ -252,6 +239,18 @@ class TinyGsmM95
       sendAT(GF("+QIDNSIP=1"));
     }
     waitResponse();
+  }
+
+  /*
+   * IP Address functions
+   */
+ protected:
+  String getLocalIPImpl() {
+    sendAT(GF("+QILOCIP"));
+    streamSkipUntil('\n');
+    String res = stream.readStringUntil('\n');
+    res.trim();
+    return res;
   }
 
   /*
@@ -334,13 +333,16 @@ class TinyGsmM95
   }
 
   /*
-   * IP Address functions
+   * SIM card functions
    */
  protected:
-  String getLocalIPImpl() {
-    sendAT(GF("+QILOCIP"));
-    streamSkipUntil('\n');
+  String getSimCCIDImpl() {
+    sendAT(GF("+QCCID"));
+    if (waitResponse(GF(GSM_NL "+QCCID:")) != 1) {
+      return "";
+    }
     String res = stream.readStringUntil('\n');
+    waitResponse();
     res.trim();
     return res;
   }

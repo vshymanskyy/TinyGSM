@@ -543,29 +543,6 @@ class TinyGsmXBee
   bool sleepEnableImpl(bool enable = true) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
   /*
-   * SIM card functions
-   */
- protected:
-  bool simUnlockImpl(const char* pin) {  // Not supported
-    if (pin && strlen(pin) > 0) {
-      DBG("XBee's do not support SIMs that require an unlock pin!");
-    }
-    return false;
-  }
-
-  String getSimCCIDImpl() {
-    return sendATGetString(GF("S#"));
-  }
-
-  String getIMEIImpl() {
-    return sendATGetString(GF("IM"));
-  }
-
-  SimStatus getSimStatusImpl(uint32_t) {
-    return SIM_READY;  // unsupported
-  }
-
-  /*
    * Generic network functions
    */
  public:
@@ -716,6 +693,22 @@ class TinyGsmXBee
   }
 
   /*
+   * IP Address functions
+   */
+ protected:
+  String getLocalIPImpl() {
+    XBEE_COMMAND_START_DECORATOR(5, "")
+    sendAT(GF("MY"));
+    String IPaddr;
+    IPaddr.reserve(16);
+    // wait for the response - this response can be very slow
+    IPaddr = readResponseString(30000);
+    XBEE_COMMAND_END_DECORATOR
+    IPaddr.trim();
+    return IPaddr;
+  }
+
+  /*
    * WiFi functions
    */
  protected:
@@ -795,24 +788,25 @@ class TinyGsmXBee
     return isNetworkConnected();
   }
 
-  String getOperatorImpl() {
-    return sendATGetString(GF("MN"));
-  }
+  String getOperatorImpl() { return sendATGetString(GF("MN")); }
 
   /*
-   * IP Address functions
+   * SIM card functions
    */
  protected:
-  String getLocalIPImpl() {
-    XBEE_COMMAND_START_DECORATOR(5, "")
-    sendAT(GF("MY"));
-    String IPaddr;
-    IPaddr.reserve(16);
-    // wait for the response - this response can be very slow
-    IPaddr = readResponseString(30000);
-    XBEE_COMMAND_END_DECORATOR
-    IPaddr.trim();
-    return IPaddr;
+  bool simUnlockImpl(const char* pin) {  // Not supported
+    if (pin && strlen(pin) > 0) {
+      DBG("XBee's do not support SIMs that require an unlock pin!");
+    }
+    return false;
+  }
+
+  String getSimCCIDImpl() { return sendATGetString(GF("S#")); }
+
+  String getIMEIImpl() { return sendATGetString(GF("IM")); }
+
+  SimStatus getSimStatusImpl(uint32_t) {
+    return SIM_READY;  // unsupported
   }
 
   /*

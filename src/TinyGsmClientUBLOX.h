@@ -244,19 +244,6 @@ class TinyGsmUBLOX
   bool sleepEnableImpl(bool enable = true) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
   /*
-   * SIM card functions
-   */
- protected:
-  String getIMEIImpl() {
-    sendAT(GF("+CGSN"));
-    if (waitResponse(GF(GSM_NL)) != 1) { return ""; }
-    String res = stream.readStringUntil('\n');
-    waitResponse();
-    res.trim();
-    return res;
-  }
-
-  /*
    * Generic network functions
    */
  public:
@@ -273,6 +260,24 @@ class TinyGsmUBLOX
       return isGprsConnected();
     else
       return false;
+  }
+
+  /*
+   * IP Address functions
+   */
+ protected:
+  String getLocalIPImpl() {
+    sendAT(GF("+UPSND=0,0"));
+    if (waitResponse(GF(GSM_NL "+UPSND:")) != 1) {
+      return "";
+    }
+    streamSkipUntil(',');   // Skip PSD profile
+    streamSkipUntil('\"');  // Skip request type
+    String res = stream.readStringUntil('\"');
+    if (waitResponse() != 1) {
+      return "";
+    }
+    return res;
   }
 
   /*
@@ -360,16 +365,17 @@ class TinyGsmUBLOX
   }
 
   /*
-   * IP Address functions
+   * SIM card functions
    */
  protected:
-  String getLocalIPImpl() {
-    sendAT(GF("+UPSND=0,0"));
-    if (waitResponse(GF(GSM_NL "+UPSND:")) != 1) { return ""; }
-    streamSkipUntil(',');   // Skip PSD profile
-    streamSkipUntil('\"');  // Skip request type
-    String res = stream.readStringUntil('\"');
-    if (waitResponse() != 1) { return ""; }
+  String getIMEIImpl() {
+    sendAT(GF("+CGSN"));
+    if (waitResponse(GF(GSM_NL)) != 1) {
+      return "";
+    }
+    String res = stream.readStringUntil('\n');
+    waitResponse();
+    res.trim();
     return res;
   }
 

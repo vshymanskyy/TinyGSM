@@ -190,19 +190,6 @@ class TinyGsmA6
   bool sleepEnableImpl(bool enable = true) TINY_GSM_ATTR_NOT_AVAILABLE;
 
   /*
-   * SIM card functions
-   */
- protected:
-  String getSimCCIDImpl() {
-    sendAT(GF("+CCID"));
-    if (waitResponse(GF(GSM_NL "+SCID: SIM Card ID:")) != 1) { return ""; }
-    String res = stream.readStringUntil('\n');
-    waitResponse();
-    res.trim();
-    return res;
-  }
-
-  /*
    * Generic network functions
    */
  public:
@@ -214,6 +201,22 @@ class TinyGsmA6
   bool isNetworkConnectedImpl() {
     RegStatus s = getRegistrationStatus();
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
+  }
+
+  /*
+   * IP Address functions
+   */
+ protected:
+  String getLocalIPImpl() {
+    sendAT(GF("+CIFSR"));
+    String res;
+    if (waitResponse(10000L, res) != 1) {
+      return "";
+    }
+    res.replace(GSM_NL "OK" GSM_NL, "");
+    res.replace(GSM_NL, "");
+    res.trim();
+    return res;
   }
 
   /*
@@ -272,15 +275,16 @@ class TinyGsmA6
   }
 
   /*
-   * IP Address functions
+   * SIM card functions
    */
  protected:
-  String getLocalIPImpl() {
-    sendAT(GF("+CIFSR"));
-    String res;
-    if (waitResponse(10000L, res) != 1) { return ""; }
-    res.replace(GSM_NL "OK" GSM_NL, "");
-    res.replace(GSM_NL, "");
+  String getSimCCIDImpl() {
+    sendAT(GF("+CCID"));
+    if (waitResponse(GF(GSM_NL "+SCID: SIM Card ID:")) != 1) {
+      return "";
+    }
+    String res = stream.readStringUntil('\n');
+    waitResponse();
     res.trim();
     return res;
   }

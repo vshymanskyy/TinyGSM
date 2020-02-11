@@ -204,20 +204,6 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600, READ_AND_CHECK_SIZE,
   }
 
   /*
-   * SIM card functions
-   */
- protected:
-  // Gets the CCID of a sim card via AT+CCID
-  String getSimCCIDImpl() {
-    sendAT(GF("+CICCID"));
-    if (waitResponse(GF(GSM_NL "+ICCID:")) != 1) { return ""; }
-    String res = stream.readStringUntil('\n');
-    waitResponse();
-    res.trim();
-    return res;
-  }
-
-  /*
    * Generic network functions
    */
  public:
@@ -245,6 +231,23 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600, READ_AND_CHECK_SIZE,
     if (waitResponse(GF(GSM_NL "+CNMP:")) != 1) { return "OK"; }
     String res = stream.readStringUntil('\n');
     waitResponse();
+    return res;
+  }
+
+  /*
+   * IP Address functions
+   */
+ protected:
+  String getLocalIPImpl() {
+    sendAT(GF("+IPADDR"));  // Inquire Socket PDP address
+    // sendAT(GF("+CGPADDR=1"));  // Show PDP address
+    String res;
+    if (waitResponse(10000L, res) != 1) {
+      return "";
+    }
+    res.replace(GSM_NL "OK" GSM_NL, "");
+    res.replace(GSM_NL, "");
+    res.trim();
     return res;
   }
 
@@ -339,16 +342,17 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600, READ_AND_CHECK_SIZE,
   }
 
   /*
-   * IP Address functions
+   * SIM card functions
    */
  protected:
-  String getLocalIPImpl() {
-    sendAT(GF("+IPADDR"));  // Inquire Socket PDP address
-    // sendAT(GF("+CGPADDR=1"));  // Show PDP address
-    String res;
-    if (waitResponse(10000L, res) != 1) { return ""; }
-    res.replace(GSM_NL "OK" GSM_NL, "");
-    res.replace(GSM_NL, "");
+  // Gets the CCID of a sim card via AT+CCID
+  String getSimCCIDImpl() {
+    sendAT(GF("+CICCID"));
+    if (waitResponse(GF(GSM_NL "+ICCID:")) != 1) {
+      return "";
+    }
+    String res = stream.readStringUntil('\n');
+    waitResponse();
     res.trim();
     return res;
   }

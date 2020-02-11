@@ -209,19 +209,6 @@ class TinyGsmBG96
   }
 
   /*
-   * SIM card functions
-   */
- protected:
-  String getSimCCIDImpl() {
-    sendAT(GF("+QCCID"));
-    if (waitResponse(GF(GSM_NL "+QCCID:")) != 1) { return ""; }
-    String res = stream.readStringUntil('\n');
-    waitResponse();
-    res.trim();
-    return res;
-  }
-
-  /*
    * Generic network functions
    */
  public:
@@ -234,6 +221,12 @@ class TinyGsmBG96
     RegStatus s = getRegistrationStatus();
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
   }
+
+  /*
+   * IP Address functions
+   */
+ protected:
+  // Can follow all of the IP functions from the template
 
   /*
    * GPRS functions
@@ -267,10 +260,19 @@ class TinyGsmBG96
   }
 
   /*
-   * IP Address functions
+   * SIM card functions
    */
  protected:
-  // Can follow all of the IP functions from the template
+  String getSimCCIDImpl() {
+    sendAT(GF("+QCCID"));
+    if (waitResponse(GF(GSM_NL "+QCCID:")) != 1) {
+      return "";
+    }
+    String res = stream.readStringUntil('\n');
+    waitResponse();
+    res.trim();
+    return res;
+  }
 
   /*
    * Phone Call functions

@@ -275,19 +275,6 @@ class TinyGsmSequansMonarch
   }
 
   /*
-   * SIM card functions
-   */
- protected:
-  String getSimCCIDImpl() {
-    sendAT(GF("+SQNCCID"));
-    if (waitResponse(GF(GSM_NL "+SQNCCID:")) != 1) { return ""; }
-    String res = stream.readStringUntil('\n');
-    waitResponse();
-    res.trim();
-    return res;
-  }
-
-  /*
    * Generic network functions
    */
  public:
@@ -299,6 +286,20 @@ class TinyGsmSequansMonarch
   bool isNetworkConnectedImpl() {
     RegStatus s = getRegistrationStatus();
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
+  }
+
+  /*
+   * IP Address functions
+   */
+ protected:
+  String getLocalIPImpl() {
+    sendAT(GF("+CGPADDR=3"));
+    if (waitResponse(10000L, GF("+CGPADDR: 3,\"")) != 1) {
+      return "";
+    }
+    String res = stream.readStringUntil('\"');
+    waitResponse();
+    return res;
   }
 
   /*
@@ -338,14 +339,17 @@ class TinyGsmSequansMonarch
   }
 
   /*
-   * IP Address functions
+   * SIM card functions
    */
  protected:
-  String getLocalIPImpl() {
-    sendAT(GF("+CGPADDR=3"));
-    if (waitResponse(10000L, GF("+CGPADDR: 3,\"")) != 1) { return ""; }
-    String res = stream.readStringUntil('\"');
+  String getSimCCIDImpl() {
+    sendAT(GF("+SQNCCID"));
+    if (waitResponse(GF(GSM_NL "+SQNCCID:")) != 1) {
+      return "";
+    }
+    String res = stream.readStringUntil('\n');
     waitResponse();
+    res.trim();
     return res;
   }
 
