@@ -45,7 +45,9 @@
 // Chips without internal buffering (A6/A7, ESP8266, M590)
 // need enough space in the buffer for the entire response
 // else data will be lost (and the http library will fail).
+#ifndef TINY_GSM_RX_BUFFER
 #define TINY_GSM_RX_BUFFER 1024
+#endif
 
 // See all AT commands, if wanted
 // #define DUMP_AT_COMMANDS
@@ -106,7 +108,7 @@ const char resource[] = "/TinyGSM/logo.txt";
   TinyGsm modem(SerialAT);
 #endif
 
-#ifdef USE_SSL
+#ifdef USE_SSL && defined TINY_GSM_MODEM_HAS_SSL
   TinyGsmClientSecure client(modem);
   const int  port = 443;
 #else
