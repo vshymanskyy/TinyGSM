@@ -14,12 +14,15 @@
 
 #define TINY_GSM_MUX_COUNT 5
 
-#include "TinyGsmCommon.h"
+#include "TinyGsmModem.tpp"
+#include "TinyGsmSSL.tpp"
+#include "TinyGsmTCP.tpp"
+#include "TinyGsmWifi.tpp"
 
 #define GSM_NL "\r\n"
 static const char GSM_OK[] TINY_GSM_PROGMEM    = "OK" GSM_NL;
 static const char GSM_ERROR[] TINY_GSM_PROGMEM = "ERROR" GSM_NL;
-static uint8_t TINY_GSM_TCP_KEEP_ALIVE = 120;
+static uint8_t    TINY_GSM_TCP_KEEP_ALIVE      = 120;
 
 // <stat> status of ESP8266 station interface
 // 2 : ESP8266 station connected to an AP and has obtained IP
@@ -35,8 +38,14 @@ enum RegStatus {
 };
 
 class TinyGsmESP8266
-    : public TinyGsmModem<TinyGsmESP8266, NO_MODEM_BUFFER, TINY_GSM_MUX_COUNT> {
-  friend class TinyGsmModem<TinyGsmESP8266, NO_MODEM_BUFFER, TINY_GSM_MUX_COUNT>;
+    : public TinyGsmModem<TinyGsmESP8266>,
+      public TinyGsmWifi<TinyGsmESP8266>,
+      public TinyGsmTCP<TinyGsmESP8266, NO_MODEM_BUFFER, TINY_GSM_MUX_COUNT>,
+      public TinyGsmSSL<TinyGsmESP8266> {
+  friend class TinyGsmModem<TinyGsmESP8266>;
+  friend class TinyGsmWifi<TinyGsmESP8266>;
+  friend class TinyGsmTCP<TinyGsmESP8266, NO_MODEM_BUFFER, TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmSSL<TinyGsmESP8266>;
 
   /*
    * Inner Client
@@ -63,24 +72,16 @@ class TinyGsmESP8266
     }
 
    public:
-    int connect(const char* host, uint16_t port, int timeout_s) {
+    virtual int connect(const char* host, uint16_t port, int timeout_s) {
       stop();
       TINY_GSM_YIELD();
       rx.clear();
       sock_connected = at->modemConnect(host, port, mux, false, timeout_s);
       return sock_connected;
     }
-    int connect(IPAddress ip, uint16_t port, int timeout_s) {
-      return connect(TinyGsmStringFromIp(ip).c_str(), port, timeout_s);
-    }
-    int connect(const char* host, uint16_t port) override {
-      return connect(host, port, 75);
-    }
-    int connect(IPAddress ip, uint16_t port) override {
-      return connect(ip, port, 75);
-    }
+    TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
-    void stop(uint32_t maxWaitMs) {
+    virtual void stop(uint32_t maxWaitMs) {
       TINY_GSM_YIELD();
       at->sendAT(GF("+CIPCLOSE="), mux);
       sock_connected = false;
@@ -110,13 +111,14 @@ class TinyGsmESP8266
         : GsmClientESP8266(modem, mux) {}
 
    public:
-    int connect(const char* host, uint16_t port, int timeout_s) {
+    int connect(const char* host, uint16_t port, int timeout_s) override {
       stop();
       TINY_GSM_YIELD();
       rx.clear();
       sock_connected = at->modemConnect(host, port, mux, true, timeout_s);
       return sock_connected;
     }
+    TINY_GSM_CLIENT_CONNECT_OVERRIDES
   };
 
   /*
@@ -171,18 +173,6 @@ class TinyGsmESP8266
     return res;
   }
 
-  bool thisHasSSL() {
-    return true;
-  }
-
-  bool thisHasWifi() {
-    return true;
-  }
-
-  bool thisHasGPRS() {
-    return false;
-  }
-
   /*
    * Power functions
    */
@@ -204,12 +194,6 @@ class TinyGsmESP8266
   bool radioOffImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
   bool sleepEnableImpl(bool enable = true) TINY_GSM_ATTR_NOT_AVAILABLE;
-
-  /*
-   * SIM card functions
-   */
- protected:
-  // SIM card functions don't apply
 
   /*
    * Generic network functions
@@ -257,16 +241,10 @@ class TinyGsmESP8266
     }
   }
 
-  /*
-   * IP Address functions
-   */
- protected:
   String getLocalIPImpl() {
     sendAT(GF("+CIPSTA_CUR?"));
     int res1 = waitResponse(GF("ERROR"), GF("+CWJAP_CUR:"));
-    if (res1 != 2) {
-      return "";
-    }
+    if (res1 != 2) { return ""; }
     String res2 = stream.readStringUntil('"');
     waitResponse();
     return res2;
@@ -291,56 +269,6 @@ class TinyGsmESP8266
     waitResponse(GF("WIFI DISCONNECT"));
     return retVal;
   }
-
-  /*
-   * Phone Call functions
-   */
- protected:
-  bool callAnswerImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
-  bool callNumberImpl(const String& number) TINY_GSM_ATTR_NOT_AVAILABLE;
-  bool callHangupImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
-  bool dtmfSendImpl(char cmd,
-                    int  duration_ms = 100) TINY_GSM_ATTR_NOT_AVAILABLE;
-
-  /*
-   * Messaging functions
-   */
- protected:
-  String sendUSSDImpl(const String& code) TINY_GSM_ATTR_NOT_AVAILABLE;
-  bool   sendSMSImpl(const String& number,
-                     const String& text) TINY_GSM_ATTR_NOT_AVAILABLE;
-  bool   sendSMS_UTF16Impl(const char* const number, const void* text,
-                           size_t len) TINY_GSM_ATTR_NOT_AVAILABLE;
-
-  /*
-   * Location functions
-   */
- protected:
-  String getGsmLocationImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
-
-  /*
-   * GPS location functions
-   */
- public:
-  // No functions of this type supported
-
-  /*
-   * Time functions
-   */
- protected:
-  String
-  getGSMDateTimeImpl(TinyGSMDateTimeFormat format) TINY_GSM_ATTR_NOT_AVAILABLE;
-
-  /*
-   * Battery & temperature functions
-   */
- protected:
-  uint16_t getBattVoltageImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
-  int8_t   getBattPercentImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
-  uint8_t  getBattChargeStateImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
-  bool     getBattStatsImpl(uint8_t& chargeState, int8_t& percent,
-                            uint16_t& milliVolts) TINY_GSM_ATTR_NOT_AVAILABLE;
-  float    getTemperatureImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
 
   /*
    * Client related functions

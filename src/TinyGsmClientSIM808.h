@@ -10,18 +10,22 @@
 #define SRC_TINYGSMCLIENTSIM808_H_
 // #pragma message("TinyGSM:  TinyGsmClientSIM808")
 
-#include <TinyGsmClientSIM800.h>
+#include "TinyGsmClientSIM800.h"
+#include "TinyGsmGPS.tpp"
 
-class TinyGsmSim808 : public TinyGsmSim800 {
+class TinyGsmSim808 : public TinyGsmSim800, public TinyGsmGPS<TinyGsmSim808> {
+  friend class TinyGsmGPS<TinyGsmSim808>;
+
  public:
   explicit TinyGsmSim808(Stream& stream) : TinyGsmSim800(stream) {}
+
 
   /*
    * GPS location functions
    */
- public:
+ protected:
   // enable GPS
-  bool enableGPS() {
+  bool enableGPSImpl() {
     // uint16_t state;
 
     sendAT(GF("+CGNSPWR=1"));
@@ -30,7 +34,7 @@ class TinyGsmSim808 : public TinyGsmSim800 {
     return true;
   }
 
-  bool disableGPS() {
+  bool disableGPSImpl() {
     // uint16_t state;
 
     sendAT(GF("+CGNSPWR=0"));
@@ -41,7 +45,7 @@ class TinyGsmSim808 : public TinyGsmSim800 {
 
   // get the RAW GPS output
   // works only with ans SIM808 V2
-  String getGPSraw() {
+  String getGPSrawImpl() {
     sendAT(GF("+CGNSINF"));
     if (waitResponse(GF(GSM_NL "+CGNSINF:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
@@ -52,8 +56,8 @@ class TinyGsmSim808 : public TinyGsmSim800 {
 
   // get GPS informations
   // works only with ans SIM808 V2
-  bool getGPS(float* lat, float* lon, float* speed = 0, int* alt = 0,
-              int* vsat = 0, int* usat = 0) {
+  bool getGPSImpl(float* lat, float* lon, float* speed = 0, int* alt = 0,
+                  int* vsat = 0, int* usat = 0) {
     // String buffer = "";
     // char chr_buffer[12];
     bool fix = false;
@@ -90,8 +94,8 @@ class TinyGsmSim808 : public TinyGsmSim800 {
 
   // get GPS time
   // works only with SIM808 V2
-  bool getGPSTime(int* year, int* month, int* day, int* hour, int* minute,
-                  int* second) {
+  bool getGPSTimeImpl(int* year, int* month, int* day, int* hour, int* minute,
+                      int* second) {
     bool fix = false;
     char chr_buffer[12];
     sendAT(GF("+CGNSINF"));

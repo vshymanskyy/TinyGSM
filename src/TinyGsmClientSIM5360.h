@@ -14,7 +14,13 @@
 
 #define TINY_GSM_MUX_COUNT 10
 
-#include "TinyGsmCommon.h"
+#include "TinyGsmBattery.tpp"
+#include "TinyGsmGPRS.tpp"
+#include "TinyGsmModem.tpp"
+#include "TinyGsmSMS.tpp"
+#include "TinyGsmTCP.tpp"
+#include "TinyGsmTemperature.tpp"
+#include "TinyGsmTime.tpp"
 
 #define GSM_NL "\r\n"
 static const char GSM_OK[] TINY_GSM_PROGMEM        = "OK" GSM_NL;
@@ -31,10 +37,22 @@ enum RegStatus {
   REG_UNKNOWN      = 4,
 };
 
-class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360, READ_AND_CHECK_SIZE,
-                                           TINY_GSM_MUX_COUNT> {
-  friend class TinyGsmModem<TinyGsmSim5360, READ_AND_CHECK_SIZE,
-                            TINY_GSM_MUX_COUNT>;
+class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
+                       public TinyGsmGPRS<TinyGsmSim5360>,
+                       public TinyGsmTCP<TinyGsmSim5360, READ_AND_CHECK_SIZE,
+                                         TINY_GSM_MUX_COUNT>,
+                       public TinyGsmSMS<TinyGsmSim5360>,
+                       public TinyGsmTime<TinyGsmSim5360>,
+                       public TinyGsmBattery<TinyGsmSim5360>,
+                       public TinyGsmTemperature<TinyGsmSim5360> {
+  friend class TinyGsmModem<TinyGsmSim5360>;
+  friend class TinyGsmGPRS<TinyGsmSim5360>;
+  friend class TinyGsmTCP<TinyGsmSim5360, READ_AND_CHECK_SIZE,
+                          TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmSMS<TinyGsmSim5360>;
+  friend class TinyGsmTime<TinyGsmSim5360>;
+  friend class TinyGsmBattery<TinyGsmSim5360>;
+  friend class TinyGsmTemperature<TinyGsmSim5360>;
 
   /*
    * Inner Client
@@ -64,24 +82,16 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360, READ_AND_CHECK_SIZE,
     }
 
    public:
-    int connect(const char* host, uint16_t port, int timeout_s) {
+    virtual int connect(const char* host, uint16_t port, int timeout_s) {
       stop();
       TINY_GSM_YIELD();
       rx.clear();
       sock_connected = at->modemConnect(host, port, mux, false, timeout_s);
       return sock_connected;
     }
-    int connect(IPAddress ip, uint16_t port, int timeout_s) {
-      return connect(TinyGsmStringFromIp(ip).c_str(), port, timeout_s);
-    }
-    int connect(const char* host, uint16_t port) override {
-      return connect(host, port, 75);
-    }
-    int connect(IPAddress ip, uint16_t port) override {
-      return connect(ip, port, 75);
-    }
+    TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
-    void stop(uint32_t maxWaitMs) {
+    virtual void stop(uint32_t maxWaitMs) {
       dumpModemBuffer(maxWaitMs);
       at->sendAT(GF("+CIPCLOSE="), mux);
       sock_connected = false;
@@ -112,13 +122,14 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360, READ_AND_CHECK_SIZE,
       : GsmClientSim5360(modem, mux) {}
 
    public:
-    int connect(const char* host, uint16_t port, int timeout_s) {
+    int connect(const char* host, uint16_t port, int timeout_s) override {
       stop();
       TINY_GSM_YIELD();
       rx.clear();
       sock_connected = at->modemConnect(host, port, mux, true, timeout_s);
       return sock_connected;
     }
+    TINY_GSM_CLIENT_CONNECT_OVERRIDES
   };
   */
 
@@ -186,18 +197,6 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360, READ_AND_CHECK_SIZE,
     return false;
   }
 
-  bool thisHasSSL() {
-    return false;  // TODO(>):  Module supports SSL, but not yet implemented
-  }
-
-  bool thisHasWifi() {
-    return false;
-  }
-
-  bool thisHasGPRS() {
-    return true;
-  }
-
   /*
    * Power functions
    */
@@ -258,17 +257,11 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360, READ_AND_CHECK_SIZE,
     return res;
   }
 
-  /*
-   * IP Address functions
-   */
- protected:
   String getLocalIPImpl() {
     sendAT(GF("+IPADDR"));  // Inquire Socket PDP address
     // sendAT(GF("+CGPADDR=1"));  // Show PDP address
     String res;
-    if (waitResponse(10000L, res) != 1) {
-      return "";
-    }
+    if (waitResponse(10000L, res) != 1) { return ""; }
     res.replace(GSM_NL "OK" GSM_NL, "");
     res.replace(GSM_NL, "");
     res.trim();
@@ -395,24 +388,12 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360, READ_AND_CHECK_SIZE,
   // Gets the CCID of a sim card via AT+CCID
   String getSimCCIDImpl() {
     sendAT(GF("+CICCID"));
-    if (waitResponse(GF(GSM_NL "+ICCID:")) != 1) {
-      return "";
-    }
+    if (waitResponse(GF(GSM_NL "+ICCID:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     waitResponse();
     res.trim();
     return res;
   }
-
-  /*
-   * Phone Call functions
-   */
- protected:
-  bool callAnswerImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
-  bool callNumberImpl(const String& number) TINY_GSM_ATTR_NOT_IMPLEMENTED;
-  bool callHangupImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
-  bool dtmfSendImpl(char cmd,
-                    int  duration_ms = 100) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
   /*
    * Messaging functions
@@ -421,25 +402,13 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360, READ_AND_CHECK_SIZE,
   // Follows all messaging functions per template
 
   /*
-   * Location functions
-   */
- protected:
-  String getGsmLocationImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
-
-  /*
-   * GPS location functions
-   */
- public:
-  // No functions of this type supported
-
-  /*
    * Time functions
    */
  protected:
   // Can follow the standard CCLK function in the template
 
   /*
-   * Battery & temperature functions
+   * Battery functions
    */
  protected:
   // SRGD Note:  Returns voltage in VOLTS instead of millivolts
@@ -471,6 +440,10 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360, READ_AND_CHECK_SIZE,
     waitResponse();
     return true;
   }
+
+  /*
+   * Temperature functions
+   */
 
   // get temperature in degree celsius
   float getTemperatureImpl() {

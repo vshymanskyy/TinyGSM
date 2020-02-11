@@ -14,7 +14,11 @@
 
 #define TINY_GSM_MUX_COUNT 2
 
-#include "TinyGsmCommon.h"
+#include "TinyGsmGPRS.tpp"
+#include "TinyGsmModem.tpp"
+#include "TinyGsmSMS.tpp"
+#include "TinyGsmTCP.tpp"
+#include "TinyGsmTime.tpp"
 
 #define GSM_NL "\r\n"
 static const char GSM_OK[] TINY_GSM_PROGMEM        = "OK" GSM_NL;
@@ -32,8 +36,16 @@ enum RegStatus {
 };
 
 class TinyGsmM590
-    : public TinyGsmModem<TinyGsmM590, NO_MODEM_BUFFER, TINY_GSM_MUX_COUNT> {
-  friend class TinyGsmModem<TinyGsmM590, NO_MODEM_BUFFER, TINY_GSM_MUX_COUNT>;
+    : public TinyGsmModem<TinyGsmM590>,
+      public TinyGsmGPRS<TinyGsmM590>,
+      public TinyGsmTCP<TinyGsmM590, NO_MODEM_BUFFER, TINY_GSM_MUX_COUNT>,
+      public TinyGsmSMS<TinyGsmM590>,
+      public TinyGsmTime<TinyGsmM590> {
+  friend class TinyGsmModem<TinyGsmM590>;
+  friend class TinyGsmGPRS<TinyGsmM590>;
+  friend class TinyGsmTCP<TinyGsmM590, NO_MODEM_BUFFER, TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmSMS<TinyGsmM590>;
+  friend class TinyGsmTime<TinyGsmM590>;
 
   /*
    * Inner Client
@@ -67,17 +79,9 @@ class TinyGsmM590
       sock_connected = at->modemConnect(host, port, mux, false, timeout_s);
       return sock_connected;
     }
-    int connect(IPAddress ip, uint16_t port, int timeout_s) {
-      return connect(TinyGsmStringFromIp(ip).c_str(), port, timeout_s);
-    }
-    int connect(const char* host, uint16_t port) override {
-      return connect(host, port, 75);
-    }
-    int connect(IPAddress ip, uint16_t port) override {
-      return connect(ip, port, 75);
-    }
+    TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
-    void stop(uint32_t maxWaitMs) {
+    virtual void stop(uint32_t maxWaitMs) {
       TINY_GSM_YIELD();
       at->sendAT(GF("+TCPCLOSE="), mux);
       sock_connected = false;
@@ -155,18 +159,6 @@ class TinyGsmM590
     return waitResponse() == 1;
   }
 
-  bool thisHasSSL() {
-    return false;
-  }
-
-  bool thisHasWifi() {
-    return false;
-  }
-
-  bool thisHasGPRS() {
-    return true;
-  }
-
   /*
    * Power functions
    */
@@ -204,15 +196,9 @@ class TinyGsmM590
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
   }
 
-  /*
-   * IP Address functions
-   */
- protected:
   String getLocalIPImpl() {
     sendAT(GF("+XIIC?"));
-    if (waitResponse(GF(GSM_NL "+XIIC:")) != 1) {
-      return "";
-    }
+    if (waitResponse(GF(GSM_NL "+XIIC:")) != 1) { return ""; }
     streamSkipUntil(',');
     String res = stream.readStringUntil('\n');
     waitResponse();
@@ -283,16 +269,6 @@ class TinyGsmM590
   // Able to follow all SIM card functions as inherited from the template
 
   /*
-   * Phone Call functions
-   */
- protected:
-  bool callAnswerImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
-  bool callNumberImpl(const String& number) TINY_GSM_ATTR_NOT_AVAILABLE;
-  bool callHangupImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
-  bool dtmfSendImpl(char cmd,
-                    int  duration_ms = 100) TINY_GSM_ATTR_NOT_AVAILABLE;
-
-  /*
    * Messaging functions
    */
  protected:
@@ -300,32 +276,10 @@ class TinyGsmM590
                          size_t len) TINY_GSM_ATTR_NOT_AVAILABLE;
 
   /*
-   * Location functions
-   */
- protected:
-  String getGsmLocationImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
-
-  /*
-   * GPS location functions
-   */
- public:
-  // No functions of this type available
-  /*
    * Time functions
    */
  protected:
   // Can follow the standard CCLK function in the template
-
-  /*
-   * Battery & temperature functions
-   */
- protected:
-  uint16_t getBattVoltageImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
-  int8_t   getBattPercentImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
-  uint8_t  getBattChargeStateImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
-  bool     getBattStatsImpl(uint8_t& chargeState, int8_t& percent,
-                            uint16_t& milliVolts) TINY_GSM_ATTR_NOT_AVAILABLE;
-  float    getTemperatureImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
 
   /*
    * Client related functions

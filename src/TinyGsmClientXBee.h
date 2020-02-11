@@ -20,7 +20,14 @@
 // here)
 #define TINY_GSM_XBEE_GUARD_TIME 1010
 
-#include "TinyGsmCommon.h"
+#include "TinyGsmBattery.tpp"
+#include "TinyGsmGPRS.tpp"
+#include "TinyGsmModem.tpp"
+#include "TinyGsmSMS.tpp"
+#include "TinyGsmSSL.tpp"
+#include "TinyGsmTCP.tpp"
+#include "TinyGsmTemperature.tpp"
+#include "TinyGsmWifi.tpp"
 
 #define GSM_NL "\r"
 static const char GSM_OK[] TINY_GSM_PROGMEM    = "OK" GSM_NL;
@@ -59,8 +66,22 @@ enum XBeeType {
 };
 
 class TinyGsmXBee
-    : public TinyGsmModem<TinyGsmXBee, NO_MODEM_BUFFER, TINY_GSM_MUX_COUNT> {
-  friend class TinyGsmModem<TinyGsmXBee, NO_MODEM_BUFFER, TINY_GSM_MUX_COUNT>;
+    : public TinyGsmModem<TinyGsmXBee>,
+      public TinyGsmGPRS<TinyGsmXBee>,
+      public TinyGsmWifi<TinyGsmXBee>,
+      public TinyGsmTCP<TinyGsmXBee, NO_MODEM_BUFFER, TINY_GSM_MUX_COUNT>,
+      public TinyGsmSSL<TinyGsmXBee>,
+      public TinyGsmSMS<TinyGsmXBee>,
+      public TinyGsmBattery<TinyGsmXBee>,
+      public TinyGsmTemperature<TinyGsmXBee> {
+  friend class TinyGsmModem<TinyGsmXBee>;
+  friend class TinyGsmGPRS<TinyGsmXBee>;
+  friend class TinyGsmWifi<TinyGsmXBee>;
+  friend class TinyGsmTCP<TinyGsmXBee, NO_MODEM_BUFFER, TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmSSL<TinyGsmXBee>;
+  friend class TinyGsmSMS<TinyGsmXBee>;
+  friend class TinyGsmBattery<TinyGsmXBee>;
+  friend class TinyGsmTemperature<TinyGsmXBee>;
 
   /*
    * Inner Client
@@ -93,7 +114,7 @@ class TinyGsmXBee
     // itself is not opened until you attempt to send data. Because all settings
     // are saved to flash, it is possible (or likely) that you could send data
     // even if you haven't "made" any connection.
-    int connect(const char* host, uint16_t port, int timeout_s) {
+    virtual int connect(const char* host, uint16_t port, int timeout_s) {
       // NOTE:  Not caling stop() or yeild() here
       at->streamClear();  // Empty anything in the buffer before starting
       sock_connected = at->modemConnect(host, port, mux, false, timeout_s);
@@ -103,7 +124,7 @@ class TinyGsmXBee
       return connect(host, port, 75);
     }
 
-    int connect(IPAddress ip, uint16_t port, int timeout_s) {
+    virtual int connect(IPAddress ip, uint16_t port, int timeout_s) {
       if (timeout_s != 0) {
         DBG("Timeout [", timeout_s, "] doesn't apply here.");
       }
@@ -116,7 +137,7 @@ class TinyGsmXBee
       return connect(ip, port, 0);
     }
 
-    void stop(uint32_t maxWaitMs) {
+    virtual void stop(uint32_t maxWaitMs) {
       at->streamClear();  // Empty anything in the buffer
       // empty the saved currently-in-use destination address
       at->modemStop(maxWaitMs);
@@ -236,14 +257,17 @@ class TinyGsmXBee
         : GsmClientXBee(modem, mux) {}
 
    public:
-    int connect(const char* host, uint16_t port, int timeout_s) {
+    int connect(const char* host, uint16_t port, int timeout_s) override {
       // NOTE:  Not caling stop() or yeild() here
       at->streamClear();  // Empty anything in the buffer before starting
       sock_connected = at->modemConnect(host, port, mux, true, timeout_s);
       return sock_connected;
     }
+    int connect(const char* host, uint16_t port) override {
+      return connect(host, port, 75);
+    }
 
-    int connect(IPAddress ip, uint16_t port, int timeout_s) {
+    int connect(IPAddress ip, uint16_t port, int timeout_s) override {
       if (timeout_s != 0) {
         DBG("Timeout [", timeout_s, "] doesn't apply here.");
       }
@@ -251,6 +275,9 @@ class TinyGsmXBee
       at->streamClear();  // Empty anything in the buffer before starting
       sock_connected = at->modemConnect(ip, port, mux, true);
       return sock_connected;
+    }
+    int connect(IPAddress ip, uint16_t port) override {
+      return connect(ip, port, 0);
     }
   };
 
@@ -405,6 +432,7 @@ class TinyGsmXBee
     return sendATGetString(GF("HS"));
   }
 
+  /*
   bool thisHasSSL() {
     if (beeType == XBEE_S6B_WIFI)
       return false;
@@ -425,6 +453,7 @@ class TinyGsmXBee
     else
       return true;
   }
+  */
 
  public:
   XBeeType getBeeType() {
@@ -692,10 +721,6 @@ class TinyGsmXBee
     return retVal;
   }
 
-  /*
-   * IP Address functions
-   */
- protected:
   String getLocalIPImpl() {
     XBEE_COMMAND_START_DECORATOR(5, "")
     sendAT(GF("MY"));
@@ -788,7 +813,9 @@ class TinyGsmXBee
     return isNetworkConnected();
   }
 
-  String getOperatorImpl() { return sendATGetString(GF("MN")); }
+  String getOperatorImpl() {
+    return sendATGetString(GF("MN"));
+  }
 
   /*
    * SIM card functions
@@ -801,23 +828,17 @@ class TinyGsmXBee
     return false;
   }
 
-  String getSimCCIDImpl() { return sendATGetString(GF("S#")); }
+  String getSimCCIDImpl() {
+    return sendATGetString(GF("S#"));
+  }
 
-  String getIMEIImpl() { return sendATGetString(GF("IM")); }
+  String getIMEIImpl() {
+    return sendATGetString(GF("IM"));
+  }
 
   SimStatus getSimStatusImpl(uint32_t) {
     return SIM_READY;  // unsupported
   }
-
-  /*
-   * Phone Call functions
-   */
- protected:
-  bool callAnswerImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
-  bool callNumberImpl(const String& number) TINY_GSM_ATTR_NOT_AVAILABLE;
-  bool callHangupImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
-  bool dtmfSendImpl(char cmd,
-                    int  duration_ms = 100) TINY_GSM_ATTR_NOT_AVAILABLE;
 
   /*
    * Messaging functions
@@ -848,26 +869,7 @@ class TinyGsmXBee
   }
 
   /*
-   * Location functions
-   */
- protected:
-  String getGsmLocationImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
-
-  /*
-   * GPS location functions
-   */
- public:
-  // No functions of this type supported
-
-  /*
-   * Time functions
-   */
- protected:
-  String getGSMDateTimeImpl(TinyGSMDateTimeFormat format)
-      TINY_GSM_ATTR_NOT_IMPLEMENTED;
-
-  /*
-   * Battery & temperature functions
+   * Battery functions
    */
  protected:
   // Use: float vBatt = modem.getBattVoltage() / 1000.0;
@@ -893,6 +895,10 @@ class TinyGsmXBee
     milliVolts  = getBattVoltage();
     return true;
   }
+
+  /*
+   * Temperature functions
+   */
 
   float getTemperatureImpl() {
     XBEE_COMMAND_START_DECORATOR(5, static_cast<float>(-9999))

@@ -14,7 +14,14 @@
 
 #define TINY_GSM_MUX_COUNT 10
 
-#include "TinyGsmCommon.h"
+#include "TinyGsmBattery.tpp"
+#include "TinyGsmGPRS.tpp"
+#include "TinyGsmGPS.tpp"
+#include "TinyGsmModem.tpp"
+#include "TinyGsmSMS.tpp"
+#include "TinyGsmTCP.tpp"
+#include "TinyGsmTemperature.tpp"
+#include "TinyGsmTime.tpp"
 
 #define GSM_NL "\r\n"
 static const char GSM_OK[] TINY_GSM_PROGMEM        = "OK" GSM_NL;
@@ -31,10 +38,24 @@ enum RegStatus {
   REG_UNKNOWN      = 4,
 };
 
-class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600, READ_AND_CHECK_SIZE,
-                                           TINY_GSM_MUX_COUNT> {
-  friend class TinyGsmModem<TinyGsmSim7600, READ_AND_CHECK_SIZE,
-                            TINY_GSM_MUX_COUNT>;
+class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
+                       public TinyGsmGPRS<TinyGsmSim7600>,
+                       public TinyGsmTCP<TinyGsmSim7600, READ_AND_CHECK_SIZE,
+                                         TINY_GSM_MUX_COUNT>,
+                       public TinyGsmSMS<TinyGsmSim7600>,
+                       public TinyGsmGPS<TinyGsmSim7600>,
+                       public TinyGsmTime<TinyGsmSim7600>,
+                       public TinyGsmBattery<TinyGsmSim7600>,
+                       public TinyGsmTemperature<TinyGsmSim7600> {
+  friend class TinyGsmModem<TinyGsmSim7600>;
+  friend class TinyGsmGPRS<TinyGsmSim7600>;
+  friend class TinyGsmTCP<TinyGsmSim7600, READ_AND_CHECK_SIZE,
+                          TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmSMS<TinyGsmSim7600>;
+  friend class TinyGsmGPS<TinyGsmSim7600>;
+  friend class TinyGsmTime<TinyGsmSim7600>;
+  friend class TinyGsmBattery<TinyGsmSim7600>;
+  friend class TinyGsmTemperature<TinyGsmSim7600>;
 
   /*
    * Inner Client
@@ -71,17 +92,9 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600, READ_AND_CHECK_SIZE,
       sock_connected = at->modemConnect(host, port, mux, false, timeout_s);
       return sock_connected;
     }
-    int connect(IPAddress ip, uint16_t port, int timeout_s) {
-      return connect(TinyGsmStringFromIp(ip).c_str(), port, timeout_s);
-    }
-    int connect(const char* host, uint16_t port) override {
-      return connect(host, port, 75);
-    }
-    int connect(IPAddress ip, uint16_t port) override {
-      return connect(ip, port, 75);
-    }
+    TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
-    void stop(uint32_t maxWaitMs) {
+    virtual void stop(uint32_t maxWaitMs) {
       dumpModemBuffer(maxWaitMs);
       at->sendAT(GF("+CIPCLOSE="), mux);
       sock_connected = false;
@@ -97,6 +110,32 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600, READ_AND_CHECK_SIZE,
 
     String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
   };
+
+  /*
+   * Inner Secure Client
+   */
+
+  /*TODO(?))
+  class GsmClientSecureSIM7000 : public GsmClientSim7000
+  {
+  public:
+    GsmClientSecure() {}
+
+    GsmClientSecure(TinyGsmSim7000& modem, uint8_t mux = 1)
+     : public GsmClient(modem, mux)
+    {}
+
+  public:
+    int connect(const char* host, uint16_t port, int timeout_s) override {
+      stop();
+      TINY_GSM_YIELD();
+      rx.clear();
+      sock_connected = at->modemConnect(host, port, mux, true, timeout_s);
+      return sock_connected;
+    }
+    TINY_GSM_CLIENT_CONNECT_OVERRIDES
+  };
+  */
 
   /*
    * Constructor
@@ -162,18 +201,6 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600, READ_AND_CHECK_SIZE,
     return false;
   }
 
-  bool thisHasSSL() {
-    return false;  // TODO(?):  Module supports SSL, but not yet implemented
-  }
-
-  bool thisHasWifi() {
-    return false;
-  }
-
-  bool thisHasGPRS() {
-    return true;
-  }
-
   /*
    * Power functions
    */
@@ -234,17 +261,11 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600, READ_AND_CHECK_SIZE,
     return res;
   }
 
-  /*
-   * IP Address functions
-   */
- protected:
   String getLocalIPImpl() {
     sendAT(GF("+IPADDR"));  // Inquire Socket PDP address
     // sendAT(GF("+CGPADDR=1"));  // Show PDP address
     String res;
-    if (waitResponse(10000L, res) != 1) {
-      return "";
-    }
+    if (waitResponse(10000L, res) != 1) { return ""; }
     res.replace(GSM_NL "OK" GSM_NL, "");
     res.replace(GSM_NL, "");
     res.trim();
@@ -348,9 +369,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600, READ_AND_CHECK_SIZE,
   // Gets the CCID of a sim card via AT+CCID
   String getSimCCIDImpl() {
     sendAT(GF("+CICCID"));
-    if (waitResponse(GF(GSM_NL "+ICCID:")) != 1) {
-      return "";
-    }
+    if (waitResponse(GF(GSM_NL "+ICCID:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     waitResponse();
     res.trim();
@@ -379,25 +398,26 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600, READ_AND_CHECK_SIZE,
  protected:
   String getGsmLocationImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
+
   /*
    * GPS location functions
    */
- public:
+ protected:
   // enable GPS
-  bool enableGPS() {
+  bool enableGPSImpl() {
     sendAT(GF("+CGPS=1"));
     if (waitResponse() != 1) { return false; }
     return true;
   }
 
-  bool disableGPS() {
+  bool disableGPSImpl() {
     sendAT(GF("+CGPS=0"));
     if (waitResponse() != 1) { return false; }
     return true;
   }
 
   // get the RAW GPS output
-  String getGPSraw() {
+  String getGPSrawImpl() {
     sendAT(GF("+CGNSSINFO=32"));
     if (waitResponse(GF(GSM_NL "+CGNSSINFO:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
@@ -407,7 +427,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600, READ_AND_CHECK_SIZE,
   }
 
   // get GPS informations
-  bool getGPS(float* lat, float* lon, float* speed = 0, int* alt = 0) {
+  bool getGPSImpl(float* lat, float* lon, float* speed = 0, int* alt = 0) {
     // String buffer = "";
     bool fix = false;
 
@@ -449,7 +469,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600, READ_AND_CHECK_SIZE,
   // Can follow the standard CCLK function in the template
 
   /*
-   * Battery & temperature functions
+   * Battery functions
    */
  protected:
   // returns volts, multiply by 1000 to get mV
@@ -477,6 +497,10 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600, READ_AND_CHECK_SIZE,
     milliVolts  = getBattVoltage();
     return true;
   }
+
+  /*
+   * Temperature functions
+   */
 
   // get temperature in degree celsius
   uint16_t getTemperatureImpl() {

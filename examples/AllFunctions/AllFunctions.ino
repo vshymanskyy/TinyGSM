@@ -245,9 +245,9 @@ void loop() {
     stream.print(F("Привіііт! Print number: "));
     stream.print(595);
     res = modem.sendSMS_UTF8_end();
-  } 
+  }
   DBG("UTF8 SMS:", res ? "OK" : "fail");
-  
+
 #endif
 
 #if TINY_GSM_TEST_CALL && defined(CALL_TARGET)

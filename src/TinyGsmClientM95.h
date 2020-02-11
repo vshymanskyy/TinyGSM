@@ -15,7 +15,14 @@
 
 #define TINY_GSM_MUX_COUNT 6
 
-#include "TinyGsmCommon.h"
+#include "TinyGsmBattery.tpp"
+#include "TinyGsmCalling.tpp"
+#include "TinyGsmGPRS.tpp"
+#include "TinyGsmModem.tpp"
+#include "TinyGsmSMS.tpp"
+#include "TinyGsmTCP.tpp"
+#include "TinyGsmTemperature.tpp"
+#include "TinyGsmTime.tpp"
 
 #define GSM_NL "\r\n"
 static const char GSM_OK[] TINY_GSM_PROGMEM        = "OK" GSM_NL;
@@ -33,8 +40,22 @@ enum RegStatus {
 };
 
 class TinyGsmM95
-    : public TinyGsmModem<TinyGsmM95, READ_NO_CHECK, TINY_GSM_MUX_COUNT> {
-  friend class TinyGsmModem<TinyGsmM95, READ_NO_CHECK, TINY_GSM_MUX_COUNT>;
+    : public TinyGsmModem<TinyGsmM95>,
+      public TinyGsmGPRS<TinyGsmM95>,
+      public TinyGsmTCP<TinyGsmM95, READ_NO_CHECK, TINY_GSM_MUX_COUNT>,
+      public TinyGsmCalling<TinyGsmM95>,
+      public TinyGsmSMS<TinyGsmM95>,
+      public TinyGsmTime<TinyGsmM95>,
+      public TinyGsmBattery<TinyGsmM95>,
+      public TinyGsmTemperature<TinyGsmM95> {
+  friend class TinyGsmModem<TinyGsmM95>;
+  friend class TinyGsmGPRS<TinyGsmM95>;
+  friend class TinyGsmTCP<TinyGsmM95, READ_NO_CHECK, TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmCalling<TinyGsmM95>;
+  friend class TinyGsmSMS<TinyGsmM95>;
+  friend class TinyGsmTime<TinyGsmM95>;
+  friend class TinyGsmBattery<TinyGsmM95>;
+  friend class TinyGsmTemperature<TinyGsmM95>;
 
   /*
    * Inner Client
@@ -62,24 +83,16 @@ class TinyGsmM95
     }
 
    public:
-    int connect(const char* host, uint16_t port, int timeout_s) {
+    virtual int connect(const char* host, uint16_t port, int timeout_s) {
       stop();
       TINY_GSM_YIELD();
       rx.clear();
       sock_connected = at->modemConnect(host, port, mux, false, timeout_s);
       return sock_connected;
     }
-    int connect(IPAddress ip, uint16_t port, int timeout_s) {
-      return connect(TinyGsmStringFromIp(ip).c_str(), port, timeout_s);
-    }
-    int connect(const char* host, uint16_t port) override {
-      return connect(host, port, 75);
-    }
-    int connect(IPAddress ip, uint16_t port) override {
-      return connect(ip, port, 75);
-    }
+    TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
-    void stop(uint32_t maxWaitMs) {
+    virtual void stop(uint32_t maxWaitMs) {
       uint32_t startMillis = millis();
       dumpModemBuffer(maxWaitMs);
       at->sendAT(GF("+QICLOSE="), mux);
@@ -114,13 +127,14 @@ class TinyGsmM95
 
 
     public:
-      int connect(const char* host, uint16_t port, int timeout_s) {
+      int connect(const char* host, uint16_t port, int timeout_s) override {
         stop();
         TINY_GSM_YIELD();
         rx.clear();
         sock_connected = at->modemConnect(host, port, mux, true, timeout_s);
         return sock_connected;
       }
+      TINY_GSM_CLIENT_CONNECT_OVERRIDES
     };
   */
 
@@ -172,18 +186,6 @@ class TinyGsmM95
     }
   }
 
-  bool thisHasSSL() {
-    return false;  // TODO(?): Add SSL support
-  }
-
-  bool thisHasWifi() {
-    return false;
-  }
-
-  bool thisHasGPRS() {
-    return true;
-  }
-
   /*
    * Power functions
    */
@@ -231,7 +233,6 @@ class TinyGsmM95
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
   }
 
- public:
   void setHostFormat(bool useDottedQuad) {
     if (useDottedQuad) {
       sendAT(GF("+QIDNSIP=0"));
@@ -241,10 +242,6 @@ class TinyGsmM95
     waitResponse();
   }
 
-  /*
-   * IP Address functions
-   */
- protected:
   String getLocalIPImpl() {
     sendAT(GF("+QILOCIP"));
     streamSkipUntil('\n');
@@ -338,9 +335,7 @@ class TinyGsmM95
  protected:
   String getSimCCIDImpl() {
     sendAT(GF("+QCCID"));
-    if (waitResponse(GF(GSM_NL "+QCCID:")) != 1) {
-      return "";
-    }
+    if (waitResponse(GF(GSM_NL "+QCCID:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     waitResponse();
     res.trim();
@@ -370,25 +365,18 @@ class TinyGsmM95
   }
 
   /*
-   * Location functions
-   */
- protected:
-  String getGsmLocationImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
-
-  /*
-   * GPS location functions
-   */
- public:
-  // No functions of this type supported
-
-  /*
    * Time functions
    */
  protected:
   // Can follow the standard CCLK function in the template
 
   /*
-   * Battery & temperature functions
+   * Battery functions
+   */
+  // Can follow the battery functions in the template
+
+  /*
+   * Temperature functions
    */
  protected:
   float getTemperatureImpl() {

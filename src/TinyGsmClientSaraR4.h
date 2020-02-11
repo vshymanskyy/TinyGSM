@@ -14,7 +14,15 @@
 
 #define TINY_GSM_MUX_COUNT 7
 
-#include "TinyGsmCommon.h"
+#include "TinyGsmBattery.tpp"
+#include "TinyGsmGPRS.tpp"
+#include "TinyGsmGSMLocation.tpp"
+#include "TinyGsmModem.tpp"
+#include "TinyGsmSMS.tpp"
+#include "TinyGsmSSL.tpp"
+#include "TinyGsmTCP.tpp"
+#include "TinyGsmTemperature.tpp"
+#include "TinyGsmTime.tpp"
 
 #define GSM_NL "\r\n"
 static const char GSM_OK[] TINY_GSM_PROGMEM        = "OK" GSM_NL;
@@ -31,10 +39,26 @@ enum RegStatus {
   REG_UNKNOWN      = 4,
 };
 
-class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4, READ_AND_CHECK_SIZE,
-                                          TINY_GSM_MUX_COUNT> {
-  friend class TinyGsmModem<TinyGsmSaraR4, READ_AND_CHECK_SIZE,
-                            TINY_GSM_MUX_COUNT>;
+class TinyGsmSaraR4
+    : public TinyGsmModem<TinyGsmSaraR4>,
+      public TinyGsmGPRS<TinyGsmSaraR4>,
+      public TinyGsmTCP<TinyGsmSaraR4, READ_AND_CHECK_SIZE, TINY_GSM_MUX_COUNT>,
+      public TinyGsmSSL<TinyGsmSaraR4>,
+      public TinyGsmBattery<TinyGsmSaraR4>,
+      public TinyGsmGSMLocation<TinyGsmSaraR4>,
+      public TinyGsmSMS<TinyGsmSaraR4>,
+      public TinyGsmTemperature<TinyGsmSaraR4>,
+      public TinyGsmTime<TinyGsmSaraR4> {
+  friend class TinyGsmModem<TinyGsmSaraR4>;
+  friend class TinyGsmGPRS<TinyGsmSaraR4>;
+  friend class TinyGsmTCP<TinyGsmSaraR4, READ_AND_CHECK_SIZE,
+                          TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmSSL<TinyGsmSaraR4>;
+  friend class TinyGsmBattery<TinyGsmSaraR4>;
+  friend class TinyGsmGSMLocation<TinyGsmSaraR4>;
+  friend class TinyGsmSMS<TinyGsmSaraR4>;
+  friend class TinyGsmTemperature<TinyGsmSaraR4>;
+  friend class TinyGsmTime<TinyGsmSaraR4>;
 
   /*
    * Inner Client
@@ -64,7 +88,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4, READ_AND_CHECK_SIZE,
     }
 
    public:
-    int connect(const char* host, uint16_t port, int timeout_s) {
+    virtual int connect(const char* host, uint16_t port, int timeout_s) {
       stop();
       TINY_GSM_YIELD();
       rx.clear();
@@ -80,7 +104,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4, READ_AND_CHECK_SIZE,
 
       return sock_connected;
     }
-    int connect(IPAddress ip, uint16_t port, int timeout_s) {
+    virtual int connect(IPAddress ip, uint16_t port, int timeout_s) {
       return connect(TinyGsmStringFromIp(ip).c_str(), port, timeout_s);
     }
     int connect(const char* host, uint16_t port) override {
@@ -90,7 +114,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4, READ_AND_CHECK_SIZE,
       return connect(ip, port, 120);
     }
 
-    void stop(uint32_t maxWaitMs) {
+    virtual void stop(uint32_t maxWaitMs) {
       uint32_t startMillis = millis();
       dumpModemBuffer(maxWaitMs);
       // We want to use an async socket close because the syncrhonous close of
@@ -144,7 +168,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4, READ_AND_CHECK_SIZE,
         : GsmClientSaraR4(modem, mux) {}
 
    public:
-    int connect(const char* host, uint16_t port, int timeout_s) {
+    int connect(const char* host, uint16_t port, int timeout_s) override {
       stop();
       TINY_GSM_YIELD();
       rx.clear();
@@ -157,6 +181,15 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4, READ_AND_CHECK_SIZE,
       at->sockets[mux] = this;
       at->maintain();
       return sock_connected;
+    }
+    virtual int connect(IPAddress ip, uint16_t port, int timeout_s) {
+      return connect(TinyGsmStringFromIp(ip).c_str(), port, timeout_s);
+    }
+    int connect(const char* host, uint16_t port) override {
+      return connect(host, port, 120);
+    }
+    int connect(IPAddress ip, uint16_t port) override {
+      return connect(ip, port, 120);
     }
   };
 
@@ -249,18 +282,6 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4, READ_AND_CHECK_SIZE,
     return waitResponse() == 1;
   }
 
-  bool thisHasSSL() {
-    return true;
-  }
-
-  bool thisHasWifi() {
-    return false;
-  }
-
-  bool thisHasGPRS() {
-    return true;
-  }
-
   /*
    * Power functions
    */
@@ -328,12 +349,6 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4, READ_AND_CHECK_SIZE,
   }
 
   /*
-   * IP Address functions
-   */
- protected:
-  // Can follow the template in all function
-
-  /*
    * GPRS functions
    */
  protected:
@@ -391,26 +406,12 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4, READ_AND_CHECK_SIZE,
   // This uses "CGSN" instead of "GSN"
   String getIMEIImpl() {
     sendAT(GF("+CGSN"));
-    if (waitResponse(GF(GSM_NL)) != 1) {
-      return "";
-    }
+    if (waitResponse(GF(GSM_NL)) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     waitResponse();
     res.trim();
     return res;
   }
-
-  /*
-   * Phone Call functions
-   */
- protected:
-  // While the AT commands for call answer and hang-up are nominally supported,
-  // no voice calls are supported rendering them meaningless
-  bool callAnswerImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
-  bool callNumberImpl(const String& number) TINY_GSM_ATTR_NOT_AVAILABLE;
-  bool callHangupImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
-  bool dtmfSendImpl(char cmd,
-                    int  duration_ms = 100) TINY_GSM_ATTR_NOT_AVAILABLE;
 
   /*
    * Messaging functions
@@ -436,7 +437,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4, READ_AND_CHECK_SIZE,
   /*
    * GPS location functions
    */
- public:
+ protected:
   // No functions of this type supported
 
   /*
@@ -446,7 +447,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4, READ_AND_CHECK_SIZE,
   // Can follow the standard CCLK function in the template
 
   /*
-   * Battery & temperature functions
+   * Battery functions
    */
  protected:
   uint16_t getBattVoltageImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
@@ -471,6 +472,10 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4, READ_AND_CHECK_SIZE,
     milliVolts  = 0;
     return true;
   }
+
+  /*
+   * Temperature functions
+   */
 
   float getTemperatureImpl() {
     // First make sure the temperature is set to be in celsius

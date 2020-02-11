@@ -14,7 +14,13 @@
 
 #define TINY_GSM_MUX_COUNT 12
 
-#include "TinyGsmCommon.h"
+#include "TinyGsmBattery.tpp"
+#include "TinyGsmCalling.tpp"
+#include "TinyGsmGPRS.tpp"
+#include "TinyGsmModem.tpp"
+#include "TinyGsmSMS.tpp"
+#include "TinyGsmTCP.tpp"
+#include "TinyGsmTime.tpp"
 
 #define GSM_NL "\r\n"
 static const char GSM_OK[] TINY_GSM_PROGMEM        = "OK" GSM_NL;
@@ -32,8 +38,20 @@ enum RegStatus {
 };
 
 class TinyGsmBG96
-    : public TinyGsmModem<TinyGsmBG96, READ_AND_CHECK_SIZE, TINY_GSM_MUX_COUNT> {
-  friend class TinyGsmModem<TinyGsmBG96, READ_AND_CHECK_SIZE, TINY_GSM_MUX_COUNT>;
+    : public TinyGsmModem<TinyGsmBG96>,
+      public TinyGsmGPRS<TinyGsmBG96>,
+      public TinyGsmTCP<TinyGsmBG96, READ_AND_CHECK_SIZE, TINY_GSM_MUX_COUNT>,
+      public TinyGsmCalling<TinyGsmBG96>,
+      public TinyGsmSMS<TinyGsmBG96>,
+      public TinyGsmTime<TinyGsmBG96>,
+      public TinyGsmBattery<TinyGsmBG96> {
+  friend class TinyGsmModem<TinyGsmBG96>;
+  friend class TinyGsmGPRS<TinyGsmBG96>;
+  friend class TinyGsmTCP<TinyGsmBG96, READ_AND_CHECK_SIZE, TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmCalling<TinyGsmBG96>;
+  friend class TinyGsmSMS<TinyGsmBG96>;
+  friend class TinyGsmTime<TinyGsmBG96>;
+  friend class TinyGsmBattery<TinyGsmBG96>;
 
   /*
    * Inner Client
@@ -70,17 +88,9 @@ class TinyGsmBG96
       sock_connected = at->modemConnect(host, port, mux, false, timeout_s);
       return sock_connected;
     }
-    int connect(IPAddress ip, uint16_t port, int timeout_s) {
-      return connect(TinyGsmStringFromIp(ip).c_str(), port, timeout_s);
-    }
-    int connect(const char* host, uint16_t port) override {
-      return connect(host, port, 75);
-    }
-    int connect(IPAddress ip, uint16_t port) override {
-      return connect(ip, port, 75);
-    }
+    TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
-    void stop(uint32_t maxWaitMs) {
+    virtual void stop(uint32_t maxWaitMs) {
       dumpModemBuffer(maxWaitMs);
       at->sendAT(GF("+QICLOSE="), mux);
       sock_connected = false;
@@ -113,13 +123,14 @@ class TinyGsmBG96
 
 
   public:
-    int connect(const char* host, uint16_t port, int timeout_s) {
+    int connect(const char* host, uint16_t port, int timeout_s) override {
       stop();
       TINY_GSM_YIELD();
       rx.clear();
       sock_connected = at->modemConnect(host, port, mux, true, timeout_s);
       return sock_connected;
     }
+    TINY_GSM_CLIENT_CONNECT_OVERRIDES
   };
   */
 
@@ -168,18 +179,6 @@ class TinyGsmBG96
     }
   }
 
-  bool thisHasSSL() {
-    return false;  // TODO(?): Add SSL support
-  }
-
-  bool thisHasWifi() {
-    return false;
-  }
-
-  bool thisHasGPRS() {
-    return true;
-  }
-
   /*
    * Power functions
    */
@@ -223,12 +222,6 @@ class TinyGsmBG96
   }
 
   /*
-   * IP Address functions
-   */
- protected:
-  // Can follow all of the IP functions from the template
-
-  /*
    * GPRS functions
    */
  protected:
@@ -265,9 +258,7 @@ class TinyGsmBG96
  protected:
   String getSimCCIDImpl() {
     sendAT(GF("+QCCID"));
-    if (waitResponse(GF(GSM_NL "+QCCID:")) != 1) {
-      return "";
-    }
+    if (waitResponse(GF(GSM_NL "+QCCID:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     waitResponse();
     res.trim();
@@ -287,28 +278,14 @@ class TinyGsmBG96
   // Follows all messaging functions per template
 
   /*
-   * Location functions
-   */
- protected:
-  String getGsmLocationImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
-
-  /*
-   * GPS location functions
-   */
- public:
-  // No functions of this type supported
-
-  /*
    * Time functions
    */
  protected:
   // Can follow the standard CCLK function in the template
 
   /*
-   * Battery & temperature functions
+   * Battery functions
    */
- protected:
-  float getTemperatureImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
 
   /*
    * Client related functions

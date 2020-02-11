@@ -44,7 +44,9 @@
 // Chips without internal buffering (A6/A7, ESP8266, M590)
 // need enough space in the buffer for the entire response
 // else data will be lost (and the http library will fail).
+#if !defined(TINY_GSM_RX_BUFFER)
 #define TINY_GSM_RX_BUFFER 650
+#endif
 
 // See all AT commands, if wanted
 // #define DUMP_AT_COMMANDS

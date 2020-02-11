@@ -14,7 +14,13 @@
 
 #define TINY_GSM_MUX_COUNT 8
 
-#include "TinyGsmCommon.h"
+#include "TinyGsmBattery.tpp"
+#include "TinyGsmCalling.tpp"
+#include "TinyGsmGPRS.tpp"
+#include "TinyGsmModem.tpp"
+#include "TinyGsmSMS.tpp"
+#include "TinyGsmTCP.tpp"
+#include "TinyGsmTime.tpp"
 
 #define GSM_NL "\r\n"
 static const char GSM_OK[] TINY_GSM_PROGMEM        = "OK" GSM_NL;
@@ -32,8 +38,20 @@ enum RegStatus {
 };
 
 class TinyGsmA6
-    : public TinyGsmModem<TinyGsmA6, NO_MODEM_BUFFER, TINY_GSM_MUX_COUNT> {
-  friend class TinyGsmModem<TinyGsmA6, NO_MODEM_BUFFER, TINY_GSM_MUX_COUNT>;
+    : public TinyGsmModem<TinyGsmA6>,
+      public TinyGsmGPRS<TinyGsmA6>,
+      public TinyGsmTCP<TinyGsmA6, NO_MODEM_BUFFER, TINY_GSM_MUX_COUNT>,
+      public TinyGsmCalling<TinyGsmA6>,
+      public TinyGsmSMS<TinyGsmA6>,
+      public TinyGsmTime<TinyGsmA6>,
+      public TinyGsmBattery<TinyGsmA6> {
+  friend class TinyGsmModem<TinyGsmA6>;
+  friend class TinyGsmGPRS<TinyGsmA6>;
+  friend class TinyGsmTCP<TinyGsmA6, NO_MODEM_BUFFER, TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmCalling<TinyGsmA6>;
+  friend class TinyGsmSMS<TinyGsmA6>;
+  friend class TinyGsmTime<TinyGsmA6>;
+  friend class TinyGsmBattery<TinyGsmA6>;
 
   /*
    * Inner Client
@@ -70,17 +88,9 @@ class TinyGsmA6
       }
       return sock_connected;
     }
-    int connect(IPAddress ip, uint16_t port, int timeout_s) {
-      return connect(TinyGsmStringFromIp(ip).c_str(), port, timeout_s);
-    }
-    int connect(const char* host, uint16_t port) override {
-      return connect(host, port, 75);
-    }
-    int connect(IPAddress ip, uint16_t port) override {
-      return connect(ip, port, 75);
-    }
+    TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
-    void stop(uint32_t maxWaitMs) {
+    virtual void stop(uint32_t maxWaitMs) {
       TINY_GSM_YIELD();
       at->sendAT(GF("+CIPCLOSE="), mux);
       sock_connected = false;
@@ -158,18 +168,6 @@ class TinyGsmA6
     return waitResponse() == 1;
   }
 
-  bool thisHasSSL() {
-    return false;
-  }
-
-  bool thisHasWifi() {
-    return false;
-  }
-
-  bool thisHasGPRS() {
-    return true;
-  }
-
   /*
    * Power functions
    */
@@ -203,16 +201,10 @@ class TinyGsmA6
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
   }
 
-  /*
-   * IP Address functions
-   */
- protected:
   String getLocalIPImpl() {
     sendAT(GF("+CIFSR"));
     String res;
-    if (waitResponse(10000L, res) != 1) {
-      return "";
-    }
+    if (waitResponse(10000L, res) != 1) { return ""; }
     res.replace(GSM_NL "OK" GSM_NL, "");
     res.replace(GSM_NL, "");
     res.trim();
@@ -280,9 +272,7 @@ class TinyGsmA6
  protected:
   String getSimCCIDImpl() {
     sendAT(GF("+CCID"));
-    if (waitResponse(GF(GSM_NL "+SCID: SIM Card ID:")) != 1) {
-      return "";
-    }
+    if (waitResponse(GF(GSM_NL "+SCID: SIM Card ID:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     waitResponse();
     res.trim();
@@ -381,18 +371,6 @@ class TinyGsmA6
   }
 
   /*
-   * Location functions
-   */
- protected:
-  String getGsmLocationImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
-
-  /*
-   * GPS location functions
-   */
- public:
-  // No functions of this type supported
-
-  /*
    * Time functions
    */
  protected:
@@ -400,7 +378,7 @@ class TinyGsmA6
   // Note - the clock probably has to be set manaually first
 
   /*
-   * Battery & temperature functions
+   * Battery functions
    */
  protected:
   uint16_t getBattVoltageImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
@@ -429,8 +407,6 @@ class TinyGsmA6
     waitResponse();
     return true;
   }
-
-  float getTemperatureImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
 
   /*
    * Client related functions

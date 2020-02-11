@@ -17,7 +17,14 @@
 
 #define TINY_GSM_MUX_COUNT 6
 
-#include "TinyGsmCommon.h"
+#include "TinyGsmBattery.tpp"
+#include "TinyGsmCalling.tpp"
+#include "TinyGsmGPRS.tpp"
+#include "TinyGsmGSMLocation.tpp"
+#include "TinyGsmModem.tpp"
+#include "TinyGsmSMS.tpp"
+#include "TinyGsmTCP.tpp"
+#include "TinyGsmTime.tpp"
 
 #define GSM_NL "\r\n"
 static const char GSM_OK[] TINY_GSM_PROGMEM        = "OK" GSM_NL;
@@ -35,8 +42,22 @@ enum RegStatus {
 };
 
 class TinyGsmMC60
-    : public TinyGsmModem<TinyGsmMC60, READ_NO_CHECK, TINY_GSM_MUX_COUNT> {
-  friend class TinyGsmModem<TinyGsmMC60, READ_NO_CHECK, TINY_GSM_MUX_COUNT>;
+    : public TinyGsmModem<TinyGsmMC60>,
+      public TinyGsmGPRS<TinyGsmMC60>,
+      public TinyGsmTCP<TinyGsmMC60, READ_NO_CHECK, TINY_GSM_MUX_COUNT>,
+      public TinyGsmCalling<TinyGsmMC60>,
+      public TinyGsmSMS<TinyGsmMC60>,
+      public TinyGsmGSMLocation<TinyGsmMC60>,
+      public TinyGsmTime<TinyGsmMC60>,
+      public TinyGsmBattery<TinyGsmMC60> {
+  friend class TinyGsmModem<TinyGsmMC60>;
+  friend class TinyGsmGPRS<TinyGsmMC60>;
+  friend class TinyGsmTCP<TinyGsmMC60, READ_NO_CHECK, TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmCalling<TinyGsmMC60>;
+  friend class TinyGsmSMS<TinyGsmMC60>;
+  friend class TinyGsmGSMLocation<TinyGsmMC60>;
+  friend class TinyGsmTime<TinyGsmMC60>;
+  friend class TinyGsmBattery<TinyGsmMC60>;
 
   /*
    * Inner Client
@@ -64,24 +85,16 @@ class TinyGsmMC60
     }
 
    public:
-    int connect(const char* host, uint16_t port, int timeout_s) {
+    virtual int connect(const char* host, uint16_t port, int timeout_s) {
       stop();
       TINY_GSM_YIELD();
       rx.clear();
       sock_connected = at->modemConnect(host, port, mux, false, timeout_s);
       return sock_connected;
     }
-    int connect(IPAddress ip, uint16_t port, int timeout_s) {
-      return connect(TinyGsmStringFromIp(ip).c_str(), port, timeout_s);
-    }
-    int connect(const char* host, uint16_t port) override {
-      return connect(host, port, 75);
-    }
-    int connect(IPAddress ip, uint16_t port) override {
-      return connect(ip, port, 75);
-    }
+    TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
-    void stop(uint32_t maxWaitMs) {
+    virtual void stop(uint32_t maxWaitMs) {
       uint32_t startMillis = millis();
       dumpModemBuffer(maxWaitMs);
       at->sendAT(GF("+QICLOSE="), mux);
@@ -116,13 +129,14 @@ class TinyGsmMC60
 
 
     public:
-      int connect(const char* host, uint16_t port, int timeout_s) {
+      int connect(const char* host, uint16_t port, int timeout_s) override {
         stop();
         TINY_GSM_YIELD();
         rx.clear();
         sock_connected = at->modemConnect(host, port, mux, true, timeout_s);
         return sock_connected;
       }
+      TINY_GSM_CLIENT_CONNECT_OVERRIDES
     };
  */
 
@@ -175,29 +189,6 @@ class TinyGsmMC60
   }
 
   /*
-   * under development
-   */
-  // bool thisHasSSL() {
-  //   sendAT(GF("+QIPSSL=?"));
-  //   if (waitResponse(GF(GSM_NL "+CIPSSL:")) != 1) {
-  //     return false;
-  //   }
-  //   return waitResponse() == 1;
-  // }
-
-  bool thisHasSSL() {
-    return false;  // TODO(?): Add SSL support
-  }
-
-  bool thisHasWifi() {
-    return false;
-  }
-
-  bool thisHasGPRS() {
-    return true;
-  }
-
-  /*
    * Power functions
    */
  protected:
@@ -240,10 +231,6 @@ class TinyGsmMC60
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
   }
 
-  /*
-   * IP Address functions
-   */
- protected:
   String getLocalIPImpl() {
     sendAT(GF("+QILOCIP"));
     streamSkipUntil('\n');
@@ -321,21 +308,17 @@ class TinyGsmMC60
         delay(1000);
         continue;
       }
-      int status =
-          waitResponse(GF("READY"), GF("SIM PIN"), GF("SIM PUK"),
-                       GF("NOT INSERTED"), GF("PH_SIM PIN"), GF("PH_SIM PUK"));
+      int status = waitResponse(GF("READY"), GF("SIM PIN"), GF("SIM PUK"),
+                                GF("NOT INSERTED"), GF("PH_SIM PIN"),
+                                GF("PH_SIM PUK"));
       waitResponse();
       switch (status) {
         case 2:
-        case 3:
-          return SIM_LOCKED;
+        case 3: return SIM_LOCKED;
         case 5:
-        case 6:
-          return SIM_ANTITHEFT_LOCKED;
-        case 1:
-          return SIM_READY;
-        default:
-          return SIM_ERROR;
+        case 6: return SIM_ANTITHEFT_LOCKED;
+        case 1: return SIM_READY;
+        default: return SIM_ERROR;
       }
     }
     return SIM_ERROR;
@@ -370,22 +353,15 @@ class TinyGsmMC60
   // Can use CIPGSMLOC as inherited from the template
 
   /*
-   * GPS location functions
-   */
- public:
-  // No functions of this type supported
-
-  /*
    * Time functions
    */
  protected:
   // Can follow the standard CCLK function in the template
 
   /*
-   * Battery & temperature functions
+   * Battery functions
    */
- protected:
-  float getTemperatureImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
+  // Can follow battery functions as in the template
 
   /*
    * Client related functions

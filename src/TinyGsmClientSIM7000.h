@@ -14,7 +14,14 @@
 
 #define TINY_GSM_MUX_COUNT 8
 
-#include "TinyGsmCommon.h"
+#include "TinyGsmBattery.tpp"
+#include "TinyGsmGPRS.tpp"
+#include "TinyGsmGPS.tpp"
+#include "TinyGsmGSMLocation.tpp"
+#include "TinyGsmModem.tpp"
+#include "TinyGsmSMS.tpp"
+#include "TinyGsmTCP.tpp"
+#include "TinyGsmTime.tpp"
 
 #define GSM_NL "\r\n"
 static const char GSM_OK[] TINY_GSM_PROGMEM        = "OK" GSM_NL;
@@ -31,10 +38,24 @@ enum RegStatus {
   REG_UNKNOWN      = 4,
 };
 
-class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000, READ_AND_CHECK_SIZE,
-                                           TINY_GSM_MUX_COUNT> {
-  friend class TinyGsmModem<TinyGsmSim7000, READ_AND_CHECK_SIZE,
-                            TINY_GSM_MUX_COUNT>;
+class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
+                       public TinyGsmGPRS<TinyGsmSim7000>,
+                       public TinyGsmTCP<TinyGsmSim7000, READ_AND_CHECK_SIZE,
+                                         TINY_GSM_MUX_COUNT>,
+                       public TinyGsmSMS<TinyGsmSim7000>,
+                       public TinyGsmGSMLocation<TinyGsmSim7000>,
+                       public TinyGsmGPS<TinyGsmSim7000>,
+                       public TinyGsmTime<TinyGsmSim7000>,
+                       public TinyGsmBattery<TinyGsmSim7000> {
+  friend class TinyGsmModem<TinyGsmSim7000>;
+  friend class TinyGsmGPRS<TinyGsmSim7000>;
+  friend class TinyGsmTCP<TinyGsmSim7000, READ_AND_CHECK_SIZE,
+                          TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmSMS<TinyGsmSim7000>;
+  friend class TinyGsmGSMLocation<TinyGsmSim7000>;
+  friend class TinyGsmGPS<TinyGsmSim7000>;
+  friend class TinyGsmTime<TinyGsmSim7000>;
+  friend class TinyGsmBattery<TinyGsmSim7000>;
 
   /*
    * Inner Client
@@ -64,24 +85,16 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000, READ_AND_CHECK_SIZE,
     }
 
    public:
-    int connect(const char* host, uint16_t port, int timeout_s) {
+    virtual int connect(const char* host, uint16_t port, int timeout_s) {
       stop();
       TINY_GSM_YIELD();
       rx.clear();
       sock_connected = at->modemConnect(host, port, mux, false, timeout_s);
       return sock_connected;
     }
-    int connect(IPAddress ip, uint16_t port, int timeout_s) {
-      return connect(TinyGsmStringFromIp(ip).c_str(), port, timeout_s);
-    }
-    int connect(const char* host, uint16_t port) override {
-      return connect(host, port, 75);
-    }
-    int connect(IPAddress ip, uint16_t port) override {
-      return connect(ip, port, 75);
-    }
+    TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
-    void stop(uint32_t maxWaitMs) {
+    virtual void stop(uint32_t maxWaitMs) {
       dumpModemBuffer(maxWaitMs);
       at->sendAT(GF("+CIPCLOSE="), mux);
       sock_connected = false;
@@ -113,13 +126,14 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000, READ_AND_CHECK_SIZE,
     {}
 
   public:
-    int connect(const char* host, uint16_t port, int timeout_s) {
+    int connect(const char* host, uint16_t port, int timeout_s) override {
       stop();
       TINY_GSM_YIELD();
       rx.clear();
       sock_connected = at->modemConnect(host, port, mux, true, timeout_s);
       return sock_connected;
     }
+    TINY_GSM_CLIENT_CONNECT_OVERRIDES
   };
   */
 
@@ -185,18 +199,6 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000, READ_AND_CHECK_SIZE,
 
   bool factoryDefaultImpl() {  // these commands aren't supported
     return false;
-  }
-
-  bool thisHasSSL() {
-    return false;  // TODO(?):  Module supports SSL, but not yet implemented
-  }
-
-  bool thisHasWifi() {
-    return false;
-  }
-
-  bool thisHasGPRS() {
-    return true;
   }
 
   /*
@@ -273,16 +275,10 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000, READ_AND_CHECK_SIZE,
     return res;
   }
 
-  /*
-   * IP Address functions
-   */
- protected:
   String getLocalIPImpl() {
     sendAT(GF("+CIFSR;E0"));
     String res;
-    if (waitResponse(10000L, res) != 1) {
-      return "";
-    }
+    if (waitResponse(10000L, res) != 1) { return ""; }
     res.replace(GSM_NL "OK" GSM_NL, "");
     res.replace(GSM_NL, "");
     res.trim();
@@ -381,16 +377,6 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000, READ_AND_CHECK_SIZE,
   // Able to follow all SIM card functions as inherited from the template
 
   /*
-   * Phone Call functions
-   */
- protected:
-  bool callAnswerImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
-  bool callNumberImpl(const String& number) TINY_GSM_ATTR_NOT_IMPLEMENTED;
-  bool callHangupImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
-  bool dtmfSendImpl(char cmd,
-                    int  duration_ms = 100) TINY_GSM_ATTR_NOT_IMPLEMENTED;
-
-  /*
    * Messaging functions
    */
  protected:
@@ -402,25 +388,26 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000, READ_AND_CHECK_SIZE,
  protected:
   // Can return a location from CIPGSMLOC as per the template
 
+
   /*
    * GPS location functions
    */
- public:
+ protected:
   // enable GPS
-  bool enableGPS() {
+  bool enableGPSImpl() {
     sendAT(GF("+CGNSPWR=1"));
     if (waitResponse() != 1) { return false; }
     return true;
   }
 
-  bool disableGPS() {
+  bool disableGPSImpl() {
     sendAT(GF("+CGNSPWR=0"));
     if (waitResponse() != 1) { return false; }
     return true;
   }
 
   // get the RAW GPS output
-  String getGPSraw() {
+  String getGPSrawImpl() {
     sendAT(GF("+CGNSINF"));
     if (waitResponse(GF(GSM_NL "+CGNSINF:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
@@ -430,8 +417,8 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000, READ_AND_CHECK_SIZE,
   }
 
   // get GPS informations
-  bool getGPS(float* lat, float* lon, float* speed = 0, int* alt = 0,
-              int* vsat = 0, int* usat = 0) {
+  bool getGPSImpl(float* lat, float* lon, float* speed = 0, int* alt = 0,
+                  int* vsat = 0, int* usat = 0) {
     // String buffer = "";
     bool fix = false;
 
@@ -464,14 +451,9 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000, READ_AND_CHECK_SIZE,
 
     return fix;
   }
-
-  /*
-   * Time functions
-   */
- public:
   // get GPS time
-  bool getGPSTime(int* year, int* month, int* day, int* hour, int* minute,
-                  int* second) {
+  bool getGPSTimeImpl(int* year, int* month, int* day, int* hour, int* minute,
+                      int* second) {
     bool fix = false;
     char chr_buffer[12];
     sendAT(GF("+CGNSINF"));
@@ -514,10 +496,15 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000, READ_AND_CHECK_SIZE,
   }
 
   /*
-   * Battery & temperature functions
+   * Time functions
+   */
+  // Can follow CCLK as per template
+
+  /*
+   * Battery functions
    */
  protected:
-  float getTemperatureImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
+  // Follows all battery functions per template
 
   /*
    * Client related functions

@@ -58,6 +58,8 @@ IncludeCategories:
     Priority:        2
   - Regex:           '.*'
     Priority:        3
+  - Regex:           '.*.tpp'
+    Priority:        4
 IncludeIsMainRegex: '([-_](test|unittest))?$'
 IndentCaseLabels: true
 IndentPPDirectives: None
@@ -80,7 +82,7 @@ PenaltyBreakComment: 300
 PenaltyBreakFirstLessLess: 120
 PenaltyBreakString: 1000
 PenaltyBreakTemplateDeclaration: 10
-PenaltyExcessCharacter: 60
+PenaltyExcessCharacter: 600
 PenaltyReturnTypeOnItsOwnLine: 50
 PointerAlignment: Left
 PointerBindsToType: true

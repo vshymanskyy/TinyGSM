@@ -14,7 +14,15 @@
 
 #define TINY_GSM_MUX_COUNT 7
 
-#include "TinyGsmCommon.h"
+#include "TinyGsmBattery.tpp"
+#include "TinyGsmCalling.tpp"
+#include "TinyGsmGPRS.tpp"
+#include "TinyGsmGSMLocation.tpp"
+#include "TinyGsmModem.tpp"
+#include "TinyGsmSMS.tpp"
+#include "TinyGsmSSL.tpp"
+#include "TinyGsmTCP.tpp"
+#include "TinyGsmTime.tpp"
 
 #define GSM_NL "\r\n"
 static const char GSM_OK[] TINY_GSM_PROGMEM        = "OK" GSM_NL;
@@ -32,9 +40,25 @@ enum RegStatus {
 };
 
 class TinyGsmUBLOX
-    : public TinyGsmModem<TinyGsmUBLOX, READ_AND_CHECK_SIZE, TINY_GSM_MUX_COUNT> {
-  friend class TinyGsmModem<TinyGsmUBLOX, READ_AND_CHECK_SIZE,
-                            TINY_GSM_MUX_COUNT>;
+    : public TinyGsmModem<TinyGsmUBLOX>,
+      public TinyGsmGPRS<TinyGsmUBLOX>,
+      public TinyGsmTCP<TinyGsmUBLOX, READ_AND_CHECK_SIZE, TINY_GSM_MUX_COUNT>,
+      public TinyGsmSSL<TinyGsmUBLOX>,
+      public TinyGsmCalling<TinyGsmUBLOX>,
+      public TinyGsmSMS<TinyGsmUBLOX>,
+      public TinyGsmGSMLocation<TinyGsmUBLOX>,
+      public TinyGsmTime<TinyGsmUBLOX>,
+      public TinyGsmBattery<TinyGsmUBLOX> {
+  friend class TinyGsmModem<TinyGsmUBLOX>;
+  friend class TinyGsmGPRS<TinyGsmUBLOX>;
+  friend class TinyGsmTCP<TinyGsmUBLOX, READ_AND_CHECK_SIZE,
+                          TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmSSL<TinyGsmUBLOX>;
+  friend class TinyGsmCalling<TinyGsmUBLOX>;
+  friend class TinyGsmSMS<TinyGsmUBLOX>;
+  friend class TinyGsmGSMLocation<TinyGsmUBLOX>;
+  friend class TinyGsmTime<TinyGsmUBLOX>;
+  friend class TinyGsmBattery<TinyGsmUBLOX>;
 
   /*
    * Inner Client
@@ -64,7 +88,7 @@ class TinyGsmUBLOX
     }
 
    public:
-    int connect(const char* host, uint16_t port, int timeout_s) {
+    virtual int connect(const char* host, uint16_t port, int timeout_s) {
       stop();
       TINY_GSM_YIELD();
       rx.clear();
@@ -80,17 +104,9 @@ class TinyGsmUBLOX
 
       return sock_connected;
     }
-    int connect(IPAddress ip, uint16_t port, int timeout_s) {
-      return connect(TinyGsmStringFromIp(ip).c_str(), port, timeout_s);
-    }
-    int connect(const char* host, uint16_t port) override {
-      return connect(host, port, 75);
-    }
-    int connect(IPAddress ip, uint16_t port) override {
-      return connect(ip, port, 75);
-    }
+    TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
-    void stop(uint32_t maxWaitMs) {
+    virtual void stop(uint32_t maxWaitMs) {
       dumpModemBuffer(maxWaitMs);
       at->sendAT(GF("+USOCL="), mux);
       at->waitResponse();  // should return within 1s
@@ -119,7 +135,7 @@ class TinyGsmUBLOX
         : GsmClientUBLOX(modem, mux) {}
 
    public:
-    int connect(const char* host, uint16_t port, int timeout_s) {
+    int connect(const char* host, uint16_t port, int timeout_s) override {
       stop();
       TINY_GSM_YIELD();
       rx.clear();
@@ -133,6 +149,7 @@ class TinyGsmUBLOX
       at->maintain();
       return sock_connected;
     }
+    TINY_GSM_CLIENT_CONNECT_OVERRIDES
   };
 
   /*
@@ -212,18 +229,6 @@ class TinyGsmUBLOX
     return waitResponse() == 1;
   }
 
-  bool thisHasSSL() {
-    return true;
-  }
-
-  bool thisHasWifi() {
-    return false;
-  }
-
-  bool thisHasGPRS() {
-    return true;
-  }
-
   /*
    * Power functions
    */
@@ -262,21 +267,13 @@ class TinyGsmUBLOX
       return false;
   }
 
-  /*
-   * IP Address functions
-   */
- protected:
   String getLocalIPImpl() {
     sendAT(GF("+UPSND=0,0"));
-    if (waitResponse(GF(GSM_NL "+UPSND:")) != 1) {
-      return "";
-    }
+    if (waitResponse(GF(GSM_NL "+UPSND:")) != 1) { return ""; }
     streamSkipUntil(',');   // Skip PSD profile
     streamSkipUntil('\"');  // Skip request type
     String res = stream.readStringUntil('\"');
-    if (waitResponse() != 1) {
-      return "";
-    }
+    if (waitResponse() != 1) { return ""; }
     return res;
   }
 
@@ -370,9 +367,7 @@ class TinyGsmUBLOX
  protected:
   String getIMEIImpl() {
     sendAT(GF("+CGSN"));
-    if (waitResponse(GF(GSM_NL)) != 1) {
-      return "";
-    }
+    if (waitResponse(GF(GSM_NL)) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     waitResponse();
     res.trim();
@@ -414,19 +409,13 @@ class TinyGsmUBLOX
   }
 
   /*
-   * GPS location functions
-   */
- public:
-  // No functions of this type supported
-
-  /*
    * Time functions
    */
  protected:
   // Can follow the standard CCLK function in the template
 
   /*
-   * Battery & temperature functions
+   * Battery functions
    */
  protected:
   uint16_t getBattVoltageImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
@@ -451,6 +440,10 @@ class TinyGsmUBLOX
     milliVolts  = 0;
     return true;
   }
+
+  /*
+   * Temperature functions
+   */
 
   // This would only available for a small number of modules in this group
   // (TOBY-L)
@@ -477,8 +470,9 @@ class TinyGsmUBLOX
     }
 
     // Enable NODELAY
-    sendAT(GF("+USOSO="), *mux, GF(",6,1,1"));
-    waitResponse();
+    // NOTE:  No delay allows data to go out faster, at the cost of using
+    // additional data from your cellular plan sendAT(GF("+USOSO="), *mux,
+    // GF(",6,1,1")); waitResponse();
 
     // Enable KEEPALIVE, 30 sec
     // sendAT(GF("+USOSO="), *mux, GF(",6,2,30000"));
