@@ -38,6 +38,10 @@ class TinyGsmGPRS {
   String getIMEI() {
     return thisModem().getIMEIImpl();
   }
+  // Asks for International Mobile Subscriber Identity IMSI
+  String getIMSI() {
+    return thisModem().getIMSIImpl();
+  }
   SimStatus getSimStatus(uint32_t timeout_ms = 10000L) {
     return thisModem().getSimStatusImpl(timeout_ms);
   }
@@ -99,6 +103,16 @@ class TinyGsmGPRS {
   // AT+GSN command
   String getIMEIImpl() {
     thisModem().sendAT(GF("+GSN"));
+    String res = thisModem().stream.readStringUntil('\n');
+    thisModem().waitResponse();
+    res.trim();
+    return res;
+  }
+
+  // Asks for International Mobile Subscriber Identity IMSI via the AT+CIMI
+  // command
+  String getIMSIImpl() {
+    thisModem().sendAT(GF("+CIMI"));
     String res = thisModem().stream.readStringUntil('\n');
     thisModem().waitResponse();
     res.trim();

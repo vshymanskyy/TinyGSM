@@ -836,6 +836,10 @@ class TinyGsmXBee
     return sendATGetString(GF("IM"));
   }
 
+  String getIMSIImpl() {
+    return sendATGetString(GF("II"));
+  }
+
   SimStatus getSimStatusImpl(uint32_t) {
     return SIM_READY;  // unsupported
   }
