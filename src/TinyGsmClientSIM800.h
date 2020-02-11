@@ -323,6 +323,8 @@ TINY_GSM_MODEM_GET_SIMCCID_CCID()
 
 TINY_GSM_MODEM_GET_IMEI_GSN()
 
+TINY_GSM_MODEM_GET_IMSI_CIMI()
+
   SimStatus getSimStatus(unsigned long timeout_ms = 10000L) {
     for (unsigned long start = millis(); millis() - start < timeout_ms; ) {
       sendAT(GF("+CPIN?"));
@@ -700,7 +702,7 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
   }
 
   uint8_t getBattChargeState() {
-    sendAT(GF("+CBC?"));
+    sendAT(GF("+CBC"));
     if (waitResponse(GF(GSM_NL "+CBC:")) != 1) {
       return false;
     }
@@ -712,7 +714,7 @@ TINY_GSM_MODEM_WAIT_FOR_NETWORK()
   }
 
   bool getBattStats(uint8_t &chargeState, int8_t &percent, uint16_t &milliVolts) {
-    sendAT(GF("+CBC?"));
+    sendAT(GF("+CBC"));
     if (waitResponse(GF(GSM_NL "+CBC:")) != 1) {
       return false;
     }
