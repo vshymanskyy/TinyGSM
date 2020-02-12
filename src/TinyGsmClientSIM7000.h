@@ -168,7 +168,14 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
 
     // Enable Local Time Stamp for getting network time
     sendAT(GF("+CLTS=1"));
-    if (waitResponse(10000L) != 1) { return false; }
+    if (waitResponse(10000L) != 1) { return false;
+    }
+
+    // Enable battery checks
+    sendAT(GF("+CBATCHK=1"));
+    if (waitResponse() != 1) {
+      return false;
+    }
 
     int ret = getSimStatus();
     // if the sim isn't ready and a pin has been provided, try to unlock the sim
@@ -209,8 +216,9 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
     sendAT(GF("+CFUN=0"));
     if (waitResponse(10000L) != 1) { return false; }
     sendAT(GF("+CFUN=1,1"));
-    if (waitResponse(10000L) != 1) { return false; }
-    delay(3000);  // TODO(SRGDamia1):  Test this delay
+    if (waitResponse(10000L) != 1) { return false;
+    }
+    waitResponse(60000L, GF("SMS Ready"));
     return init();
   }
 
@@ -233,7 +241,7 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
    */
  public:
   RegStatus getRegistrationStatus() {
-    return (RegStatus)getRegistrationStatusXREG("CGREG");
+    return (RegStatus)getRegistrationStatusXREG("CEREG");
   }
 
  protected:

@@ -170,7 +170,12 @@ class TinyGsmSim800
 
     // Enable Local Time Stamp for getting network time
     sendAT(GF("+CLTS=1"));
-    if (waitResponse(10000L) != 1) { return false; }
+    if (waitResponse(10000L) != 1) { return false;
+    }
+
+    // Enable battery checks
+    sendAT(GF("+CBATCHK=1"));
+    waitResponse();
 
     int ret = getSimStatus();
     // if the sim isn't ready and a pin has been provided, try to unlock the sim
