@@ -405,7 +405,28 @@ class TinyGsmSim800
  protected:
   // Can return a location from CIPGSMLOC as per the template
 
-
+  String getGsmLocation() {
+    sendAT(GF("+CIPGSMLOC=1,1"));
+    if (waitResponse(10000L, GF(GSM_NL "+CIPGSMLOC:")) != 1) {
+      return "";
+    }
+    String res = stream.readStringUntil('\n');
+    waitResponse();
+    res.trim();
+    return res;
+  }
+  
+  String getBaseStationGsmLocation() {
+    sendAT(GF("+CLBS=1,1"));
+    if (waitResponse(10000L, GF(GSM_NL "+CLBS:")) != 1) {
+      return "";
+    }
+    String res = stream.readStringUntil('\n');
+    waitResponse();
+    res.trim();
+    return res;
+  }
+  
   /*
    * GPS location functions
    */
