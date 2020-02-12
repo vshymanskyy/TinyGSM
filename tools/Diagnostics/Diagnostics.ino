@@ -129,7 +129,7 @@ void setup() {
 
   // Set GSM module baud rate
   // TinyGsmAutoBaud(SerialAT,GSM_AUTOBAUD_MIN,GSM_AUTOBAUD_MAX);
-  SerialAT.begin(115200);
+  SerialAT.begin(9600);
   delay(3000);
 }
 

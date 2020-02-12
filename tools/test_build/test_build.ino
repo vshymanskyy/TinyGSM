@@ -69,11 +69,6 @@ void loop() {
   modem.getGSMDateTime(DATE_FULL);
 #endif
 
-// Test the Network time function
-#if defined(TINY_GSM_MODEM_HAS_TIME)
-  modem.getGSMDateTime(DATE_FULL);
-#endif
-
 // Test the GPS functions
 #if defined(TINY_GSM_MODEM_HAS_GPS)
   modem.enableGPS();

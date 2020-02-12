@@ -41,7 +41,6 @@ enum modemInternalBuffferType {
                             // and check the size of the buffer
 };
 
-// The fully generic template is empty
 template <class modemType, modemInternalBuffferType bufType, uint8_t muxCount>
 class TinyGsmTCP {
  public:
