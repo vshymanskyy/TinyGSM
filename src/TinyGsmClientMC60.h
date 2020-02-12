@@ -20,7 +20,6 @@
 #include "TinyGsmBattery.tpp"
 #include "TinyGsmCalling.tpp"
 #include "TinyGsmGPRS.tpp"
-#include "TinyGsmGSMLocation.tpp"
 #include "TinyGsmModem.tpp"
 #include "TinyGsmSMS.tpp"
 #include "TinyGsmTCP.tpp"
@@ -47,7 +46,6 @@ class TinyGsmMC60
       public TinyGsmTCP<TinyGsmMC60, READ_NO_CHECK, TINY_GSM_MUX_COUNT>,
       public TinyGsmCalling<TinyGsmMC60>,
       public TinyGsmSMS<TinyGsmMC60>,
-      public TinyGsmGSMLocation<TinyGsmMC60>,
       public TinyGsmTime<TinyGsmMC60>,
       public TinyGsmBattery<TinyGsmMC60> {
   friend class TinyGsmModem<TinyGsmMC60>;
@@ -55,7 +53,6 @@ class TinyGsmMC60
   friend class TinyGsmTCP<TinyGsmMC60, READ_NO_CHECK, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmCalling<TinyGsmMC60>;
   friend class TinyGsmSMS<TinyGsmMC60>;
-  friend class TinyGsmGSMLocation<TinyGsmMC60>;
   friend class TinyGsmTime<TinyGsmMC60>;
   friend class TinyGsmBattery<TinyGsmMC60>;
 
@@ -345,12 +342,6 @@ class TinyGsmMC60
     }
     return false;
   }
-
-  /*
-   * Location functions
-   */
- protected:
-  // Can use CIPGSMLOC as inherited from the template
 
   /*
    * Time functions
