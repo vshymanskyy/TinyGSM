@@ -412,14 +412,14 @@ class TinyGsmUBLOX
     if (waitResponse(10000L, GF(GSM_NL "+UGPS:")) != 1) { return false; }
     return waitResponse(10000L) == 1;
   }
-  String getUbloxLocationRaw(int8_t sensor) {
+  String inline getUbloxLocationRaw(int8_t sensor) {
     // AT+ULOC=<mode>,<sensor>,<response_type>,<timeout>,<accuracy>
     // <mode> - 2: single shot position
     // <sensor> - 0: use the last fix in the internal database and stop the GNSS
     //          receiver
     //          - 1: use the GNSS receiver for localization
-    //          - 2: use cellular CellLocate® location information
-    //          - 3: ?? use the combined GNSS receiver and CellLocate® service
+    //          - 2: use cellular CellLocate location information
+    //          - 3: ?? use the combined GNSS receiver and CellLocate service
     //          information ?? - Docs show using sensor 3 and it's
     //          documented for the +UTIME command but not for +ULOC
     // <response_type> - 0: standard (single-hypothesis) response
@@ -442,18 +442,18 @@ class TinyGsmUBLOX
     return getUbloxLocationRaw(1);
   }
 
-  bool getUbloxLocation(int8_t sensor, float* lat, float* lon, float* speed = 0,
+  bool inline getUbloxLocation(int8_t sensor, float* lat, float* lon, float* speed = 0,
                         int* alt = 0, int* vsat = 0, int* usat = 0,
                         float* accuracy = 0, int* year = 0, int* month = 0,
                         int* day = 0, int* hour = 0, int* minute = 0,
                         int* second = 0) {
     // AT+ULOC=<mode>,<sensor>,<response_type>,<timeout>,<accuracy>
     // <mode> - 2: single shot position
-    // <sensor> - 2: use cellular CellLocate® location information
+    // <sensor> - 2: use cellular CellLocate location information
     //          - 0: use the last fix in the internal database and stop the GNSS
     //          receiver
     //          - 1: use the GNSS receiver for localization
-    //          - 3: ?? use the combined GNSS receiver and CellLocate® service
+    //          - 3: ?? use the combined GNSS receiver and CellLocate service
     //          information ?? - Docs show using sensor 3 and it's documented
     //          for the +UTIME command but not for +ULOC
     // <response_type> - 0: standard (single-hypothesis) response
@@ -469,74 +469,60 @@ class TinyGsmUBLOX
     // <direction>, <vertical_acc>, <sensor_used>, <SV_used>, <antenna_status>,
     // <jamming_status>
 
+    // init variables
+    float ilat         = 0;
+    float ilon         = 0;
+    float ispeed       = 0;
+    int   ialt         = 0;
+    int   iusat        = 0;
+    float iaccuracy    = 0;
+    int   iyear        = 0;
+    int   imonth       = 0;
+    int   iday         = 0;
+    int   ihour        = 0;
+    int   imin         = 0;
+    float secondWithSS = 0;
+
     // Date & Time
-    char dtSBuff[7] = {'\0'};
+    iday         = streamGetInt('/');    // Two digit day
+    imonth       = streamGetInt('/');    // Two digit month
+    iyear        = streamGetInt(',');    // Four digit year
+    ihour        = streamGetInt(':');    // Two digit hour
+    imin         = streamGetInt(':');    // Two digit minute
+    secondWithSS = streamGetFloat(',');  // 6 digit second with subseconds
 
-    stream.readBytes(dtSBuff, 2);           // Two digit day
-    dtSBuff[2] = '\0';                      // null terminate buffer
-    if (day != NULL) *day = atoi(dtSBuff);  // Convert to int
-    streamSkipUntil('/');                   // Throw out slash
-
-    stream.readBytes(dtSBuff, 2);  // Two digit month
-    dtSBuff[2] = '\0';
-    if (month != NULL) *month = atoi(dtSBuff);
-    streamSkipUntil('/');  // Throw out slash
-
-    stream.readBytes(dtSBuff, 4);  // Four digit year
-    dtSBuff[4] = '\0';
-    if (year != NULL) *year = atoi(dtSBuff);
-    streamSkipUntil(',');  // Throw out comma
-
-    stream.readBytes(dtSBuff, 2);  // Two digit hour
-    dtSBuff[2] = '\0';
-    if (hour != NULL) *hour = atoi(dtSBuff);
-    streamSkipUntil(':');  // Throw out colon
-
-    stream.readBytes(dtSBuff, 2);  // Two digit minute
-    dtSBuff[2] = '\0';
-    if (minute != NULL) *minute = atoi(dtSBuff);
-    streamSkipUntil(':');  // Throw out colon
-
-    stream.readBytes(dtSBuff, 6);  // 6 digit second with subseconds
-    dtSBuff[6] = '\0';
-    if (second != NULL) *second = atoi(dtSBuff);
-    // *secondWithSS = atof(dtSBuff);
-    streamSkipUntil(',');  // Throw away the final comma
-
-    *lat = streamGetFloat(',');  // Estimated latitude, in degrees
-    *lon = streamGetFloat(',');  // Estimated longitude, in degrees
-
-    if (alt != NULL) {  // Estimated altitude, in meters - only for GNSS
-                        // positioning, 0 in case of CellLocate
-      *alt = streamGetFloat(',');
-    } else {
-      streamSkipUntil(',');
-    }
-    if (accuracy != NULL) {  // Maximum possible error, in meters (0 - 20000000)
-      *accuracy = streamGetFloat(',');
-    } else {
-      streamSkipUntil(',');
-    }
-    if (speed != NULL) {  // Speed over ground m/s3
-      *speed = streamGetFloat(',');
-    } else {
-      streamSkipUntil(',');
-    }
+    ilat = streamGetFloat(',');  // Estimated latitude, in degrees
+    ilon = streamGetFloat(',');  // Estimated longitude, in degrees
+    ialt = streamGetFloat(',');  // Estimated altitude, in meters - only for
+    iaccuracy = streamGetFloat(
+        ',');  // Maximum possible error, in meters (0 - 20000000)
+    ispeed = streamGetFloat(',');  // Speed over ground m/s3
     streamSkipUntil(',');  // Course over ground in degree (0 deg - 360 deg)
     streamSkipUntil(',');  // Vertical accuracy, in meters
     streamSkipUntil(',');  // Sensor used for the position calculation
-    if (vsat != NULL) *vsat = 0;  // Number of satellites viewed not reported
-    if (usat != NULL) {  // Number of satellite used to calculate the position
-      *usat = streamGetInt(',');
-    } else {
-      streamSkipUntil(',');
-    }
-    streamSkipUntil(',');   // Antenna status
+    iusat = streamGetInt(
+        ',');              // Number of satellite used to calculate the position
+    streamSkipUntil(',');  // Antenna status
     streamSkipUntil('\n');  // Jamming status
+
+    // Set pointers
+    if (lat != NULL) *lat = ilat;
+    if (lon != NULL) *lon = ilon;
+    if (speed != NULL) *speed = ispeed;
+    if (alt != NULL) *alt = ialt;
+    if (vsat != NULL) *vsat = 0;  // Number of satellites viewed not reported;
+    if (usat != NULL) *usat = iusat;
+    if (accuracy != NULL) *accuracy = iaccuracy;
+    if (iyear < 2000) iyear += 2000;
+    if (year != NULL) *year = iyear;
+    if (month != NULL) *month = imonth;
+    if (day != NULL) *day = iday;
+    if (hour != NULL) *hour = ihour;
+    if (minute != NULL) *minute = imin;
+    if (second != NULL) *second = static_cast<int>(secondWithSS);
 
     // final ok
     waitResponse();
-
     return true;
   }
   bool getGsmLocationImpl(float* lat, float* lon, float* accuracy = 0,
@@ -544,7 +530,7 @@ class TinyGsmUBLOX
                           int* hour = 0, int* minute = 0, int* second = 0) {
     return getUbloxLocation(2, lat, lon, 0, 0, 0, 0, accuracy, year, month, day,
                             hour, minute, second);
-  };
+  }
   bool getGPSImpl(float* lat, float* lon, float* speed = 0, int* alt = 0,
                   int* vsat = 0, int* usat = 0, float* accuracy = 0,
                   int* year = 0, int* month = 0, int* day = 0, int* hour = 0,

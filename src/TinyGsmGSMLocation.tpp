@@ -93,45 +93,41 @@ class TinyGsmGSMLocation {
     if (thisModem().waitResponse(120000L, GF("+CLBS:0,")) != 1) {
       return false;
     }
-    *lat = thisModem().streamGetFloat(',');  // Latitude
-    *lon = thisModem().streamGetFloat(',');  // Longitude
-    if (accuracy != NULL) {                  // Positioning accuracy
-      *accuracy = thisModem().streamGetInt(',');
-    } else {
-      thisModem().streamSkipUntil(',');
-    }
+
+    // init variables
+    float ilat      = 0;
+    float ilon      = 0;
+    float iaccuracy = 0;
+    int   iyear     = 0;
+    int   imonth    = 0;
+    int   iday      = 0;
+    int   ihour     = 0;
+    int   imin      = 0;
+    int   isec      = 0;
+
+    ilat      = thisModem().streamGetFloat(',');  // Latitude
+    ilon      = thisModem().streamGetFloat(',');  // Longitude
+    iaccuracy = thisModem().streamGetInt(',');    // Positioning accuracy
 
     // Date & Time
-    char dtSBuff[5] = {'\0'};
-    thisModem().stream.readBytes(dtSBuff, 4);  // Four digit year
-    dtSBuff[4] = '\0';                         // null terminate buffer
-    if (year != NULL) *year = atoi(dtSBuff);   // Convert to int
-    thisModem().streamSkipUntil('/');          // Throw out slash
+    iyear  = thisModem().streamGetInt('/');
+    imonth = thisModem().streamGetInt('/');
+    iday   = thisModem().streamGetInt(',');
+    ihour  = thisModem().streamGetInt(':');
+    imin   = thisModem().streamGetInt(':');
+    isec   = thisModem().streamGetInt('\n');
 
-    thisModem().stream.readBytes(dtSBuff, 2);  // Two digit month
-    dtSBuff[2] = '\0';
-    if (month != NULL) *month = atoi(dtSBuff);
-    thisModem().streamSkipUntil('/');  // Throw out slash
-
-    thisModem().stream.readBytes(dtSBuff, 2);  // Two digit day
-    dtSBuff[2] = '\0';
-    if (day != NULL) *day = atoi(dtSBuff);
-    thisModem().streamSkipUntil(',');  // Throw out comma
-
-    thisModem().stream.readBytes(dtSBuff, 2);  // Two digit hour
-    dtSBuff[2] = '\0';
-    if (hour != NULL) *hour = atoi(dtSBuff);
-    thisModem().streamSkipUntil(':');  // Throw out colon
-
-    thisModem().stream.readBytes(dtSBuff, 2);  // Two digit minute
-    dtSBuff[2] = '\0';
-    if (minute != NULL) *minute = atoi(dtSBuff);
-    thisModem().streamSkipUntil(':');  // Throw out colon
-
-    thisModem().stream.readBytes(dtSBuff, 2);  // Two digit second
-    dtSBuff[2] = '\0';
-    if (second != NULL) *second = atoi(dtSBuff);
-    thisModem().streamSkipUntil('\n');  // Should be at the end of the line
+    // Set pointers
+    if (lat != NULL) *lat = ilat;
+    if (lon != NULL) *lon = ilon;
+    if (accuracy != NULL) *accuracy = iaccuracy;
+    if (iyear < 2000) iyear += 2000;
+      if (year != NULL) *year = iyear;
+    if (month != NULL) *month = imonth;
+    if (day != NULL) *day = iday;
+    if (hour != NULL) *hour = ihour;
+    if (minute != NULL) *minute = imin;
+    if (second != NULL) *second = isec;
 
     // Final OK
     thisModem().waitResponse();

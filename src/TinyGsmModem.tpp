@@ -255,7 +255,21 @@ class TinyGsmModem {
     thisModem().streamWrite(tail...);
   }
 
-  int16_t inline streamGetInt(char lastChar) {
+  int16_t inline streamGetInt(int8_t numChars) {
+    char   buf[6];
+    size_t bytesRead = thisModem().stream.readBytes(buf, numChars);
+    if (bytesRead) {
+      buf[numChars] = '\0';
+      int16_t res   = atoi(buf);
+      return res;
+    } else {
+      return -9999;
+    }
+  }
+
+  template <class T>
+  // calling with template only to prevent promotion of char to int
+  int16_t inline streamGetInt(T lastChar) {
     char   buf[6];
     size_t bytesRead = thisModem().stream.readBytesUntil(
         lastChar, buf, static_cast<size_t>(6));
@@ -267,7 +281,21 @@ class TinyGsmModem {
     }
   }
 
-  float inline streamGetFloat(char lastChar) {
+  float inline streamGetFloat(int8_t numChars) {
+    char   buf[12];
+    size_t bytesRead = thisModem().stream.readBytes(buf, numChars);
+    if (bytesRead) {
+      buf[numChars] = '\0';
+      int16_t res   = atof(buf);
+      return res;
+    } else {
+      return static_cast<float>(-9999);
+    }
+  }
+
+  template <class T>
+  // calling with template only to prevent promotion of char to int
+  float inline streamGetFloat(T lastChar) {
     char   buf[12];
     size_t bytesRead = thisModem().stream.readBytesUntil(
         lastChar, buf, static_cast<size_t>(12));

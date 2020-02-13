@@ -194,7 +194,6 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
     res2.trim();
 
     name = res2;
-    DBG("### Modem:", name);
     return name;
   }
 
@@ -375,7 +374,15 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
    * SIM card functions
    */
  protected:
-  // Able to follow all SIM card functions as inherited from the template
+  // Doesn't return the "+CCID" before the number
+  String getSimCCIDImpl() {
+    sendAT(GF("+CCID"));
+    if (waitResponse(GF(GSM_NL)) != 1) { return ""; }
+    String res = stream.readStringUntil('\n');
+    waitResponse();
+    res.trim();
+    return res;
+  }
 
   /*
    * Messaging functions
@@ -403,7 +410,7 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
   // get the RAW GPS output
   String getGPSrawImpl() {
     sendAT(GF("+CGNSINF"));
-    if (waitResponse(GF(GSM_NL "+CGNSINF:")) != 1) { return ""; }
+    if (waitResponse(10000L, GF(GSM_NL "+CGNSINF:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     waitResponse();
     res.trim();
@@ -415,84 +422,76 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
                   int* vsat = 0, int* usat = 0, float* accuracy = 0,
                   int* year = 0, int* month = 0, int* day = 0, int* hour = 0,
                   int* minute = 0, int* second = 0) {
-    bool fix = false;
-
     sendAT(GF("+CGNSINF"));
-    if (waitResponse(GF(GSM_NL "+CGNSINF:")) != 1) { return false; }
+    if (waitResponse(10000L, GF(GSM_NL "+CGNSINF:")) != 1) { return false; }
 
-    streamSkipUntil(',');                    // GNSS run status
-    if (streamGetInt(',') == 1) fix = true;  // fix status
+    streamSkipUntil(',');          // GNSS run status
+    if (streamGetInt(',') == 1) {  // fix status
+      // init variables
+      float ilat         = 0;
+      float ilon         = 0;
+      float ispeed       = 0;
+      int   ialt         = 0;
+      int   ivsat        = 0;
+      int   iusat        = 0;
+      float iaccuracy    = 0;
+      int   iyear        = 0;
+      int   imonth       = 0;
+      int   iday         = 0;
+      int   ihour        = 0;
+      int   imin         = 0;
+      float secondWithSS = 0;
 
-    // UTC date & Time
-    char dtSBuff[7] = {'\0'};
-    stream.readBytes(dtSBuff, 4);             // Four digit year
-    dtSBuff[4] = '\0';                        // null terminate buffer
-    if (year != NULL) *year = atoi(dtSBuff);  // Convert to int
+      // UTC date & Time
+      iyear        = streamGetInt(static_cast<int8_t>(4));  // Four digit year
+      imonth       = streamGetInt(static_cast<int8_t>(2));  // Two digit month
+      iday         = streamGetInt(static_cast<int8_t>(2));  // Two digit day
+      ihour        = streamGetInt(static_cast<int8_t>(2));  // Two digit hour
+      imin         = streamGetInt(static_cast<int8_t>(2));  // Two digit minute
+      secondWithSS = streamGetFloat(',');  // 6 digit second with subseconds
 
-    stream.readBytes(dtSBuff, 2);  // Two digit month
-    dtSBuff[2] = '\0';
-    if (month != NULL) *month = atoi(dtSBuff);
+      ilat   = streamGetFloat(',');     // Latitude
+      ilon   = streamGetFloat(',');     // Longitude
+      ialt   = streamGetFloat(',');     // MSL Altitude. Unit is meters
+      ispeed = streamGetFloat(',');     // Speed Over Ground. Unit is knots.
+      streamSkipUntil(',');             // Course Over Ground. Degrees.
+      streamSkipUntil(',');             // Fix Mode
+      streamSkipUntil(',');             // Reserved1
+      streamSkipUntil(',');             // Horizontal Dilution Of Precision
+      iaccuracy = streamGetFloat(',');  // Position Dilution Of Precision
+      streamSkipUntil(',');             // Vertical Dilution Of Precision
+      streamSkipUntil(',');             // Reserved2
+      ivsat = streamGetInt(',');        // GNSS Satellites in View
+      iusat = streamGetInt(',');        // GNSS Satellites Used
+      streamSkipUntil(',');             // GLONASS Satellites Used
+      streamSkipUntil(',');             // Reserved3
+      streamSkipUntil(',');             // C/N0 max
+      streamSkipUntil(',');             // HPA
+      streamSkipUntil('\n');            // VPA
 
-    stream.readBytes(dtSBuff, 2);  // Two digit day
-    dtSBuff[2] = '\0';
-    if (day != NULL) *day = atoi(dtSBuff);
+      // Set pointers
+      if (lat != NULL) *lat = ilat;
+      if (lon != NULL) *lon = ilon;
+      if (speed != NULL) *speed = ispeed;
+      if (alt != NULL) *alt = ialt;
+      if (vsat != NULL) *vsat = ivsat;
+      if (usat != NULL) *usat = iusat;
+      if (accuracy != NULL) *accuracy = iaccuracy;
+      if (iyear < 2000) iyear += 2000;
+      if (year != NULL) *year = iyear;
+      if (month != NULL) *month = imonth;
+      if (day != NULL) *day = iday;
+      if (hour != NULL) *hour = ihour;
+      if (minute != NULL) *minute = imin;
+      if (second != NULL) *second = static_cast<int>(secondWithSS);
 
-    stream.readBytes(dtSBuff, 2);  // Two digit hour
-    dtSBuff[2] = '\0';
-    if (hour != NULL) *hour = atoi(dtSBuff);
-
-    stream.readBytes(dtSBuff, 2);  // Two digit minute
-    dtSBuff[2] = '\0';
-    if (minute != NULL) *minute = atoi(dtSBuff);
-
-    stream.readBytes(dtSBuff, 6);  // 6 digit second with subseconds
-    dtSBuff[6] = '\0';
-    if (second != NULL) *second = atoi(dtSBuff);
-    // *secondWithSS = atof(dtSBuff);
-    streamSkipUntil(',');  // Throw away the final comma
-
-    *lat = streamGetFloat(',');  // Latitude
-    *lon = streamGetFloat(',');  // Longitude
-    if (alt != NULL) {           // MSL Altitude. Unit is meters
-      *alt = streamGetFloat(',');
-    } else {
-      streamSkipUntil(',');
+      waitResponse();
+      return true;
     }
-    if (speed != NULL) {  // Speed Over Ground. Unit is knots.
-      *speed = streamGetFloat(',');
-    } else {
-      streamSkipUntil(',');
-    }
-    streamSkipUntil(',');    // Course Over Ground. Degrees.
-    streamSkipUntil(',');    // Fix Mode
-    streamSkipUntil(',');    // Reserved1
-    streamSkipUntil(',');    // Horizontal Dilution Of Precision
-    if (accuracy != NULL) {  // Position Dilution Of Precision
-      *accuracy = streamGetFloat(',');
-    } else {
-      streamSkipUntil(',');
-    }
-    streamSkipUntil(',');  // Vertical Dilution Of Precision
-    streamSkipUntil(',');  // Reserved2
-    if (vsat != NULL) {    // GNSS Satellites in View
-      *vsat = streamGetInt(',');
-    } else {
-      streamSkipUntil(',');
-    }
-    if (usat != NULL) {  // GNSS Satellites Used
-      *usat = streamGetInt(',');
-    } else {
-      streamSkipUntil(',');
-    }
-    streamSkipUntil(',');   // GLONASS Satellites Used
-    streamSkipUntil(',');   // Reserved3
-    streamSkipUntil(',');   // C/N0 max
-    streamSkipUntil(',');   // HPA
-    streamSkipUntil('\n');  // VPA
 
+    streamSkipUntil('\n');  // toss the row of commas
     waitResponse();
-
-    return fix;
+    return false;
   }
 
   /*

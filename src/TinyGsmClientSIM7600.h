@@ -314,10 +314,10 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     //         = 10 (default)
     // DelayTm = number of milliseconds to delay before outputting received data
     //          = 0 (default)
-    // Ack = sets whether reporting a string “Send ok” = 0 (don't report)
+    // Ack = sets whether reporting a string "Send ok" = 0 (don't report)
     // errMode = mode of reporting error result code = 0 (numberic values)
     // HeaderType = which data header of receiving data in multi-client mode
-    //            = 1 (“+RECEIVE,<link num>,<data length>”)
+    //            = 1 (+RECEIVE,<link num>,<data length>)
     // AsyncMode = sets mode of executing commands
     //           = 0 (synchronous command executing)
     // TimeoutVal = minimum retransmission timeout in milliseconds = 75000
@@ -439,69 +439,69 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     uint8_t fixMode = streamGetInt(',');  // mode 2=2D Fix or 3=3DFix
                                           // TODO(?) Can 1 be returned
     if (fixMode == 1 || fixMode == 2 || fixMode == 3) {
+      // init variables
+      float ilat      = 0;
+      float ilon      = 0;
+      float ispeed    = 0;
+      int   ialt      = 0;
+      int   ivsat     = 0;
+      int   iusat     = 0;
+      float iaccuracy = 0;
+      int iyear = 0;
+      int imonth = 0;
+      int iday = 0;
+      int ihour = 0;
+      int imin = 0;
+      float secondWithSS = 0;
+
       streamSkipUntil(',');        // GPS satellite valid numbers
       streamSkipUntil(',');        // GLONASS satellite valid numbers
       streamSkipUntil(',');        // BEIDOU satellite valid numbers
-      *lat = streamGetFloat(',');  // Latitude
+      ilat = streamGetFloat(',');  // Latitude
       streamSkipUntil(',');        // N/S Indicator, N=north or S=south
-      *lon = streamGetFloat(',');  // Longitude
+      ilon = streamGetFloat(',');  // Longitude
       streamSkipUntil(',');        // E/W Indicator, E=east or W=west
 
       // Date. Output format is ddmmyy
-      char dtSBuff[7] = {'\0'};
-      stream.readBytes(dtSBuff, 2);           // Two digit day
-      dtSBuff[2] = '\0';                      // null terminate buffer
-      if (day != NULL) *day = atoi(dtSBuff);  // Convert to int
-
-      stream.readBytes(dtSBuff, 2);  // Two digit month
-      dtSBuff[2] = '\0';
-      if (month != NULL) *month = atoi(dtSBuff);
-
-      stream.readBytes(dtSBuff, 2);  // Two digit year
-      dtSBuff[2] = '\0';
-      if (year != NULL) *year = atoi(dtSBuff);
-      streamSkipUntil(',');  // Throw away the final comma
+      iday = streamGetInt(static_cast<int8_t>(2));    // Two digit day
+      imonth = streamGetInt(static_cast<int8_t>(2));  // Two digit month
+      iyear = streamGetInt(',');                      // Two digit year
 
       // UTC Time. Output format is hhmmss.s
-      stream.readBytes(dtSBuff, 2);  // Two digit hour
-      dtSBuff[2] = '\0';
-      if (hour != NULL) *hour = atoi(dtSBuff);
+      ihour = streamGetInt(static_cast<int8_t>(2));  // Two digit hour
+      imin = streamGetInt(static_cast<int8_t>(2));   // Two digit minute
+      secondWithSS = streamGetFloat(',');  // 4 digit second with subseconds
 
-      stream.readBytes(dtSBuff, 2);  // Two digit minute
-      dtSBuff[2] = '\0';
-      if (minute != NULL) *minute = atoi(dtSBuff);
+      ialt   = streamGetFloat(',');  // MSL Altitude. Unit is meters
+      ispeed = streamGetFloat(',');  // Speed Over Ground. Unit is knots.
+      streamSkipUntil(',');          // Course Over Ground. Degrees.
+      streamSkipUntil(',');  // After set, will report GPS every x seconds
+      iaccuracy = streamGetFloat(',');  // Position Dilution Of Precision
+      streamSkipUntil(',');             // Horizontal Dilution Of Precision
+      streamSkipUntil(',');             // Vertical Dilution Of Precision
+      streamSkipUntil('\n');            // TODO(?) is one more field reported??
 
-      stream.readBytes(dtSBuff, 6);  // 6 digit second with subseconds
-      dtSBuff[6] = '\0';
-      if (second != NULL) *second = atoi(dtSBuff);
-      // *secondWithSS = atof(dtSBuff);
-      streamSkipUntil(',');  // Throw away the final comma
-
-      if (alt != NULL) {  // MSL Altitude. Unit is meters
-        *alt = streamGetFloat(',');
-      } else {
-        streamSkipUntil(',');
-      }
-      if (speed != NULL) {  // Speed Over Ground. Unit is knots.
-        *speed = streamGetFloat(',');
-      } else {
-        streamSkipUntil(',');
-      }
-      streamSkipUntil(',');    // Course Over Ground. Degrees.
-      streamSkipUntil(',');    // After set, will report GPS every x seconds
-      if (accuracy != NULL) {  // Position Dilution Of Precision
-        *accuracy = streamGetFloat(',');
-      } else {
-        streamSkipUntil(',');
-      }
-      streamSkipUntil(',');   // Horizontal Dilution Of Precision
-      streamSkipUntil(',');   // Vertical Dilution Of Precision
-      streamSkipUntil('\n');  // TODO(?) is one more field reported??
+      // Set pointers
+      if (lat != NULL) *lat = ilat;
+      if (lon != NULL) *lon = ilon;
+      if (speed != NULL) *speed = ispeed;
+      if (alt != NULL) *alt = ialt;
+      if (vsat != NULL) *vsat = ivsat;
+      if (usat != NULL) *usat = iusat;
+      if (accuracy != NULL) *accuracy = iaccuracy;
+      if (iyear < 2000) iyear += 2000;
+      if (year != NULL) *year = iyear;
+      if (month != NULL) *month = imonth;
+      if (day != NULL) *day = iday;
+      if (hour != NULL) *hour = ihour;
+      if (minute != NULL) *minute = imin;
+      if (second != NULL) *second = static_cast<int>(secondWithSS);
 
       waitResponse();
-
       return true;
     }
+
+    waitResponse();
     return false;
   }
 
