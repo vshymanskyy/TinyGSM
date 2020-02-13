@@ -275,29 +275,6 @@ void loop() {
   }
 #endif
 
-#if TINY_GSM_TEST_GPS && defined TINY_GSM_MODEM_HAS_GPS
-  modem.enableGPS();
-  String gps_raw = modem.getGPSraw();
-  modem.disableGPS();
-  DBG("GPS raw data:", gps_raw);
-#endif
-
-#if TINY_GSM_TEST_SMS && defined TINY_GSM_MODEM_HAS_SMS && defined SMS_TARGET
-  res = modem.sendSMS(SMS_TARGET, String("Hello from ") + imei);
-  DBG("SMS:", res ? "OK" : "fail");
-
-  // This is only supported on SIMxxx series
-  res = modem.sendSMS_UTF8_begin(SMS_TARGET);
-  if (res) {
-    auto stream = modem.sendSMS_UTF8_stream();
-    stream.print(F("Привіііт! Print number: "));
-    stream.print(595);
-    res = modem.sendSMS_UTF8_end();
-  }
-  DBG("UTF8 SMS:", res ? "OK" : "fail");
-
-#endif
-
 #if TINY_GSM_TEST_CALL && defined TINY_GSM_MODEM_HAS_CALLING && \
     defined CALL_TARGET
   DBG("Calling:", CALL_TARGET);
@@ -324,24 +301,84 @@ void loop() {
   }
 #endif
 
-#if TINY_GSM_TEST_BATTERY && defined TINY_GSM_MODEM_HAS_BATTERY
-  uint8_t chargeState = -99;
-  int8_t percent = -99;
-  uint16_t milliVolts = -9999;
-  modem.getBattStats(chargeState, percent, milliVolts);
-  DBG("Battery charge state:", chargeState);
-  DBG("Battery charge 'percent':", percent);
-  DBG("Battery voltage:", milliVolts / 1000.0F);
-#endif
+#if TINY_GSM_TEST_SMS && defined TINY_GSM_MODEM_HAS_SMS && defined SMS_TARGET
+  res = modem.sendSMS(SMS_TARGET, String("Hello from ") + imei);
+  DBG("SMS:", res ? "OK" : "fail");
 
-#if TINY_GSM_TEST_TEMPERATURE && defined TINY_GSM_MODEM_HAS_TEMPERATURE
-  float temp = modem.getTemperature();
-  DBG("Chip temperature:", temp);
+  // This is only supported on SIMxxx series
+  res = modem.sendSMS_UTF8_begin(SMS_TARGET);
+  if (res) {
+    auto stream = modem.sendSMS_UTF8_stream();
+    stream.print(F("Привіііт! Print number: "));
+    stream.print(595);
+    res = modem.sendSMS_UTF8_end();
+  }
+  DBG("UTF8 SMS:", res ? "OK" : "fail");
+
 #endif
 
 #if TINY_GSM_TEST_GSM_LOCATION && defined TINY_GSM_MODEM_HAS_GSM_LOCATION
   String location = modem.getGsmLocation();
   DBG("GSM Based Location:", location);
+  float lat = 0;
+  float lon = 0;
+  float accuracy = 0;
+  int year = 0;
+  int month = 0;
+  int day = 0;
+  int hour = 0;
+  int min = 0;
+  int sec = 0;
+  if (modem.getGsmLocation(&lat, &lon, &accuracy, &year, &month, &day, &hour,
+                           &min, &sec)) {
+    DBG("Latitude:", lat);
+    DBG("Longitude:", lon);
+    DBG("Accuracy:", accuracy);
+    DBG("Year:", year);
+    DBG("Month:", month);
+    DBG("Day:", day);
+    DBG("Hour:", hour);
+    DBG("Minute:", min);
+    DBG("Second:", sec);
+  } else {
+    DBG("Couldn't get GSM location");
+  }
+#endif
+
+#if TINY_GSM_TEST_GPS && defined TINY_GSM_MODEM_HAS_GPS
+  modem.enableGPS();
+  String gps_raw = modem.getGPSraw();
+  DBG("GPS/GNSS Based Location:", gps_raw);
+  float lat = 0;
+  float lon = 0;
+  float speed = 0;
+  int alt = 0;
+  int vsat = 0;
+  int usat = 0;
+  int year = 0;
+  int month = 0;
+  int day = 0;
+  int hour = 0;
+  int min = 0;
+  int sec = 0;
+  if (getGPS(&lat, &lon, &speed, &alt, &vsat, &usat, &year, &month, &day, &hour,
+             &minute, &second)) {
+    DBG("Latitude:", lat);
+    DBG("Longitude:", lon);
+    DBG("Speed:", speed);
+    DBG("Altitude:", alt);
+    DBG("Visible Satellites:", vsat);
+    DBG("Used Satellites:", usat);
+    DBG("Year:", year);
+    DBG("Month:", month);
+    DBG("Day:", day);
+    DBG("Hour:", hour);
+    DBG("Minute:", min);
+    DBG("Second:", sec);
+  } else {
+    DBG("Couldn't get GPS/GNSS location");
+  }
+  modem.disableGPS();
 #endif
 
 #if TINY_GSM_TEST_TIME && defined TINY_GSM_MODEM_HAS_TIME
@@ -361,6 +398,21 @@ void loop() {
 #if TINY_GSM_TEST_WIFI
   modem.networkDisconnect();
   DBG("WiFi disconnected");
+#endif
+
+#if TINY_GSM_TEST_BATTERY && defined TINY_GSM_MODEM_HAS_BATTERY
+  uint8_t chargeState = -99;
+  int8_t percent = -99;
+  uint16_t milliVolts = -9999;
+  modem.getBattStats(chargeState, percent, milliVolts);
+  DBG("Battery charge state:", chargeState);
+  DBG("Battery charge 'percent':", percent);
+  DBG("Battery voltage:", milliVolts / 1000.0F);
+#endif
+
+#if TINY_GSM_TEST_TEMPERATURE && defined TINY_GSM_MODEM_HAS_TEMPERATURE
+  float temp = modem.getTemperature();
+  DBG("Chip temperature:", temp);
 #endif
 
 #if TINY_GSM_POWERDOWN
