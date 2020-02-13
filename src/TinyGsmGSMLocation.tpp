@@ -122,7 +122,7 @@ class TinyGsmGSMLocation {
     if (lon != NULL) *lon = ilon;
     if (accuracy != NULL) *accuracy = iaccuracy;
     if (iyear < 2000) iyear += 2000;
-      if (year != NULL) *year = iyear;
+    if (year != NULL) *year = iyear;
     if (month != NULL) *month = imonth;
     if (day != NULL) *day = iday;
     if (hour != NULL) *hour = ihour;

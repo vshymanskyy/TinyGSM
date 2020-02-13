@@ -431,7 +431,7 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
       float ilat         = 0;
       float ilon         = 0;
       float ispeed       = 0;
-      int   ialt         = 0;
+      float ialt         = 0;
       int   ivsat        = 0;
       int   iusat        = 0;
       float iaccuracy    = 0;
@@ -473,7 +473,7 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
       if (lat != NULL) *lat = ilat;
       if (lon != NULL) *lon = ilon;
       if (speed != NULL) *speed = ispeed;
-      if (alt != NULL) *alt = ialt;
+      if (alt != NULL) *alt = static_cast<int>(ialt);
       if (vsat != NULL) *vsat = ivsat;
       if (usat != NULL) *usat = iusat;
       if (accuracy != NULL) *accuracy = iaccuracy;

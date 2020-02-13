@@ -428,7 +428,9 @@ class TinyGsmSaraR4
    * GSM/GPS/GNSS/GLONASS Location functions
    * NOTE:  u-blox modules use the same function to get location data from both
    * GSM tower triangulation and from dedicated GPS/GNSS/GLONASS receivers.  The
-   * only difference in which sensor the data is requested from.
+   * only difference in which sensor the data is requested from.  If a GNSS
+   * location is requested from a modem without a GNSS receiver installed on the
+   * I2C port, the GSM-based "Cell Locate" location will be returned instead.
    */
  protected:
   bool enableGPSImpl() {
@@ -475,11 +477,12 @@ class TinyGsmSaraR4
     return getUbloxLocationRaw(1);
   }
 
-  bool inline getUbloxLocation(int8_t sensor, float* lat, float* lon, float* speed = 0,
-                        int* alt = 0, int* vsat = 0, int* usat = 0,
-                        float* accuracy = 0, int* year = 0, int* month = 0,
-                        int* day = 0, int* hour = 0, int* minute = 0,
-                        int* second = 0) {
+  bool inline getUbloxLocation(int8_t sensor, float* lat, float* lon,
+                               float* speed = 0, int* alt = 0, int* vsat = 0,
+                               int* usat = 0, float* accuracy = 0,
+                               int* year = 0, int* month = 0, int* day = 0,
+                               int* hour = 0, int* minute = 0,
+                               int* second = 0) {
     // AT+ULOC=<mode>,<sensor>,<response_type>,<timeout>,<accuracy>
     // <mode> - 2: single shot position
     // <sensor> - 2: use cellular CellLocate location information
@@ -506,7 +509,7 @@ class TinyGsmSaraR4
     float ilat         = 0;
     float ilon         = 0;
     float ispeed       = 0;
-    int   ialt         = 0;
+    float ialt         = 0;
     int   iusat        = 0;
     float iaccuracy    = 0;
     int   iyear        = 0;
@@ -526,23 +529,26 @@ class TinyGsmSaraR4
 
     ilat = streamGetFloat(',');  // Estimated latitude, in degrees
     ilon = streamGetFloat(',');  // Estimated longitude, in degrees
-    ialt = streamGetFloat(',');  // Estimated altitude, in meters - only for
-    iaccuracy = streamGetFloat(
-        ',');  // Maximum possible error, in meters (0 - 20000000)
-    ispeed = streamGetFloat(',');  // Speed over ground m/s3
-    streamSkipUntil(',');  // Course over ground in degree (0 deg - 360 deg)
-    streamSkipUntil(',');  // Vertical accuracy, in meters
-    streamSkipUntil(',');  // Sensor used for the position calculation
-    iusat = streamGetInt(
-        ',');              // Number of satellite used to calculate the position
-    streamSkipUntil(',');  // Antenna status
-    streamSkipUntil('\n');  // Jamming status
+    ialt = streamGetFloat(',');  // Estimated altitude, in meters - only forGNSS
+                                 // positioning, 0 in case of CellLocate
+    if (ialt != 0) {             // values not returned for CellLocate
+      iaccuracy = streamGetFloat(',');  // Maximum possible error, in meters
+      ispeed    = streamGetFloat(',');  // Speed over ground m/s3
+      streamSkipUntil(',');  // Course over ground in degree (0 deg - 360 deg)
+      streamSkipUntil(',');  // Vertical accuracy, in meters
+      streamSkipUntil(',');  // Sensor used for the position calculation
+      iusat = streamGetInt(',');  // Number of satellite used
+      streamSkipUntil(',');       // Antenna status
+      streamSkipUntil('\n');      // Jamming status
+    } else {
+      iaccuracy = streamGetFloat('\n');  // Maximum possible error, in meters
+    }
 
     // Set pointers
     if (lat != NULL) *lat = ilat;
     if (lon != NULL) *lon = ilon;
     if (speed != NULL) *speed = ispeed;
-    if (alt != NULL) *alt = ialt;
+    if (alt != NULL) *alt = static_cast<int>(ialt);
     if (vsat != NULL) *vsat = 0;  // Number of satellites viewed not reported;
     if (usat != NULL) *usat = iusat;
     if (accuracy != NULL) *accuracy = iaccuracy;

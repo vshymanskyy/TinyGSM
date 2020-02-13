@@ -440,18 +440,18 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
                                           // TODO(?) Can 1 be returned
     if (fixMode == 1 || fixMode == 2 || fixMode == 3) {
       // init variables
-      float ilat      = 0;
-      float ilon      = 0;
-      float ispeed    = 0;
-      int   ialt      = 0;
-      int   ivsat     = 0;
-      int   iusat     = 0;
-      float iaccuracy = 0;
-      int iyear = 0;
-      int imonth = 0;
-      int iday = 0;
-      int ihour = 0;
-      int imin = 0;
+      float ilat         = 0;
+      float ilon         = 0;
+      float ispeed       = 0;
+      float ialt         = 0;
+      int   ivsat        = 0;
+      int   iusat        = 0;
+      float iaccuracy    = 0;
+      int   iyear        = 0;
+      int   imonth       = 0;
+      int   iday         = 0;
+      int   ihour        = 0;
+      int   imin         = 0;
       float secondWithSS = 0;
 
       streamSkipUntil(',');        // GPS satellite valid numbers
@@ -463,13 +463,13 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       streamSkipUntil(',');        // E/W Indicator, E=east or W=west
 
       // Date. Output format is ddmmyy
-      iday = streamGetInt(static_cast<int8_t>(2));    // Two digit day
+      iday   = streamGetInt(static_cast<int8_t>(2));  // Two digit day
       imonth = streamGetInt(static_cast<int8_t>(2));  // Two digit month
-      iyear = streamGetInt(',');                      // Two digit year
+      iyear  = streamGetInt(',');                     // Two digit year
 
       // UTC Time. Output format is hhmmss.s
-      ihour = streamGetInt(static_cast<int8_t>(2));  // Two digit hour
-      imin = streamGetInt(static_cast<int8_t>(2));   // Two digit minute
+      ihour        = streamGetInt(static_cast<int8_t>(2));  // Two digit hour
+      imin         = streamGetInt(static_cast<int8_t>(2));  // Two digit minute
       secondWithSS = streamGetFloat(',');  // 4 digit second with subseconds
 
       ialt   = streamGetFloat(',');  // MSL Altitude. Unit is meters
@@ -485,7 +485,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       if (lat != NULL) *lat = ilat;
       if (lon != NULL) *lon = ilon;
       if (speed != NULL) *speed = ispeed;
-      if (alt != NULL) *alt = ialt;
+      if (alt != NULL) *alt = static_cast<int>(ialt);
       if (vsat != NULL) *vsat = ivsat;
       if (usat != NULL) *usat = iusat;
       if (accuracy != NULL) *accuracy = iaccuracy;
