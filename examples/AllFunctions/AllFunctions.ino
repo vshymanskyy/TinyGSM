@@ -319,20 +319,20 @@ void loop() {
 
 #if TINY_GSM_TEST_GSM_LOCATION && defined TINY_GSM_MODEM_HAS_GSM_LOCATION
   String location = modem.getGsmLocation();
-  DBG("GSM Based Location:", location);
-  float lat = 0;
-  float lon = 0;
+  DBG("GSM Based Location String:", location);
+  float lat      = 0;
+  float lon      = 0;
   float accuracy = 0;
-  int year = 0;
-  int month = 0;
-  int day = 0;
-  int hour = 0;
-  int min = 0;
-  int sec = 0;
+  int   year     = 0;
+  int   month    = 0;
+  int   day      = 0;
+  int   hour     = 0;
+  int   min      = 0;
+  int   sec      = 0;
   if (modem.getGsmLocation(&lat, &lon, &accuracy, &year, &month, &day, &hour,
                            &min, &sec)) {
-    DBG("Latitude:", lat);
-    DBG("Longitude:", lon);
+    DBG("Latitude:", String(lat, 8));
+    DBG("Longitude:", String(lon, 8));
     DBG("Accuracy:", accuracy);
     DBG("Year:", year);
     DBG("Month:", month);
@@ -348,33 +348,35 @@ void loop() {
 #if TINY_GSM_TEST_GPS && defined TINY_GSM_MODEM_HAS_GPS
   modem.enableGPS();
   String gps_raw = modem.getGPSraw();
-  DBG("GPS/GNSS Based Location:", gps_raw);
-  float lat = 0;
-  float lon = 0;
-  float speed = 0;
-  int alt = 0;
-  int vsat = 0;
-  int usat = 0;
-  int year = 0;
-  int month = 0;
-  int day = 0;
-  int hour = 0;
-  int min = 0;
-  int sec = 0;
-  if (getGPS(&lat, &lon, &speed, &alt, &vsat, &usat, &year, &month, &day, &hour,
-             &minute, &second)) {
-    DBG("Latitude:", lat);
-    DBG("Longitude:", lon);
-    DBG("Speed:", speed);
-    DBG("Altitude:", alt);
-    DBG("Visible Satellites:", vsat);
-    DBG("Used Satellites:", usat);
-    DBG("Year:", year);
-    DBG("Month:", month);
-    DBG("Day:", day);
-    DBG("Hour:", hour);
-    DBG("Minute:", min);
-    DBG("Second:", sec);
+  DBG("GPS/GNSS Based Location String:", gps_raw);
+  float lat2      = 0;
+  float lon2      = 0;
+  float speed2    = 0;
+  int   alt2      = 0;
+  int   vsat2     = 0;
+  int   usat2     = 0;
+  float accuracy2 = 0;
+  int   year2     = 0;
+  int   month2    = 0;
+  int   day2      = 0;
+  int   hour2     = 0;
+  int   min2      = 0;
+  int   sec2      = 0;
+  if (modem.getGPS(&lat2, &lon, &speed2, &alt2, &vsat2, &usat2, &accuracy2,
+                   &year2, &month2, &day2, &hour2, &min2, &sec2)) {
+    DBG("Latitude:", String(lat2, 8));
+    DBG("Longitude:", String(lon2, 8));
+    DBG("Speed:", speed2);
+    DBG("Altitude:", alt2);
+    DBG("Visible Satellites:", vsat2);
+    DBG("Used Satellites:", usat2);
+    DBG("Accuracy:", accuracy2);
+    DBG("Year:", year2);
+    DBG("Month:", month2);
+    DBG("Day:", day2);
+    DBG("Hour:", hour2);
+    DBG("Minute:", min2);
+    DBG("Second:", sec2);
   } else {
     DBG("Couldn't get GPS/GNSS location");
   }

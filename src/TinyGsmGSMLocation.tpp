@@ -95,8 +95,11 @@ class TinyGsmGSMLocation {
     }
     *lat = thisModem().streamGetFloat(',');  // Latitude
     *lon = thisModem().streamGetFloat(',');  // Longitude
-    if (accuracy != NULL)
-      *accuracy = thisModem().streamGetInt(',');  // Positioning accuracy
+    if (accuracy != NULL) {                  // Positioning accuracy
+      *accuracy = thisModem().streamGetInt(',');
+    } else {
+      thisModem().streamSkipUntil(',');
+    }
 
     // Date & Time
     char dtSBuff[5] = {'\0'};

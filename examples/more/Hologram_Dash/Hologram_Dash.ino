@@ -12,7 +12,9 @@
 #define TINY_GSM_MODEM_UBLOX
 
 // Increase RX buffer if needed
-// #define TINY_GSM_RX_BUFFER 512
+#if !defined(TINY_GSM_RX_BUFFER)
+#define TINY_GSM_RX_BUFFER 512
+#endif
 
 #include <TinyGsmClient.h>
 

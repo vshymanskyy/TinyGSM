@@ -433,8 +433,6 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
                   int* vsat = 0, int* usat = 0, float* accuracy = 0,
                   int* year = 0, int* month = 0, int* day = 0, int* hour = 0,
                   int* minute = 0, int* second = 0) {
-    // String buffer = "";
-
     sendAT(GF("+CGNSSINFO"));
     if (waitResponse(GF(GSM_NL "+CGNSSINFO:")) != 1) { return false; }
 
@@ -479,16 +477,25 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       // *secondWithSS = atof(dtSBuff);
       streamSkipUntil(',');  // Throw away the final comma
 
-      if (alt != NULL)
-        *alt = streamGetFloat(',');  // MSL Altitude. Unit is meters
-      if (speed != NULL)
-        *speed = streamGetFloat(',');  // Speed Over Ground. Unit is knots.
-      streamSkipUntil(',');            // Course. Degrees.
-      streamSkipUntil(',');  // After set, will report GPS every x seconds
-      if (accuracy != NULL)
-        *accuracy = streamGetFloat(',');  // Position Dilution Of Precision
-      streamSkipUntil(',');               // Horizontal Dilution Of Precision
-      streamSkipUntil(',');               // Vertical Dilution Of Precision
+      if (alt != NULL) {  // MSL Altitude. Unit is meters
+        *alt = streamGetFloat(',');
+      } else {
+        streamSkipUntil(',');
+      }
+      if (speed != NULL) {  // Speed Over Ground. Unit is knots.
+        *speed = streamGetFloat(',');
+      } else {
+        streamSkipUntil(',');
+      }
+      streamSkipUntil(',');    // Course Over Ground. Degrees.
+      streamSkipUntil(',');    // After set, will report GPS every x seconds
+      if (accuracy != NULL) {  // Position Dilution Of Precision
+        *accuracy = streamGetFloat(',');
+      } else {
+        streamSkipUntil(',');
+      }
+      streamSkipUntil(',');   // Horizontal Dilution Of Precision
+      streamSkipUntil(',');   // Vertical Dilution Of Precision
       streamSkipUntil('\n');  // TODO(?) is one more field reported??
 
       waitResponse();

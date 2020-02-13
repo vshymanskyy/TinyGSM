@@ -26,20 +26,14 @@ class TinyGsmSim808 : public TinyGsmSim800, public TinyGsmGPS<TinyGsmSim808> {
  protected:
   // enable GPS
   bool enableGPSImpl() {
-    // uint16_t state;
-
     sendAT(GF("+CGNSPWR=1"));
     if (waitResponse() != 1) { return false; }
-
     return true;
   }
 
   bool disableGPSImpl() {
-    // uint16_t state;
-
     sendAT(GF("+CGNSPWR=0"));
     if (waitResponse() != 1) { return false; }
-
     return true;
   }
 
@@ -96,25 +90,44 @@ class TinyGsmSim808 : public TinyGsmSim800, public TinyGsmGPS<TinyGsmSim808> {
     // *secondWithSS = atof(dtSBuff);
     streamSkipUntil(',');  // Throw away the final comma
 
-    *lat = streamGetFloat(',');                       // Latitude
-    *lon = streamGetFloat(',');                       // Longitude
-    if (alt != NULL) *alt = streamGetFloat(',');      // MSL Altitude
-    if (speed != NULL) *speed = streamGetFloat(',');  // Speed Over Ground
-    streamSkipUntil(',');                             // Course Over Ground
-    streamSkipUntil(',');                             // Fix Mode
-    streamSkipUntil(',');                             // Reserved1
-    streamSkipUntil(',');  // Horizontal Dilution Of Precision
-    if (accuracy != NULL)
-      *accuracy = streamGetFloat(',');  // Position Dilution Of Precision
+    *lat = streamGetFloat(',');  // Latitude
+    *lon = streamGetFloat(',');  // Longitude
+    if (alt != NULL) {           // MSL Altitude. Unit is meters
+      *alt = streamGetFloat(',');
+    } else {
+      streamSkipUntil(',');
+    }
+    if (speed != NULL) {  //  Speed Over Ground. Unit is knots.
+      *speed = streamGetFloat(',');
+    } else {
+      streamSkipUntil(',');
+    }
+    streamSkipUntil(',');    // Course Over Ground. Degrees.
+    streamSkipUntil(',');    // Fix Mode
+    streamSkipUntil(',');    // Reserved1
+    streamSkipUntil(',');    // Horizontal Dilution Of Precision
+    if (accuracy != NULL) {  // Position Dilution Of Precision
+      *accuracy = streamGetFloat(',');
+    } else {
+      streamSkipUntil(',');
+    }
     streamSkipUntil(',');  // Vertical Dilution Of Precision
     streamSkipUntil(',');  // Reserved2
-    if (vsat != NULL) *vsat = streamGetInt(',');  // GNSS Satellites in View
-    if (usat != NULL) *usat = streamGetInt(',');  // GNSS Satellites Used
-    streamSkipUntil(',');                         // GLONASS Satellites Used
-    streamSkipUntil(',');                         // Reserved3
-    streamSkipUntil(',');                         // C/N0 max
-    streamSkipUntil(',');                         // HPA
-    streamSkipUntil('\n');                        // VPA
+    if (vsat != NULL) {    // GNSS Satellites in View
+      *vsat = streamGetInt(',');
+    } else {
+      streamSkipUntil(',');
+    }
+    if (usat != NULL) {  // GNSS Satellites Used
+      *usat = streamGetInt(',');
+    } else {
+      streamSkipUntil(',');
+    }
+    streamSkipUntil(',');   // GLONASS Satellites Used
+    streamSkipUntil(',');   // Reserved3
+    streamSkipUntil(',');   // C/N0 max
+    streamSkipUntil(',');   // HPA
+    streamSkipUntil('\n');  // VPA
 
     waitResponse();
 

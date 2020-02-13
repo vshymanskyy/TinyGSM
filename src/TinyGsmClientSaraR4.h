@@ -538,21 +538,33 @@ class TinyGsmSaraR4
 
     *lat = streamGetFloat(',');  // Estimated latitude, in degrees
     *lon = streamGetFloat(',');  // Estimated longitude, in degrees
-    if (alt != NULL)
-      *alt = streamGetFloat(',');  // Estimated altitude, in meters - only for
-                                   // GNSS positioning, 0 in case of CellLocate
-    if (accuracy != NULL) {
+
+    if (alt != NULL) {  // Estimated altitude, in meters - only for GNSS
+                        // positioning, 0 in case of CellLocate
+      *alt = streamGetFloat(',');
+    } else {
+      streamSkipUntil(',');
+    }
+    if (accuracy != NULL) {  // Maximum possible error, in meters (0 - 20000000)
       *accuracy = streamGetFloat(',');
-    }  // Maximum possible error, in meters (0 - 20000000)
-    if (speed != NULL) *speed = streamGetFloat(',');  // Speed over ground m/s3
+    } else {
+      streamSkipUntil(',');
+    }
+    if (speed != NULL) {  // Speed over ground m/s3
+      *speed = streamGetFloat(',');
+    } else {
+      streamSkipUntil(',');
+    }
     streamSkipUntil(',');  // Course over ground in degree (0 deg - 360 deg)
     streamSkipUntil(',');  // Vertical accuracy, in meters
     streamSkipUntil(',');  // Sensor used for the position calculation
-    streamSkipUntil(',');  // Number of satellite used to calculate the position
-    if (usat != NULL)
-      *usat = streamGetInt(
-          ',');            // Number of satellite used to calculate the position
-    streamSkipUntil(',');  // Antenna status
+    if (vsat != NULL) vsat = 0;  // Number of satellites viewed not reported
+    if (usat != NULL) {  // Number of satellite used to calculate the position
+      *usat = streamGetInt(',');
+    } else {
+      streamSkipUntil(',');
+    }
+    streamSkipUntil(',');   // Antenna status
     streamSkipUntil('\n');  // Jamming status
 
     // final ok
