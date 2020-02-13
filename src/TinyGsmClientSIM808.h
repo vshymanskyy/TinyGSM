@@ -57,17 +57,45 @@ class TinyGsmSim808 : public TinyGsmSim800, public TinyGsmGPS<TinyGsmSim808> {
   // get GPS informations
   // works only with ans SIM808 V2
   bool getGPSImpl(float* lat, float* lon, float* speed = 0, int* alt = 0,
-                  int* vsat = 0, int* usat = 0) {
-    // String buffer = "";
-    // char chr_buffer[12];
+                  int* vsat = 0, int* usat = 0, int* year = 0, int* month = 0,
+                  int* day = 0, int* hour = 0, int* minute = 0,
+                  int* second = 0) {
     bool fix = false;
 
     sendAT(GF("+CGNSINF"));
     if (waitResponse(GF(GSM_NL "+CGNSINF:")) != 1) { return false; }
 
-    streamSkipUntil(',');                             // GNSS run status
-    if (streamGetInt(',') == 1) fix = true;           // fix status
-    streamSkipUntil(',');                             // UTC date & Time
+    streamSkipUntil(',');                    // GNSS run status
+    if (streamGetInt(',') == 1) fix = true;  // fix status
+
+    // UTC date & Time
+    char dtSBuff[7] = {'\0'};
+    stream.readBytes(dtSBuff, 4);             // Four digit year
+    dtSBuff[4] = '\0';                        // null terminate buffer
+    if (year != NULL) *year = atoi(dtSBuff);  // Convert to int
+
+    stream.readBytes(dtSBuff, 2);  // Two digit month
+    dtSBuff[2] = '\0';
+    if (month != NULL) *month = atoi(dtSBuff);
+
+    stream.readBytes(dtSBuff, 2);  // Two digit day
+    dtSBuff[2] = '\0';
+    if (day != NULL) *day = atoi(dtSBuff);
+
+    stream.readBytes(dtSBuff, 2);  // Two digit hour
+    dtSBuff[2] = '\0';
+    if (hour != NULL) *hour = atoi(dtSBuff);
+
+    stream.readBytes(dtSBuff, 2);  // Two digit minute
+    dtSBuff[2] = '\0';
+    if (minute != NULL) *minute = atoi(dtSBuff);
+
+    stream.readBytes(dtSBuff, 6);  // 6 digit second with subseconds
+    dtSBuff[6] = '\0';
+    if (second != NULL) *second = atoi(dtSBuff);
+    // *secondWithSS = atof(dtSBuff);
+    streamSkipUntil(',');  // Throw away the final comma
+
     *lat = streamGetFloat(',');                       // Latitude
     *lon = streamGetFloat(',');                       // Longitude
     if (alt != NULL) *alt = streamGetFloat(',');      // MSL Altitude
@@ -90,51 +118,6 @@ class TinyGsmSim808 : public TinyGsmSim800, public TinyGsmGPS<TinyGsmSim808> {
     waitResponse();
 
     return fix;
-  }
-
-  // get GPS time
-  // works only with SIM808 V2
-  bool getGPSTimeImpl(int* year, int* month, int* day, int* hour, int* minute,
-                      int* second) {
-    bool fix = false;
-    char chr_buffer[12];
-    sendAT(GF("+CGNSINF"));
-    if (waitResponse(GF(GSM_NL "+CGNSINF:")) != 1) { return false; }
-
-    for (int i = 0; i < 3; i++) {
-      String buffer = stream.readStringUntil(',');
-      buffer.toCharArray(chr_buffer, sizeof(chr_buffer));
-      switch (i) {
-        case 0:
-          // mode
-          break;
-        case 1:
-          // fixstatus
-          if (buffer.toInt() == 1) { fix = buffer.toInt(); }
-          break;
-        case 2:
-          *year   = buffer.substring(0, 4).toInt();
-          *month  = buffer.substring(4, 6).toInt();
-          *day    = buffer.substring(6, 8).toInt();
-          *hour   = buffer.substring(8, 10).toInt();
-          *minute = buffer.substring(10, 12).toInt();
-          *second = buffer.substring(12, 14).toInt();
-          break;
-
-        default:
-          // if nothing else matches, do the default
-          // default is optional
-          break;
-      }
-    }
-    streamSkipUntil('\n');
-    waitResponse();
-
-    if (fix) {
-      return true;
-    } else {
-      return false;
-    }
   }
 };
 

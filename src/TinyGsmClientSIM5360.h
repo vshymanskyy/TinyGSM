@@ -16,6 +16,7 @@
 
 #include "TinyGsmBattery.tpp"
 #include "TinyGsmGPRS.tpp"
+#include "TinyGsmGSMLocation.tpp"
 #include "TinyGsmModem.tpp"
 #include "TinyGsmSMS.tpp"
 #include "TinyGsmTCP.tpp"
@@ -43,6 +44,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
                                          TINY_GSM_MUX_COUNT>,
                        public TinyGsmSMS<TinyGsmSim5360>,
                        public TinyGsmTime<TinyGsmSim5360>,
+                       public TinyGsmGSMLocation<TinyGsmSim5360>,
                        public TinyGsmBattery<TinyGsmSim5360>,
                        public TinyGsmTemperature<TinyGsmSim5360> {
   friend class TinyGsmModem<TinyGsmSim5360>;
@@ -51,6 +53,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
                           TINY_GSM_MUX_COUNT>;
   friend class TinyGsmSMS<TinyGsmSim5360>;
   friend class TinyGsmTime<TinyGsmSim5360>;
+  friend class TinyGsmGSMLocation<TinyGsmSim5360>;
   friend class TinyGsmBattery<TinyGsmSim5360>;
   friend class TinyGsmTemperature<TinyGsmSim5360>;
 
@@ -400,6 +403,13 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
    */
  protected:
   // Follows all messaging functions per template
+
+  /*
+   * Location functions
+   */
+ protected:
+  // SIM5360 and SIM7100 can return a GSM-based location from CLBS as per the
+  // template; SIM5320 doesn't not appear to be able to
 
   /*
    * Time functions

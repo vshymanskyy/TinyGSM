@@ -170,8 +170,7 @@ class TinyGsmSim800
 
     // Enable Local Time Stamp for getting network time
     sendAT(GF("+CLTS=1"));
-    if (waitResponse(10000L) != 1) { return false;
-    }
+    if (waitResponse(10000L) != 1) { return false; }
 
     // Enable battery checks
     sendAT(GF("+CBATCHK=1"));
@@ -408,30 +407,10 @@ class TinyGsmSim800
    * Location functions
    */
  protected:
-  // Can return a location from CIPGSMLOC as per the template
+  // Depending on the exacty model and firmware revision, should return a
+  // GSM-based location from CLBS as per the template
+  // TODO(?):  Check number of digits in year (2 or 4)
 
-  String getGsmLocation() {
-    sendAT(GF("+CIPGSMLOC=1,1"));
-    if (waitResponse(10000L, GF(GSM_NL "+CIPGSMLOC:")) != 1) {
-      return "";
-    }
-    String res = stream.readStringUntil('\n');
-    waitResponse();
-    res.trim();
-    return res;
-  }
-  
-  String getBaseStationGsmLocation() {
-    sendAT(GF("+CLBS=1,1"));
-    if (waitResponse(10000L, GF(GSM_NL "+CLBS:")) != 1) {
-      return "";
-    }
-    String res = stream.readStringUntil('\n');
-    waitResponse();
-    res.trim();
-    return res;
-  }
-  
   /*
    * GPS location functions
    */

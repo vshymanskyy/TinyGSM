@@ -425,13 +425,94 @@ class TinyGsmSaraR4
    * Location functions
    */
  protected:
-  String getGsmLocationImpl() {
-    sendAT(GF("+ULOC=2,3,0,120,1"));
-    if (waitResponse(30000L, GF(GSM_NL "+UULOC:")) != 1) { return ""; }
+  String getGsmLocationRawImpl() {
+    // AT+ULOC=<mode>,<sensor>,<response_type>,<timeout>,<accuracy>
+    // <mode> - 2: single shot position
+    // <sensor> - 2: use cellular CellLocate® location information
+    // <response_type> - 0: standard (single-hypothesis) response
+    // <timeout> - Timeout period in seconds
+    // <accuracy> - Target accuracy in meters (1 - 999999)
+    sendAT(GF("+ULOC=2,2,0,120,1"));
+    // wait for first "OK"
+    if (waitResponse(10000L) != 1) { return ""; }
+    // wait for the final result - wait full timeout time
+    if (waitResponse(120000L, GF(GSM_NL "+UULOC:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     waitResponse();
     res.trim();
     return res;
+  }
+
+  bool getGsmLocationImpl(float* lat, float* lon, float* accuracy = 0,
+                          int* year = 0, int* month = 0, int* day = 0,
+                          int* hour = 0, int* minute = 0, int* second = 0) {
+    // AT+ULOC=<mode>,<sensor>,<response_type>,<timeout>,<accuracy>
+    // <mode> - 2: single shot position
+    // <sensor> - 2: use cellular CellLocate® location information
+    // <response_type> - 0: standard (single-hypothesis) response
+    // <timeout> - Timeout period in seconds
+    // <accuracy> - Target accuracy in meters (1 - 999999)
+    sendAT(GF("+ULOC=2,2,0,120,1"));
+    // wait for first "OK"
+    if (waitResponse(10000L) != 1) { return false; }
+    // wait for the final result - wait full timeout time
+    if (waitResponse(120000L, GF(GSM_NL "+UULOC:")) != 1) { return false; }
+
+    // +UULOC: <date>, <time>, <lat>, <long>, <alt>, <uncertainty>, <speed>,
+    // <direction>, <vertical_acc>, <sensor_used>, <SV_used>, <antenna_status>,
+    // <jamming_status>
+
+    // Date & Time
+    char dtSBuff[7] = {'\0'};
+
+    stream.readBytes(dtSBuff, 2);           // Two digit day
+    dtSBuff[2] = '\0';                      // null terminate buffer
+    if (day != NULL) *day = atoi(dtSBuff);  // Convert to int
+    streamSkipUntil('/');                   // Throw out slash
+
+    stream.readBytes(dtSBuff, 2);  // Two digit month
+    dtSBuff[2] = '\0';
+    if (month != NULL) *month = atoi(dtSBuff);
+    streamSkipUntil('/');  // Throw out slash
+
+    stream.readBytes(dtSBuff, 4);  // Four digit year
+    dtSBuff[4] = '\0';
+    if (year != NULL) *year = atoi(dtSBuff);
+    streamSkipUntil(',');  // Throw out comma
+
+    stream.readBytes(dtSBuff, 2);  // Two digit hour
+    dtSBuff[2] = '\0';
+    if (hour != NULL) *hour = atoi(dtSBuff);
+    streamSkipUntil(':');  // Throw out colon
+
+    stream.readBytes(dtSBuff, 2);  // Two digit minute
+    dtSBuff[2] = '\0';
+    if (minute != NULL) *minute = atoi(dtSBuff);
+    streamSkipUntil(':');  // Throw out colon
+
+    stream.readBytes(dtSBuff, 6);  // 6 digit second with subseconds
+    dtSBuff[6] = '\0';
+    if (second != NULL) *second = atoi(dtSBuff);
+    // *secondWithSS = atof(dtSBuff);
+    streamSkipUntil(',');  // Throw away the final comma
+
+    *lat = streamGetFloat(',');  // Estimated latitude, in degrees
+    *lon = streamGetFloat(',');  // Estimated longitude, in degrees
+    if (accuracy != NULL) {
+      *accuracy = streamGetInt(',');
+    }                      // Maximum possible error, in meters (0 - 20000000)
+    streamSkipUntil(',');  // Speed over ground m/s3
+    streamSkipUntil(',');  // Course over ground in degree (0 deg - 360 deg)
+    streamSkipUntil(',');  // Vertical accuracy, in meters
+    streamSkipUntil(',');  // Sensor used for the position calculation
+    streamSkipUntil(',');  // Number of satellite used to calculate the position
+    streamSkipUntil(',');  // Antenna status
+    streamSkipUntil('\n');  // Jamming status
+
+    // final ok
+    waitResponse();
+
+    return true;
   }
 
   /*

@@ -17,7 +17,6 @@
 #include "TinyGsmBattery.tpp"
 #include "TinyGsmGPRS.tpp"
 #include "TinyGsmGPS.tpp"
-#include "TinyGsmGSMLocation.tpp"
 #include "TinyGsmModem.tpp"
 #include "TinyGsmSMS.tpp"
 #include "TinyGsmTCP.tpp"
@@ -43,7 +42,6 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
                        public TinyGsmTCP<TinyGsmSim7000, READ_AND_CHECK_SIZE,
                                          TINY_GSM_MUX_COUNT>,
                        public TinyGsmSMS<TinyGsmSim7000>,
-                       public TinyGsmGSMLocation<TinyGsmSim7000>,
                        public TinyGsmGPS<TinyGsmSim7000>,
                        public TinyGsmTime<TinyGsmSim7000>,
                        public TinyGsmBattery<TinyGsmSim7000> {
@@ -52,7 +50,6 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
   friend class TinyGsmTCP<TinyGsmSim7000, READ_AND_CHECK_SIZE,
                           TINY_GSM_MUX_COUNT>;
   friend class TinyGsmSMS<TinyGsmSim7000>;
-  friend class TinyGsmGSMLocation<TinyGsmSim7000>;
   friend class TinyGsmGPS<TinyGsmSim7000>;
   friend class TinyGsmTime<TinyGsmSim7000>;
   friend class TinyGsmBattery<TinyGsmSim7000>;
@@ -391,13 +388,6 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
   // Follows all messaging functions per template
 
   /*
-   * Location functions
-   */
- protected:
-  // Can return a location from CIPGSMLOC as per the template
-
-
-  /*
    * GPS location functions
    */
  protected:
@@ -426,16 +416,45 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
 
   // get GPS informations
   bool getGPSImpl(float* lat, float* lon, float* speed = 0, int* alt = 0,
-                  int* vsat = 0, int* usat = 0) {
-    // String buffer = "";
+                  int* vsat = 0, int* usat = 0, int* year = 0, int* month = 0,
+                  int* day = 0, int* hour = 0, int* minute = 0,
+                  int* second = 0) {
     bool fix = false;
 
     sendAT(GF("+CGNSINF"));
     if (waitResponse(GF(GSM_NL "+CGNSINF:")) != 1) { return false; }
 
-    streamSkipUntil(',');                             // GNSS run status
-    if (streamGetInt(',') == 1) fix = true;           // fix status
-    streamSkipUntil(',');                             // UTC date & Time
+    streamSkipUntil(',');                    // GNSS run status
+    if (streamGetInt(',') == 1) fix = true;  // fix status
+
+    // UTC date & Time
+    char dtSBuff[7] = {'\0'};
+    stream.readBytes(dtSBuff, 4);             // Four digit year
+    dtSBuff[4] = '\0';                        // null terminate buffer
+    if (year != NULL) *year = atoi(dtSBuff);  // Convert to int
+
+    stream.readBytes(dtSBuff, 2);  // Two digit month
+    dtSBuff[2] = '\0';
+    if (month != NULL) *month = atoi(dtSBuff);
+
+    stream.readBytes(dtSBuff, 2);  // Two digit day
+    dtSBuff[2] = '\0';
+    if (day != NULL) *day = atoi(dtSBuff);
+
+    stream.readBytes(dtSBuff, 2);  // Two digit hour
+    dtSBuff[2] = '\0';
+    if (hour != NULL) *hour = atoi(dtSBuff);
+
+    stream.readBytes(dtSBuff, 2);  // Two digit minute
+    dtSBuff[2] = '\0';
+    if (minute != NULL) *minute = atoi(dtSBuff);
+
+    stream.readBytes(dtSBuff, 6);  // 6 digit second with subseconds
+    dtSBuff[6] = '\0';
+    if (second != NULL) *second = atoi(dtSBuff);
+    // *secondWithSS = atof(dtSBuff);
+    streamSkipUntil(',');  // Throw away the final comma
+
     *lat = streamGetFloat(',');                       // Latitude
     *lon = streamGetFloat(',');                       // Longitude
     if (alt != NULL) *alt = streamGetFloat(',');      // MSL Altitude
@@ -458,49 +477,6 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
     waitResponse();
 
     return fix;
-  }
-  // get GPS time
-  bool getGPSTimeImpl(int* year, int* month, int* day, int* hour, int* minute,
-                      int* second) {
-    bool fix = false;
-    char chr_buffer[12];
-    sendAT(GF("+CGNSINF"));
-    if (waitResponse(GF(GSM_NL "+CGNSINF:")) != 1) { return false; }
-
-    for (int i = 0; i < 3; i++) {
-      String buffer = stream.readStringUntil(',');
-      buffer.toCharArray(chr_buffer, sizeof(chr_buffer));
-      switch (i) {
-        case 0:
-          // mode
-          break;
-        case 1:
-          // fixstatus
-          if (buffer.toInt() == 1) { fix = buffer.toInt(); }
-          break;
-        case 2:
-          *year   = buffer.substring(0, 4).toInt();
-          *month  = buffer.substring(4, 6).toInt();
-          *day    = buffer.substring(6, 8).toInt();
-          *hour   = buffer.substring(8, 10).toInt();
-          *minute = buffer.substring(10, 12).toInt();
-          *second = buffer.substring(12, 14).toInt();
-          break;
-
-        default:
-          // if nothing else matches, do the default
-          // default is optional
-          break;
-      }
-    }
-    streamSkipUntil('\n');
-    waitResponse();
-
-    if (fix) {
-      return true;
-    } else {
-      return false;
-    }
   }
 
   /*

@@ -17,6 +17,7 @@
 #include "TinyGsmBattery.tpp"
 #include "TinyGsmGPRS.tpp"
 #include "TinyGsmGPS.tpp"
+#include "TinyGsmGSMLocation.tpp"
 #include "TinyGsmModem.tpp"
 #include "TinyGsmSMS.tpp"
 #include "TinyGsmTCP.tpp"
@@ -43,6 +44,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
                        public TinyGsmTCP<TinyGsmSim7600, READ_AND_CHECK_SIZE,
                                          TINY_GSM_MUX_COUNT>,
                        public TinyGsmSMS<TinyGsmSim7600>,
+                       public TinyGsmGSMLocation<TinyGsmSim7600>,
                        public TinyGsmGPS<TinyGsmSim7600>,
                        public TinyGsmTime<TinyGsmSim7600>,
                        public TinyGsmBattery<TinyGsmSim7600>,
@@ -53,6 +55,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
                           TINY_GSM_MUX_COUNT>;
   friend class TinyGsmSMS<TinyGsmSim7600>;
   friend class TinyGsmGPS<TinyGsmSim7600>;
+  friend class TinyGsmGSMLocation<TinyGsmSim7600>;
   friend class TinyGsmTime<TinyGsmSim7600>;
   friend class TinyGsmBattery<TinyGsmSim7600>;
   friend class TinyGsmTemperature<TinyGsmSim7600>;
@@ -85,7 +88,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     }
 
    public:
-    int connect(const char* host, uint16_t port, int timeout_s) {
+    virtual int connect(const char* host, uint16_t port, int timeout_s) {
       stop();
       TINY_GSM_YIELD();
       rx.clear();
@@ -396,8 +399,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
    * Location functions
    */
  protected:
-  String getGsmLocationImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
-
+  // Can return a GSM-based location from CLBS as per the template
 
   /*
    * GPS location functions
@@ -427,39 +429,72 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
   }
 
   // get GPS informations
-  bool getGPSImpl(float* lat, float* lon, float* speed = 0, int* alt = 0) {
+  bool getGPSImpl(float* lat, float* lon, float* speed = 0, int* alt = 0,
+                  int* vsat = 0, int* usat = 0, int* year = 0, int* month = 0,
+                  int* day = 0, int* hour = 0, int* minute = 0,
+                  int* second = 0) {
     // String buffer = "";
-    bool fix = false;
 
     sendAT(GF("+CGNSSINFO"));
     if (waitResponse(GF(GSM_NL "+CGNSSINFO:")) != 1) { return false; }
 
-    // streamSkipUntil(','); // mode
-    if (streamGetInt(',') == 1)
-      fix = true;          // TODO(?) Shouldn't this be 2=2D Fix or 3=3DFix?
-    streamSkipUntil(',');  // GPS satellite valid numbers
-    streamSkipUntil(',');  // GLONASS satellite valid numbers
-    streamSkipUntil(',');  // BEIDOU satellite valid numbers
-    *lat = streamGetFloat(',');  // Latitude
-    streamSkipUntil(',');        // N/S Indicator, N=north or S=south
-    *lon = streamGetFloat(',');  // Longitude
-    streamSkipUntil(',');        // E/W Indicator, E=east or W=west
-    streamSkipUntil(',');        // Date. Output format is ddmmyy
-    streamSkipUntil(',');        // UTC Time. Output format is hhmmss.s
-    if (alt != NULL)
-      *alt = streamGetFloat(',');  // MSL Altitude. Unit is meters
-    if (speed != NULL)
-      *speed = streamGetFloat(',');  // Speed Over Ground. Unit is knots.
-    streamSkipUntil(',');            // Course. Degrees.
-    streamSkipUntil(',');   // After set, will report GPS every x seconds
-    streamSkipUntil(',');   // Position Dilution Of Precision
-    streamSkipUntil(',');   // Horizontal Dilution Of Precision
-    streamSkipUntil(',');   // Vertical Dilution Of Precision
-    streamSkipUntil('\n');  // TODO(?) is one more field reported??
+    uint8_t fixMode = streamGetInt(',');  // mode 2=2D Fix or 3=3DFix
+                                          // TODO(?) Can 1 be returned
+    if (fixMode == 1 || fixMode == 2 || fixMode == 3) {
+      streamSkipUntil(',');        // GPS satellite valid numbers
+      streamSkipUntil(',');        // GLONASS satellite valid numbers
+      streamSkipUntil(',');        // BEIDOU satellite valid numbers
+      *lat = streamGetFloat(',');  // Latitude
+      streamSkipUntil(',');        // N/S Indicator, N=north or S=south
+      *lon = streamGetFloat(',');  // Longitude
+      streamSkipUntil(',');        // E/W Indicator, E=east or W=west
 
-    waitResponse();
+      // Date. Output format is ddmmyy
+      char dtSBuff[5] = {'\0'};
+      stream.readBytes(dtSBuff, 2);           // Two digit day
+      dtSBuff[2] = '\0';                      // null terminate buffer
+      if (day != NULL) *day = atoi(dtSBuff);  // Convert to int
 
-    return fix;
+      stream.readBytes(dtSBuff, 2);  // Two digit month
+      dtSBuff[2] = '\0';
+      if (month != NULL) *month = atoi(dtSBuff);
+
+      stream.readBytes(dtSBuff, 2);  // Two digit year
+      dtSBuff[2] = '\0';
+      if (year != NULL) *year = atoi(dtSBuff);
+      streamSkipUntil(',');  // Throw away the final comma
+
+      // UTC Time. Output format is hhmmss.s
+      stream.readBytes(dtSBuff, 2);  // Two digit hour
+      dtSBuff[2] = '\0';
+      if (hour != NULL) *hour = atoi(dtSBuff);
+
+      stream.readBytes(dtSBuff, 2);  // Two digit minute
+      dtSBuff[2] = '\0';
+      if (minute != NULL) *minute = atoi(dtSBuff);
+
+      stream.readBytes(dtSBuff, 6);  // 6 digit second with subseconds
+      dtSBuff[6] = '\0';
+      if (second != NULL) *second = atoi(dtSBuff);
+      // *secondWithSS = atof(dtSBuff);
+      streamSkipUntil(',');  // Throw away the final comma
+
+      if (alt != NULL)
+        *alt = streamGetFloat(',');  // MSL Altitude. Unit is meters
+      if (speed != NULL)
+        *speed = streamGetFloat(',');  // Speed Over Ground. Unit is knots.
+      streamSkipUntil(',');            // Course. Degrees.
+      streamSkipUntil(',');   // After set, will report GPS every x seconds
+      streamSkipUntil(',');   // Position Dilution Of Precision
+      streamSkipUntil(',');   // Horizontal Dilution Of Precision
+      streamSkipUntil(',');   // Vertical Dilution Of Precision
+      streamSkipUntil('\n');  // TODO(?) is one more field reported??
+
+      waitResponse();
+
+      return true;
+    }
+    return false;
   }
 
   /*
