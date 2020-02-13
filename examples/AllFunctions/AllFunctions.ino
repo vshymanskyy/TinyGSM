@@ -343,6 +343,7 @@ void loop() {
     DBG("Hour:", hour);
     DBG("Minute:", min);
     DBG("Second:", sec);
+      break;
   } else {
       DBG("Couldn't get GSM location, retrying in 10s.");
       delay(10000L);

@@ -590,7 +590,7 @@ class TinyGsmUBLOX
     uint32_t startMillis = millis();
 
     // create a socket
-    sendAT(GF("+USOCR=6"));  // create a socket
+    sendAT(GF("+USOCR=6"));
     // reply is +USOCR: ## of socket created
     if (waitResponse(GF(GSM_NL "+USOCR:")) != 1) { return false; }
     *mux = streamGetInt('\n');

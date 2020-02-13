@@ -305,7 +305,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
       waitResponse();
     }
 
-    // Set active PDP context’s profile number
+    // Set active PDP context's profile number
     // This ties the embedded TCP/IP application to the external PDP context
     sendAT(GF("+CSOCKSETPN=1"));
     waitResponse();
@@ -327,10 +327,10 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
     //         = 10 (default)
     // DelayTm = number of milliseconds to delay before outputting received data
     //          = 0 (default)
-    // Ack = sets whether reporting a string “Send ok” = 0 (don't report)
+    // Ack = sets whether reporting a string "Send ok" = 0 (don't report)
     // errMode = mode of reporting error result code = 0 (numberic values)
     // HeaderType = which data header of receiving data in multi-client mode
-    //            = 1 (“+RECEIVE,<link num>,<data length>”)
+    //            = 1 (+RECEIVE,<link num>,<data length>)
     // AsyncMode = sets mode of executing commands
     //           = 0 (synchronous command executing)
     // TimeoutVal = minimum retransmission timeout in milliseconds = 75000

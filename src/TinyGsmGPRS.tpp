@@ -103,6 +103,7 @@ class TinyGsmGPRS {
   // AT+GSN command
   String getIMEIImpl() {
     thisModem().sendAT(GF("+GSN"));
+    thisModem().streamSkipUntil('\n');  // skip first newline
     String res = thisModem().stream.readStringUntil('\n');
     thisModem().waitResponse();
     res.trim();
@@ -113,6 +114,7 @@ class TinyGsmGPRS {
   // command
   String getIMSIImpl() {
     thisModem().sendAT(GF("+CIMI"));
+    thisModem().streamSkipUntil('\n');  // skip first newline
     String res = thisModem().stream.readStringUntil('\n');
     thisModem().waitResponse();
     res.trim();

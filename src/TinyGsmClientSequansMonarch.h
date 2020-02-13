@@ -429,7 +429,7 @@ class TinyGsmSequansMonarch
     // <connId> = Connection ID = mux
     // <txProt> = Transmission protocol = 0 - TCP (1 for UDP)
     // <rPort> = Remote host port to contact
-    // <IPaddr> = Any valid IP address in the format “xxx.xxx.xxx.xxx” or any
+    // <IPaddr> = Any valid IP address in the format xxx.xxx.xxx.xxx or any
     // host name solved with a DNS query
     // <closureType> = Socket closure behaviour for TCP, has no effect for UDP
     //               = 0 - local port closes when remote does (default)

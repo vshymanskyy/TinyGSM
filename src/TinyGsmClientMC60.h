@@ -282,7 +282,7 @@ class TinyGsmMC60
 
     // Set Method to Handle Received TCP/IP Data
     // Mode=2 - Output a notification statement:
-    // “+QIRDI: <id>,<sc>,<sid>,<num>,<len>,< tlen>”
+    // +QIRDI: <id>,<sc>,<sid>,<num>,<len>,< tlen>
     sendAT(GF("+QINDI=2"));
     if (waitResponse() != 1) { return false; }
 
