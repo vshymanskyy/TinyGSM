@@ -404,7 +404,7 @@ class TinyGsmSim800
   // Follows all messaging functions per template
 
   /*
-   * Location functions
+   * GSM Location functions
    */
  protected:
   // Depending on the exacty model and firmware revision, should return a
@@ -412,7 +412,7 @@ class TinyGsmSim800
   // TODO(?):  Check number of digits in year (2 or 4)
 
   /*
-   * GPS location functions
+   * GPS/GNSS/GLONASS location functions
    */
  protected:
   // No functions of this type supported

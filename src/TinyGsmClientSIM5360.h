@@ -405,7 +405,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
   // Follows all messaging functions per template
 
   /*
-   * Location functions
+   * GSM Location functions
    */
  protected:
   // SIM5360 and SIM7100 can return a GSM-based location from CLBS as per the

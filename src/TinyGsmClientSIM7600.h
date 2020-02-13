@@ -396,13 +396,13 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
   // Follows all messaging functions per template
 
   /*
-   * Location functions
+   * GSM Location functions
    */
  protected:
   // Can return a GSM-based location from CLBS as per the template
 
   /*
-   * GPS location functions
+   * GPS/GNSS/GLONASS location functions
    */
  protected:
   // enable GPS
@@ -430,9 +430,9 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
 
   // get GPS informations
   bool getGPSImpl(float* lat, float* lon, float* speed = 0, int* alt = 0,
-                  int* vsat = 0, int* usat = 0, int* year = 0, int* month = 0,
-                  int* day = 0, int* hour = 0, int* minute = 0,
-                  int* second = 0) {
+                  int* vsat = 0, int* usat = 0, float* accuracy = 0,
+                  int* year = 0, int* month = 0, int* day = 0, int* hour = 0,
+                  int* minute = 0, int* second = 0) {
     // String buffer = "";
 
     sendAT(GF("+CGNSSINFO"));
@@ -450,7 +450,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       streamSkipUntil(',');        // E/W Indicator, E=east or W=west
 
       // Date. Output format is ddmmyy
-      char dtSBuff[5] = {'\0'};
+      char dtSBuff[7] = {'\0'};
       stream.readBytes(dtSBuff, 2);           // Two digit day
       dtSBuff[2] = '\0';                      // null terminate buffer
       if (day != NULL) *day = atoi(dtSBuff);  // Convert to int
@@ -484,10 +484,11 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       if (speed != NULL)
         *speed = streamGetFloat(',');  // Speed Over Ground. Unit is knots.
       streamSkipUntil(',');            // Course. Degrees.
-      streamSkipUntil(',');   // After set, will report GPS every x seconds
-      streamSkipUntil(',');   // Position Dilution Of Precision
-      streamSkipUntil(',');   // Horizontal Dilution Of Precision
-      streamSkipUntil(',');   // Vertical Dilution Of Precision
+      streamSkipUntil(',');  // After set, will report GPS every x seconds
+      if (accuracy != NULL)
+        *accuracy = streamGetFloat(',');  // Position Dilution Of Precision
+      streamSkipUntil(',');               // Horizontal Dilution Of Precision
+      streamSkipUntil(',');               // Vertical Dilution Of Precision
       streamSkipUntil('\n');  // TODO(?) is one more field reported??
 
       waitResponse();

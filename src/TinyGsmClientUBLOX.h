@@ -17,6 +17,7 @@
 #include "TinyGsmBattery.tpp"
 #include "TinyGsmCalling.tpp"
 #include "TinyGsmGPRS.tpp"
+#include "TinyGsmGPS.tpp"
 #include "TinyGsmGSMLocation.tpp"
 #include "TinyGsmModem.tpp"
 #include "TinyGsmSMS.tpp"
@@ -47,6 +48,7 @@ class TinyGsmUBLOX
       public TinyGsmCalling<TinyGsmUBLOX>,
       public TinyGsmSMS<TinyGsmUBLOX>,
       public TinyGsmGSMLocation<TinyGsmUBLOX>,
+      public TinyGsmGPS<TinyGsmUBLOX>,
       public TinyGsmTime<TinyGsmUBLOX>,
       public TinyGsmBattery<TinyGsmUBLOX> {
   friend class TinyGsmModem<TinyGsmUBLOX>;
@@ -57,6 +59,7 @@ class TinyGsmUBLOX
   friend class TinyGsmCalling<TinyGsmUBLOX>;
   friend class TinyGsmSMS<TinyGsmUBLOX>;
   friend class TinyGsmGSMLocation<TinyGsmUBLOX>;
+  friend class TinyGsmGPS<TinyGsmUBLOX>;
   friend class TinyGsmTime<TinyGsmUBLOX>;
   friend class TinyGsmBattery<TinyGsmUBLOX>;
 
@@ -163,7 +166,7 @@ class TinyGsmUBLOX
   /*
    * Basic functions
    */
-
+ protected:
   bool initImpl(const char* pin = NULL) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
 
@@ -197,6 +200,7 @@ class TinyGsmUBLOX
     }
   }
 
+  // only difference in implementation is the warning on the wrong type
   String getModemNameImpl() {
     sendAT(GF("+CGMI"));
     String res1;
@@ -246,7 +250,7 @@ class TinyGsmUBLOX
     return waitResponse(40000L) == 1;
   }
 
-  bool sleepEnableImpl(bool enable = true) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool sleepEnableImpl(bool enable = true) TINY_GSM_ATTR_NOT_AVAILABLE;
 
   /*
    * Generic network functions
@@ -365,6 +369,7 @@ class TinyGsmUBLOX
    * SIM card functions
    */
  protected:
+  // This uses "CGSN" instead of "GSN"
   String getIMEIImpl() {
     sendAT(GF("+CGSN"));
     if (waitResponse(GF(GSM_NL)) != 1) { return ""; }
@@ -387,17 +392,40 @@ class TinyGsmUBLOX
   // Can follow all template functions
 
   /*
-   * Location functions
+   * GSM/GPS/GNSS/GLONASS Location functions
+   * NOTE:  u-blox modules use the same function to get location data from both
+   * GSM tower triangulation and from dedicated GPS/GNSS/GLONASS receivers.  The
+   * only difference in which sensor the data is requested from.
    */
  protected:
-  String getGsmLocationRawImpl() {
+  bool enableGPSImpl() {
+    // AT+UGPS=<mode>[,<aid_mode>[,<GNSS_systems>]]
+    // <mode> - 0: GNSS receiver powered off, 1: on
+    // <aid_mode> - 0: no aiding (default)
+    // <GNSS_systems> - 3: GPS + SBAS (default)
+    sendAT(GF("+UGPS=1,0,3"));
+    if (waitResponse(10000L, GF(GSM_NL "+UGPS:")) != 1) { return false; }
+    return waitResponse(10000L) == 1;
+  }
+  bool disableGPSImpl() {
+    sendAT(GF("+UGPS=0"));
+    if (waitResponse(10000L, GF(GSM_NL "+UGPS:")) != 1) { return false; }
+    return waitResponse(10000L) == 1;
+  }
+  String getUbloxLocationRaw(int8_t sensor) {
     // AT+ULOC=<mode>,<sensor>,<response_type>,<timeout>,<accuracy>
     // <mode> - 2: single shot position
-    // <sensor> - 2: use cellular CellLocate® location information
+    // <sensor> - 0: use the last fix in the internal database and stop the GNSS
+    //          receiver
+    //          - 1: use the GNSS receiver for localization
+    //          - 2: use cellular CellLocate® location information
+    //          - 3: ?? use the combined GNSS receiver and CellLocate® service
+    //          information ?? - Docs show using sensor 3 and it's
+    //          documented for the +UTIME command but not for +ULOC
     // <response_type> - 0: standard (single-hypothesis) response
     // <timeout> - Timeout period in seconds
     // <accuracy> - Target accuracy in meters (1 - 999999)
-    sendAT(GF("+ULOC=2,2,0,120,1"));
+    sendAT(GF("+ULOC=2,"), sensor, GF(",0,120,1"));
     // wait for first "OK"
     if (waitResponse(10000L) != 1) { return ""; }
     // wait for the final result - wait full timeout time
@@ -407,21 +435,35 @@ class TinyGsmUBLOX
     res.trim();
     return res;
   }
+  String getGsmLocationRawImpl() {
+    return getUbloxLocationRaw(2);
+  }
+  String getGPSrawImpl() {
+    return getUbloxLocationRaw(1);
+  }
 
-  bool getGsmLocationImpl(float* lat, float* lon, float* accuracy = 0,
-                          int* year = 0, int* month = 0, int* day = 0,
-                          int* hour = 0, int* minute = 0, int* second = 0) {
+  bool getUbloxLocation(int8_t sensor, float* lat, float* lon, float* speed = 0,
+                        int* alt = 0, int* vsat = 0, int* usat = 0,
+                        float* accuracy = 0, int* year = 0, int* month = 0,
+                        int* day = 0, int* hour = 0, int* minute = 0,
+                        int* second = 0) {
     // AT+ULOC=<mode>,<sensor>,<response_type>,<timeout>,<accuracy>
     // <mode> - 2: single shot position
     // <sensor> - 2: use cellular CellLocate® location information
+    //          - 0: use the last fix in the internal database and stop the GNSS
+    //          receiver
+    //          - 1: use the GNSS receiver for localization
+    //          - 3: ?? use the combined GNSS receiver and CellLocate® service
+    //          information ?? - Docs show using sensor 3 and it's documented
+    //          for the +UTIME command but not for +ULOC
     // <response_type> - 0: standard (single-hypothesis) response
     // <timeout> - Timeout period in seconds
     // <accuracy> - Target accuracy in meters (1 - 999999)
-    sendAT(GF("+ULOC=2,2,0,120,1"));
+    sendAT(GF("+ULOC=2,"), sensor, GF(",0,120,1"));
     // wait for first "OK"
     if (waitResponse(10000L) != 1) { return false; }
     // wait for the final result - wait full timeout time
-    if (waitResponse(120000L, GF(GSM_NL "+UULOC:")) != 1) { return false; }
+    if (waitResponse(120000L, GF(GSM_NL "+UULOC: ")) != 1) { return false; }
 
     // +UULOC: <date>, <time>, <lat>, <long>, <alt>, <uncertainty>, <speed>,
     // <direction>, <vertical_acc>, <sensor_used>, <SV_used>, <antenna_status>,
@@ -463,14 +505,20 @@ class TinyGsmUBLOX
 
     *lat = streamGetFloat(',');  // Estimated latitude, in degrees
     *lon = streamGetFloat(',');  // Estimated longitude, in degrees
+    if (alt != NULL)
+      *alt = streamGetFloat(',');  // Estimated altitude, in meters - only for
+                                   // GNSS positioning, 0 in case of CellLocate
     if (accuracy != NULL) {
-      *accuracy = streamGetInt(',');
-    }                      // Maximum possible error, in meters (0 - 20000000)
-    streamSkipUntil(',');  // Speed over ground m/s3
+      *accuracy = streamGetFloat(',');
+    }  // Maximum possible error, in meters (0 - 20000000)
+    if (speed != NULL) *speed = streamGetFloat(',');  // Speed over ground m/s3
     streamSkipUntil(',');  // Course over ground in degree (0 deg - 360 deg)
     streamSkipUntil(',');  // Vertical accuracy, in meters
     streamSkipUntil(',');  // Sensor used for the position calculation
     streamSkipUntil(',');  // Number of satellite used to calculate the position
+    if (usat != NULL)
+      *usat = streamGetInt(
+          ',');            // Number of satellite used to calculate the position
     streamSkipUntil(',');  // Antenna status
     streamSkipUntil('\n');  // Jamming status
 
@@ -478,6 +526,19 @@ class TinyGsmUBLOX
     waitResponse();
 
     return true;
+  }
+  bool getGsmLocationImpl(float* lat, float* lon, float* accuracy = 0,
+                          int* year = 0, int* month = 0, int* day = 0,
+                          int* hour = 0, int* minute = 0, int* second = 0) {
+    return getUbloxLocation(2, lat, lon, 0, 0, 0, 0, accuracy, year, month, day,
+                            hour, minute, second);
+  };
+  bool getGPSImpl(float* lat, float* lon, float* speed = 0, int* alt = 0,
+                  int* vsat = 0, int* usat = 0, float* accuracy = 0,
+                  int* year = 0, int* month = 0, int* day = 0, int* hour = 0,
+                  int* minute = 0, int* second = 0) {
+    return getUbloxLocation(1, lat, lon, speed, alt, vsat, usat, accuracy, year,
+                            month, day, hour, minute, second);
   }
 
   /*
@@ -527,12 +588,13 @@ class TinyGsmUBLOX
  protected:
   bool modemConnect(const char* host, uint16_t port, uint8_t* mux,
                     bool ssl = false, int timeout_s = 120) {
-    uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
+    uint32_t timeout_ms  = ((uint32_t)timeout_s) * 1000;
+    uint32_t startMillis = millis();
+
+    // create a socket
     sendAT(GF("+USOCR=6"));  // create a socket
-    if (waitResponse(GF(GSM_NL "+USOCR:")) !=
-        1) {  // reply is +USOCR: ## of socket created
-      return false;
-    }
+    // reply is +USOCR: ## of socket created
+    if (waitResponse(GF(GSM_NL "+USOCR:")) != 1) { return false; }
     *mux = streamGetInt('\n');
     waitResponse();
 
@@ -542,9 +604,12 @@ class TinyGsmUBLOX
     }
 
     // Enable NODELAY
-    // NOTE:  No delay allows data to go out faster, at the cost of using
-    // additional data from your cellular plan sendAT(GF("+USOSO="), *mux,
-    // GF(",6,1,1")); waitResponse();
+    // AT+USOSO=<socket>,<level>,<opt_name>,<opt_val>[,<opt_val2>]
+    // <level> - 0 for IP, 6 for TCP, 65535 for socket level options
+    // <opt_name> TCP/1 = no delay (do not delay send to coalesce packets)
+    // NOTE:  Enabling this may increase data plan usage
+    // sendAT(GF("+USOSO="), *mux, GF(",6,1,1"));
+    // waitResponse();
 
     // Enable KEEPALIVE, 30 sec
     // sendAT(GF("+USOSO="), *mux, GF(",6,2,30000"));
@@ -552,7 +617,7 @@ class TinyGsmUBLOX
 
     // connect on the allocated socket
     sendAT(GF("+USOCO="), *mux, ",\"", host, "\",", port);
-    int rsp = waitResponse(timeout_ms);
+    int rsp = waitResponse(timeout_ms - (millis() - startMillis));
     return (1 == rsp);
   }
 

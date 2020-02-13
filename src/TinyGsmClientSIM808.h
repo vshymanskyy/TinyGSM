@@ -21,7 +21,7 @@ class TinyGsmSim808 : public TinyGsmSim800, public TinyGsmGPS<TinyGsmSim808> {
 
 
   /*
-   * GPS location functions
+   * GPS/GNSS/GLONASS location functions
    */
  protected:
   // enable GPS
@@ -57,9 +57,9 @@ class TinyGsmSim808 : public TinyGsmSim800, public TinyGsmGPS<TinyGsmSim808> {
   // get GPS informations
   // works only with ans SIM808 V2
   bool getGPSImpl(float* lat, float* lon, float* speed = 0, int* alt = 0,
-                  int* vsat = 0, int* usat = 0, int* year = 0, int* month = 0,
-                  int* day = 0, int* hour = 0, int* minute = 0,
-                  int* second = 0) {
+                  int* vsat = 0, int* usat = 0, float* accuracy = 0,
+                  int* year = 0, int* month = 0, int* day = 0, int* hour = 0,
+                  int* minute = 0, int* second = 0) {
     bool fix = false;
 
     sendAT(GF("+CGNSINF"));
@@ -104,7 +104,8 @@ class TinyGsmSim808 : public TinyGsmSim800, public TinyGsmGPS<TinyGsmSim808> {
     streamSkipUntil(',');                             // Fix Mode
     streamSkipUntil(',');                             // Reserved1
     streamSkipUntil(',');  // Horizontal Dilution Of Precision
-    streamSkipUntil(',');  // Position Dilution Of Precision
+    if (accuracy != NULL)
+      *accuracy = streamGetFloat(',');  // Position Dilution Of Precision
     streamSkipUntil(',');  // Vertical Dilution Of Precision
     streamSkipUntil(',');  // Reserved2
     if (vsat != NULL) *vsat = streamGetInt(',');  // GNSS Satellites in View

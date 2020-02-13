@@ -17,7 +17,7 @@ template <class modemType>
 class TinyGsmGPS {
  public:
   /*
-   * GPS location functions
+   * GPS/GNSS/GLONASS location functions
    */
   bool enableGPS() {
     return thisModem().enableGPSImpl();
@@ -29,17 +29,18 @@ class TinyGsmGPS {
     return thisModem().getGPSrawImpl();
   }
   bool getGPS(float* lat, float* lon, float* speed = 0, int* alt = 0,
-              int* vsat = 0, int* usat = 0, int* year = 0, int* month = 0,
-              int* day = 0, int* hour = 0, int* minute = 0, int* second = 0) {
-    return thisModem().getGPSImpl(lat, lon, speed, alt, vsat, usat, year, month,
-                                  day, hour, minute, second);
+              int* vsat = 0, int* usat = 0, float* accuracy = 0, int* year = 0,
+              int* month = 0, int* day = 0, int* hour = 0, int* minute = 0,
+              int* second = 0) {
+    return thisModem().getGPSImpl(lat, lon, speed, alt, vsat, usat, accuracy,
+                                  year, month, day, hour, minute, second);
   }
   bool getGPSTime(int* year, int* month, int* day, int* hour, int* minute,
                   int* second) {
     float lat = 0;
     float lon = 0;
-    return thisModem().getGPSImpl(lat, lon, 0, 0, 0, 0, year, month, day, hour,
-                                  minute, second);
+    return thisModem().getGPSImpl(lat, lon, 0, 0, 0, 0, 0, year, month, day,
+                                  hour, minute, second);
   }
 
   /*
@@ -54,15 +55,16 @@ class TinyGsmGPS {
   }
 
   /*
-   * GPS location functions
+   * GPS/GNSS/GLONASS location functions
    */
 
   bool   enableGPSImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
   bool   disableGPSImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
   String getGPSrawImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
   bool   getGPSImpl(float* lat, float* lon, float* speed = 0, int* alt = 0,
-                    int* vsat = 0, int* usat = 0, int* year = 0, int* month = 0,
-                    int* day = 0, int* hour = 0, int* minute = 0,
+                    int* vsat = 0, int* usat = 0, float* accuracy = 0,
+                    int* year = 0, int* month = 0, int* day = 0, int* hour = 0,
+                    int* minute = 0,
                     int* second = 0) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 };
 

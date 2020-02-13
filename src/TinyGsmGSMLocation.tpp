@@ -17,7 +17,7 @@ template <class modemType>
 class TinyGsmGSMLocation {
  public:
   /*
-   * Location functions
+   * GSM Location functions
    */
   String getGsmLocationRaw() {
     return thisModem().getGsmLocationRawImpl();
@@ -54,7 +54,7 @@ class TinyGsmGSMLocation {
   }
 
   /*
-   * Location functions
+   * GSM Location functions
    * Template is based on SIMCOM commands
    */
  protected:
