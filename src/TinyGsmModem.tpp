@@ -301,7 +301,6 @@ class TinyGsmModem {
     char   buf[16];
     size_t bytesRead = thisModem().stream.readBytesUntil(
         lastChar, buf, static_cast<size_t>(16));
-    DBG("### TEMPL bytesRead:", bytesRead);
     if (bytesRead) {
       buf[bytesRead] = '\0';
       float res      = atof(buf);
