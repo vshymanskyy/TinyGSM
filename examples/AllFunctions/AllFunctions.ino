@@ -49,7 +49,7 @@
 
 // Range to attempt to autobaud
 #define GSM_AUTOBAUD_MIN 9600
-#define GSM_AUTOBAUD_MAX 38400
+#define GSM_AUTOBAUD_MAX 115200
 
 /*
  * Tests enabled
