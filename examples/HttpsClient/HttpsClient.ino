@@ -143,11 +143,6 @@ void setup() {
     modem.simUnlock(GSM_PIN);
   }
 #endif
-
-  if (!modem.hasSSL()) {
-    SerialMon.println(F("SSL is not supported by this modem"));
-    while(true) { delay(1000); }
-  }
 }
 
 void loop() {
