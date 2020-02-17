@@ -77,12 +77,12 @@
 // #define CALL_TARGET "+380xxxxxxxxx"
 
 // Your GPRS credentials, if any
-const char apn[]  = "YourAPN";
+const char apn[]      = "YourAPN";
 const char gprsUser[] = "";
 const char gprsPass[] = "";
 
 // Your WiFi connection credentials, if applicable
-const char wifiSSID[]  = "YourSSID";
+const char wifiSSID[] = "YourSSID";
 const char wifiPass[] = "YourWiFiPass";
 
 // Server details to test TCP/SSL
@@ -119,6 +119,8 @@ void setup() {
 
   // !!!!!!!!!!!
   // Set your reset, enable, power pins here
+  pinMode(23, OUTPUT);
+  digitalWrite(23, HIGH);
   // !!!!!!!!!!!
 
   DBG("Wait...");
@@ -398,6 +400,30 @@ void loop() {
 #if TINY_GSM_TEST_TIME && defined TINY_GSM_MODEM_HAS_TIME
   String time = modem.getGSMDateTime(DATE_FULL);
   DBG("Current Network Time:", time);
+  int year3 = 0;
+  int month3 = 0;
+  int day3 = 0;
+  int hour3 = 0;
+  int min3 = 0;
+  int sec3 = 0;
+  float timezone = 0;
+  for (int8_t i = 5; i; i--) {
+    DBG("Requesting current network time");
+    if (modem.getNetworkTime(&year3, &month3, &day3, &hour3, &min3, &sec3,
+                                 &timezone)) {
+      DBG("Year:", year3);
+      DBG("Month:", month3);
+      DBG("Day:", day3);
+      DBG("Hour:", hour3);
+      DBG("Minute:", min3);
+      DBG("Second:", sec3);
+      DBG("Timezone:", timezone);
+      break;
+    } else {
+      DBG("Couldn't get network time, retrying in 10s.");
+      delay(10000L);
+    }
+  }
 #endif
 
 #if TINY_GSM_TEST_GPRS
