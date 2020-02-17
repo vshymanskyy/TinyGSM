@@ -548,8 +548,10 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
     //  ^^ Requested number of data bytes (1-1460 bytes)to be read
     int16_t len_confirmed = streamGetIntBefore('\n');
     // ^^ Confirmed number of data bytes to be read, which may be less than
-    // requested. 0 indicates that no data can be read. This is actually be the
-    // number of bytes that will be remaining after the read
+    // requested. 0 indicates that no data can be read.
+    // SRGD NOTE:  Contrary to above (which is copied from AT command manual)
+    // this is actually be the number of bytes that will be remaining in the
+    // buffer after the read.
     for (int i = 0; i < len_requested; i++) {
       uint32_t startMillis = millis();
 #ifdef TINY_GSM_USE_HEX

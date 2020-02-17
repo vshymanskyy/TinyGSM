@@ -265,14 +265,11 @@ class TinyGsmTCP {
     // data that it wants from the socket even if it was closed externally.
     inline void dumpModemBuffer(uint32_t maxWaitMs) {
       TINY_GSM_YIELD();
-      rx.clear();
-      at->maintain();
       uint32_t startMillis = millis();
-      while (sock_available > 0 && (millis() - startMillis < maxWaitMs)) {
-        at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available), mux);
+      do {
         rx.clear();
-        at->maintain();
-      }
+        at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available), mux);
+      } while (sock_available > 0 && (millis() - startMillis < maxWaitMs));
     }
 
     modemType* at;

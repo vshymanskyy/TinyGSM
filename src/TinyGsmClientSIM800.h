@@ -457,12 +457,15 @@ class TinyGsmSim800
   }
 
   byte NTPServerSync(String server = "pool.ntp.org", byte TimeZone = 3) {
+    // Set GPRS bearer profile to associate with NTP sync
     sendAT(GF("+CNTPCID=1"));
     if (waitResponse(10000L) != 1) { return -1; }
 
+    // Set NTP server and timezone
     sendAT(GF("+CNTP="), server, ',', String(TimeZone));
     if (waitResponse(10000L) != 1) { return -1; }
 
+    // Request network synchronization
     sendAT(GF("+CNTP"));
     if (waitResponse(10000L, GF(GSM_NL "+CNTP:"))) {
       String result = stream.readStringUntil('\n');
@@ -520,8 +523,10 @@ class TinyGsmSim800
     //  ^^ Requested number of data bytes (1-1460 bytes)to be read
     int16_t len_confirmed = streamGetIntBefore('\n');
     // ^^ Confirmed number of data bytes to be read, which may be less than
-    // requested. 0 indicates that no data can be read. This is actually be the
-    // number of bytes that will be remaining after the read
+    // requested. 0 indicates that no data can be read.
+    // SRGD NOTE:  Contrary to above (which is copied from AT command manual)
+    // this is actually be the number of bytes that will be remaining in the
+    // buffer after the read.
     for (int i = 0; i < len_requested; i++) {
       uint32_t startMillis = millis();
 #ifdef TINY_GSM_USE_HEX
