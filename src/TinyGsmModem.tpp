@@ -187,7 +187,7 @@ class TinyGsmModem {
                                            GF("+CEREG:"));
     if (resp != 1 && resp != 2 && resp != 3) { return -1; }
     thisModem().streamSkipUntil(','); /* Skip format (0) */
-    int status = thisModem().streamGetInt('\n');
+    int status = thisModem().streamGetIntBefore('\n');
     thisModem().waitResponse();
     return status;
   }
@@ -204,7 +204,7 @@ class TinyGsmModem {
   int8_t getSignalQualityImpl() {
     thisModem().sendAT(GF("+CSQ"));
     if (thisModem().waitResponse(GF("+CSQ:")) != 1) { return 99; }
-    int8_t res = thisModem().streamGetInt(',');
+    int8_t res = thisModem().streamGetIntBefore(',');
     thisModem().waitResponse();
     return res;
   }
@@ -255,7 +255,7 @@ class TinyGsmModem {
     thisModem().streamWrite(tail...);
   }
 
-  inline int16_t streamGetInt(int8_t numChars) {
+  inline int16_t streamGetIntLength(int8_t numChars) {
     char   buf[6];
     size_t bytesRead = thisModem().stream.readBytes(buf, numChars);
     if (bytesRead) {
@@ -267,9 +267,7 @@ class TinyGsmModem {
     }
   }
 
-  template <class T>
-  // calling with template only to prevent promotion of char to int
-  inline int16_t streamGetInt(T lastChar) {
+  inline int16_t streamGetIntBefore(char lastChar) {
     char   buf[6];
     size_t bytesRead = thisModem().stream.readBytesUntil(
         lastChar, buf, static_cast<size_t>(6));
@@ -282,7 +280,7 @@ class TinyGsmModem {
     }
   }
 
-  inline float streamGetFloat(int8_t numChars) {
+  inline float streamGetFloatLength(int8_t numChars) {
     char   buf[16];
     size_t bytesRead = thisModem().stream.readBytes(buf, numChars);
     DBG("### bytesRead:", bytesRead);
@@ -295,9 +293,7 @@ class TinyGsmModem {
     }
   }
 
-  template <class T>
-  // calling with template only to prevent promotion of char to int
-  inline float streamGetFloat(T lastChar) {
+  inline float streamGetFloatBefore(char lastChar) {
     char   buf[16];
     size_t bytesRead = thisModem().stream.readBytesUntil(
         lastChar, buf, static_cast<size_t>(16));

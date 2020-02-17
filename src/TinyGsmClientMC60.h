@@ -386,13 +386,13 @@ class TinyGsmMC60
       } else {
         streamSkipUntil(','); /** Skip total */
         streamSkipUntil(','); /** Skip acknowledged data size */
-        if (streamGetInt('\n') == 0) { allAcknowledged = true; }
+        if (streamGetIntBefore('\n') == 0) { allAcknowledged = true; }
       }
     }
     waitResponse(5000L);
 
     // streamSkipUntil(','); // Skip mux
-    // return streamGetInt('\n');
+    // return streamGetIntBefore('\n');
 
     return len;  // TODO(?): verify len/ack
   }
@@ -413,7 +413,7 @@ class TinyGsmMC60
       streamSkipUntil(',');  // skip port
       streamSkipUntil(',');  // skip connection type (TCP/UDP)
       // read the real length of the retrieved data
-      uint16_t len = streamGetInt('\n');
+      uint16_t len = streamGetIntBefore('\n');
       // It's possible that the real length available is less than expected
       // This is quite likely if the buffer is broken into packets - which may
       // be different sizes.
@@ -444,12 +444,12 @@ class TinyGsmMC60
 
     if (waitResponse(GF("+QISTATE:")) != 1) { return false; }
 
-    streamSkipUntil(',');            // Skip mux
-    streamSkipUntil(',');            // Skip socket type
-    streamSkipUntil(',');            // Skip remote ip
-    streamSkipUntil(',');            // Skip remote port
-    streamSkipUntil(',');            // Skip local port
-    int8_t res = streamGetInt(',');  // socket state
+    streamSkipUntil(',');                  // Skip mux
+    streamSkipUntil(',');                  // Skip socket type
+    streamSkipUntil(',');                  // Skip remote ip
+    streamSkipUntil(',');                  // Skip remote port
+    streamSkipUntil(',');                  // Skip local port
+    int8_t res = streamGetIntBefore(',');  // socket state
 
     waitResponse();
 
@@ -512,11 +512,11 @@ class TinyGsmMC60
           streamSkipUntil(',');  // Skip the context
           streamSkipUntil(',');  // Skip the role
           // read the connection id
-          int8_t mux = streamGetInt(',');
+          int8_t mux = streamGetIntBefore(',');
           // read the number of packets in the buffer
-          int8_t num_packets = streamGetInt(',');
+          int8_t num_packets = streamGetIntBefore(',');
           // read the length of the current packet
-          int16_t len_packet = streamGetInt('\n');
+          int16_t len_packet = streamGetIntBefore('\n');
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
             sockets[mux]->sock_available = len_packet * num_packets;
           }

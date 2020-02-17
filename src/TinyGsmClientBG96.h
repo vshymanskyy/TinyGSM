@@ -306,9 +306,9 @@ class TinyGsmBG96
 
     if (waitResponse(timeout_ms, GF(GSM_NL "+QIOPEN:")) != 1) { return false; }
 
-    if (streamGetInt(',') != mux) { return false; }
+    if (streamGetIntBefore(',') != mux) { return false; }
     // Read status
-    return (0 == streamGetInt('\n'));
+    return (0 == streamGetIntBefore('\n'));
   }
 
   int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
@@ -324,7 +324,7 @@ class TinyGsmBG96
   size_t modemRead(size_t size, uint8_t mux) {
     sendAT(GF("+QIRD="), mux, ',', (uint16_t)size);
     if (waitResponse(GF("+QIRD:")) != 1) { return 0; }
-    int16_t len = streamGetInt('\n');
+    int16_t len = streamGetIntBefore('\n');
 
     for (int i = 0; i < len; i++) { moveCharFromStreamToFifo(mux); }
     waitResponse();
@@ -339,7 +339,7 @@ class TinyGsmBG96
     if (waitResponse(GF("+QIRD:")) == 1) {
       streamSkipUntil(',');  // Skip total received
       streamSkipUntil(',');  // Skip have read
-      result = streamGetInt('\n');
+      result = streamGetIntBefore('\n');
       if (result) { DBG("### DATA AVAILABLE:", result, "on", mux); }
       waitResponse();
     }
@@ -353,12 +353,12 @@ class TinyGsmBG96
 
     if (waitResponse(GF("+QISTATE:")) != 1) { return false; }
 
-    streamSkipUntil(',');            // Skip mux
-    streamSkipUntil(',');            // Skip socket type
-    streamSkipUntil(',');            // Skip remote ip
-    streamSkipUntil(',');            // Skip remote port
-    streamSkipUntil(',');            // Skip local port
-    int8_t res = streamGetInt(',');  // socket state
+    streamSkipUntil(',');                  // Skip mux
+    streamSkipUntil(',');                  // Skip socket type
+    streamSkipUntil(',');                  // Skip remote ip
+    streamSkipUntil(',');                  // Skip remote port
+    streamSkipUntil(',');                  // Skip local port
+    int8_t res = streamGetIntBefore(',');  // socket state
 
     waitResponse();
 
@@ -415,13 +415,13 @@ class TinyGsmBG96
           String urc = stream.readStringUntil('\"');
           streamSkipUntil(',');
           if (urc == "recv") {
-            int8_t mux = streamGetInt('\n');
+            int8_t mux = streamGetIntBefore('\n');
             DBG("### URC RECV:", mux);
             if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
               sockets[mux]->got_data = true;
             }
           } else if (urc == "closed") {
-            int8_t mux = streamGetInt('\n');
+            int8_t mux = streamGetIntBefore('\n');
             DBG("### URC CLOSE:", mux);
             if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
               sockets[mux]->sock_connected = false;

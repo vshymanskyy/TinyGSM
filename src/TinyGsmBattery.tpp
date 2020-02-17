@@ -55,7 +55,7 @@ class TinyGsmBattery {
     thisModem().streamSkipUntil(',');  // Skip battery charge status
     thisModem().streamSkipUntil(',');  // Skip battery charge level
     // return voltage in mV
-    uint16_t res = thisModem().streamGetInt(',');
+    uint16_t res = thisModem().streamGetIntBefore(',');
     // Wait for final OK
     thisModem().waitResponse();
     return res;
@@ -66,7 +66,7 @@ class TinyGsmBattery {
     if (thisModem().waitResponse(GF("+CBC:")) != 1) { return false; }
     thisModem().streamSkipUntil(',');  // Skip battery charge status
     // Read battery charge level
-    int8_t res = thisModem().streamGetInt(',');
+    int8_t res = thisModem().streamGetIntBefore(',');
     // Wait for final OK
     thisModem().waitResponse();
     return res;
@@ -76,7 +76,7 @@ class TinyGsmBattery {
     thisModem().sendAT(GF("+CBC"));
     if (thisModem().waitResponse(GF("+CBC:")) != 1) { return false; }
     // Read battery charge status
-    int8_t res = thisModem().streamGetInt(',');
+    int8_t res = thisModem().streamGetIntBefore(',');
     // Wait for final OK
     thisModem().waitResponse();
     return res;
@@ -86,9 +86,9 @@ class TinyGsmBattery {
                         uint16_t& milliVolts) {
     thisModem().sendAT(GF("+CBC"));
     if (thisModem().waitResponse(GF("+CBC:")) != 1) { return false; }
-    chargeState = thisModem().streamGetInt(',');
-    percent     = thisModem().streamGetInt(',');
-    milliVolts  = thisModem().streamGetInt('\n');
+    chargeState = thisModem().streamGetIntBefore(',');
+    percent     = thisModem().streamGetIntBefore(',');
+    milliVolts  = thisModem().streamGetIntBefore('\n');
     // Wait for final OK
     thisModem().waitResponse();
     return true;

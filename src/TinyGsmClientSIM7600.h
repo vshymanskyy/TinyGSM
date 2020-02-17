@@ -436,8 +436,8 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     sendAT(GF("+CGNSSINFO"));
     if (waitResponse(GF(GSM_NL "+CGNSSINFO:")) != 1) { return false; }
 
-    uint8_t fixMode = streamGetInt(',');  // mode 2=2D Fix or 3=3DFix
-                                          // TODO(?) Can 1 be returned
+    uint8_t fixMode = streamGetIntBefore(',');  // mode 2=2D Fix or 3=3DFix
+                                                // TODO(?) Can 1 be returned
     if (fixMode == 1 || fixMode == 2 || fixMode == 3) {
       // init variables
       float ilat         = 0;
@@ -454,32 +454,33 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       int   imin         = 0;
       float secondWithSS = 0;
 
-      streamSkipUntil(',');        // GPS satellite valid numbers
-      streamSkipUntil(',');        // GLONASS satellite valid numbers
-      streamSkipUntil(',');        // BEIDOU satellite valid numbers
-      ilat = streamGetFloat(',');  // Latitude
-      streamSkipUntil(',');        // N/S Indicator, N=north or S=south
-      ilon = streamGetFloat(',');  // Longitude
-      streamSkipUntil(',');        // E/W Indicator, E=east or W=west
+      streamSkipUntil(',');              // GPS satellite valid numbers
+      streamSkipUntil(',');              // GLONASS satellite valid numbers
+      streamSkipUntil(',');              // BEIDOU satellite valid numbers
+      ilat = streamGetFloatBefore(',');  // Latitude
+      streamSkipUntil(',');              // N/S Indicator, N=north or S=south
+      ilon = streamGetFloatBefore(',');  // Longitude
+      streamSkipUntil(',');              // E/W Indicator, E=east or W=west
 
       // Date. Output format is ddmmyy
-      iday   = streamGetInt(static_cast<int8_t>(2));  // Two digit day
-      imonth = streamGetInt(static_cast<int8_t>(2));  // Two digit month
-      iyear  = streamGetInt(',');                     // Two digit year
+      iday   = streamGetIntLength(2);    // Two digit day
+      imonth = streamGetIntLength(2);    // Two digit month
+      iyear  = streamGetIntBefore(',');  // Two digit year
 
       // UTC Time. Output format is hhmmss.s
-      ihour        = streamGetInt(static_cast<int8_t>(2));  // Two digit hour
-      imin         = streamGetInt(static_cast<int8_t>(2));  // Two digit minute
-      secondWithSS = streamGetFloat(',');  // 4 digit second with subseconds
+      ihour = streamGetIntLength(2);  // Two digit hour
+      imin  = streamGetIntLength(2);  // Two digit minute
+      secondWithSS =
+          streamGetFloatBefore(',');  // 4 digit second with subseconds
 
-      ialt   = streamGetFloat(',');  // MSL Altitude. Unit is meters
-      ispeed = streamGetFloat(',');  // Speed Over Ground. Unit is knots.
-      streamSkipUntil(',');          // Course Over Ground. Degrees.
+      ialt   = streamGetFloatBefore(',');  // MSL Altitude. Unit is meters
+      ispeed = streamGetFloatBefore(',');  // Speed Over Ground. Unit is knots.
+      streamSkipUntil(',');                // Course Over Ground. Degrees.
       streamSkipUntil(',');  // After set, will report GPS every x seconds
-      iaccuracy = streamGetFloat(',');  // Position Dilution Of Precision
-      streamSkipUntil(',');             // Horizontal Dilution Of Precision
-      streamSkipUntil(',');             // Vertical Dilution Of Precision
-      streamSkipUntil('\n');            // TODO(?) is one more field reported??
+      iaccuracy = streamGetFloatBefore(',');  // Position Dilution Of Precision
+      streamSkipUntil(',');   // Horizontal Dilution Of Precision
+      streamSkipUntil(',');   // Vertical Dilution Of Precision
+      streamSkipUntil('\n');  // TODO(?) is one more field reported??
 
       // Set pointers
       if (lat != NULL) *lat = ilat;
@@ -521,7 +522,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     if (waitResponse(GF(GSM_NL "+CBC:")) != 1) { return 0; }
 
     // get voltage in VOLTS
-    float voltage = streamGetFloat('\n');
+    float voltage = streamGetFloatBefore('\n');
     // Wait for final OK
     waitResponse();
     // Return millivolts
@@ -550,7 +551,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     sendAT(GF("+CPMUTEMP"));
     if (waitResponse(GF(GSM_NL "+CPMUTEMP:")) != 1) { return 0; }
     // return temperature in C
-    uint16_t res = streamGetInt('\n');
+    uint16_t res = streamGetIntBefore('\n');
     // Wait for final OK
     waitResponse();
     return res;
@@ -585,7 +586,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     streamSkipUntil(',');  // Skip mux
     streamSkipUntil(',');  // Skip requested bytes to send
     // TODO(?):  make sure requested and confirmed bytes match
-    return streamGetInt('\n');
+    return streamGetIntBefore('\n');
   }
 
   size_t modemRead(size_t size, uint8_t mux) {
@@ -598,9 +599,9 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
 #endif
     streamSkipUntil(',');  // Skip Rx mode 2/normal or 3/HEX
     streamSkipUntil(',');  // Skip mux/cid (connecion id)
-    int16_t len_requested = streamGetInt(',');
+    int16_t len_requested = streamGetIntBefore(',');
     //  ^^ Requested number of data bytes (1-1460 bytes)to be read
-    int16_t len_confirmed = streamGetInt('\n');
+    int16_t len_confirmed = streamGetIntBefore('\n');
     // ^^ The data length which not read in the buffer
     for (int i = 0; i < len_requested; i++) {
       uint32_t startMillis = millis();
@@ -637,7 +638,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     if (waitResponse(GF("+CIPRXGET:")) == 1) {
       streamSkipUntil(',');  // Skip mode 4
       streamSkipUntil(',');  // Skip mux
-      result = streamGetInt('\n');
+      result = streamGetIntBefore('\n');
       waitResponse();
     }
     DBG("### Available:", result, "on", mux);
@@ -704,9 +705,9 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
           index = 5;
           goto finish;
         } else if (data.endsWith(GF(GSM_NL "+CIPRXGET:"))) {
-          int8_t mode = streamGetInt(',');
+          int8_t mode = streamGetIntBefore(',');
           if (mode == 1) {
-            int8_t mux = streamGetInt('\n');
+            int8_t mux = streamGetIntBefore('\n');
             if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
               sockets[mux]->got_data = true;
             }
@@ -716,8 +717,8 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
             data += mode;
           }
         } else if (data.endsWith(GF(GSM_NL "+RECEIVE:"))) {
-          int8_t  mux = streamGetInt(',');
-          int16_t len = streamGetInt('\n');
+          int8_t  mux = streamGetIntBefore(',');
+          int16_t len = streamGetIntBefore('\n');
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
             sockets[mux]->got_data       = true;
             sockets[mux]->sock_available = len;
@@ -725,7 +726,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
           data = "";
           DBG("### Got Data:", len, "on", mux);
         } else if (data.endsWith(GF("+IPCLOSE:"))) {
-          int8_t mux = streamGetInt(',');
+          int8_t mux = streamGetIntBefore(',');
           streamSkipUntil('\n');  // Skip the reason code
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
             sockets[mux]->sock_connected = false;

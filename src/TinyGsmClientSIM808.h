@@ -57,8 +57,8 @@ class TinyGsmSim808 : public TinyGsmSim800, public TinyGsmGPS<TinyGsmSim808> {
     sendAT(GF("+CGNSINF"));
     if (waitResponse(10000L, GF(GSM_NL "+CGNSINF:")) != 1) { return false; }
 
-    streamSkipUntil(',');          // GNSS run status
-    if (streamGetInt(',') == 1) {  // fix status
+    streamSkipUntil(',');                // GNSS run status
+    if (streamGetIntBefore(',') == 1) {  // fix status
       // init variables
       float ilat         = 0;
       float ilon         = 0;
@@ -75,31 +75,32 @@ class TinyGsmSim808 : public TinyGsmSim800, public TinyGsmGPS<TinyGsmSim808> {
       float secondWithSS = 0;
 
       // UTC date & Time
-      iyear        = streamGetInt(static_cast<int8_t>(4));  // Four digit year
-      imonth       = streamGetInt(static_cast<int8_t>(2));  // Two digit month
-      iday         = streamGetInt(static_cast<int8_t>(2));  // Two digit day
-      ihour        = streamGetInt(static_cast<int8_t>(2));  // Two digit hour
-      imin         = streamGetInt(static_cast<int8_t>(2));  // Two digit minute
-      secondWithSS = streamGetFloat(',');  // 6 digit second with subseconds
+      iyear  = streamGetIntLength(4);  // Four digit year
+      imonth = streamGetIntLength(2);  // Two digit month
+      iday   = streamGetIntLength(2);  // Two digit day
+      ihour  = streamGetIntLength(2);  // Two digit hour
+      imin   = streamGetIntLength(2);  // Two digit minute
+      secondWithSS =
+          streamGetFloatBefore(',');  // 6 digit second with subseconds
 
-      ilat   = streamGetFloat(',');     // Latitude
-      ilon   = streamGetFloat(',');     // Longitude
-      ialt   = streamGetFloat(',');     // MSL Altitude. Unit is meters
-      ispeed = streamGetFloat(',');     // Speed Over Ground. Unit is knots.
-      streamSkipUntil(',');             // Course Over Ground. Degrees.
-      streamSkipUntil(',');             // Fix Mode
-      streamSkipUntil(',');             // Reserved1
-      streamSkipUntil(',');             // Horizontal Dilution Of Precision
-      iaccuracy = streamGetFloat(',');  // Position Dilution Of Precision
-      streamSkipUntil(',');             // Vertical Dilution Of Precision
-      streamSkipUntil(',');             // Reserved2
-      ivsat = streamGetInt(',');        // GNSS Satellites in View
-      iusat = streamGetInt(',');        // GNSS Satellites Used
-      streamSkipUntil(',');             // GLONASS Satellites Used
-      streamSkipUntil(',');             // Reserved3
-      streamSkipUntil(',');             // C/N0 max
-      streamSkipUntil(',');             // HPA
-      streamSkipUntil('\n');            // VPA
+      ilat   = streamGetFloatBefore(',');  // Latitude
+      ilon   = streamGetFloatBefore(',');  // Longitude
+      ialt   = streamGetFloatBefore(',');  // MSL Altitude. Unit is meters
+      ispeed = streamGetFloatBefore(',');  // Speed Over Ground. Unit is knots.
+      streamSkipUntil(',');                // Course Over Ground. Degrees.
+      streamSkipUntil(',');                // Fix Mode
+      streamSkipUntil(',');                // Reserved1
+      streamSkipUntil(',');                // Horizontal Dilution Of Precision
+      iaccuracy = streamGetFloatBefore(',');  // Position Dilution Of Precision
+      streamSkipUntil(',');                   // Vertical Dilution Of Precision
+      streamSkipUntil(',');                   // Reserved2
+      ivsat = streamGetIntBefore(',');        // GNSS Satellites in View
+      iusat = streamGetIntBefore(',');        // GNSS Satellites Used
+      streamSkipUntil(',');                   // GLONASS Satellites Used
+      streamSkipUntil(',');                   // Reserved3
+      streamSkipUntil(',');                   // C/N0 max
+      streamSkipUntil(',');                   // HPA
+      streamSkipUntil('\n');                  // VPA
 
       // Set pointers
       if (lat != NULL) *lat = ilat;

@@ -487,28 +487,31 @@ class TinyGsmUBLOX
     float secondWithSS = 0;
 
     // Date & Time
-    iday         = streamGetInt('/');    // Two digit day
-    imonth       = streamGetInt('/');    // Two digit month
-    iyear        = streamGetInt(',');    // Four digit year
-    ihour        = streamGetInt(':');    // Two digit hour
-    imin         = streamGetInt(':');    // Two digit minute
-    secondWithSS = streamGetFloat(',');  // 6 digit second with subseconds
+    iday         = streamGetIntBefore('/');    // Two digit day
+    imonth       = streamGetIntBefore('/');    // Two digit month
+    iyear        = streamGetIntBefore(',');    // Four digit year
+    ihour        = streamGetIntBefore(':');    // Two digit hour
+    imin         = streamGetIntBefore(':');    // Two digit minute
+    secondWithSS = streamGetFloatBefore(',');  // 6 digit second with subseconds
 
-    ilat = streamGetFloat(',');  // Estimated latitude, in degrees
-    ilon = streamGetFloat(',');  // Estimated longitude, in degrees
-    ialt = streamGetFloat(',');  // Estimated altitude, in meters - only forGNSS
-                                 // positioning, 0 in case of CellLocate
-    if (ialt != 0) {             // values not returned for CellLocate
-      iaccuracy = streamGetFloat(',');  // Maximum possible error, in meters
-      ispeed    = streamGetFloat(',');  // Speed over ground m/s3
+    ilat = streamGetFloatBefore(',');  // Estimated latitude, in degrees
+    ilon = streamGetFloatBefore(',');  // Estimated longitude, in degrees
+    ialt = streamGetFloatBefore(
+        ',');         // Estimated altitude, in meters - only forGNSS
+                      // positioning, 0 in case of CellLocate
+    if (ialt != 0) {  // values not returned for CellLocate
+      iaccuracy =
+          streamGetFloatBefore(',');       // Maximum possible error, in meters
+      ispeed = streamGetFloatBefore(',');  // Speed over ground m/s3
       streamSkipUntil(',');  // Course over ground in degree (0 deg - 360 deg)
       streamSkipUntil(',');  // Vertical accuracy, in meters
       streamSkipUntil(',');  // Sensor used for the position calculation
-      iusat = streamGetInt(',');  // Number of satellite used
-      streamSkipUntil(',');       // Antenna status
-      streamSkipUntil('\n');      // Jamming status
+      iusat = streamGetIntBefore(',');  // Number of satellite used
+      streamSkipUntil(',');             // Antenna status
+      streamSkipUntil('\n');            // Jamming status
     } else {
-      iaccuracy = streamGetFloat('\n');  // Maximum possible error, in meters
+      iaccuracy =
+          streamGetFloatBefore('\n');  // Maximum possible error, in meters
     }
 
     // Set pointers
@@ -561,7 +564,7 @@ class TinyGsmUBLOX
     sendAT(GF("+CIND?"));
     if (waitResponse(GF(GSM_NL "+CIND:")) != 1) { return 0; }
 
-    int8_t res     = streamGetInt(',');
+    int8_t res     = streamGetIntBefore(',');
     int8_t percent = res * 20;  // return is 0-5
     // Wait for final OK
     waitResponse();
@@ -599,7 +602,7 @@ class TinyGsmUBLOX
     sendAT(GF("+USOCR=6"));
     // reply is +USOCR: ## of socket created
     if (waitResponse(GF(GSM_NL "+USOCR:")) != 1) { return false; }
-    *mux = streamGetInt('\n');
+    *mux = streamGetIntBefore('\n');
     waitResponse();
 
     if (ssl) {
@@ -634,7 +637,7 @@ class TinyGsmUBLOX
     stream.flush();
     if (waitResponse(GF(GSM_NL "+USOWR:")) != 1) { return 0; }
     streamSkipUntil(',');  // Skip mux
-    int16_t sent = streamGetInt('\n');
+    int16_t sent = streamGetIntBefore('\n');
     waitResponse();  // sends back OK after the confirmation of number sent
     return sent;
   }
@@ -643,7 +646,7 @@ class TinyGsmUBLOX
     sendAT(GF("+USORD="), mux, ',', (uint16_t)size);
     if (waitResponse(GF(GSM_NL "+USORD:")) != 1) { return 0; }
     streamSkipUntil(',');  // Skip mux
-    int16_t len = streamGetInt(',');
+    int16_t len = streamGetIntBefore(',');
     streamSkipUntil('\"');
 
     for (int i = 0; i < len; i++) { moveCharFromStreamToFifo(mux); }
@@ -663,7 +666,7 @@ class TinyGsmUBLOX
     // that you have already told to close
     if (res == 1) {
       streamSkipUntil(',');  // Skip mux
-      result = streamGetInt('\n');
+      result = streamGetIntBefore('\n');
       // if (result) DBG("### DATA AVAILABLE:", result, "on", mux);
       waitResponse();
     }
@@ -680,7 +683,7 @@ class TinyGsmUBLOX
 
     streamSkipUntil(',');  // Skip mux
     streamSkipUntil(',');  // Skip type
-    int8_t result = streamGetInt('\n');
+    int8_t result = streamGetIntBefore('\n');
     // 0: the socket is in INACTIVE status (it corresponds to CLOSED status
     // defined in RFC793 "TCP Protocol Specification" [112])
     // 1: the socket is in LISTEN status
@@ -742,8 +745,8 @@ class TinyGsmUBLOX
           index = 5;
           goto finish;
         } else if (data.endsWith(GF("+UUSORD:"))) {
-          int8_t  mux = streamGetInt(',');
-          int16_t len = streamGetInt('\n');
+          int8_t  mux = streamGetIntBefore(',');
+          int16_t len = streamGetIntBefore('\n');
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
             sockets[mux]->got_data       = true;
             sockets[mux]->sock_available = len;
@@ -751,7 +754,7 @@ class TinyGsmUBLOX
           data = "";
           DBG("### URC Data Received:", len, "on", mux);
         } else if (data.endsWith(GF("+UUSOCL:"))) {
-          int8_t mux = streamGetInt('\n');
+          int8_t mux = streamGetIntBefore('\n');
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
             sockets[mux]->sock_connected = false;
           }

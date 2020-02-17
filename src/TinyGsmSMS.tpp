@@ -125,7 +125,7 @@ class TinyGsmSMS {
     thisModem().stream.readStringUntil('"');
     String hex = thisModem().stream.readStringUntil('"');
     thisModem().stream.readStringUntil(',');
-    int8_t dcs = thisModem().streamGetInt('\n');
+    int8_t dcs = thisModem().streamGetIntBefore('\n');
 
     if (dcs == 15) {
       return TinyGsmDecodeHex8bit(hex);

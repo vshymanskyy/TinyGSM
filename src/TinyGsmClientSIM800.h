@@ -503,7 +503,7 @@ class TinyGsmSim800
     stream.flush();
     if (waitResponse(GF(GSM_NL "DATA ACCEPT:")) != 1) { return 0; }
     streamSkipUntil(',');  // Skip mux
-    return streamGetInt('\n');
+    return streamGetIntBefore('\n');
   }
 
   size_t modemRead(size_t size, uint8_t mux) {
@@ -516,9 +516,9 @@ class TinyGsmSim800
 #endif
     streamSkipUntil(',');  // Skip Rx mode 2/normal or 3/HEX
     streamSkipUntil(',');  // Skip mux
-    int16_t len_requested = streamGetInt(',');
+    int16_t len_requested = streamGetIntBefore(',');
     //  ^^ Requested number of data bytes (1-1460 bytes)to be read
-    int16_t len_confirmed = streamGetInt('\n');
+    int16_t len_confirmed = streamGetIntBefore('\n');
     // ^^ Confirmed number of data bytes to be read, which may be less than
     // requested. 0 indicates that no data can be read. This is actually be the
     // number of bytes that will be remaining after the read
@@ -557,7 +557,7 @@ class TinyGsmSim800
     if (waitResponse(GF("+CIPRXGET:")) == 1) {
       streamSkipUntil(',');  // Skip mode 4
       streamSkipUntil(',');  // Skip mux
-      result = streamGetInt('\n');
+      result = streamGetIntBefore('\n');
       waitResponse();
     }
     DBG("### Available:", result, "on", mux);
@@ -620,9 +620,9 @@ class TinyGsmSim800
           index = 5;
           goto finish;
         } else if (data.endsWith(GF(GSM_NL "+CIPRXGET:"))) {
-          int8_t mode = streamGetInt(',');
+          int8_t mode = streamGetIntBefore(',');
           if (mode == 1) {
-            int8_t mux = streamGetInt('\n');
+            int8_t mux = streamGetIntBefore('\n');
             if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
               sockets[mux]->got_data = true;
             }
@@ -632,8 +632,8 @@ class TinyGsmSim800
             data += mode;
           }
         } else if (data.endsWith(GF(GSM_NL "+RECEIVE:"))) {
-          int8_t  mux = streamGetInt(',');
-          int16_t len = streamGetInt('\n');
+          int8_t  mux = streamGetIntBefore(',');
+          int16_t len = streamGetIntBefore('\n');
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
             sockets[mux]->got_data       = true;
             sockets[mux]->sock_available = len;

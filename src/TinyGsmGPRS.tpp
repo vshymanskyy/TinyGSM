@@ -153,7 +153,7 @@ class TinyGsmGPRS {
   bool isGprsConnectedImpl() {
     thisModem().sendAT(GF("+CGATT?"));
     if (thisModem().waitResponse(GF("+CGATT:")) != 1) { return false; }
-    int8_t res = thisModem().streamGetInt('\n');
+    int8_t res = thisModem().streamGetIntBefore('\n');
     thisModem().waitResponse();
     if (res != 1) { return false; }
 

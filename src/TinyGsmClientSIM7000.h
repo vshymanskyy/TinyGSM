@@ -425,8 +425,8 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
     sendAT(GF("+CGNSINF"));
     if (waitResponse(10000L, GF(GSM_NL "+CGNSINF:")) != 1) { return false; }
 
-    streamSkipUntil(',');          // GNSS run status
-    if (streamGetInt(',') == 1) {  // fix status
+    streamSkipUntil(',');                // GNSS run status
+    if (streamGetIntBefore(',') == 1) {  // fix status
       // init variables
       float ilat         = 0;
       float ilon         = 0;
@@ -443,31 +443,32 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
       float secondWithSS = 0;
 
       // UTC date & Time
-      iyear        = streamGetInt(static_cast<int8_t>(4));  // Four digit year
-      imonth       = streamGetInt(static_cast<int8_t>(2));  // Two digit month
-      iday         = streamGetInt(static_cast<int8_t>(2));  // Two digit day
-      ihour        = streamGetInt(static_cast<int8_t>(2));  // Two digit hour
-      imin         = streamGetInt(static_cast<int8_t>(2));  // Two digit minute
-      secondWithSS = streamGetFloat(',');  // 6 digit second with subseconds
+      iyear  = streamGetIntLength(4);  // Four digit year
+      imonth = streamGetIntLength(2);  // Two digit month
+      iday   = streamGetIntLength(2);  // Two digit day
+      ihour  = streamGetIntLength(2);  // Two digit hour
+      imin   = streamGetIntLength(2);  // Two digit minute
+      secondWithSS =
+          streamGetFloatBefore(',');  // 6 digit second with subseconds
 
-      ilat   = streamGetFloat(',');     // Latitude
-      ilon   = streamGetFloat(',');     // Longitude
-      ialt   = streamGetFloat(',');     // MSL Altitude. Unit is meters
-      ispeed = streamGetFloat(',');     // Speed Over Ground. Unit is knots.
-      streamSkipUntil(',');             // Course Over Ground. Degrees.
-      streamSkipUntil(',');             // Fix Mode
-      streamSkipUntil(',');             // Reserved1
-      streamSkipUntil(',');             // Horizontal Dilution Of Precision
-      iaccuracy = streamGetFloat(',');  // Position Dilution Of Precision
-      streamSkipUntil(',');             // Vertical Dilution Of Precision
-      streamSkipUntil(',');             // Reserved2
-      ivsat = streamGetInt(',');        // GNSS Satellites in View
-      iusat = streamGetInt(',');        // GNSS Satellites Used
-      streamSkipUntil(',');             // GLONASS Satellites Used
-      streamSkipUntil(',');             // Reserved3
-      streamSkipUntil(',');             // C/N0 max
-      streamSkipUntil(',');             // HPA
-      streamSkipUntil('\n');            // VPA
+      ilat   = streamGetFloatBefore(',');  // Latitude
+      ilon   = streamGetFloatBefore(',');  // Longitude
+      ialt   = streamGetFloatBefore(',');  // MSL Altitude. Unit is meters
+      ispeed = streamGetFloatBefore(',');  // Speed Over Ground. Unit is knots.
+      streamSkipUntil(',');                // Course Over Ground. Degrees.
+      streamSkipUntil(',');                // Fix Mode
+      streamSkipUntil(',');                // Reserved1
+      streamSkipUntil(',');                // Horizontal Dilution Of Precision
+      iaccuracy = streamGetFloatBefore(',');  // Position Dilution Of Precision
+      streamSkipUntil(',');                   // Vertical Dilution Of Precision
+      streamSkipUntil(',');                   // Reserved2
+      ivsat = streamGetIntBefore(',');        // GNSS Satellites in View
+      iusat = streamGetIntBefore(',');        // GNSS Satellites Used
+      streamSkipUntil(',');                   // GLONASS Satellites Used
+      streamSkipUntil(',');                   // Reserved3
+      streamSkipUntil(',');                   // C/N0 max
+      streamSkipUntil(',');                   // HPA
+      streamSkipUntil('\n');                  // VPA
 
       // Set pointers
       if (lat != NULL) *lat = ilat;
@@ -530,7 +531,7 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
     stream.flush();
     if (waitResponse(GF(GSM_NL "DATA ACCEPT:")) != 1) { return 0; }
     streamSkipUntil(',');  // Skip mux
-    return streamGetInt('\n');
+    return streamGetIntBefore('\n');
   }
 
   size_t modemRead(size_t size, uint8_t mux) {
@@ -543,9 +544,9 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
 #endif
     streamSkipUntil(',');  // Skip Rx mode 2/normal or 3/HEX
     streamSkipUntil(',');  // Skip mux
-    int16_t len_requested = streamGetInt(',');
+    int16_t len_requested = streamGetIntBefore(',');
     //  ^^ Requested number of data bytes (1-1460 bytes)to be read
-    int16_t len_confirmed = streamGetInt('\n');
+    int16_t len_confirmed = streamGetIntBefore('\n');
     // ^^ Confirmed number of data bytes to be read, which may be less than
     // requested. 0 indicates that no data can be read. This is actually be the
     // number of bytes that will be remaining after the read
@@ -584,7 +585,7 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
     if (waitResponse(GF("+CIPRXGET:")) == 1) {
       streamSkipUntil(',');  // Skip mode 4
       streamSkipUntil(',');  // Skip mux
-      result = streamGetInt('\n');
+      result = streamGetIntBefore('\n');
       waitResponse();
     }
     DBG("### Available:", result, "on", mux);
@@ -645,9 +646,9 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
           index = 5;
           goto finish;
         } else if (data.endsWith(GF(GSM_NL "+CIPRXGET:"))) {
-          int8_t mode = streamGetInt(',');
+          int8_t mode = streamGetIntBefore(',');
           if (mode == 1) {
-            int8_t mux = streamGetInt('\n');
+            int8_t mux = streamGetIntBefore('\n');
             if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
               sockets[mux]->got_data = true;
             }
@@ -657,8 +658,8 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
             data += mode;
           }
         } else if (data.endsWith(GF(GSM_NL "+RECEIVE:"))) {
-          int8_t  mux = streamGetInt(',');
-          int16_t len = streamGetInt('\n');
+          int8_t  mux = streamGetIntBefore(',');
+          int16_t len = streamGetIntBefore('\n');
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
             sockets[mux]->got_data       = true;
             sockets[mux]->sock_available = len;

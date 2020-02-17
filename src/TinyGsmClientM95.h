@@ -386,9 +386,9 @@ class TinyGsmM95
     }
     streamSkipUntil(',');  // Skip mode
     // Read charge of thermistor
-    // milliVolts = streamGetInt(',');
+    // milliVolts = streamGetIntBefore(',');
     streamSkipUntil(',');  // Skip thermistor charge
-    float temp = streamGetFloat('\n');
+    float temp = streamGetFloatBefore('\n');
     // Wait for final OK
     waitResponse();
     return temp;
@@ -427,7 +427,7 @@ class TinyGsmM95
     //     streamSkipUntil(',');  // Skip total length sent on connection
     //     streamSkipUntil(',');  // Skip length already acknowledged by remote
     //     // Make sure the total length un-acknowledged is 0
-    //     if ( streamGetInt('\n') == 0 ) {
+    //     if ( streamGetIntBefore('\n') == 0 ) {
     //       allAcknowledged = true;
     //     }
     //   }
@@ -453,7 +453,7 @@ class TinyGsmM95
       streamSkipUntil(',');  // skip port
       streamSkipUntil(',');  // skip connection type (TCP/UDP)
       // read the real length of the retrieved data
-      uint16_t len = streamGetInt('\n');
+      uint16_t len = streamGetIntBefore('\n');
       // We have no way of knowing in advance how much data will be in the
       // buffer so when data is received we always assume the buffer is
       // completely full. Chances are, this is not true and there's really not
@@ -485,12 +485,12 @@ class TinyGsmM95
 
     if (waitResponse(GF("+QISTATE:")) != 1) { return false; }
 
-    streamSkipUntil(',');            // Skip mux
-    streamSkipUntil(',');            // Skip socket type
-    streamSkipUntil(',');            // Skip remote ip
-    streamSkipUntil(',');            // Skip remote port
-    streamSkipUntil(',');            // Skip local port
-    int8_t res = streamGetInt(',');  // socket state
+    streamSkipUntil(',');                  // Skip mux
+    streamSkipUntil(',');                  // Skip socket type
+    streamSkipUntil(',');                  // Skip remote ip
+    streamSkipUntil(',');                  // Skip remote port
+    streamSkipUntil(',');                  // Skip local port
+    int8_t res = streamGetIntBefore(',');  // socket state
 
     waitResponse();
 
@@ -545,7 +545,7 @@ class TinyGsmM95
         } else if (data.endsWith(GF(GSM_NL "+QIRDI:"))) {
           streamSkipUntil(',');  // Skip the context
           streamSkipUntil(',');  // Skip the role
-          int8_t mux = streamGetInt('\n');
+          int8_t mux = streamGetIntBefore('\n');
           DBG("### Got Data:", mux);
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
             // We have no way of knowing how much data actually came in, so

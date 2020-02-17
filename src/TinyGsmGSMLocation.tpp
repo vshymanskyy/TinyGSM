@@ -105,17 +105,17 @@ class TinyGsmGSMLocation {
     int   imin      = 0;
     int   isec      = 0;
 
-    ilat      = thisModem().streamGetFloat(',');  // Latitude
-    ilon      = thisModem().streamGetFloat(',');  // Longitude
-    iaccuracy = thisModem().streamGetInt(',');    // Positioning accuracy
+    ilat      = thisModem().streamGetFloatBefore(',');  // Latitude
+    ilon      = thisModem().streamGetFloatBefore(',');  // Longitude
+    iaccuracy = thisModem().streamGetIntBefore(',');    // Positioning accuracy
 
     // Date & Time
-    iyear  = thisModem().streamGetInt('/');
-    imonth = thisModem().streamGetInt('/');
-    iday   = thisModem().streamGetInt(',');
-    ihour  = thisModem().streamGetInt(':');
-    imin   = thisModem().streamGetInt(':');
-    isec   = thisModem().streamGetInt('\n');
+    iyear  = thisModem().streamGetIntBefore('/');
+    imonth = thisModem().streamGetIntBefore('/');
+    iday   = thisModem().streamGetIntBefore(',');
+    ihour  = thisModem().streamGetIntBefore(':');
+    imin   = thisModem().streamGetIntBefore(':');
+    isec   = thisModem().streamGetIntBefore('\n');
 
     // Set pointers
     if (lat != NULL) *lat = ilat;

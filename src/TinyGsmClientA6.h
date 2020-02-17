@@ -359,7 +359,7 @@ class TinyGsmA6
     streamSkipUntil('"');
     String hex = stream.readStringUntil('"');
     streamSkipUntil(',');
-    int8_t dcs = streamGetInt('\n');
+    int8_t dcs = streamGetIntBefore('\n');
 
     if (dcs == 15) {
       return TinyGsmDecodeHex7bit(hex);
@@ -389,7 +389,7 @@ class TinyGsmA6
     if (waitResponse(GF(GSM_NL "+CBC:")) != 1) { return false; }
     streamSkipUntil(',');  // Skip battery charge status
     // Read battery charge level
-    int8_t res = streamGetInt('\n');
+    int8_t res = streamGetIntBefore('\n');
     // Wait for final OK
     waitResponse();
     return res;
@@ -400,8 +400,8 @@ class TinyGsmA6
                         uint16_t& milliVolts) {
     sendAT(GF("+CBC?"));
     if (waitResponse(GF(GSM_NL "+CBC:")) != 1) { return false; }
-    chargeState = streamGetInt(',');
-    percent     = streamGetInt('\n');
+    chargeState = streamGetIntBefore(',');
+    percent     = streamGetIntBefore('\n');
     milliVolts  = 0;
     // Wait for final OK
     waitResponse();
@@ -419,7 +419,7 @@ class TinyGsmA6
 
     sendAT(GF("+CIPSTART="), GF("\"TCP"), GF("\",\""), host, GF("\","), port);
     if (waitResponse(timeout_ms, GF(GSM_NL "+CIPNUM:")) != 1) { return false; }
-    int8_t newMux = streamGetInt('\n');
+    int8_t newMux = streamGetIntBefore('\n');
 
     int8_t rsp = waitResponse(
         (timeout_ms - (millis() - startMillis)), GF("CONNECT OK" GSM_NL),
@@ -499,8 +499,8 @@ class TinyGsmA6
           index = 5;
           goto finish;
         } else if (data.endsWith(GF("+CIPRCV:"))) {
-          int8_t  mux      = streamGetInt(',');
-          int16_t len      = streamGetInt(',');
+          int8_t  mux      = streamGetIntBefore(',');
+          int16_t len      = streamGetIntBefore(',');
           int16_t len_orig = len;
           if (len > sockets[mux]->rx.free()) {
             DBG("### Buffer overflow: ", len, "->", sockets[mux]->rx.free());
@@ -515,7 +515,7 @@ class TinyGsmA6
           }
           data = "";
         } else if (data.endsWith(GF("+TCPCLOSED:"))) {
-          int8_t mux = streamGetInt('\n');
+          int8_t mux = streamGetIntBefore('\n');
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT) {
             sockets[mux]->sock_connected = false;
           }

@@ -257,7 +257,7 @@ class TinyGsmM590
   bool isGprsConnectedImpl() {
     sendAT(GF("+XIIC?"));
     if (waitResponse(GF(GSM_NL "+XIIC:")) != 1) { return false; }
-    int8_t res = streamGetInt(',');
+    int8_t res = streamGetIntBefore(',');
     waitResponse();
     return res == 1;
   }
@@ -386,8 +386,8 @@ class TinyGsmM590
           index = 5;
           goto finish;
         } else if (data.endsWith(GF("+TCPRECV:"))) {
-          int8_t  mux      = streamGetInt(',');
-          int16_t len      = streamGetInt(',');
+          int8_t  mux      = streamGetIntBefore(',');
+          int16_t len      = streamGetIntBefore(',');
           int16_t len_orig = len;
           if (len > sockets[mux]->rx.free()) {
             DBG("### Buffer overflow: ", len, "->", sockets[mux]->rx.free());
@@ -402,7 +402,7 @@ class TinyGsmM590
           }
           data = "";
         } else if (data.endsWith(GF("+TCPCLOSE:"))) {
-          int8_t mux = streamGetInt(',');
+          int8_t mux = streamGetIntBefore(',');
           streamSkipUntil('\n');
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT) {
             sockets[mux]->sock_connected = false;

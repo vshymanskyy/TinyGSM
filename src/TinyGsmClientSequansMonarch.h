@@ -496,7 +496,7 @@ class TinyGsmSequansMonarch
     sendAT(GF("+SQNSRECV="), mux, ',', (uint16_t)size);
     if (waitResponse(GF("+SQNSRECV: ")) != 1) { return 0; }
     streamSkipUntil(',');  // Skip mux
-    int16_t len = streamGetInt('\n');
+    int16_t len = streamGetIntBefore('\n');
     for (int i = 0; i < len; i++) {
       uint32_t startMillis = millis();
       while (!stream.available() &&
@@ -517,10 +517,10 @@ class TinyGsmSequansMonarch
     sendAT(GF("+SQNSI="), mux);
     size_t result = 0;
     if (waitResponse(GF("+SQNSI:")) == 1) {
-      streamSkipUntil(',');        // Skip mux
-      streamSkipUntil(',');        // Skip total sent
-      streamSkipUntil(',');        // Skip total received
-      result = streamGetInt(',');  // keep data not yet read
+      streamSkipUntil(',');              // Skip mux
+      streamSkipUntil(',');              // Skip total sent
+      streamSkipUntil(',');              // Skip total received
+      result = streamGetIntBefore(',');  // keep data not yet read
       waitResponse();
     }
     DBG("### Available:", result, "on", mux);
@@ -534,7 +534,7 @@ class TinyGsmSequansMonarch
     for (int muxNo = 1; muxNo <= TINY_GSM_MUX_COUNT; muxNo++) {
       if (waitResponse(GFP(GSM_OK), GF(GSM_NL "+SQNSS: ")) != 2) { break; }
       uint8_t status = 0;
-      // if (streamGetInt(',') != muxNo) { // check the mux no
+      // if (streamGetIntBefore(',') != muxNo) { // check the mux no
       //   DBG("### Warning: misaligned mux numbers!");
       // }
       streamSkipUntil(',');        // skip mux [use muxNo]
@@ -602,8 +602,8 @@ class TinyGsmSequansMonarch
           index = 5;
           goto finish;
         } else if (data.endsWith(GF(GSM_NL "+SQNSRING:"))) {
-          int8_t  mux = streamGetInt(',');
-          int16_t len = streamGetInt('\n');
+          int8_t  mux = streamGetIntBefore(',');
+          int16_t len = streamGetIntBefore('\n');
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT &&
               sockets[mux % TINY_GSM_MUX_COUNT]) {
             sockets[mux % TINY_GSM_MUX_COUNT]->got_data       = true;
@@ -612,7 +612,7 @@ class TinyGsmSequansMonarch
           data = "";
           DBG("### URC Data Received:", len, "on", mux);
         } else if (data.endsWith(GF("SQNSH: "))) {
-          int8_t mux = streamGetInt('\n');
+          int8_t mux = streamGetIntBefore('\n');
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT &&
               sockets[mux % TINY_GSM_MUX_COUNT]) {
             sockets[mux % TINY_GSM_MUX_COUNT]->sock_connected = false;
