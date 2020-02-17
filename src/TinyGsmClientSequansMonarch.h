@@ -24,9 +24,11 @@
 #include "TinyGsmTime.tpp"
 
 #define GSM_NL "\r\n"
-static const char GSM_OK[] TINY_GSM_PROGMEM        = "OK" GSM_NL;
-static const char GSM_ERROR[] TINY_GSM_PROGMEM     = "ERROR" GSM_NL;
+static const char GSM_OK[] TINY_GSM_PROGMEM    = "OK" GSM_NL;
+static const char GSM_ERROR[] TINY_GSM_PROGMEM = "ERROR" GSM_NL;
+#if defined       TINY_GSM_DEBUG
 static const char GSM_CME_ERROR[] TINY_GSM_PROGMEM = GSM_NL "+CME ERROR:";
+#endif
 
 enum RegStatus {
   REG_NO_RESULT    = -1,
@@ -506,7 +508,7 @@ class TinyGsmSequansMonarch
       char c = stream.read();
       sockets[mux % TINY_GSM_MUX_COUNT]->rx.put(c);
     }
-    DBG("### Read:", len, "from", mux);
+    // DBG("### READ:", len, "from", mux);
     waitResponse();
     sockets[mux % TINY_GSM_MUX_COUNT]->sock_available = modemGetAvailable(mux);
     return len;
@@ -522,7 +524,7 @@ class TinyGsmSequansMonarch
       result = streamGetIntBefore(',');  // keep data not yet read
       waitResponse();
     }
-    DBG("### Available:", result, "on", mux);
+    // DBG("### Available:", result, "on", mux);
     return result;
   }
 
@@ -564,7 +566,11 @@ class TinyGsmSequansMonarch
   int8_t waitResponse(uint32_t timeout_ms, String& data,
                       GsmConstStr r1 = GFP(GSM_OK),
                       GsmConstStr r2 = GFP(GSM_ERROR),
+#if defined TINY_GSM_DEBUG
                       GsmConstStr r3 = GFP(GSM_CME_ERROR),
+#else
+                      GsmConstStr r3 = NULL,
+#endif
                       GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
     /*String r1s(r1); r1s.trim();
     String r2s(r2); r2s.trim();
@@ -589,9 +595,11 @@ class TinyGsmSequansMonarch
           index = 2;
           goto finish;
         } else if (r3 && data.endsWith(r3)) {
+#if defined TINY_GSM_DEBUG
           if (r3 == GFP(GSM_CME_ERROR)) {
             streamSkipUntil('\n');  // Read out the error
           }
+#endif
           index = 3;
           goto finish;
         } else if (r4 && data.endsWith(r4)) {
@@ -634,7 +642,11 @@ class TinyGsmSequansMonarch
 
   int8_t waitResponse(uint32_t timeout_ms, GsmConstStr r1 = GFP(GSM_OK),
                       GsmConstStr r2 = GFP(GSM_ERROR),
+#if defined TINY_GSM_DEBUG
                       GsmConstStr r3 = GFP(GSM_CME_ERROR),
+#else
+                      GsmConstStr r3 = NULL,
+#endif
                       GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
     String data;
     return waitResponse(timeout_ms, data, r1, r2, r3, r4, r5);
@@ -642,7 +654,11 @@ class TinyGsmSequansMonarch
 
   int8_t waitResponse(GsmConstStr r1 = GFP(GSM_OK),
                       GsmConstStr r2 = GFP(GSM_ERROR),
+#if defined TINY_GSM_DEBUG
                       GsmConstStr r3 = GFP(GSM_CME_ERROR),
+#else
+                      GsmConstStr r3 = NULL,
+#endif
                       GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
     return waitResponse(1000, r1, r2, r3, r4, r5);
   }

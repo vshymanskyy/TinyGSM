@@ -384,7 +384,7 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
             DBG("### Buffer overflow: ", len, "received vs",
                 sockets[mux]->rx.free(), "available");
           } else {
-            DBG("### Got Data: ", len, "on", mux);
+            // DBG("### Got Data: ", len, "on", mux);
           }
           while (len--) { moveCharFromStreamToFifo(mux); }
           // TODO(SRGDamia1): deal with buffer overflow/missed characters

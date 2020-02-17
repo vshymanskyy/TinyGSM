@@ -26,9 +26,11 @@
 #include "TinyGsmTime.tpp"
 
 #define GSM_NL "\r\n"
-static const char GSM_OK[] TINY_GSM_PROGMEM        = "OK" GSM_NL;
-static const char GSM_ERROR[] TINY_GSM_PROGMEM     = "ERROR" GSM_NL;
+static const char GSM_OK[] TINY_GSM_PROGMEM    = "OK" GSM_NL;
+static const char GSM_ERROR[] TINY_GSM_PROGMEM = "ERROR" GSM_NL;
+#if defined       TINY_GSM_DEBUG
 static const char GSM_CME_ERROR[] TINY_GSM_PROGMEM = GSM_NL "+CME ERROR:";
+#endif
 
 enum RegStatus {
   REG_NO_RESULT    = -1,
@@ -467,7 +469,7 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95>,
         // FIFO
       }
       waitResponse();  // ends with an OK
-      DBG("### READ:", len, "from", mux);
+      // DBG("### READ:", len, "from", mux);
       return len;
     } else {
       sockets[mux]->sock_available = 0;
@@ -506,7 +508,11 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95>,
   int8_t waitResponse(uint32_t timeout_ms, String& data,
                       GsmConstStr r1 = GFP(GSM_OK),
                       GsmConstStr r2 = GFP(GSM_ERROR),
+#if defined TINY_GSM_DEBUG
                       GsmConstStr r3 = GFP(GSM_CME_ERROR),
+#else
+                      GsmConstStr r3 = NULL,
+#endif
                       GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
     /*String r1s(r1); r1s.trim();
     String r2s(r2); r2s.trim();
@@ -531,9 +537,11 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95>,
           index = 2;
           goto finish;
         } else if (r3 && data.endsWith(r3)) {
+#if defined TINY_GSM_DEBUG
           if (r3 == GFP(GSM_CME_ERROR)) {
             streamSkipUntil('\n');  // Read out the error
           }
+#endif
           index = 3;
           goto finish;
         } else if (r4 && data.endsWith(r4)) {
@@ -546,7 +554,7 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95>,
           streamSkipUntil(',');  // Skip the context
           streamSkipUntil(',');  // Skip the role
           int8_t mux = streamGetIntBefore('\n');
-          DBG("### Got Data:", mux);
+          // DBG("### Got Data:", mux);
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
             // We have no way of knowing how much data actually came in, so
             // we set the value to 1500, the maximum possible size.
@@ -578,7 +586,11 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95>,
 
   int8_t waitResponse(uint32_t timeout_ms, GsmConstStr r1 = GFP(GSM_OK),
                       GsmConstStr r2 = GFP(GSM_ERROR),
+#if defined TINY_GSM_DEBUG
                       GsmConstStr r3 = GFP(GSM_CME_ERROR),
+#else
+                      GsmConstStr r3 = NULL,
+#endif
                       GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
     String data;
     return waitResponse(timeout_ms, data, r1, r2, r3, r4, r5);
@@ -586,7 +598,11 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95>,
 
   int8_t waitResponse(GsmConstStr r1 = GFP(GSM_OK),
                       GsmConstStr r2 = GFP(GSM_ERROR),
+#if defined TINY_GSM_DEBUG
                       GsmConstStr r3 = GFP(GSM_CME_ERROR),
+#else
+                      GsmConstStr r3 = NULL,
+#endif
                       GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
     return waitResponse(1000, r1, r2, r3, r4, r5);
   }

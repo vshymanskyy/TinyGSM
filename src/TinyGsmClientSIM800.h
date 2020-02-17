@@ -27,9 +27,11 @@
 #include "TinyGsmTime.tpp"
 
 #define GSM_NL "\r\n"
-static const char GSM_OK[] TINY_GSM_PROGMEM        = "OK" GSM_NL;
-static const char GSM_ERROR[] TINY_GSM_PROGMEM     = "ERROR" GSM_NL;
+static const char GSM_OK[] TINY_GSM_PROGMEM    = "OK" GSM_NL;
+static const char GSM_ERROR[] TINY_GSM_PROGMEM = "ERROR" GSM_NL;
+#if defined       TINY_GSM_DEBUG
 static const char GSM_CME_ERROR[] TINY_GSM_PROGMEM = GSM_NL "+CME ERROR:";
+#endif
 
 enum RegStatus {
   REG_NO_RESULT    = -1,
@@ -548,7 +550,7 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
 #endif
       sockets[mux]->rx.put(c);
     }
-    DBG("### READ:", len_requested, "from", mux);
+    // DBG("### READ:", len_requested, "from", mux);
     // sockets[mux]->sock_available = modemGetAvailable(mux);
     sockets[mux]->sock_available = len_confirmed;
     waitResponse();
@@ -564,7 +566,7 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
       result = streamGetIntBefore('\n');
       waitResponse();
     }
-    DBG("### Available:", result, "on", mux);
+    // DBG("### Available:", result, "on", mux);
     if (!result) { sockets[mux]->sock_connected = modemGetConnected(mux); }
     return result;
   }
@@ -587,7 +589,11 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
   int8_t waitResponse(uint32_t timeout_ms, String& data,
                       GsmConstStr r1 = GFP(GSM_OK),
                       GsmConstStr r2 = GFP(GSM_ERROR),
+#if defined TINY_GSM_DEBUG
                       GsmConstStr r3 = GFP(GSM_CME_ERROR),
+#else
+                      GsmConstStr r3 = NULL,
+#endif
                       GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
     /*String r1s(r1); r1s.trim();
     String r2s(r2); r2s.trim();
@@ -612,9 +618,11 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
           index = 2;
           goto finish;
         } else if (r3 && data.endsWith(r3)) {
+#if defined TINY_GSM_DEBUG
           if (r3 == GFP(GSM_CME_ERROR)) {
             streamSkipUntil('\n');  // Read out the error
           }
+#endif
           index = 3;
           goto finish;
         } else if (r4 && data.endsWith(r4)) {
@@ -631,7 +639,7 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
               sockets[mux]->got_data = true;
             }
             data = "";
-            DBG("### Got Data:", mux);
+            // DBG("### Got Data:", mux);
           } else {
             data += mode;
           }
@@ -643,7 +651,7 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
             sockets[mux]->sock_available = len;
           }
           data = "";
-          DBG("### Got Data:", len, "on", mux);
+          // DBG("### Got Data:", len, "on", mux);
         } else if (data.endsWith(GF("CLOSED" GSM_NL))) {
           int8_t nl   = data.lastIndexOf(GSM_NL, data.length() - 8);
           int8_t coma = data.indexOf(',', nl + 2);
@@ -669,7 +677,11 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
 
   int8_t waitResponse(uint32_t timeout_ms, GsmConstStr r1 = GFP(GSM_OK),
                       GsmConstStr r2 = GFP(GSM_ERROR),
+#if defined TINY_GSM_DEBUG
                       GsmConstStr r3 = GFP(GSM_CME_ERROR),
+#else
+                      GsmConstStr r3 = NULL,
+#endif
                       GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
     String data;
     return waitResponse(timeout_ms, data, r1, r2, r3, r4, r5);
@@ -677,7 +689,11 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
 
   int8_t waitResponse(GsmConstStr r1 = GFP(GSM_OK),
                       GsmConstStr r2 = GFP(GSM_ERROR),
+#if defined TINY_GSM_DEBUG
                       GsmConstStr r3 = GFP(GSM_CME_ERROR),
+#else
+                      GsmConstStr r3 = NULL,
+#endif
                       GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
     return waitResponse(1000, r1, r2, r3, r4, r5);
   }
