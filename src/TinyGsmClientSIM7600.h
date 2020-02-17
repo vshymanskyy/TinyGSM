@@ -13,6 +13,7 @@
 // #define TINY_GSM_USE_HEX
 
 #define TINY_GSM_MUX_COUNT 10
+#define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
 
 #include "TinyGsmBattery.tpp"
 #include "TinyGsmGPRS.tpp"
@@ -41,8 +42,7 @@ enum RegStatus {
 
 class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
                        public TinyGsmGPRS<TinyGsmSim7600>,
-                       public TinyGsmTCP<TinyGsmSim7600, READ_AND_CHECK_SIZE,
-                                         TINY_GSM_MUX_COUNT>,
+                       public TinyGsmTCP<TinyGsmSim7600, TINY_GSM_MUX_COUNT>,
                        public TinyGsmSMS<TinyGsmSim7600>,
                        public TinyGsmGSMLocation<TinyGsmSim7600>,
                        public TinyGsmGPS<TinyGsmSim7600>,
@@ -51,8 +51,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
                        public TinyGsmTemperature<TinyGsmSim7600> {
   friend class TinyGsmModem<TinyGsmSim7600>;
   friend class TinyGsmGPRS<TinyGsmSim7600>;
-  friend class TinyGsmTCP<TinyGsmSim7600, READ_AND_CHECK_SIZE,
-                          TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmTCP<TinyGsmSim7600, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmSMS<TinyGsmSim7600>;
   friend class TinyGsmGPS<TinyGsmSim7600>;
   friend class TinyGsmGSMLocation<TinyGsmSim7600>;

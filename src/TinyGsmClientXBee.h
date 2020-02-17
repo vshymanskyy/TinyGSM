@@ -16,6 +16,7 @@
 // XBee's do not support multi-plexing in transparent/command mode
 // The much more complicated API mode is needed for multi-plexing
 #define TINY_GSM_MUX_COUNT 1
+#define TINY_GSM_NO_MODEM_BUFFER
 // XBee's have a default guard time of 1 second (1000ms, 10 extra for safety
 // here)
 #define TINY_GSM_XBEE_GUARD_TIME 1010
@@ -65,19 +66,18 @@ enum XBeeType {
   XBEE3_LTEM_ATT = 0xB08,  // Digi XBee3 Cellular LTE-M
 };
 
-class TinyGsmXBee
-    : public TinyGsmModem<TinyGsmXBee>,
-      public TinyGsmGPRS<TinyGsmXBee>,
-      public TinyGsmWifi<TinyGsmXBee>,
-      public TinyGsmTCP<TinyGsmXBee, NO_MODEM_BUFFER, TINY_GSM_MUX_COUNT>,
-      public TinyGsmSSL<TinyGsmXBee>,
-      public TinyGsmSMS<TinyGsmXBee>,
-      public TinyGsmBattery<TinyGsmXBee>,
-      public TinyGsmTemperature<TinyGsmXBee> {
+class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
+                    public TinyGsmGPRS<TinyGsmXBee>,
+                    public TinyGsmWifi<TinyGsmXBee>,
+                    public TinyGsmTCP<TinyGsmXBee, TINY_GSM_MUX_COUNT>,
+                    public TinyGsmSSL<TinyGsmXBee>,
+                    public TinyGsmSMS<TinyGsmXBee>,
+                    public TinyGsmBattery<TinyGsmXBee>,
+                    public TinyGsmTemperature<TinyGsmXBee> {
   friend class TinyGsmModem<TinyGsmXBee>;
   friend class TinyGsmGPRS<TinyGsmXBee>;
   friend class TinyGsmWifi<TinyGsmXBee>;
-  friend class TinyGsmTCP<TinyGsmXBee, NO_MODEM_BUFFER, TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmTCP<TinyGsmXBee, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmSSL<TinyGsmXBee>;
   friend class TinyGsmSMS<TinyGsmXBee>;
   friend class TinyGsmBattery<TinyGsmXBee>;
@@ -1115,13 +1115,6 @@ class TinyGsmXBee
     }
 
     return len;
-  }
-
-  size_t modemRead(size_t, uint8_t) {
-    return 0;
-  }
-  size_t modemGetAvailable(uint8_t) {
-    return 0;
   }
 
   // NOTE:  The CI command returns the status of the TCP connection as open only

@@ -13,6 +13,7 @@
 // #define TINY_GSM_DEBUG Serial
 
 #define TINY_GSM_MUX_COUNT 5
+#define TINY_GSM_NO_MODEM_BUFFER
 
 #include "TinyGsmModem.tpp"
 #include "TinyGsmSSL.tpp"
@@ -37,14 +38,13 @@ enum RegStatus {
   REG_UNKNOWN   = 6,
 };
 
-class TinyGsmESP8266
-    : public TinyGsmModem<TinyGsmESP8266>,
-      public TinyGsmWifi<TinyGsmESP8266>,
-      public TinyGsmTCP<TinyGsmESP8266, NO_MODEM_BUFFER, TINY_GSM_MUX_COUNT>,
-      public TinyGsmSSL<TinyGsmESP8266> {
+class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
+                       public TinyGsmWifi<TinyGsmESP8266>,
+                       public TinyGsmTCP<TinyGsmESP8266, TINY_GSM_MUX_COUNT>,
+                       public TinyGsmSSL<TinyGsmESP8266> {
   friend class TinyGsmModem<TinyGsmESP8266>;
   friend class TinyGsmWifi<TinyGsmESP8266>;
-  friend class TinyGsmTCP<TinyGsmESP8266, NO_MODEM_BUFFER, TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmTCP<TinyGsmESP8266, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmSSL<TinyGsmESP8266>;
 
   /*
@@ -299,13 +299,6 @@ class TinyGsmESP8266
     stream.flush();
     if (waitResponse(10000L, GF(GSM_NL "SEND OK" GSM_NL)) != 1) { return 0; }
     return len;
-  }
-
-  size_t modemRead(size_t, uint8_t) {
-    return 0;
-  }
-  size_t modemGetAvailable(uint8_t) {
-    return 0;
   }
 
   bool modemGetConnected(uint8_t mux) {

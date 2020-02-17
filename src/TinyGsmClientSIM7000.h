@@ -13,6 +13,7 @@
 // #define TINY_GSM_USE_HEX
 
 #define TINY_GSM_MUX_COUNT 8
+#define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
 
 #include "TinyGsmBattery.tpp"
 #include "TinyGsmGPRS.tpp"
@@ -39,16 +40,14 @@ enum RegStatus {
 
 class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
                        public TinyGsmGPRS<TinyGsmSim7000>,
-                       public TinyGsmTCP<TinyGsmSim7000, READ_AND_CHECK_SIZE,
-                                         TINY_GSM_MUX_COUNT>,
+                       public TinyGsmTCP<TinyGsmSim7000, TINY_GSM_MUX_COUNT>,
                        public TinyGsmSMS<TinyGsmSim7000>,
                        public TinyGsmGPS<TinyGsmSim7000>,
                        public TinyGsmTime<TinyGsmSim7000>,
                        public TinyGsmBattery<TinyGsmSim7000> {
   friend class TinyGsmModem<TinyGsmSim7000>;
   friend class TinyGsmGPRS<TinyGsmSim7000>;
-  friend class TinyGsmTCP<TinyGsmSim7000, READ_AND_CHECK_SIZE,
-                          TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmTCP<TinyGsmSim7000, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmSMS<TinyGsmSim7000>;
   friend class TinyGsmGPS<TinyGsmSim7000>;
   friend class TinyGsmTime<TinyGsmSim7000>;

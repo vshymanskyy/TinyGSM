@@ -13,6 +13,7 @@
 // #define TINY_GSM_DEBUG Serial
 
 #define TINY_GSM_MUX_COUNT 7
+#define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
 
 #include "TinyGsmBattery.tpp"
 #include "TinyGsmCalling.tpp"
@@ -40,21 +41,19 @@ enum RegStatus {
   REG_UNKNOWN      = 4,
 };
 
-class TinyGsmUBLOX
-    : public TinyGsmModem<TinyGsmUBLOX>,
-      public TinyGsmGPRS<TinyGsmUBLOX>,
-      public TinyGsmTCP<TinyGsmUBLOX, READ_AND_CHECK_SIZE, TINY_GSM_MUX_COUNT>,
-      public TinyGsmSSL<TinyGsmUBLOX>,
-      public TinyGsmCalling<TinyGsmUBLOX>,
-      public TinyGsmSMS<TinyGsmUBLOX>,
-      public TinyGsmGSMLocation<TinyGsmUBLOX>,
-      public TinyGsmGPS<TinyGsmUBLOX>,
-      public TinyGsmTime<TinyGsmUBLOX>,
-      public TinyGsmBattery<TinyGsmUBLOX> {
+class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
+                     public TinyGsmGPRS<TinyGsmUBLOX>,
+                     public TinyGsmTCP<TinyGsmUBLOX, TINY_GSM_MUX_COUNT>,
+                     public TinyGsmSSL<TinyGsmUBLOX>,
+                     public TinyGsmCalling<TinyGsmUBLOX>,
+                     public TinyGsmSMS<TinyGsmUBLOX>,
+                     public TinyGsmGSMLocation<TinyGsmUBLOX>,
+                     public TinyGsmGPS<TinyGsmUBLOX>,
+                     public TinyGsmTime<TinyGsmUBLOX>,
+                     public TinyGsmBattery<TinyGsmUBLOX> {
   friend class TinyGsmModem<TinyGsmUBLOX>;
   friend class TinyGsmGPRS<TinyGsmUBLOX>;
-  friend class TinyGsmTCP<TinyGsmUBLOX, READ_AND_CHECK_SIZE,
-                          TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmTCP<TinyGsmUBLOX, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmSSL<TinyGsmUBLOX>;
   friend class TinyGsmCalling<TinyGsmUBLOX>;
   friend class TinyGsmSMS<TinyGsmUBLOX>;

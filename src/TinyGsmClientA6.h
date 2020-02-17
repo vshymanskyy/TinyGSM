@@ -13,6 +13,7 @@
 // #define TINY_GSM_DEBUG Serial
 
 #define TINY_GSM_MUX_COUNT 8
+#define TINY_GSM_NO_MODEM_BUFFER
 
 #include "TinyGsmBattery.tpp"
 #include "TinyGsmCalling.tpp"
@@ -37,17 +38,16 @@ enum RegStatus {
   REG_UNKNOWN      = 4,
 };
 
-class TinyGsmA6
-    : public TinyGsmModem<TinyGsmA6>,
-      public TinyGsmGPRS<TinyGsmA6>,
-      public TinyGsmTCP<TinyGsmA6, NO_MODEM_BUFFER, TINY_GSM_MUX_COUNT>,
-      public TinyGsmCalling<TinyGsmA6>,
-      public TinyGsmSMS<TinyGsmA6>,
-      public TinyGsmTime<TinyGsmA6>,
-      public TinyGsmBattery<TinyGsmA6> {
+class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
+                  public TinyGsmGPRS<TinyGsmA6>,
+                  public TinyGsmTCP<TinyGsmA6, TINY_GSM_MUX_COUNT>,
+                  public TinyGsmCalling<TinyGsmA6>,
+                  public TinyGsmSMS<TinyGsmA6>,
+                  public TinyGsmTime<TinyGsmA6>,
+                  public TinyGsmBattery<TinyGsmA6> {
   friend class TinyGsmModem<TinyGsmA6>;
   friend class TinyGsmGPRS<TinyGsmA6>;
-  friend class TinyGsmTCP<TinyGsmA6, NO_MODEM_BUFFER, TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmTCP<TinyGsmA6, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmCalling<TinyGsmA6>;
   friend class TinyGsmSMS<TinyGsmA6>;
   friend class TinyGsmTime<TinyGsmA6>;
@@ -437,13 +437,6 @@ class TinyGsmA6
     stream.flush();
     if (waitResponse(10000L, GFP(GSM_OK), GF(GSM_NL "FAIL")) != 1) { return 0; }
     return len;
-  }
-
-  size_t modemRead(size_t, uint8_t) {
-    return 0;
-  }
-  size_t modemGetAvailable(uint8_t) {
-    return 0;
   }
 
   bool modemGetConnected(uint8_t) {

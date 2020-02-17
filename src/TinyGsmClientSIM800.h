@@ -14,6 +14,7 @@
 // #define TINY_GSM_USE_HEX
 
 #define TINY_GSM_MUX_COUNT 5
+#define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
 
 #include "TinyGsmBattery.tpp"
 #include "TinyGsmCalling.tpp"
@@ -39,20 +40,18 @@ enum RegStatus {
   REG_OK_ROAMING   = 5,
   REG_UNKNOWN      = 4,
 };
-class TinyGsmSim800
-    : public TinyGsmModem<TinyGsmSim800>,
-      public TinyGsmGPRS<TinyGsmSim800>,
-      public TinyGsmTCP<TinyGsmSim800, READ_AND_CHECK_SIZE, TINY_GSM_MUX_COUNT>,
-      public TinyGsmSSL<TinyGsmSim800>,
-      public TinyGsmCalling<TinyGsmSim800>,
-      public TinyGsmSMS<TinyGsmSim800>,
-      public TinyGsmGSMLocation<TinyGsmSim800>,
-      public TinyGsmTime<TinyGsmSim800>,
-      public TinyGsmBattery<TinyGsmSim800> {
+class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
+                      public TinyGsmGPRS<TinyGsmSim800>,
+                      public TinyGsmTCP<TinyGsmSim800, TINY_GSM_MUX_COUNT>,
+                      public TinyGsmSSL<TinyGsmSim800>,
+                      public TinyGsmCalling<TinyGsmSim800>,
+                      public TinyGsmSMS<TinyGsmSim800>,
+                      public TinyGsmGSMLocation<TinyGsmSim800>,
+                      public TinyGsmTime<TinyGsmSim800>,
+                      public TinyGsmBattery<TinyGsmSim800> {
   friend class TinyGsmModem<TinyGsmSim800>;
   friend class TinyGsmGPRS<TinyGsmSim800>;
-  friend class TinyGsmTCP<TinyGsmSim800, READ_AND_CHECK_SIZE,
-                          TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmTCP<TinyGsmSim800, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmSSL<TinyGsmSim800>;
   friend class TinyGsmCalling<TinyGsmSim800>;
   friend class TinyGsmSMS<TinyGsmSim800>;

@@ -12,6 +12,7 @@
 // #define TINY_GSM_DEBUG Serial
 
 #define TINY_GSM_MUX_COUNT 6
+#define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
 
 #include "TinyGsmCalling.tpp"
 #include "TinyGsmGPRS.tpp"
@@ -50,8 +51,7 @@ enum SocketStatus {
 class TinyGsmSequansMonarch
     : public TinyGsmModem<TinyGsmSequansMonarch>,
       public TinyGsmGPRS<TinyGsmSequansMonarch>,
-      public TinyGsmTCP<TinyGsmSequansMonarch, READ_AND_CHECK_SIZE,
-                        TINY_GSM_MUX_COUNT>,
+      public TinyGsmTCP<TinyGsmSequansMonarch, TINY_GSM_MUX_COUNT>,
       public TinyGsmSSL<TinyGsmSequansMonarch>,
       public TinyGsmCalling<TinyGsmSequansMonarch>,
       public TinyGsmSMS<TinyGsmSequansMonarch>,
@@ -59,8 +59,7 @@ class TinyGsmSequansMonarch
       public TinyGsmTemperature<TinyGsmSequansMonarch> {
   friend class TinyGsmModem<TinyGsmSequansMonarch>;
   friend class TinyGsmGPRS<TinyGsmSequansMonarch>;
-  friend class TinyGsmTCP<TinyGsmSequansMonarch, READ_AND_CHECK_SIZE,
-                          TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmTCP<TinyGsmSequansMonarch, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmSSL<TinyGsmSequansMonarch>;
   friend class TinyGsmCalling<TinyGsmSequansMonarch>;
   friend class TinyGsmSMS<TinyGsmSequansMonarch>;

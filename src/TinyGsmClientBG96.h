@@ -13,6 +13,7 @@
 // #define TINY_GSM_DEBUG Serial
 
 #define TINY_GSM_MUX_COUNT 12
+#define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
 
 #include "TinyGsmBattery.tpp"
 #include "TinyGsmCalling.tpp"
@@ -37,17 +38,16 @@ enum RegStatus {
   REG_UNKNOWN      = 4,
 };
 
-class TinyGsmBG96
-    : public TinyGsmModem<TinyGsmBG96>,
-      public TinyGsmGPRS<TinyGsmBG96>,
-      public TinyGsmTCP<TinyGsmBG96, READ_AND_CHECK_SIZE, TINY_GSM_MUX_COUNT>,
-      public TinyGsmCalling<TinyGsmBG96>,
-      public TinyGsmSMS<TinyGsmBG96>,
-      public TinyGsmTime<TinyGsmBG96>,
-      public TinyGsmBattery<TinyGsmBG96> {
+class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
+                    public TinyGsmGPRS<TinyGsmBG96>,
+                    public TinyGsmTCP<TinyGsmBG96, TINY_GSM_MUX_COUNT>,
+                    public TinyGsmCalling<TinyGsmBG96>,
+                    public TinyGsmSMS<TinyGsmBG96>,
+                    public TinyGsmTime<TinyGsmBG96>,
+                    public TinyGsmBattery<TinyGsmBG96> {
   friend class TinyGsmModem<TinyGsmBG96>;
   friend class TinyGsmGPRS<TinyGsmBG96>;
-  friend class TinyGsmTCP<TinyGsmBG96, READ_AND_CHECK_SIZE, TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmTCP<TinyGsmBG96, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmCalling<TinyGsmBG96>;
   friend class TinyGsmSMS<TinyGsmBG96>;
   friend class TinyGsmTime<TinyGsmBG96>;

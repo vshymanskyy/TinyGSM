@@ -13,6 +13,7 @@
 // #define TINY_GSM_DEBUG Serial
 
 #define TINY_GSM_MUX_COUNT 7
+#define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
 
 #include "TinyGsmBattery.tpp"
 #include "TinyGsmGPRS.tpp"
@@ -40,21 +41,19 @@ enum RegStatus {
   REG_UNKNOWN      = 4,
 };
 
-class TinyGsmSaraR4
-    : public TinyGsmModem<TinyGsmSaraR4>,
-      public TinyGsmGPRS<TinyGsmSaraR4>,
-      public TinyGsmTCP<TinyGsmSaraR4, READ_AND_CHECK_SIZE, TINY_GSM_MUX_COUNT>,
-      public TinyGsmSSL<TinyGsmSaraR4>,
-      public TinyGsmBattery<TinyGsmSaraR4>,
-      public TinyGsmGSMLocation<TinyGsmSaraR4>,
-      public TinyGsmGPS<TinyGsmSaraR4>,
-      public TinyGsmSMS<TinyGsmSaraR4>,
-      public TinyGsmTemperature<TinyGsmSaraR4>,
-      public TinyGsmTime<TinyGsmSaraR4> {
+class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
+                      public TinyGsmGPRS<TinyGsmSaraR4>,
+                      public TinyGsmTCP<TinyGsmSaraR4, TINY_GSM_MUX_COUNT>,
+                      public TinyGsmSSL<TinyGsmSaraR4>,
+                      public TinyGsmBattery<TinyGsmSaraR4>,
+                      public TinyGsmGSMLocation<TinyGsmSaraR4>,
+                      public TinyGsmGPS<TinyGsmSaraR4>,
+                      public TinyGsmSMS<TinyGsmSaraR4>,
+                      public TinyGsmTemperature<TinyGsmSaraR4>,
+                      public TinyGsmTime<TinyGsmSaraR4> {
   friend class TinyGsmModem<TinyGsmSaraR4>;
   friend class TinyGsmGPRS<TinyGsmSaraR4>;
-  friend class TinyGsmTCP<TinyGsmSaraR4, READ_AND_CHECK_SIZE,
-                          TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmTCP<TinyGsmSaraR4, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmSSL<TinyGsmSaraR4>;
   friend class TinyGsmBattery<TinyGsmSaraR4>;
   friend class TinyGsmGSMLocation<TinyGsmSaraR4>;

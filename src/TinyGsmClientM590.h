@@ -13,6 +13,7 @@
 // #define TINY_GSM_DEBUG Serial
 
 #define TINY_GSM_MUX_COUNT 2
+#define TINY_GSM_NO_MODEM_BUFFER
 
 #include "TinyGsmGPRS.tpp"
 #include "TinyGsmModem.tpp"
@@ -35,15 +36,14 @@ enum RegStatus {
   REG_UNKNOWN      = 4,
 };
 
-class TinyGsmM590
-    : public TinyGsmModem<TinyGsmM590>,
-      public TinyGsmGPRS<TinyGsmM590>,
-      public TinyGsmTCP<TinyGsmM590, NO_MODEM_BUFFER, TINY_GSM_MUX_COUNT>,
-      public TinyGsmSMS<TinyGsmM590>,
-      public TinyGsmTime<TinyGsmM590> {
+class TinyGsmM590 : public TinyGsmModem<TinyGsmM590>,
+                    public TinyGsmGPRS<TinyGsmM590>,
+                    public TinyGsmTCP<TinyGsmM590, TINY_GSM_MUX_COUNT>,
+                    public TinyGsmSMS<TinyGsmM590>,
+                    public TinyGsmTime<TinyGsmM590> {
   friend class TinyGsmModem<TinyGsmM590>;
   friend class TinyGsmGPRS<TinyGsmM590>;
-  friend class TinyGsmTCP<TinyGsmM590, NO_MODEM_BUFFER, TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmTCP<TinyGsmM590, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmSMS<TinyGsmM590>;
   friend class TinyGsmTime<TinyGsmM590>;
 
@@ -315,13 +315,6 @@ class TinyGsmM590
     if (waitResponse(30000L, GF(GSM_NL "+TCPSEND:")) != 1) { return 0; }
     streamSkipUntil('\n');
     return len;
-  }
-
-  size_t modemRead(size_t, uint8_t) {
-    return 0;
-  }
-  size_t modemGetAvailable(uint8_t) {
-    return 0;
   }
 
   bool modemGetConnected(uint8_t mux) {
