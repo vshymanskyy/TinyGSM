@@ -48,15 +48,21 @@ void loop() {
 // Test the calling functions
 #if defined(TINY_GSM_MODEM_HAS_CALLING)
   modem.callNumber(String("+380000000000"));
+ #if not defined(TINY_GSM_MODEM_SEQUANS_MONARCH)
   modem.callAnswer();
+  #endif
   modem.callHangup();
 #endif
 
 // Test the SMS functions
 #if defined(TINY_GSM_MODEM_HAS_SMS)
+ #if not defined(TINY_GSM_MODEM_XBEE) && not defined(TINY_GSM_MODEM_SARAR4)
   modem.sendUSSD("*111#");
+  #endif
   modem.sendSMS(String("+380000000000"), String("Hello from "));
+ #if not defined(TINY_GSM_MODEM_XBEE) && not defined(TINY_GSM_MODEM_M590) && not defined(TINY_GSM_MODEM_SARAR4)
   modem.sendSMS_UTF16("+380000000000", "Hello", 5);
+  #endif
 #endif
 
 // Test the GSM location functions
@@ -147,9 +153,4 @@ void loop() {
 #if defined(TINY_GSM_MODEM_HAS_WIFI)
   modem.networkDisconnect();
 #endif
-
-  // Test battery and temperature functions
-  // modem.getBattVoltage();
-  // modem.getBattPercent();
-  // modem.getTemperature();
 }
