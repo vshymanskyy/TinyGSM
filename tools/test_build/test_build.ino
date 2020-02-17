@@ -33,8 +33,8 @@ void loop() {
 
   // Test Power functions
   modem.restart();
-  // modem.sleepEnable();
-  modem.radioOff();
+  // modem.sleepEnable();  // Not available for all modems
+  // modem.radioOff();  // Not available for all modems
   modem.poweroff();
 
 // Test the SIM card functions
