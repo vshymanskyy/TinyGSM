@@ -92,7 +92,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
     }
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
-    virtual void stop(uint32_t maxWaitMs) {
+    void stop(uint32_t maxWaitMs) {
       dumpModemBuffer(maxWaitMs);
       at->sendAT(GF("+QICLOSE="), mux);
       sock_connected = false;

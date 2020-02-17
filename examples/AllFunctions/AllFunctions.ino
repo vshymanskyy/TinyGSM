@@ -39,7 +39,7 @@
 
 // or Software Serial on Uno, Nano
 //#include <SoftwareSerial.h>
-//SoftwareSerial SerialAT(2, 3); // RX, TX
+// SoftwareSerial SerialAT(2, 3); // RX, TX
 
 // See all AT commands, if wanted
 // #define DUMP_AT_COMMANDS
@@ -58,9 +58,9 @@
 #define TINY_GSM_TEST_WIFI false
 #define TINY_GSM_TEST_TCP true
 #define TINY_GSM_TEST_SSL true
-#define TINY_GSM_TEST_CALL false
-#define TINY_GSM_TEST_SMS false
-#define TINY_GSM_TEST_USSD false
+#define TINY_GSM_TEST_CALL true
+#define TINY_GSM_TEST_SMS true
+#define TINY_GSM_TEST_USSD true
 #define TINY_GSM_TEST_BATTERY true
 #define TINY_GSM_TEST_TEMPERATURE true
 #define TINY_GSM_TEST_GSM_LOCATION true
@@ -332,19 +332,19 @@ void loop() {
   int sec = 0;
   for (int8_t i = 5; i; i--) {
     DBG("Waiting for GSM location");
-  if (modem.getGsmLocation(&lat, &lon, &accuracy, &year, &month, &day, &hour,
-                           &min, &sec)) {
-    DBG("Latitude:", String(lat, 8));
-    DBG("Longitude:", String(lon, 8));
-    DBG("Accuracy:", accuracy);
-    DBG("Year:", year);
-    DBG("Month:", month);
-    DBG("Day:", day);
-    DBG("Hour:", hour);
-    DBG("Minute:", min);
-    DBG("Second:", sec);
+    if (modem.getGsmLocation(&lat, &lon, &accuracy, &year, &month, &day, &hour,
+                             &min, &sec)) {
+      DBG("Latitude:", String(lat, 8));
+      DBG("Longitude:", String(lon, 8));
+      DBG("Accuracy:", accuracy);
+      DBG("Year:", year);
+      DBG("Month:", month);
+      DBG("Day:", day);
+      DBG("Hour:", hour);
+      DBG("Minute:", min);
+      DBG("Second:", sec);
       break;
-  } else {
+    } else {
       DBG("Couldn't get GSM location, retrying in 10s.");
       delay(10000L);
     }
@@ -372,22 +372,22 @@ void loop() {
   for (int8_t i = 5; i; i--) {
     DBG("Waiting for GPS/GNSS/GLONASS location");
     if (modem.getGPS(&lat2, &lon2, &speed2, &alt2, &vsat2, &usat2, &accuracy2,
-                   &year2, &month2, &day2, &hour2, &min2, &sec2)) {
-    DBG("Latitude:", String(lat2, 8));
-    DBG("Longitude:", String(lon2, 8));
-    DBG("Speed:", speed2);
-    DBG("Altitude:", alt2);
-    DBG("Visible Satellites:", vsat2);
-    DBG("Used Satellites:", usat2);
-    DBG("Accuracy:", accuracy2);
-    DBG("Year:", year2);
-    DBG("Month:", month2);
-    DBG("Day:", day2);
-    DBG("Hour:", hour2);
-    DBG("Minute:", min2);
-    DBG("Second:", sec2);
+                    &year2, &month2, &day2, &hour2, &min2, &sec2)) {
+      DBG("Latitude:", String(lat2, 8));
+      DBG("Longitude:", String(lon2, 8));
+      DBG("Speed:", speed2);
+      DBG("Altitude:", alt2);
+      DBG("Visible Satellites:", vsat2);
+      DBG("Used Satellites:", usat2);
+      DBG("Accuracy:", accuracy2);
+      DBG("Year:", year2);
+      DBG("Month:", month2);
+      DBG("Day:", day2);
+      DBG("Hour:", hour2);
+      DBG("Minute:", min2);
+      DBG("Second:", sec2);
       break;
-  } else {
+    } else {
       DBG("Couldn't get GSM location, retrying in 10s.");
       delay(10000L);
     }

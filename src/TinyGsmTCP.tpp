@@ -22,7 +22,7 @@
 // Because of the ordering of resolution of overrides in templates, these need
 // to be written out every time.  This macro is to shorten that.
 #define TINY_GSM_CLIENT_CONNECT_OVERRIDES                             \
-  virtual int connect(IPAddress ip, uint16_t port, int timeout_s) {   \
+  int connect(IPAddress ip, uint16_t port, int timeout_s) {   \
     return connect(TinyGsmStringFromIp(ip).c_str(), port, timeout_s); \
   }                                                                   \
   int connect(const char* host, uint16_t port) override {             \

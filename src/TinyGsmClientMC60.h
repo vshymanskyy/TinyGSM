@@ -93,7 +93,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60>,
     }
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
-    virtual void stop(uint32_t maxWaitMs) {
+    void stop(uint32_t maxWaitMs) {
       uint32_t startMillis = millis();
       dumpModemBuffer(maxWaitMs);
       at->sendAT(GF("+QICLOSE="), mux);

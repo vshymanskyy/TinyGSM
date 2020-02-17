@@ -118,7 +118,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
       return connect(ip, port, 120);
     }
 
-    virtual void stop(uint32_t maxWaitMs) {
+    void stop(uint32_t maxWaitMs) {
       uint32_t startMillis = millis();
       dumpModemBuffer(maxWaitMs);
       // We want to use an async socket close because the syncrhonous close of
@@ -186,7 +186,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
       at->maintain();
       return sock_connected;
     }
-    virtual int connect(IPAddress ip, uint16_t port, int timeout_s) {
+    int connect(IPAddress ip, uint16_t port, int timeout_s) override {
       return connect(TinyGsmStringFromIp(ip).c_str(), port, timeout_s);
     }
     int connect(const char* host, uint16_t port) override {

@@ -98,7 +98,7 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
     }
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
-    virtual void stop(uint32_t maxWaitMs) {
+    void stop(uint32_t maxWaitMs) {
       dumpModemBuffer(maxWaitMs);
       at->sendAT(GF("+CIPCLOSE="), mux, GF(",1"));  // Quick close
       sock_connected = false;

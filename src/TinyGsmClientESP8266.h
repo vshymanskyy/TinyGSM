@@ -81,7 +81,7 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
     }
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
-    virtual void stop(uint32_t maxWaitMs) {
+    void stop(uint32_t maxWaitMs) {
       TINY_GSM_YIELD();
       at->sendAT(GF("+CIPCLOSE="), mux);
       sock_connected = false;
