@@ -129,7 +129,7 @@ class TinyGsmTCP {
       if (!rx.size() && sock_connected) { at->maintain(); }
       return rx.size();
 
-#elif defined TINY_GSM_NO_MODEM_BUFFER
+#elif defined TINY_GSM_BUFFER_READ_NO_CHECK
       // Returns the combined number of characters available in the TinyGSM
       // fifo and the modem chips internal fifo.
       if (!rx.size()) { at->maintain(); }
