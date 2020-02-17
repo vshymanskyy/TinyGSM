@@ -263,7 +263,7 @@ class TinyGsmTCP {
     // closes until all data is read from the buffer.
     // Doing it this way allows the external mcu to find and get all of the
     // data that it wants from the socket even if it was closed externally.
-    void inline dumpModemBuffer(uint32_t maxWaitMs) {
+    inline void dumpModemBuffer(uint32_t maxWaitMs) {
       TINY_GSM_YIELD();
       rx.clear();
       at->maintain();
@@ -317,7 +317,7 @@ class TinyGsmTCP {
   // character return?  Will wait once in the first "while
   // !stream.available()" and then will wait again in the stream.read()
   // function.
-  void inline moveCharFromStreamToFifo(uint8_t mux) {
+  inline void moveCharFromStreamToFifo(uint8_t mux) {
     uint32_t startMillis = millis();
     while (!thisModem().stream.available() &&
            (millis() - startMillis < thisModem().sockets[mux]->_timeout)) {

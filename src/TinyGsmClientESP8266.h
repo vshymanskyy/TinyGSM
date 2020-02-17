@@ -202,25 +202,25 @@ class TinyGsmESP8266
   RegStatus getRegistrationStatus() {
     sendAT(GF("+CIPSTATUS"));
     if (waitResponse(3000, GF("STATUS:")) != 1) return REG_UNKNOWN;
-    int status = waitResponse(GFP(GSM_ERROR), GF("2"), GF("3"), GF("4"),
-                              GF("5"));
+    int8_t status = waitResponse(GFP(GSM_ERROR), GF("2"), GF("3"), GF("4"),
+                                 GF("5"));
     waitResponse();  // Returns an OK after the status
     return (RegStatus)status;
   }
 
  protected:
-  int16_t getSignalQualityImpl() {
+  int8_t getSignalQualityImpl() {
     sendAT(GF("+CWJAP_CUR?"));
-    int res1 = waitResponse(GF("No AP"), GF("+CWJAP_CUR:"));
+    int8_t res1 = waitResponse(GF("No AP"), GF("+CWJAP_CUR:"));
     if (res1 != 2) {
       waitResponse();
       return 0;
     }
-    streamSkipUntil(',');          // Skip SSID
-    streamSkipUntil(',');          // Skip BSSID/MAC address
-    streamSkipUntil(',');          // Skip Chanel number
-    int res2 = stream.parseInt();  // Read RSSI
-    waitResponse();                // Returns an OK after the value
+    streamSkipUntil(',');             // Skip SSID
+    streamSkipUntil(',');             // Skip BSSID/MAC address
+    streamSkipUntil(',');             // Skip Chanel number
+    int8_t res2 = stream.parseInt();  // Read RSSI
+    waitResponse();                   // Returns an OK after the value
     return res2;
   }
 
@@ -243,7 +243,7 @@ class TinyGsmESP8266
 
   String getLocalIPImpl() {
     sendAT(GF("+CIPSTA_CUR?"));
-    int res1 = waitResponse(GF("ERROR"), GF("+CWJAP_CUR:"));
+    int8_t res1 = waitResponse(GF("ERROR"), GF("+CWJAP_CUR:"));
     if (res1 != 2) { return ""; }
     String res2 = stream.readStringUntil('"');
     waitResponse();
@@ -285,8 +285,8 @@ class TinyGsmESP8266
            GF("\",\""), host, GF("\","), port, GF(","),
            TINY_GSM_TCP_KEEP_ALIVE);
     // TODO(?): Check mux
-    int rsp = waitResponse(timeout_ms, GFP(GSM_OK), GFP(GSM_ERROR),
-                           GF("ALREADY CONNECT"));
+    int8_t rsp = waitResponse(timeout_ms, GFP(GSM_OK), GFP(GSM_ERROR),
+                              GF("ALREADY CONNECT"));
     // if (rsp == 3) waitResponse();
     // May return "ERROR" after the "ALREADY CONNECT"
     return (1 == rsp);
@@ -311,8 +311,8 @@ class TinyGsmESP8266
   bool modemGetConnected(uint8_t mux) {
     sendAT(GF("+CIPSTATUS"));
     if (waitResponse(3000, GF("STATUS:")) != 1) { return false; }
-    int status = waitResponse(GFP(GSM_ERROR), GF("2"), GF("3"), GF("4"),
-                              GF("5"));
+    int8_t status = waitResponse(GFP(GSM_ERROR), GF("2"), GF("3"), GF("4"),
+                                 GF("5"));
     if (status != 3) {
       // if the status is anything but 3, there are no connections open
       waitResponse();  // Returns an OK after the status
@@ -326,7 +326,7 @@ class TinyGsmESP8266
       uint8_t has_status = waitResponse(GF("+CIPSTATUS:"), GFP(GSM_OK),
                                         GFP(GSM_ERROR));
       if (has_status == 1) {
-        int returned_mux = streamGetInt(',');
+        int8_t returned_mux = streamGetInt(',');
         streamSkipUntil(',');   // Skip mux
         streamSkipUntil(',');   // Skip type
         streamSkipUntil(',');   // Skip remote IP
@@ -348,10 +348,10 @@ class TinyGsmESP8266
    */
  public:
   // TODO(vshymanskyy): Optimize this!
-  uint8_t waitResponse(uint32_t timeout_ms, String& data,
-                       GsmConstStr r1 = GFP(GSM_OK),
-                       GsmConstStr r2 = GFP(GSM_ERROR), GsmConstStr r3 = NULL,
-                       GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
+  int8_t waitResponse(uint32_t timeout_ms, String& data,
+                      GsmConstStr r1 = GFP(GSM_OK),
+                      GsmConstStr r2 = GFP(GSM_ERROR), GsmConstStr r3 = NULL,
+                      GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
     /*String r1s(r1); r1s.trim();
     String r2s(r2); r2s.trim();
     String r3s(r3); r3s.trim();
@@ -365,7 +365,7 @@ class TinyGsmESP8266
       TINY_GSM_YIELD();
       while (stream.available() > 0) {
         TINY_GSM_YIELD();
-        int a = stream.read();
+        int8_t a = stream.read();
         if (a <= 0) continue;  // Skip 0x00 bytes, just in case
         data += static_cast<char>(a);
         if (r1 && data.endsWith(r1)) {
@@ -384,9 +384,9 @@ class TinyGsmESP8266
           index = 5;
           goto finish;
         } else if (data.endsWith(GF("+IPD,"))) {
-          int mux      = streamGetInt(',');
-          int len      = streamGetInt(':');
-          int len_orig = len;
+          int8_t  mux      = streamGetInt(',');
+          int16_t len      = streamGetInt(':');
+          int16_t len_orig = len;
           if (len > sockets[mux]->rx.free()) {
             DBG("### Buffer overflow: ", len, "received vs",
                 sockets[mux]->rx.free(), "available");
@@ -401,10 +401,10 @@ class TinyGsmESP8266
           }
           data = "";
         } else if (data.endsWith(GF("CLOSED"))) {
-          int muxStart =
+          int8_t muxStart =
               TinyGsmMax(0, data.lastIndexOf(GSM_NL, data.length() - 8));
-          int coma = data.indexOf(',', muxStart);
-          int mux  = data.substring(muxStart, coma).toInt();
+          int8_t coma = data.indexOf(',', muxStart);
+          int8_t mux  = data.substring(muxStart, coma).toInt();
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
             sockets[mux]->sock_connected = false;
           }
@@ -424,16 +424,16 @@ class TinyGsmESP8266
     return index;
   }
 
-  uint8_t waitResponse(uint32_t timeout_ms, GsmConstStr r1 = GFP(GSM_OK),
-                       GsmConstStr r2 = GFP(GSM_ERROR), GsmConstStr r3 = NULL,
-                       GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
+  int8_t waitResponse(uint32_t timeout_ms, GsmConstStr r1 = GFP(GSM_OK),
+                      GsmConstStr r2 = GFP(GSM_ERROR), GsmConstStr r3 = NULL,
+                      GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
     String data;
     return waitResponse(timeout_ms, data, r1, r2, r3, r4, r5);
   }
 
-  uint8_t waitResponse(GsmConstStr r1 = GFP(GSM_OK),
-                       GsmConstStr r2 = GFP(GSM_ERROR), GsmConstStr r3 = NULL,
-                       GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
+  int8_t waitResponse(GsmConstStr r1 = GFP(GSM_OK),
+                      GsmConstStr r2 = GFP(GSM_ERROR), GsmConstStr r3 = NULL,
+                      GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
     return waitResponse(1000, r1, r2, r3, r4, r5);
   }
 

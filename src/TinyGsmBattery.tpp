@@ -66,7 +66,7 @@ class TinyGsmBattery {
     if (thisModem().waitResponse(GF("+CBC:")) != 1) { return false; }
     thisModem().streamSkipUntil(',');  // Skip battery charge status
     // Read battery charge level
-    int res = thisModem().streamGetInt(',');
+    int8_t res = thisModem().streamGetInt(',');
     // Wait for final OK
     thisModem().waitResponse();
     return res;
@@ -76,7 +76,7 @@ class TinyGsmBattery {
     thisModem().sendAT(GF("+CBC"));
     if (thisModem().waitResponse(GF("+CBC:")) != 1) { return false; }
     // Read battery charge status
-    int res = thisModem().streamGetInt(',');
+    int8_t res = thisModem().streamGetInt(',');
     // Wait for final OK
     thisModem().waitResponse();
     return res;

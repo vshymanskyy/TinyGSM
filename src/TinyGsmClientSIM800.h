@@ -176,7 +176,7 @@ class TinyGsmSim800
     sendAT(GF("+CBATCHK=1"));
     waitResponse();
 
-    int ret = getSimStatus();
+    SimStatus ret = getSimStatus();
     // if the sim isn't ready and a pin has been provided, try to unlock the sim
     if (ret != SIM_READY && pin != NULL && strlen(pin) > 0) {
       simUnlock(pin);
@@ -480,7 +480,7 @@ class TinyGsmSim800
  protected:
   bool modemConnect(const char* host, uint16_t port, uint8_t mux,
                     bool ssl = false, int timeout_s = 75) {
-    int      rsp;
+    int8_t   rsp;
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
 #if !defined(TINY_GSM_MODEM_SIM900)
     sendAT(GF("+CIPSSL="), ssl);
@@ -516,9 +516,9 @@ class TinyGsmSim800
 #endif
     streamSkipUntil(',');  // Skip Rx mode 2/normal or 3/HEX
     streamSkipUntil(',');  // Skip mux
-    int len_requested = streamGetInt(',');
+    int16_t len_requested = streamGetInt(',');
     //  ^^ Requested number of data bytes (1-1460 bytes)to be read
-    int len_confirmed = streamGetInt('\n');
+    int16_t len_confirmed = streamGetInt('\n');
     // ^^ Confirmed number of data bytes to be read, which may be less than
     // requested. 0 indicates that no data can be read. This is actually be the
     // number of bytes that will be remaining after the read
@@ -568,9 +568,9 @@ class TinyGsmSim800
   bool modemGetConnected(uint8_t mux) {
     sendAT(GF("+CIPSTATUS="), mux);
     waitResponse(GF("+CIPSTATUS"));
-    int res = waitResponse(GF(",\"CONNECTED\""), GF(",\"CLOSED\""),
-                           GF(",\"CLOSING\""), GF(",\"REMOTE CLOSING\""),
-                           GF(",\"INITIAL\""));
+    int8_t res = waitResponse(GF(",\"CONNECTED\""), GF(",\"CLOSED\""),
+                              GF(",\"CLOSING\""), GF(",\"REMOTE CLOSING\""),
+                              GF(",\"INITIAL\""));
     waitResponse();
     return 1 == res;
   }
@@ -580,11 +580,11 @@ class TinyGsmSim800
    */
  public:
   // TODO(vshymanskyy): Optimize this!
-  uint8_t waitResponse(uint32_t timeout_ms, String& data,
-                       GsmConstStr r1 = GFP(GSM_OK),
-                       GsmConstStr r2 = GFP(GSM_ERROR),
-                       GsmConstStr r3 = GFP(GSM_CME_ERROR),
-                       GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
+  int8_t waitResponse(uint32_t timeout_ms, String& data,
+                      GsmConstStr r1 = GFP(GSM_OK),
+                      GsmConstStr r2 = GFP(GSM_ERROR),
+                      GsmConstStr r3 = GFP(GSM_CME_ERROR),
+                      GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
     /*String r1s(r1); r1s.trim();
     String r2s(r2); r2s.trim();
     String r3s(r3); r3s.trim();
@@ -598,7 +598,7 @@ class TinyGsmSim800
       TINY_GSM_YIELD();
       while (stream.available() > 0) {
         TINY_GSM_YIELD();
-        int a = stream.read();
+        int8_t a = stream.read();
         if (a <= 0) continue;  // Skip 0x00 bytes, just in case
         data += static_cast<char>(a);
         if (r1 && data.endsWith(r1)) {
@@ -620,9 +620,9 @@ class TinyGsmSim800
           index = 5;
           goto finish;
         } else if (data.endsWith(GF(GSM_NL "+CIPRXGET:"))) {
-          int mode = streamGetInt(',');
+          int8_t mode = streamGetInt(',');
           if (mode == 1) {
-            int mux = streamGetInt('\n');
+            int8_t mux = streamGetInt('\n');
             if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
               sockets[mux]->got_data = true;
             }
@@ -632,8 +632,8 @@ class TinyGsmSim800
             data += mode;
           }
         } else if (data.endsWith(GF(GSM_NL "+RECEIVE:"))) {
-          int mux = streamGetInt(',');
-          int len = streamGetInt('\n');
+          int8_t  mux = streamGetInt(',');
+          int16_t len = streamGetInt('\n');
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
             sockets[mux]->got_data       = true;
             sockets[mux]->sock_available = len;
@@ -641,9 +641,9 @@ class TinyGsmSim800
           data = "";
           DBG("### Got Data:", len, "on", mux);
         } else if (data.endsWith(GF("CLOSED" GSM_NL))) {
-          int nl   = data.lastIndexOf(GSM_NL, data.length() - 8);
-          int coma = data.indexOf(',', nl + 2);
-          int mux  = data.substring(nl + 2, coma).toInt();
+          int8_t nl   = data.lastIndexOf(GSM_NL, data.length() - 8);
+          int8_t coma = data.indexOf(',', nl + 2);
+          int8_t mux  = data.substring(nl + 2, coma).toInt();
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
             sockets[mux]->sock_connected = false;
           }
@@ -663,18 +663,18 @@ class TinyGsmSim800
     return index;
   }
 
-  uint8_t waitResponse(uint32_t timeout_ms, GsmConstStr r1 = GFP(GSM_OK),
-                       GsmConstStr r2 = GFP(GSM_ERROR),
-                       GsmConstStr r3 = GFP(GSM_CME_ERROR),
-                       GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
+  int8_t waitResponse(uint32_t timeout_ms, GsmConstStr r1 = GFP(GSM_OK),
+                      GsmConstStr r2 = GFP(GSM_ERROR),
+                      GsmConstStr r3 = GFP(GSM_CME_ERROR),
+                      GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
     String data;
     return waitResponse(timeout_ms, data, r1, r2, r3, r4, r5);
   }
 
-  uint8_t waitResponse(GsmConstStr r1 = GFP(GSM_OK),
-                       GsmConstStr r2 = GFP(GSM_ERROR),
-                       GsmConstStr r3 = GFP(GSM_CME_ERROR),
-                       GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
+  int8_t waitResponse(GsmConstStr r1 = GFP(GSM_OK),
+                      GsmConstStr r2 = GFP(GSM_ERROR),
+                      GsmConstStr r3 = GFP(GSM_CME_ERROR),
+                      GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
     return waitResponse(1000, r1, r2, r3, r4, r5);
   }
 

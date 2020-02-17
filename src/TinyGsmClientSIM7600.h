@@ -173,7 +173,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     sendAT(GF("+CTZU=1"));
     if (waitResponse(10000L) != 1) { return false; }
 
-    int ret = getSimStatus();
+    SimStatus ret = getSimStatus();
     // if the sim isn't ready and a pin has been provided, try to unlock the sim
     if (ret != SIM_READY && pin != NULL && strlen(pin) > 0) {
       simUnlock(pin);
@@ -598,9 +598,9 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
 #endif
     streamSkipUntil(',');  // Skip Rx mode 2/normal or 3/HEX
     streamSkipUntil(',');  // Skip mux/cid (connecion id)
-    int len_requested = streamGetInt(',');
+    int16_t len_requested = streamGetInt(',');
     //  ^^ Requested number of data bytes (1-1460 bytes)to be read
-    int len_confirmed = streamGetInt('\n');
+    int16_t len_confirmed = streamGetInt('\n');
     // ^^ The data length which not read in the buffer
     for (int i = 0; i < len_requested; i++) {
       uint32_t startMillis = millis();
@@ -664,11 +664,11 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
    */
  public:
   // TODO(vshymanskyy): Optimize this!
-  uint8_t waitResponse(uint32_t timeout_ms, String& data,
-                       GsmConstStr r1 = GFP(GSM_OK),
-                       GsmConstStr r2 = GFP(GSM_ERROR),
-                       GsmConstStr r3 = GFP(GSM_CME_ERROR),
-                       GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
+  int8_t waitResponse(uint32_t timeout_ms, String& data,
+                      GsmConstStr r1 = GFP(GSM_OK),
+                      GsmConstStr r2 = GFP(GSM_ERROR),
+                      GsmConstStr r3 = GFP(GSM_CME_ERROR),
+                      GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
     /*String r1s(r1); r1s.trim();
     String r2s(r2); r2s.trim();
     String r3s(r3); r3s.trim();
@@ -682,7 +682,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       TINY_GSM_YIELD();
       while (stream.available() > 0) {
         TINY_GSM_YIELD();
-        int a = stream.read();
+        int8_t a = stream.read();
         if (a <= 0) continue;  // Skip 0x00 bytes, just in case
         data += static_cast<char>(a);
         if (r1 && data.endsWith(r1)) {
@@ -704,9 +704,9 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
           index = 5;
           goto finish;
         } else if (data.endsWith(GF(GSM_NL "+CIPRXGET:"))) {
-          int mode = streamGetInt(',');
+          int8_t mode = streamGetInt(',');
           if (mode == 1) {
-            int mux = streamGetInt('\n');
+            int8_t mux = streamGetInt('\n');
             if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
               sockets[mux]->got_data = true;
             }
@@ -716,8 +716,8 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
             data += mode;
           }
         } else if (data.endsWith(GF(GSM_NL "+RECEIVE:"))) {
-          int mux = streamGetInt(',');
-          int len = streamGetInt('\n');
+          int8_t  mux = streamGetInt(',');
+          int16_t len = streamGetInt('\n');
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
             sockets[mux]->got_data       = true;
             sockets[mux]->sock_available = len;
@@ -725,7 +725,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
           data = "";
           DBG("### Got Data:", len, "on", mux);
         } else if (data.endsWith(GF("+IPCLOSE:"))) {
-          int mux = streamGetInt(',');
+          int8_t mux = streamGetInt(',');
           streamSkipUntil('\n');  // Skip the reason code
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
             sockets[mux]->sock_connected = false;
@@ -752,18 +752,18 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     return index;
   }
 
-  uint8_t waitResponse(uint32_t timeout_ms, GsmConstStr r1 = GFP(GSM_OK),
-                       GsmConstStr r2 = GFP(GSM_ERROR),
-                       GsmConstStr r3 = GFP(GSM_CME_ERROR),
-                       GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
+  int8_t waitResponse(uint32_t timeout_ms, GsmConstStr r1 = GFP(GSM_OK),
+                      GsmConstStr r2 = GFP(GSM_ERROR),
+                      GsmConstStr r3 = GFP(GSM_CME_ERROR),
+                      GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
     String data;
     return waitResponse(timeout_ms, data, r1, r2, r3, r4, r5);
   }
 
-  uint8_t waitResponse(GsmConstStr r1 = GFP(GSM_OK),
-                       GsmConstStr r2 = GFP(GSM_ERROR),
-                       GsmConstStr r3 = GFP(GSM_CME_ERROR),
-                       GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
+  int8_t waitResponse(GsmConstStr r1 = GFP(GSM_OK),
+                      GsmConstStr r2 = GFP(GSM_ERROR),
+                      GsmConstStr r3 = GFP(GSM_CME_ERROR),
+                      GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
     return waitResponse(1000, r1, r2, r3, r4, r5);
   }
 

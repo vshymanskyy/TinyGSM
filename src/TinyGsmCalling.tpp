@@ -59,8 +59,8 @@ class TinyGsmCalling {
     } else {
       thisModem().sendAT(GF("D"), number, ";");
     }
-    int status = thisModem().waitResponse(60000L, GF("OK"), GF("BUSY"),
-                                          GF("NO ANSWER"), GF("NO CARRIER"));
+    int8_t status = thisModem().waitResponse(60000L, GF("OK"), GF("BUSY"),
+                                             GF("NO ANSWER"), GF("NO CARRIER"));
     switch (status) {
       case 1: return true;
       case 2:

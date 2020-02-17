@@ -665,7 +665,7 @@ class TinyGsmXBee
   }
 
  protected:
-  int16_t getSignalQualityImpl() {
+  int8_t getSignalQualityImpl() {
     XBEE_COMMAND_START_DECORATOR(5, 0);
 
     if (beeType == XBEE_UNKNOWN)
@@ -1270,10 +1270,10 @@ class TinyGsmXBee
   // NOTE:  This function is used while INSIDE command mode, so we're only
   // waiting for requested responses.  The XBee has no unsoliliced responses
   // (URC's) when in command mode.
-  uint8_t waitResponse(uint32_t timeout_ms, String& data,
-                       GsmConstStr r1 = GFP(GSM_OK),
-                       GsmConstStr r2 = GFP(GSM_ERROR), GsmConstStr r3 = NULL,
-                       GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
+  int8_t waitResponse(uint32_t timeout_ms, String& data,
+                      GsmConstStr r1 = GFP(GSM_OK),
+                      GsmConstStr r2 = GFP(GSM_ERROR), GsmConstStr r3 = NULL,
+                      GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
     /*String r1s(r1); r1s.trim();
     String r2s(r2); r2s.trim();
     String r3s(r3); r3s.trim();
@@ -1287,7 +1287,7 @@ class TinyGsmXBee
       TINY_GSM_YIELD();
       while (stream.available() > 0) {
         TINY_GSM_YIELD();
-        int a = stream.read();
+        int8_t a = stream.read();
         if (a <= 0) continue;  // Skip 0x00 bytes, just in case
         data += static_cast<char>(a);
         if (r1 && data.endsWith(r1)) {
@@ -1328,16 +1328,16 @@ class TinyGsmXBee
     return index;
   }
 
-  uint8_t waitResponse(uint32_t timeout_ms, GsmConstStr r1 = GFP(GSM_OK),
-                       GsmConstStr r2 = GFP(GSM_ERROR), GsmConstStr r3 = NULL,
-                       GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
+  int8_t waitResponse(uint32_t timeout_ms, GsmConstStr r1 = GFP(GSM_OK),
+                      GsmConstStr r2 = GFP(GSM_ERROR), GsmConstStr r3 = NULL,
+                      GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
     String data;
     return waitResponse(timeout_ms, data, r1, r2, r3, r4, r5);
   }
 
-  uint8_t waitResponse(GsmConstStr r1 = GFP(GSM_OK),
-                       GsmConstStr r2 = GFP(GSM_ERROR), GsmConstStr r3 = NULL,
-                       GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
+  int8_t waitResponse(GsmConstStr r1 = GFP(GSM_OK),
+                      GsmConstStr r2 = GFP(GSM_ERROR), GsmConstStr r3 = NULL,
+                      GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
     return waitResponse(1000, r1, r2, r3, r4, r5);
   }
 
@@ -1356,8 +1356,8 @@ class TinyGsmXBee
       // Default guard time is 1s, but the init fxn decreases it to 100 ms
       delay(guardTime + 10);
       streamWrite(GF("+++"));  // enter command mode
-      int res = waitResponse(guardTime * 2);
-      success = (1 == res);
+      int8_t res = waitResponse(guardTime * 2);
+      success    = (1 == res);
       if (0 == res) {
         triesUntilReset--;
         if (triesUntilReset == 0) {

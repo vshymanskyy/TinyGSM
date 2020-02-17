@@ -24,7 +24,7 @@ class TinyGsmModem {
     return thisModem().initImpl(pin);
   }
   template <typename... Args>
-  void sendAT(Args... cmd) {
+  inline void sendAT(Args... cmd) {
     thisModem().streamWrite("AT", cmd..., thisModem().gsmNL);
     thisModem().stream.flush();
     TINY_GSM_YIELD(); /* DBG("### AT:", cmd...); */
@@ -180,11 +180,11 @@ class TinyGsmModem {
   // CREG = Generic network registration
   // CGREG = GPRS service registration
   // CEREG = EPS registration for LTE modules
-  int getRegistrationStatusXREG(const char* regCommand) {
+  int8_t getRegistrationStatusXREG(const char* regCommand) {
     thisModem().sendAT('+', regCommand, '?');
     // check for any of the three for simplicity
-    int resp = thisModem().waitResponse(GF("+CREG:"), GF("+CGREG:"),
-                                        GF("+CEREG:"));
+    int8_t resp = thisModem().waitResponse(GF("+CREG:"), GF("+CGREG:"),
+                                           GF("+CEREG:"));
     if (resp != 1 && resp != 2 && resp != 3) { return -1; }
     thisModem().streamSkipUntil(','); /* Skip format (0) */
     int status = thisModem().streamGetInt('\n');
@@ -201,10 +201,10 @@ class TinyGsmModem {
   }
 
   // Gets signal quality report according to 3GPP TS command AT+CSQ
-  int16_t getSignalQualityImpl() {
+  int8_t getSignalQualityImpl() {
     thisModem().sendAT(GF("+CSQ"));
     if (thisModem().waitResponse(GF("+CSQ:")) != 1) { return 99; }
-    int res = thisModem().streamGetInt(',');
+    int8_t res = thisModem().streamGetInt(',');
     thisModem().waitResponse();
     return res;
   }
@@ -218,7 +218,7 @@ class TinyGsmModem {
     return res;
   }
 
-  static IPAddress TinyGsmIpFromString(const String& strIP) {
+  static inline IPAddress TinyGsmIpFromString(const String& strIP) {
     int Parts[4] = {
         0,
     };
@@ -245,17 +245,17 @@ class TinyGsmModem {
  protected:
   // Utility templates for writing/skipping characters on a stream
   template <typename T>
-  void inline streamWrite(T last) {
+  inline void streamWrite(T last) {
     thisModem().stream.print(last);
   }
 
   template <typename T, typename... Args>
-  void inline streamWrite(T head, Args... tail) {
+  inline void streamWrite(T head, Args... tail) {
     thisModem().stream.print(head);
     thisModem().streamWrite(tail...);
   }
 
-  int16_t inline streamGetInt(int8_t numChars) {
+  inline int16_t streamGetInt(int8_t numChars) {
     char   buf[6];
     size_t bytesRead = thisModem().stream.readBytes(buf, numChars);
     if (bytesRead) {
@@ -269,7 +269,7 @@ class TinyGsmModem {
 
   template <class T>
   // calling with template only to prevent promotion of char to int
-  int16_t inline streamGetInt(T lastChar) {
+  inline int16_t streamGetInt(T lastChar) {
     char   buf[6];
     size_t bytesRead = thisModem().stream.readBytesUntil(
         lastChar, buf, static_cast<size_t>(6));
@@ -282,7 +282,7 @@ class TinyGsmModem {
     }
   }
 
-  float inline streamGetFloat(int8_t numChars) {
+  inline float streamGetFloat(int8_t numChars) {
     char   buf[16];
     size_t bytesRead = thisModem().stream.readBytes(buf, numChars);
     DBG("### bytesRead:", bytesRead);
@@ -297,7 +297,7 @@ class TinyGsmModem {
 
   template <class T>
   // calling with template only to prevent promotion of char to int
-  float inline streamGetFloat(T lastChar) {
+  inline float streamGetFloat(T lastChar) {
     char   buf[16];
     size_t bytesRead = thisModem().stream.readBytesUntil(
         lastChar, buf, static_cast<size_t>(16));
@@ -310,7 +310,7 @@ class TinyGsmModem {
     }
   }
 
-  bool inline streamSkipUntil(const char c, const uint32_t timeout_ms = 1000L) {
+  inline bool streamSkipUntil(const char c, const uint32_t timeout_ms = 1000L) {
     uint32_t startMillis = millis();
     while (millis() - startMillis < timeout_ms) {
       while (millis() - startMillis < timeout_ms &&
@@ -322,7 +322,7 @@ class TinyGsmModem {
     return false;
   }
 
-  void inline streamClear() {
+  inline void streamClear() {
     while (thisModem().stream.available()) {
       thisModem().waitResponse(50, NULL, NULL);
     }

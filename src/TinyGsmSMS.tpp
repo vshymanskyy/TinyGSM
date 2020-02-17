@@ -47,7 +47,7 @@ class TinyGsmSMS {
   static inline String TinyGsmDecodeHex7bit(String& instr) {
     String result;
     byte   reminder = 0;
-    int    bitstate = 7;
+    int8_t bitstate = 7;
     for (uint8_t i = 0; i < instr.length(); i += 2) {
       char buf[4] = {
           0,
@@ -125,7 +125,7 @@ class TinyGsmSMS {
     thisModem().stream.readStringUntil('"');
     String hex = thisModem().stream.readStringUntil('"');
     thisModem().stream.readStringUntil(',');
-    int dcs = thisModem().streamGetInt('\n');
+    int8_t dcs = thisModem().streamGetInt('\n');
 
     if (dcs == 15) {
       return TinyGsmDecodeHex8bit(hex);

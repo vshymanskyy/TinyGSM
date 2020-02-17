@@ -128,9 +128,9 @@ class TinyGsmGPRS {
         delay(1000);
         continue;
       }
-      int status = thisModem().waitResponse(GF("READY"), GF("SIM PIN"),
-                                            GF("SIM PUK"), GF("NOT INSERTED"),
-                                            GF("NOT READY"));
+      int8_t status =
+          thisModem().waitResponse(GF("READY"), GF("SIM PIN"), GF("SIM PUK"),
+                                   GF("NOT INSERTED"), GF("NOT READY"));
       thisModem().waitResponse();
       switch (status) {
         case 2:
@@ -153,7 +153,7 @@ class TinyGsmGPRS {
   bool isGprsConnectedImpl() {
     thisModem().sendAT(GF("+CGATT?"));
     if (thisModem().waitResponse(GF("+CGATT:")) != 1) { return false; }
-    int res = thisModem().streamGetInt('\n');
+    int8_t res = thisModem().streamGetInt('\n');
     thisModem().waitResponse();
     if (res != 1) { return false; }
 
