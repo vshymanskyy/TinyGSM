@@ -59,16 +59,20 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590>,
    public:
     GsmClientM590() {}
 
-    explicit GsmClientM590(TinyGsmM590& modem, uint8_t mux = 1) {
+    explicit GsmClientM590(TinyGsmM590& modem, uint8_t mux = 0) {
       init(&modem, mux);
     }
 
-    bool init(TinyGsmM590* modem, uint8_t mux = 1) {
+    bool init(TinyGsmM590* modem, uint8_t mux = 0) {
       this->at       = modem;
-      this->mux      = mux;
       sock_connected = false;
 
-      at->sockets[mux] = this;
+      if (mux < TINY_GSM_MUX_COUNT) {
+        this->mux = mux;
+      } else {
+        this->mux = (mux % TINY_GSM_MUX_COUNT);
+      }
+      at->sockets[this->mux] = this;
 
       return true;
     }

@@ -57,16 +57,20 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
    public:
     GsmClientESP8266() {}
 
-    explicit GsmClientESP8266(TinyGsmESP8266& modem, uint8_t mux = 1) {
+    explicit GsmClientESP8266(TinyGsmESP8266& modem, uint8_t mux = 0) {
       init(&modem, mux);
     }
 
-    bool init(TinyGsmESP8266* modem, uint8_t mux = 1) {
+    bool init(TinyGsmESP8266* modem, uint8_t mux = 0) {
       this->at       = modem;
-      this->mux      = mux;
       sock_connected = false;
 
-      at->sockets[mux] = this;
+      if (mux < TINY_GSM_MUX_COUNT) {
+        this->mux = mux;
+      } else {
+        this->mux = (mux % TINY_GSM_MUX_COUNT);
+      }
+      at->sockets[this->mux] = this;
 
       return true;
     }
@@ -107,7 +111,7 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
    public:
     GsmClientSecureESP8266() {}
 
-    explicit GsmClientSecureESP8266(TinyGsmESP8266& modem, uint8_t mux = 1)
+    explicit GsmClientSecureESP8266(TinyGsmESP8266& modem, uint8_t mux = 0)
         : GsmClientESP8266(modem, mux) {}
 
    public:

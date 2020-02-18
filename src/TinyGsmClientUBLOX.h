@@ -80,20 +80,24 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
 
     bool init(TinyGsmUBLOX* modem, uint8_t mux = 0) {
       this->at       = modem;
-      this->mux      = mux;
       sock_available = 0;
       prev_check     = 0;
       sock_connected = false;
       got_data       = false;
 
-      at->sockets[mux] = this;
+      if (mux < TINY_GSM_MUX_COUNT) {
+        this->mux = mux;
+      } else {
+        this->mux = (mux % TINY_GSM_MUX_COUNT);
+      }
+      at->sockets[this->mux] = this;
 
       return true;
     }
 
    public:
     virtual int connect(const char* host, uint16_t port, int timeout_s) {
-      stop();
+      // stop();  // DON'T stop!
       TINY_GSM_YIELD();
       rx.clear();
 
@@ -135,12 +139,12 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
    public:
     GsmClientSecureUBLOX() {}
 
-    explicit GsmClientSecureUBLOX(TinyGsmUBLOX& modem, uint8_t mux = 1)
+    explicit GsmClientSecureUBLOX(TinyGsmUBLOX& modem, uint8_t mux = 0)
         : GsmClientUBLOX(modem, mux) {}
 
    public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
-      stop();
+      // stop();  // DON'T stop!
       TINY_GSM_YIELD();
       rx.clear();
       uint8_t oldMux = mux;
@@ -288,7 +292,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
  protected:
   bool gprsConnectImpl(const char* apn, const char* user = NULL,
                        const char* pwd = NULL) {
-    gprsDisconnect();
+    // gprsDisconnect();
 
     sendAT(GF("+CGATT=1"));  // attach to GPRS
     if (waitResponse(360000L) != 1) { return false; }

@@ -74,13 +74,17 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
 
     bool init(TinyGsmSim5360* modem, uint8_t mux = 0) {
       this->at       = modem;
-      this->mux      = mux;
       sock_available = 0;
       prev_check     = 0;
       sock_connected = false;
       got_data       = false;
 
-      at->sockets[mux] = this;
+      if (mux < TINY_GSM_MUX_COUNT) {
+        this->mux = mux;
+      } else {
+        this->mux = (mux % TINY_GSM_MUX_COUNT);
+      }
+      at->sockets[this->mux] = this;
 
       return true;
     }
@@ -122,7 +126,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
    public:
     GsmClientSecureSim5360() {}
 
-    explicit GsmClientSecureSim5360(TinyGsmSim5360& modem, uint8_t mux = 1)
+    explicit GsmClientSecureSim5360(TinyGsmSim5360& modem, uint8_t mux = 0)
       : GsmClientSim5360(modem, mux) {}
 
    public:

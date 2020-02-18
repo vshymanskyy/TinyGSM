@@ -97,12 +97,12 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
       init(&modem, mux);
     }
 
-    bool init(TinyGsmXBee* modem, uint8_t mux = 0) {
+    bool init(TinyGsmXBee* modem, uint8_t) {
       this->at       = modem;
-      this->mux      = mux;
+      this->mux      = 0;
       sock_connected = false;
 
-      at->sockets[mux] = this;
+      at->sockets[0] = this;
 
       return true;
     }

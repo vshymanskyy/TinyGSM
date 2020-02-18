@@ -71,19 +71,23 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
    public:
     GsmClientSim800() {}
 
-    explicit GsmClientSim800(TinyGsmSim800& modem, uint8_t mux = 1) {
+    explicit GsmClientSim800(TinyGsmSim800& modem, uint8_t mux = 0) {
       init(&modem, mux);
     }
 
-    bool init(TinyGsmSim800* modem, uint8_t mux = 1) {
+    bool init(TinyGsmSim800* modem, uint8_t mux = 0) {
       this->at       = modem;
-      this->mux      = mux;
       sock_available = 0;
       prev_check     = 0;
       sock_connected = false;
       got_data       = false;
 
-      at->sockets[mux] = this;
+      if (mux < TINY_GSM_MUX_COUNT) {
+        this->mux = mux;
+      } else {
+        this->mux = (mux % TINY_GSM_MUX_COUNT);
+      }
+      at->sockets[this->mux] = this;
 
       return true;
     }
@@ -123,7 +127,7 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
    public:
     GsmClientSecureSim800() {}
 
-    explicit GsmClientSecureSim800(TinyGsmSim800& modem, uint8_t mux = 1)
+    explicit GsmClientSecureSim800(TinyGsmSim800& modem, uint8_t mux = 0)
         : GsmClientSim800(modem, mux) {}
 
    public:

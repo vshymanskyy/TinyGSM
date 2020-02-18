@@ -69,17 +69,21 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95>,
    public:
     GsmClientM95() {}
 
-    explicit GsmClientM95(TinyGsmM95& modem, uint8_t mux = 1) {
+    explicit GsmClientM95(TinyGsmM95& modem, uint8_t mux = 0) {
       init(&modem, mux);
     }
 
-    bool init(TinyGsmM95* modem, uint8_t mux = 1) {
+    bool init(TinyGsmM95* modem, uint8_t 0) {
       this->at       = modem;
-      this->mux      = mux;
       sock_available = 0;
       sock_connected = false;
 
-      at->sockets[mux] = this;
+      if (mux < TINY_GSM_MUX_COUNT) {
+        this->mux = mux;
+      } else {
+        this->mux = (mux % TINY_GSM_MUX_COUNT);
+      }
+      at->sockets[this->mux] = this;
 
       return true;
     }
@@ -123,7 +127,7 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95>,
     public:
       GsmClientSecure() {}
 
-      GsmClientSecure(TinyGsmm95& modem, uint8_t mux = 1)
+      GsmClientSecure(TinyGsmm95& modem, uint8_t mux = 0)
        : GsmClient(modem, mux)
       {}
 

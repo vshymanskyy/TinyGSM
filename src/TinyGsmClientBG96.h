@@ -65,19 +65,23 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
    public:
     GsmClientBG96() {}
 
-    explicit GsmClientBG96(TinyGsmBG96& modem, uint8_t mux = 1) {
+    explicit GsmClientBG96(TinyGsmBG96& modem, uint8_t mux = 0) {
       init(&modem, mux);
     }
 
-    bool init(TinyGsmBG96* modem, uint8_t mux = 1) {
+    bool init(TinyGsmBG96* modem, uint8_t mux = 0) {
       this->at       = modem;
-      this->mux      = mux;
       sock_available = 0;
       prev_check     = 0;
       sock_connected = false;
       got_data       = false;
 
-      at->sockets[mux] = this;
+      if (mux < TINY_GSM_MUX_COUNT) {
+        this->mux = mux;
+      } else {
+        this->mux = (mux % TINY_GSM_MUX_COUNT);
+      }
+      at->sockets[this->mux] = this;
 
       return true;
     }
@@ -119,7 +123,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
   public:
     GsmClientSecure() {}
 
-    GsmClientSecure(TinyGsmBG96& modem, uint8_t mux = 1)
+    GsmClientSecure(TinyGsmBG96& modem, uint8_t mux = 0)
      : public GsmClient(modem, mux)
     {}
 
@@ -298,7 +302,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
    */
  protected:
   bool modemConnect(const char* host, uint16_t port, uint8_t mux,
-                    bool ssl = false, int timeout_s = 20) {
+                    bool ssl = false, int timeout_s = 150) {
     if (ssl) { DBG("SSL not yet supported on this module!"); }
 
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;

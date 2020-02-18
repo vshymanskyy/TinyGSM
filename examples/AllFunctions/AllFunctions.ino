@@ -220,7 +220,7 @@ void loop() {
 #endif
 
 #if TINY_GSM_TEST_TCP && defined TINY_GSM_MODEM_HAS_TCP
-  TinyGsmClient client(modem);
+  TinyGsmClient client(modem, 0);
   const int port = 80;
   DBG("Connecting to ", server);
   if (!client.connect(server, port)) {
@@ -232,16 +232,18 @@ void loop() {
     client.print("Connection: close\r\n\r\n");
 
     // Wait for data to arrive
-    while (client.connected() && !client.available()) {
+    uint32_t start = millis();
+    while (client.connected() && !client.available() &&
+           millis() - start < 30000L) {
       delay(100);
     };
 
     // Read data
-    uint32_t timeout = millis();
-    while (client.connected() && millis() - timeout < 5000L) {
+    start = millis();
+    while (client.connected() && millis() - start < 5000L) {
       while (client.available()) {
         SerialMon.write(client.read());
-        timeout = millis();
+        start = millis();
       }
     }
     client.stop();
@@ -249,7 +251,7 @@ void loop() {
 #endif
 
 #if TINY_GSM_TEST_SSL && defined TINY_GSM_MODEM_HAS_SSL
-  TinyGsmClientSecure secureClient(modem);
+  TinyGsmClientSecure secureClient(modem, 1);
   const int securePort = 443;
   DBG("Connecting to ", server);
   if (!secureClient.connect(server, securePort)) {
@@ -261,16 +263,18 @@ void loop() {
     secureClient.print("Connection: close\r\n\r\n");
 
     // Wait for data to arrive
-    while (secureClient.connected() && !secureClient.available()) {
+    uint32_t startS = millis();
+    while (secureClient.connected() && !secureClient.available() &&
+           millis() - startS < 30000L) {
       delay(100);
     };
 
     // Read data
-    uint32_t timeoutS = millis();
-    while (secureClient.connected() && millis() - timeoutS < 5000L) {
+    startS = millis();
+    while (secureClient.connected() && millis() - startS < 5000L) {
       while (secureClient.available()) {
         SerialMon.write(secureClient.read());
-        timeoutS = millis();
+        startS = millis();
       }
     }
     secureClient.stop();

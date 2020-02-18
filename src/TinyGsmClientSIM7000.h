@@ -65,19 +65,23 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
    public:
     GsmClientSim7000() {}
 
-    explicit GsmClientSim7000(TinyGsmSim7000& modem, uint8_t mux = 1) {
+    explicit GsmClientSim7000(TinyGsmSim7000& modem, uint8_t mux = 0) {
       init(&modem, mux);
     }
 
-    bool init(TinyGsmSim7000* modem, uint8_t mux = 1) {
+    bool init(TinyGsmSim7000* modem, uint8_t mux = 0) {
       this->at       = modem;
-      this->mux      = mux;
       sock_available = 0;
       prev_check     = 0;
       sock_connected = false;
       got_data       = false;
 
-      at->sockets[mux] = this;
+      if (mux < TINY_GSM_MUX_COUNT) {
+        this->mux = mux;
+      } else {
+        this->mux = (mux % TINY_GSM_MUX_COUNT);
+      }
+      at->sockets[this->mux] = this;
 
       return true;
     }
@@ -119,7 +123,7 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
   public:
     GsmClientSecure() {}
 
-    GsmClientSecure(TinyGsmSim7000& modem, uint8_t mux = 1)
+    GsmClientSecure(TinyGsmSim7000& modem, uint8_t mux = 0)
      : public GsmClient(modem, mux)
     {}
 

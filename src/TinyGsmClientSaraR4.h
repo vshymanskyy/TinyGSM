@@ -80,20 +80,24 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
 
     bool init(TinyGsmSaraR4* modem, uint8_t mux = 0) {
       this->at       = modem;
-      this->mux      = mux;
       sock_available = 0;
       prev_check     = 0;
       sock_connected = false;
       got_data       = false;
 
-      at->sockets[mux] = this;
+      if (mux < TINY_GSM_MUX_COUNT) {
+        this->mux = mux;
+      } else {
+        this->mux = (mux % TINY_GSM_MUX_COUNT);
+      }
+      at->sockets[this->mux] = this;
 
       return true;
     }
 
    public:
     virtual int connect(const char* host, uint16_t port, int timeout_s) {
-      stop();
+      // stop();  // DON'T stop!
       TINY_GSM_YIELD();
       rx.clear();
 
@@ -168,12 +172,12 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
    public:
     GsmClientSecureR4() {}
 
-    explicit GsmClientSecureR4(TinyGsmSaraR4& modem, uint8_t mux = 1)
+    explicit GsmClientSecureR4(TinyGsmSaraR4& modem, uint8_t mux = 0)
         : GsmClientSaraR4(modem, mux) {}
 
    public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
-      stop();
+      // stop();  // DON'T stop!
       TINY_GSM_YIELD();
       rx.clear();
       uint8_t oldMux = mux;

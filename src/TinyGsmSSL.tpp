@@ -47,7 +47,7 @@ class TinyGsmSSL {
    public:
     GsmClientSecureSim800() {}
 
-    explicit GsmClientSecureSim800(TinyGsmSim800& modem, uint8_t mux = 1)
+    explicit GsmClientSecureSim800(TinyGsmSim800& modem, uint8_t mux = 0)
         : GsmClientSim800(modem, mux) {}
 
    public:

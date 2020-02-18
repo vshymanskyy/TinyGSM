@@ -85,7 +85,6 @@ class TinyGsmSequansMonarch
 
     bool init(TinyGsmSequansMonarch* modem, uint8_t mux = 1) {
       this->at       = modem;
-      this->mux      = mux;
       sock_available = 0;
       prev_check     = 0;
       sock_connected = false;
@@ -93,6 +92,11 @@ class TinyGsmSequansMonarch
 
       // adjust for zero indexed socket array vs Sequans' 1 indexed mux numbers
       // using modulus will force 6 back to 0
+      if (mux >= 1 && mux <= TINY_GSM_MUX_COUNT) {
+        this->mux = mux;
+      } else {
+        this->mux = (mux % TINY_GSM_MUX_COUNT) + 1;
+      }
       at->sockets[mux % TINY_GSM_MUX_COUNT] = this;
 
       return true;
