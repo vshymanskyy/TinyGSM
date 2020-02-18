@@ -84,7 +84,7 @@ class TinyGsmTime {
     isec        = thisModem().streamGetIntLength(2);
     char tzSign = thisModem().stream.read();
     itimezone   = thisModem().streamGetIntBefore('\n');
-    if (strcmp(tzSign, '-') == 0) { itimezone = itimezone * -1; }
+    if (tzSign == '-') { itimezone = itimezone * -1; }
 
     // Set pointers
     if (iyear < 2000) iyear += 2000;
