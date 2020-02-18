@@ -539,9 +539,9 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60>,
           }
           data = "";
           DBG("### Closed: ", mux);
-        } else if (data.endsWith(GF("+QNITZ:" GSM_NL))) {
+        } else if (data.endsWith(GF("+QNITZ:"))) {
           streamSkipUntil('\n');  // URC for time sync
-          DBG("### Network time has been updated.");
+          DBG("### Network time updated.");
           data = "";
         }
       }

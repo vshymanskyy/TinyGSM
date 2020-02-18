@@ -686,23 +686,23 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
           }
           data = "";
           DBG("### Closed: ", mux);
-        } else if (data.endsWith(GF("*PSNWID:" GSM_NL))) {
+        } else if (data.endsWith(GF("*PSNWID:"))) {
           streamSkipUntil('\n');  // Refresh network name by network
           data = "";
-          DBG("### Network name has been updated.");
-        } else if (data.endsWith(GF("*PSUTTZ:" GSM_NL))) {
+          DBG("### Network name updated.");
+        } else if (data.endsWith(GF("*PSUTTZ:"))) {
           streamSkipUntil('\n');  // Refresh time and time zone by network
           data = "";
-          DBG("### Network time and time zone have been updated.");
-        } else if (data.endsWith(GF("+CTZV:" GSM_NL))) {
+          DBG("### Network time and time zone updated.");
+        } else if (data.endsWith(GF("+CTZV:"))) {
           streamSkipUntil('\n');  // Refresh network time zone by network
           data = "";
-          DBG("### Network time zone has been updated.");
-        } else if (data.endsWith(GF("DST:" GSM_NL))) {
+          DBG("### Network time zone updated.");
+        } else if (data.endsWith(GF("DST: "))) {
           streamSkipUntil(
               '\n');  // Refresh Network Daylight Saving Time by network
           data = "";
-          DBG("### Daylight savings time state been updated.");
+          DBG("### Daylight savings time state updated.");
         }
       }
     } while (millis() - startMillis < timeout_ms);
