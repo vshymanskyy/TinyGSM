@@ -138,7 +138,7 @@ void loop() {
   if (!modem.restart()) {
     // if (!modem.init()) {
     DBG("Failed to restart modem, delaying 10s and retrying");
-    delay(10000);
+    delay(10000L);
     // restart autobaud in case GSM just rebooted
     // TinyGsmAutoBaud(SerialAT, GSM_AUTOBAUD_MIN, GSM_AUTOBAUD_MAX);
     return;
@@ -238,7 +238,7 @@ void loop() {
 
     // Read data
     uint32_t timeout = millis();
-    while (client.connected() && millis() - timeout < 10000L) {
+    while (client.connected() && millis() - timeout < 5000L) {
       while (client.available()) {
         SerialMon.write(client.read());
         timeout = millis();
@@ -267,7 +267,7 @@ void loop() {
 
     // Read data
     uint32_t timeoutS = millis();
-    while (secureClient.connected() && millis() - timeoutS < 10000L) {
+    while (secureClient.connected() && millis() - timeoutS < 5000L) {
       while (secureClient.available()) {
         SerialMon.write(secureClient.read());
         timeoutS = millis();
@@ -347,8 +347,8 @@ void loop() {
       DBG("Second:", sec);
       break;
     } else {
-      DBG("Couldn't get GSM location, retrying in 10s.");
-      delay(10000L);
+      DBG("Couldn't get GSM location, retrying in 15s.");
+      delay(15000L);
     }
   }
 #endif
@@ -390,8 +390,8 @@ void loop() {
       DBG("Second:", sec2);
       break;
     } else {
-      DBG("Couldn't get GSM location, retrying in 10s.");
-      delay(10000L);
+      DBG("Couldn't get GPS/GNSS/GLONASS location, retrying in 15s.");
+      delay(15000L);
     }
   }
   modem.disableGPS();
@@ -420,8 +420,8 @@ void loop() {
       DBG("Timezone:", timezone);
       break;
     } else {
-      DBG("Couldn't get network time, retrying in 10s.");
-      delay(10000L);
+      DBG("Couldn't get network time, retrying in 15s.");
+      delay(15000L);
     }
   }
 #endif
