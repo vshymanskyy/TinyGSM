@@ -165,6 +165,10 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
 
     DBG(GF("### Modem:"), getModemName());
 
+    // Disable time and time zone URC's
+    sendAT(GF("+CTZR=0"));
+    if (waitResponse(10000L) != 1) { return false; }
+
     // Enable automatic time zone update
     sendAT(GF("+CTZU=1"));
     if (waitResponse(10000L) != 1) { return false; }

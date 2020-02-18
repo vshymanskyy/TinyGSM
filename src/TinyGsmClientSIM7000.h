@@ -686,6 +686,23 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
           }
           data = "";
           DBG("### Closed: ", mux);
+        } else if (data.endsWith(GF("*PSNWID:" GSM_NL))) {
+          streamSkipUntil('\n');  // Refresh network name by network
+          data = "";
+          DBG("### Network name has been updated.");
+        } else if (data.endsWith(GF("*PSUTTZ:" GSM_NL))) {
+          streamSkipUntil('\n');  // Refresh time and time zone by network
+          data = "";
+          DBG("### Network time and time zone have been updated.");
+        } else if (data.endsWith(GF("+CTZV:" GSM_NL))) {
+          streamSkipUntil('\n');  // Refresh network time zone by network
+          data = "";
+          DBG("### Network time zone has been updated.");
+        } else if (data.endsWith(GF("DST:" GSM_NL))) {
+          streamSkipUntil(
+              '\n');  // Refresh Network Daylight Saving Time by network
+          data = "";
+          DBG("### Daylight savings time state been updated.");
         }
       }
     } while (millis() - startMillis < timeout_ms);

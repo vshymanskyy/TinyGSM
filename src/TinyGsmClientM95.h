@@ -570,6 +570,10 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95>,
           }
           data = "";
           DBG("### Closed: ", mux);
+        } else if (data.endsWith(GF("+QNITZ:" GSM_NL))) {
+          streamSkipUntil('\n');  // URC for time sync
+          data = "";
+          DBG("### Network time has been updated.");
         }
       }
     } while (millis() - startMillis < timeout_ms);

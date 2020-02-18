@@ -170,6 +170,10 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
 
     DBG(GF("### Modem:"), getModemName());
 
+    // Disable time and time zone URC's
+    sendAT(GF("+CTZR=0"));
+    if (waitResponse(10000L) != 1) { return false; }
+
     // Enable automatic time zome update
     sendAT(GF("+CTZU=1"));
     if (waitResponse(10000L) != 1) { return false; }
