@@ -598,8 +598,10 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
 
   bool modemGetConnected(uint8_t mux) {
     sendAT(GF("+CIPSTATUS="), mux);
+    waitResponse(GF("+CIPSTATUS"));
     int8_t res = waitResponse(GF(",\"CONNECTED\""), GF(",\"CLOSED\""),
-                              GF(",\"CLOSING\""), GF(",\"INITIAL\""));
+                              GF(",\"CLOSING\""), GF(",\"REMOTE CLOSING\""),
+                              GF(",\"INITIAL\""));
     waitResponse();
     return 1 == res;
   }
