@@ -330,7 +330,7 @@ void loop() {
   int   min      = 0;
   int sec = 0;
   for (int8_t i = 5; i; i--) {
-    DBG("Waiting for GSM location");
+    DBG("Requesting current GSM location");
     if (modem.getGsmLocation(&lat, &lon, &accuracy, &year, &month, &day, &hour,
                              &min, &sec)) {
       DBG("Latitude:", String(lat, 8), "\tLongitude:", String(lon, 8));
@@ -342,14 +342,14 @@ void loop() {
       DBG("Couldn't get GSM location, retrying in 15s.");
       delay(15000L);
     }
+  }
     DBG("Retrieving GSM location again as a string");
     String location = modem.getGsmLocation();
     DBG("GSM Based Location String:", location);
-  }
 #endif
 
 #if TINY_GSM_TEST_GPS && defined TINY_GSM_MODEM_HAS_GPS
-  DBG("Enabling GPS/GNSS/GLONASS");
+  DBG("Enabling GPS/GNSS/GLONASS and waiting 15s for warm-up");
   modem.enableGPS();
   delay(15000L);
   float lat2      = 0;
@@ -366,7 +366,7 @@ void loop() {
   int   min2      = 0;
   int   sec2      = 0;
   for (int8_t i = 5; i; i--) {
-    DBG("Waiting for GPS/GNSS/GLONASS location");
+    DBG("Requesting current GPS/GNSS/GLONASS location");
     if (modem.getGPS(&lat2, &lon2, &speed2, &alt2, &vsat2, &usat2, &accuracy2,
                     &year2, &month2, &day2, &hour2, &min2, &sec2)) {
       DBG("Latitude:", String(lat2, 8), "\tLongitude:", String(lon2, 8));
@@ -380,10 +380,11 @@ void loop() {
       DBG("Couldn't get GPS/GNSS/GLONASS location, retrying in 15s.");
       delay(15000L);
     }
+  }
     DBG("Retrieving GPS/GNSS/GLONASS location again as a string");
     String gps_raw = modem.getGPSraw();
     DBG("GPS/GNSS Based Location String:", gps_raw);
-  }
+  DBG("Disabling GPS");
   modem.disableGPS();
 #endif
 
@@ -407,10 +408,10 @@ void loop() {
       DBG("Couldn't get network time, retrying in 15s.");
       delay(15000L);
     }
+  }
     DBG("Retrieving time again as a string");
     String time = modem.getGSMDateTime(DATE_FULL);
     DBG("Current Network Time:", time);
-  }
 #endif
 
 #if TINY_GSM_TEST_GPRS

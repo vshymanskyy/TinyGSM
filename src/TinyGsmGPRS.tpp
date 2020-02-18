@@ -146,9 +146,6 @@ class TinyGsmGPRS {
    * GPRS functions
    */
  protected:
-  bool thisHasGPRS() {
-    return true;
-  }
   // Checks if current attached to GPRS/EPS service
   bool isGprsConnectedImpl() {
     thisModem().sendAT(GF("+CGATT?"));
