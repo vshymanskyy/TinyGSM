@@ -18,9 +18,11 @@
 #include "TinyGsmBattery.tpp"
 #include "TinyGsmCalling.tpp"
 #include "TinyGsmGPRS.tpp"
+#include "TinyGsmGPS.tpp"
 #include "TinyGsmModem.tpp"
 #include "TinyGsmSMS.tpp"
 #include "TinyGsmTCP.tpp"
+#include "TinyGsmTemperature.tpp"
 #include "TinyGsmTime.tpp"
 
 #define GSM_NL "\r\n"
@@ -46,14 +48,18 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
                     public TinyGsmCalling<TinyGsmBG96>,
                     public TinyGsmSMS<TinyGsmBG96>,
                     public TinyGsmTime<TinyGsmBG96>,
-                    public TinyGsmBattery<TinyGsmBG96> {
+                    public TinyGsmGPS<TinyGsmBG96>,
+                    public TinyGsmBattery<TinyGsmBG96>,
+                    public TinyGsmTemperature<TinyGsmBG96> {
   friend class TinyGsmModem<TinyGsmBG96>;
   friend class TinyGsmGPRS<TinyGsmBG96>;
   friend class TinyGsmTCP<TinyGsmBG96, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmCalling<TinyGsmBG96>;
   friend class TinyGsmSMS<TinyGsmBG96>;
   friend class TinyGsmTime<TinyGsmBG96>;
+  friend class TinyGsmGPS<TinyGsmBG96>;
   friend class TinyGsmBattery<TinyGsmBG96>;
+  friend class TinyGsmTemperature<TinyGsmBG96>;
 
   /*
    * Inner Client
@@ -288,6 +294,109 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
   // Follows all messaging functions per template
 
   /*
+   * GSM Location functions
+   */
+ protected:
+  // NOTE:  As of application firmware version 01.016.01.016 triangulated
+  // locations can be obtained via the QuecLocator service and accompanying AT
+  // commands.  As this is a separate paid service which I do not have access
+  // to, I am not implementing it here.
+
+  /*
+   * GPS/GNSS/GLONASS location functions
+   */
+ protected:
+  // enable GPS
+  bool enableGPSImpl() {
+    sendAT(GF("+QGPS=1"));
+    if (waitResponse() != 1) { return false; }
+    return true;
+  }
+
+  bool disableGPSImpl() {
+    sendAT(GF("+QGPSEND"));
+    if (waitResponse() != 1) { return false; }
+    return true;
+  }
+
+  // get the RAW GPS output
+  String getGPSrawImpl() {
+    sendAT(GF("+QGPSLOC=2"));
+    if (waitResponse(10000L, GF(GSM_NL "+QGPSLOC:")) != 1) { return ""; }
+    String res = stream.readStringUntil('\n');
+    waitResponse();
+    res.trim();
+    return res;
+  }
+
+  // get GPS informations
+  bool getGPSImpl(float* lat, float* lon, float* speed = 0, int* alt = 0,
+                  int* vsat = 0, int* usat = 0, float* accuracy = 0,
+                  int* year = 0, int* month = 0, int* day = 0, int* hour = 0,
+                  int* minute = 0, int* second = 0) {
+    sendAT(GF("+QGPSLOC=2"));
+    if (waitResponse(10000L, GF(GSM_NL "+QGPSLOC:")) != 1) {
+      // NOTE:  Will return an error if the position isn't fixed
+      return false;
+    }
+
+    // init variables
+    float ilat         = 0;
+    float ilon         = 0;
+    float ispeed       = 0;
+    float ialt         = 0;
+    int   iusat        = 0;
+    float iaccuracy    = 0;
+    int   iyear        = 0;
+    int   imonth       = 0;
+    int   iday         = 0;
+    int   ihour        = 0;
+    int   imin         = 0;
+    float secondWithSS = 0;
+
+    // UTC date & Time
+    ihour        = streamGetIntLength(2);      // Two digit hour
+    imin         = streamGetIntLength(2);      // Two digit minute
+    secondWithSS = streamGetFloatBefore(',');  // 6 digit second with subseconds
+
+    ilat      = streamGetFloatBefore(',');  // Latitude
+    ilon      = streamGetFloatBefore(',');  // Longitude
+    iaccuracy = streamGetFloatBefore(',');  // Horizontal precision
+    ialt      = streamGetFloatBefore(',');  // Altitude from sea level
+    streamSkipUntil(',');                   // GNSS positioning mode
+    streamSkipUntil(',');  // Course Over Ground based on true north
+    streamSkipUntil(',');  // Speed Over Ground in Km/h
+    ispeed = streamGetFloatBefore(',');  // Speed Over Ground in knots
+
+    iday   = streamGetIntLength(2);    // Two digit day
+    imonth = streamGetIntLength(2);    // Two digit month
+    iyear  = streamGetIntBefore(',');  // Two digit year
+
+    iusat = streamGetIntBefore(',');  // Number of satellites,
+    streamSkipUntil('\n');  // The error code of the operation. If it is not
+                            // 0, it is the type of error.
+
+    // Set pointers
+    if (lat != NULL) *lat = ilat;
+    if (lon != NULL) *lon = ilon;
+    if (speed != NULL) *speed = ispeed;
+    if (alt != NULL) *alt = static_cast<int>(ialt);
+    if (vsat != NULL) *vsat = 0;
+    if (usat != NULL) *usat = iusat;
+    if (accuracy != NULL) *accuracy = iaccuracy;
+    if (iyear < 2000) iyear += 2000;
+    if (year != NULL) *year = iyear;
+    if (month != NULL) *month = imonth;
+    if (day != NULL) *day = iday;
+    if (hour != NULL) *hour = ihour;
+    if (minute != NULL) *minute = imin;
+    if (second != NULL) *second = static_cast<int>(secondWithSS);
+
+    waitResponse();  // Final OK
+    return true;
+  }
+
+  /*
    * Time functions
    */
  protected:
@@ -296,6 +405,26 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
   /*
    * Battery functions
    */
+ protected:
+  // Can follow CBC as in the template
+
+  /*
+   * Temperature functions
+   */
+ protected:
+  // get temperature in degree celsius
+  uint16_t getTemperatureImpl() {
+    sendAT(GF("+QTEMP"));
+    if (waitResponse(GF(GSM_NL "+QTEMP:")) != 1) { return 0; }
+    // return temperature in C
+    uint16_t res =
+        streamGetIntBefore(',');  // read PMIC (primary ic) temperature
+    streamSkipUntil(',');         // skip XO temperature ??
+    streamSkipUntil('\n');        // skip PA temperature ??
+    // Wait for final OK
+    waitResponse();
+    return res;
+  }
 
   /*
    * Client related functions
