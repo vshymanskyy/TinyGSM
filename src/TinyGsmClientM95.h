@@ -73,7 +73,7 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95>,
       init(&modem, mux);
     }
 
-    bool init(TinyGsmM95* modem, uint8_t 0) {
+    bool init(TinyGsmM95* modem, uint8_t mux = 0) {
       this->at       = modem;
       sock_available = 0;
       sock_connected = false;
