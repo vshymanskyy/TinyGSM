@@ -622,7 +622,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
   /*
    * Temperature functions
    */
-
+ protected:
   float getTemperatureImpl() {
     // First make sure the temperature is set to be in celsius
     sendAT(GF("+UTEMP=0"));  // Would use 1 for Fahrenheit

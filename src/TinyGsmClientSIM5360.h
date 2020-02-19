@@ -463,7 +463,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
   /*
    * Temperature functions
    */
-
+ protected:
   // get temperature in degree celsius
   float getTemperatureImpl() {
     // Enable Temparature Reading

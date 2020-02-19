@@ -378,7 +378,7 @@ class TinyGsmSequansMonarch
   /*
    * Temperature functions
    */
-
+ protected:
   float getTemperatureImpl() {
     sendAT(GF("+SMDTH"));
     if (waitResponse(10000L, GF("+SMDTH: ")) != 1) {

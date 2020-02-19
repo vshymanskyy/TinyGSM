@@ -554,7 +554,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
   /*
    * Temperature functions
    */
-
+ protected:
   // get temperature in degree celsius
   uint16_t getTemperatureImpl() {
     sendAT(GF("+CPMUTEMP"));
