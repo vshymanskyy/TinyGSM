@@ -463,17 +463,18 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
       streamSkipUntil(',');                // Course Over Ground. Degrees.
       streamSkipUntil(',');                // Fix Mode
       streamSkipUntil(',');                // Reserved1
-      streamSkipUntil(',');                // Horizontal Dilution Of Precision
-      iaccuracy = streamGetFloatBefore(',');  // Position Dilution Of Precision
-      streamSkipUntil(',');                   // Vertical Dilution Of Precision
-      streamSkipUntil(',');                   // Reserved2
-      ivsat = streamGetIntBefore(',');        // GNSS Satellites in View
-      iusat = streamGetIntBefore(',');        // GNSS Satellites Used
-      streamSkipUntil(',');                   // GLONASS Satellites Used
-      streamSkipUntil(',');                   // Reserved3
-      streamSkipUntil(',');                   // C/N0 max
-      streamSkipUntil(',');                   // HPA
-      streamSkipUntil('\n');                  // VPA
+      iaccuracy =
+          streamGetFloatBefore(',');    // Horizontal Dilution Of Precision
+      streamSkipUntil(',');             // Position Dilution Of Precision
+      streamSkipUntil(',');             // Vertical Dilution Of Precision
+      streamSkipUntil(',');             // Reserved2
+      ivsat = streamGetIntBefore(',');  // GNSS Satellites in View
+      iusat = streamGetIntBefore(',');  // GNSS Satellites Used
+      streamSkipUntil(',');             // GLONASS Satellites Used
+      streamSkipUntil(',');             // Reserved3
+      streamSkipUntil(',');             // C/N0 max
+      streamSkipUntil(',');             // HPA
+      streamSkipUntil('\n');            // VPA
 
       // Set pointers
       if (lat != NULL) *lat = ilat;
