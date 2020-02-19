@@ -74,7 +74,7 @@ class TinyGsmGSMLocation {
     //        4 = Get longitude latitude and date time
     thisModem().sendAT(GF("+CLBS=1,1"));
     // Should get a location code of "0" indicating success
-    if (thisModem().waitResponse(120000L, GF("+CLBS:0,")) != 1) { return ""; }
+    if (thisModem().waitResponse(120000L, GF("+CLBS: ")) != 1) { return ""; }
     int8_t locationCode = thisModem().streamGetIntLength(2);
     // 0 = success, else, error
     if (locationCode != 0) {
@@ -96,7 +96,7 @@ class TinyGsmGSMLocation {
     //        4 = Get longitude latitude and date time
     thisModem().sendAT(GF("+CLBS=4,1"));
     // Should get a location code of "0" indicating success
-    if (thisModem().waitResponse(120000L, GF("+CLBS:")) != 1) { return false; }
+    if (thisModem().waitResponse(120000L, GF("+CLBS: ")) != 1) { return false; }
     int8_t locationCode = thisModem().streamGetIntLength(2);
     // 0 = success, else, error
     if (locationCode != 0) {
