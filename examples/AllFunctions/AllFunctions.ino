@@ -347,9 +347,9 @@ void loop() {
       delay(15000L);
     }
   }
-    DBG("Retrieving GSM location again as a string");
-    String location = modem.getGsmLocation();
-    DBG("GSM Based Location String:", location);
+  DBG("Retrieving GSM location again as a string");
+  String location = modem.getGsmLocation();
+  DBG("GSM Based Location String:", location);
 #endif
 
 #if TINY_GSM_TEST_GPS && defined TINY_GSM_MODEM_HAS_GPS
@@ -385,9 +385,9 @@ void loop() {
       delay(15000L);
     }
   }
-    DBG("Retrieving GPS/GNSS/GLONASS location again as a string");
-    String gps_raw = modem.getGPSraw();
-    DBG("GPS/GNSS Based Location String:", gps_raw);
+  DBG("Retrieving GPS/GNSS/GLONASS location again as a string");
+  String gps_raw = modem.getGPSraw();
+  DBG("GPS/GNSS Based Location String:", gps_raw);
   DBG("Disabling GPS");
   modem.disableGPS();
 #endif
@@ -413,13 +413,14 @@ void loop() {
       delay(15000L);
     }
   }
-    DBG("Retrieving time again as a string");
-    String time = modem.getGSMDateTime(DATE_FULL);
-    DBG("Current Network Time:", time);
+  DBG("Retrieving time again as a string");
+  String time = modem.getGSMDateTime(DATE_FULL);
+  DBG("Current Network Time:", time);
 #endif
 
 #if TINY_GSM_TEST_GPRS
   modem.gprsDisconnect();
+  delay(5000L);
   if (!modem.isGprsConnected()) {
     DBG("GPRS disconnected");
   } else {
@@ -453,6 +454,8 @@ void loop() {
   modem.poweroff();
   DBG("Poweroff.");
 #endif
+
+  DBG("End of tests.");
 
   // Do nothing forevermore
   while (true) {
