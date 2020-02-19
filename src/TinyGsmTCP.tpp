@@ -270,7 +270,7 @@ class TinyGsmTCP {
     inline void dumpModemBuffer(uint32_t maxWaitMs) {
 #if defined TINY_GSM_BUFFER_READ_AND_CHECK_SIZE || \
     defined TINY_GSM_BUFFER_READ_NO_CHECK
-          TINY_GSM_YIELD();
+      TINY_GSM_YIELD();
       uint32_t startMillis = millis();
       while (sock_available > 0 && (millis() - startMillis < maxWaitMs)) {
         rx.clear();

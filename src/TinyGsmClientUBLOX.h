@@ -759,8 +759,9 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
           int8_t  mux = streamGetIntBefore(',');
           int16_t len = streamGetIntBefore('\n');
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
-            sockets[mux]->got_data       = true;
-            sockets[mux]->sock_available = len;
+            sockets[mux]->got_data = true;
+            // max size is 1024
+            if (len >= 0 && len <= 1024) { sockets[mux]->sock_available = len; }
           }
           data = "";
           DBG("### URC Data Received:", len, "on", mux);

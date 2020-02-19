@@ -519,7 +519,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60>,
           index = 6;
           goto finish;
         } else if (data.endsWith(
-                       GF(GSM_NL "+QIRD:"))) {  // TODO(?):  QIRD? or QIRDI?
+                       GF(GSM_NL "+QIRDI:"))) {  // TODO(?):  QIRD? or QIRDI?
           // +QIRDI: <id>,<sc>,<sid>,<num>,<len>,< tlen>
           streamSkipUntil(',');  // Skip the context
           streamSkipUntil(',');  // Skip the role
@@ -529,7 +529,8 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60>,
           int8_t num_packets = streamGetIntBefore(',');
           // read the length of the current packet
           int16_t len_packet = streamGetIntBefore('\n');
-          if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+          if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux] &&
+              num_packets >= 0 && len_packet >= 0) {
             sockets[mux]->sock_available = len_packet * num_packets;
           }
           data = "";
