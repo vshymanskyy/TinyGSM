@@ -75,6 +75,12 @@ class TinyGsmGSMLocation {
     thisModem().sendAT(GF("+CLBS=1,1"));
     // Should get a location code of "0" indicating success
     if (thisModem().waitResponse(120000L, GF("+CLBS:0,")) != 1) { return ""; }
+    int8_t locationCode = thisModem().streamGetIntLength(2);
+    // 0 = success, else, error
+    if (locationCode != 0) {
+      thisModem().waitResponse();  // should be an ok after the error
+      return "";
+    }
     String res = thisModem().stream.readStringUntil('\n');
     thisModem().waitResponse();
     res.trim();
