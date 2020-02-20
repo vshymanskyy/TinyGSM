@@ -242,7 +242,7 @@ class TinyGsmModem {
   /*
    Utilities
    */
- protected:
+ public:
   // Utility templates for writing/skipping characters on a stream
   template <typename T>
   inline void streamWrite(T last) {
@@ -255,6 +255,13 @@ class TinyGsmModem {
     thisModem().streamWrite(tail...);
   }
 
+  inline void streamClear() {
+    while (thisModem().stream.available()) {
+      thisModem().waitResponse(50, NULL, NULL);
+    }
+  }
+
+ protected:
   inline int16_t streamGetIntLength(int8_t numChars) {
     char   buf[6];
     size_t bytesRead = thisModem().stream.readBytes(buf, numChars);
@@ -317,12 +324,6 @@ class TinyGsmModem {
       if (thisModem().stream.read() == c) { return true; }
     }
     return false;
-  }
-
-  inline void streamClear() {
-    while (thisModem().stream.available()) {
-      thisModem().waitResponse(50, NULL, NULL);
-    }
   }
 };
 
