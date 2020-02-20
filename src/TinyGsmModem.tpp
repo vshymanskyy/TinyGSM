@@ -141,8 +141,8 @@ class TinyGsmModem {
     thisModem().sendAT(GF("+GMM"));
     String res2;
     if (thisModem().waitResponse(1000L, res2) != 1) { return "unknown"; }
-    res1.replace("\r\nOK\r\n", "");
-    res1.replace("\rOK\r", "");
+    res2.replace("\r\nOK\r\n", "");
+    res2.replace("\rOK\r", "");
     res2.trim();
 
     String name = res1 + String(' ') + res2;
