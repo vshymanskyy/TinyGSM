@@ -43,7 +43,6 @@ void loop() {
 
 // Test the GPRS and SIM card functions
 #if defined(TINY_GSM_MODEM_HAS_GPRS)
-  modem.simUnlock();
   modem.simUnlock("1234");
   modem.getSimCCID();
   modem.getIMEI();
@@ -93,8 +92,8 @@ void loop() {
 
 #if defined(TINY_GSM_MODEM_HAS_SSL)
   TinyGsmClientSecure client_secure(modem);
-  TinyGsmClientSecure client2(modem);
-  TinyGsmClientSecure client3(modem, 1);
+  TinyGsmClientSecure client_secure2(modem);
+  TinyGsmClientSecure client_secure3(modem, 1);
   client_secure.init(&modem);
   client_secure.init(&modem, 1);
 
@@ -150,12 +149,12 @@ void loop() {
   float glatitude  = -9999;
   float glongitude = -9999;
   float gacc       = 0;
-  float gyear      = 0;
-  float gmonth     = 0;
-  float gday       = 0;
-  float ghour      = 0;
-  float gmin       = 0;
-  float gsec       = 0;
+  int   gyear      = 0;
+  int   gmonth     = 0;
+  int   gday       = 0;
+  int   ghour      = 0;
+  int   gmin       = 0;
+  int   gsec       = 0;
   modem.getGsmLocation(&glatitude, &glongitude);
   modem.getGsmLocation(&glatitude, &glongitude, &gacc, &gyear, &gmonth, &gday,
                        &ghour, &gmin, &gsec);
@@ -173,12 +172,12 @@ void loop() {
   int   vsat      = 0;
   int   usat      = 0;
   float acc       = 0;
-  float year      = 0;
-  float month     = 0;
-  float day       = 0;
-  float hour      = 0;
-  float minute    = 0;
-  float second    = 0;
+  int   year      = 0;
+  int   month     = 0;
+  int   day       = 0;
+  int   hour      = 0;
+  int   minute    = 0;
+  int   second    = 0;
   modem.getGPS(&latitude, &longitude);
   modem.getGPS(&latitude, &longitude, &speed, &alt, &vsat, &usat, &acc, &year,
                &month, &day, &hour, &minute, &second);
