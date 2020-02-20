@@ -466,10 +466,12 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       streamSkipUntil(',');              // GPS satellite valid numbers
       streamSkipUntil(',');              // GLONASS satellite valid numbers
       streamSkipUntil(',');              // BEIDOU satellite valid numbers
-      ilat = streamGetFloatBefore(',');  // Latitude
-      streamSkipUntil(',');              // N/S Indicator, N=north or S=south
-      ilon = streamGetFloatBefore(',');  // Longitude
-      streamSkipUntil(',');              // E/W Indicator, E=east or W=west
+      ilat = streamGetFloatBefore(',');  // Latitude in ddmm.mmmmmm
+      char northSouth = stream.read();   // N/S Indicator, N=north or S=south
+      streamSkipUntil(',');
+      ilon = streamGetFloatBefore(',');  // Longitude in ddmm.mmmmmm
+      char eastWest = stream.read();     // E/W Indicator, E=east or W=west
+      streamSkipUntil(',');
 
       // Date. Output format is ddmmyy
       iday   = streamGetIntLength(2);    // Two digit day
@@ -492,8 +494,12 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       streamSkipUntil('\n');  // TODO(?) is one more field reported??
 
       // Set pointers
-      if (lat != NULL) *lat = ilat;
-      if (lon != NULL) *lon = ilon;
+      if (lat != NULL)
+        *lat = (floor(ilat / 100) + fmod(ilat, 100.) / 60) *
+               (northSouth == 'N' ? 1 : -1);
+      if (lon != NULL)
+        *lon = (floor(ilon / 100) + fmod(ilon, 100.) / 60) *
+               (eastWest == 'E' ? 1 : -1);
       if (speed != NULL) *speed = ispeed;
       if (alt != NULL) *alt = static_cast<int>(ialt);
       if (vsat != NULL) *vsat = ivsat;
