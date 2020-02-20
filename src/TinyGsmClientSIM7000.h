@@ -423,7 +423,7 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
   }
 
   // get GPS informations
-  bool getGPSImpl(float* lat, float* lon, float* speed = 0, int* alt = 0,
+  bool getGPSImpl(float* lat, float* lon, float* speed = 0, float* alt = 0,
                   int* vsat = 0, int* usat = 0, float* accuracy = 0,
                   int* year = 0, int* month = 0, int* day = 0, int* hour = 0,
                   int* minute = 0, int* second = 0) {
@@ -480,7 +480,7 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
       if (lat != NULL) *lat = ilat;
       if (lon != NULL) *lon = ilon;
       if (speed != NULL) *speed = ispeed;
-      if (alt != NULL) *alt = static_cast<int>(ialt);
+      if (alt != NULL) *alt = ialt;
       if (vsat != NULL) *vsat = ivsat;
       if (usat != NULL) *usat = iusat;
       if (accuracy != NULL) *accuracy = iaccuracy;

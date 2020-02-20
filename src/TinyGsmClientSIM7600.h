@@ -438,7 +438,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
   }
 
   // get GPS informations
-  bool getGPSImpl(float* lat, float* lon, float* speed = 0, int* alt = 0,
+  bool getGPSImpl(float* lat, float* lon, float* speed = 0, float* alt = 0,
                   int* vsat = 0, int* usat = 0, float* accuracy = 0,
                   int* year = 0, int* month = 0, int* day = 0, int* hour = 0,
                   int* minute = 0, int* second = 0) {
@@ -449,8 +449,10 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
                                                 // TODO(?) Can 1 be returned
     if (fixMode == 1 || fixMode == 2 || fixMode == 3) {
       // init variables
-      float ilat         = 0;
-      float ilon         = 0;
+      float ilat = 0;
+      char  north;
+      float ilon = 0;
+      char  east;
       float ispeed       = 0;
       float ialt         = 0;
       int   ivsat        = 0;
@@ -463,14 +465,14 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       int   imin         = 0;
       float secondWithSS = 0;
 
-      streamSkipUntil(',');              // GPS satellite valid numbers
-      streamSkipUntil(',');              // GLONASS satellite valid numbers
-      streamSkipUntil(',');              // BEIDOU satellite valid numbers
-      ilat = streamGetFloatBefore(',');  // Latitude in ddmm.mmmmmm
-      char northSouth = stream.read();   // N/S Indicator, N=north or S=south
+      streamSkipUntil(',');               // GPS satellite valid numbers
+      streamSkipUntil(',');               // GLONASS satellite valid numbers
+      streamSkipUntil(',');               // BEIDOU satellite valid numbers
+      ilat  = streamGetFloatBefore(',');  // Latitude in ddmm.mmmmmm
+      north = stream.read();              // N/S Indicator, N=north or S=south
       streamSkipUntil(',');
       ilon = streamGetFloatBefore(',');  // Longitude in ddmm.mmmmmm
-      char eastWest = stream.read();     // E/W Indicator, E=east or W=west
+      east = stream.read();              // E/W Indicator, E=east or W=west
       streamSkipUntil(',');
 
       // Date. Output format is ddmmyy
@@ -496,12 +498,12 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       // Set pointers
       if (lat != NULL)
         *lat = (floor(ilat / 100) + fmod(ilat, 100.) / 60) *
-               (northSouth == 'N' ? 1 : -1);
+            (north == 'N' ? 1 : -1);
       if (lon != NULL)
         *lon = (floor(ilon / 100) + fmod(ilon, 100.) / 60) *
-               (eastWest == 'E' ? 1 : -1);
+            (east == 'E' ? 1 : -1);
       if (speed != NULL) *speed = ispeed;
-      if (alt != NULL) *alt = static_cast<int>(ialt);
+      if (alt != NULL) *alt = ialt;
       if (vsat != NULL) *vsat = ivsat;
       if (usat != NULL) *usat = iusat;
       if (accuracy != NULL) *accuracy = iaccuracy;
