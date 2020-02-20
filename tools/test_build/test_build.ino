@@ -68,11 +68,22 @@ void loop() {
 // Test the GSM location functions
 #if defined(TINY_GSM_MODEM_HAS_GSM_LOCATION)
   modem.getGsmLocation();
+  float glatitude = -9999;
+  float glongitude = -9999;
+  modem.getGsmLocation(&glatitude, &glongitude);
 #endif
 
 // Test the Network time function
 #if defined(TINY_GSM_MODEM_HAS_TIME)
   modem.getGSMDateTime(DATE_FULL);
+  int year3 = 0;
+  int month3 = 0;
+  int day3 = 0;
+  int hour3 = 0;
+  int min3 = 0;
+  int sec3 = 0;
+  float timezone = 0;
+  modem.getNetworkTime(&year3, &month3, &day3, &hour3, &min3, &sec3, &timezone);
 #endif
 
 // Test the GPS functions

@@ -59,6 +59,7 @@ class TinyGsmTime {
         break;
       case DATE_DATE: res = thisModem().stream.readStringUntil(','); break;
     }
+    thisModem().waitResponse();  // Ends with OK
     return res;
   }
 
