@@ -333,7 +333,7 @@ void loop() {
   int   hour     = 0;
   int   min      = 0;
   int sec = 0;
-  for (int8_t i = 5; i; i--) {
+  for (int8_t i = 15; i; i--) {
     DBG("Requesting current GSM location");
     if (modem.getGsmLocation(&lat, &lon, &accuracy, &year, &month, &day, &hour,
                              &min, &sec)) {
@@ -359,7 +359,7 @@ void loop() {
   float lat2      = 0;
   float lon2      = 0;
   float speed2    = 0;
-  int   alt2      = 0;
+  float alt2      = 0;
   int   vsat2     = 0;
   int   usat2     = 0;
   float accuracy2 = 0;
@@ -369,7 +369,7 @@ void loop() {
   int   hour2     = 0;
   int   min2      = 0;
   int   sec2      = 0;
-  for (int8_t i = 5; i; i--) {
+  for (int8_t i = 15; i; i--) {
     DBG("Requesting current GPS/GNSS/GLONASS location");
     if (modem.getGPS(&lat2, &lon2, &speed2, &alt2, &vsat2, &usat2, &accuracy2,
                     &year2, &month2, &day2, &hour2, &min2, &sec2)) {
