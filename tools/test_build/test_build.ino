@@ -91,6 +91,8 @@ void loop() {
   client.stop();
 
 #if defined(TINY_GSM_MODEM_HAS_SSL)
+  // modem.addCertificate();  // not yet impemented
+  // modem.deleteCertificate();  // not yet impemented
   TinyGsmClientSecure client_secure(modem);
   TinyGsmClientSecure client_secure2(modem);
   TinyGsmClientSecure client_secure3(modem, 1);

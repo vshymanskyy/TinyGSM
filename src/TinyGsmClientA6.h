@@ -65,11 +65,11 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
    public:
     GsmClientA6() {}
 
-    explicit GsmClientA6(TinyGsmA6& modem) {
+    explicit GsmClientA6(TinyGsmA6& modem, uint8_t = 0) {
       init(&modem, -1);
     }
 
-    bool init(TinyGsmA6* modem, uint8_t) {
+    bool init(TinyGsmA6* modem, uint8_t = 0) {
       this->at       = modem;
       this->mux      = -1;
       sock_connected = false;

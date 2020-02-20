@@ -97,7 +97,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
       init(&modem, mux);
     }
 
-    bool init(TinyGsmXBee* modem, uint8_t) {
+    bool init(TinyGsmXBee* modem, uint8_t = 0) {
       this->at       = modem;
       this->mux      = 0;
       sock_connected = false;

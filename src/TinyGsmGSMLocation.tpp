@@ -36,8 +36,8 @@ class TinyGsmGSMLocation {
 
   bool getGsmLocationTime(int* year, int* month, int* day, int* hour,
                           int* minute, int* second) {
-    float lat = 0;
-    float lon = 0;
+    float lat      = 0;
+    float lon      = 0;
     float accuracy = 0;
     return thisModem().getGsmLocation(&lat, &lon, &accuracy, year, month, day,
                                       hour, minute, second);
