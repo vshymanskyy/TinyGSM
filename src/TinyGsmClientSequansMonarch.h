@@ -238,18 +238,14 @@ class TinyGsmSequansMonarch
   String getModemNameImpl() {
     sendAT(GF("+CGMI"));
     String res1;
-    if (waitResponse(1000L, res1) != 1) {
-      return "unknown";
-    }
+    if (waitResponse(1000L, res1) != 1) { return "unknown"; }
     res1.replace("\r\nOK\r\n", "");
     res1.replace("\rOK\r", "");
     res1.trim();
 
     sendAT(GF("+CGMM"));
     String res2;
-    if (waitResponse(1000L, res2) != 1) {
-      return "unknown";
-    }
+    if (waitResponse(1000L, res2) != 1) { return "unknown"; }
     res2.replace("\r\nOK\r\n", "");
     res2.replace("\rOK\r", "");
     res2.trim();

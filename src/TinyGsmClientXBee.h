@@ -780,15 +780,18 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
  protected:
   bool gprsConnectImpl(const char* apn, const char* user = NULL,
                        const char* pwd = NULL) {
+    bool success = true;
     if (user && strlen(user) > 0) {
-      DBG("XBee's do not support SIMs that a user name/password!");
+      sendAT(GF("CU"), user);  // Set the user for the APN
+      success &= waitResponse() == 1;
     }
     if (pwd && strlen(pwd) > 0) {
-      DBG("XBee's do not support SIMs that a user name/password!");
+      sendAT(GF("CW"), pwd);  // Set the password for the APN
+      success &= waitResponse() == 1;
     }
     XBEE_COMMAND_START_DECORATOR(5, false)
     sendAT(GF("AN"), apn);  // Set the APN
-    bool success = waitResponse() == 1;
+    success &= waitResponse() == 1;
     sendAT(GF("AM0"));  // Airplane mode off
     waitResponse(5000);
     writeChanges();
@@ -823,7 +826,8 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
  protected:
   bool simUnlockImpl(const char* pin) {  // Not supported
     if (pin && strlen(pin) > 0) {
-      DBG("XBee's do not support SIMs that require an unlock pin!");
+      sendAT(GF("PN"), pin);
+      return waitResponse() == 1;
     }
     return false;
   }
