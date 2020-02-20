@@ -235,6 +235,39 @@ class TinyGsmSequansMonarch
     }
   }
 
+  String getModemNameImpl() {
+    sendAT(GF("+CGMI"));
+    String res1;
+    if (waitResponse(1000L, res1) != 1) {
+      return "unknown";
+    }
+    res1.replace("\r\nOK\r\n", "");
+    res1.replace("\rOK\r", "");
+    res1.trim();
+
+    sendAT(GF("+CGMM"));
+    String res2;
+    if (waitResponse(1000L, res2) != 1) {
+      return "unknown";
+    }
+    res2.replace("\r\nOK\r\n", "");
+    res2.replace("\rOK\r", "");
+    res2.trim();
+
+    String name = res1 + String(' ') + res2;
+    DBG("### Modem:", name);
+    return name;
+  }
+
+  bool factoryDefaultImpl() {
+    sendAT(GF("&F0"));  // Factory
+    waitResponse();
+    sendAT(GF("Z"));  // default configuration
+    waitResponse();
+    sendAT(GF("+IPR=0"));  // Auto-baud
+    return waitResponse() == 1;
+  }
+
   void maintainImpl() {
     for (int mux = 1; mux <= TINY_GSM_MUX_COUNT; mux++) {
       GsmClientSequansMonarch* sock = sockets[mux % TINY_GSM_MUX_COUNT];
