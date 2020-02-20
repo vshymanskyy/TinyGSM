@@ -1,19 +1,12 @@
 /**************************************************************
  *
  *  DO NOT USE THIS - this is just a compilation test!
+ *  This is NOT an example for use of this library!
  *
  **************************************************************/
 #include <TinyGsmClient.h>
 
 TinyGsm modem(Serial);
-TinyGsmClient client(modem);
-
-#if defined(TINY_GSM_MODEM_HAS_SSL)
-TinyGsmClientSecure client_secure(modem);
-#endif
-
-char server[] = "somewhere";
-char resource[] = "something";
 
 void setup() {
   Serial.begin(115200);
@@ -22,14 +15,16 @@ void setup() {
 
 void loop() {
   // Test the basic functions
-  // modem.init();
   modem.begin();
+  modem.begin("1234");
+  modem.init();
+  modem.init("1234");
   modem.setBaud(115200);
   modem.testAT();
-  modem.factoryDefault();
+
   modem.getModemInfo();
   modem.getModemName();
-  modem.maintain();
+  modem.factoryDefault();
 
   // Test Power functions
   modem.restart();
@@ -37,90 +32,47 @@ void loop() {
   // modem.radioOff();  // Not available for all modems
   modem.poweroff();
 
-// Test the SIM card functions
+  // Test generic network functions
+  modem.getRegistrationStatus();
+  modem.isNetworkConnected();
+  modem.waitForNetwork();
+  modem.waitForNetwork(15000L);
+  modem.getSignalQuality();
+  modem.getLocalIP();
+  modem.localIP();
+
+// Test the GPRS and SIM card functions
 #if defined(TINY_GSM_MODEM_HAS_GPRS)
+  modem.simUnlock();
+  modem.simUnlock("1234");
   modem.getSimCCID();
   modem.getIMEI();
+  modem.getIMSI();
   modem.getSimStatus();
+
+  modem.gprsConnect("myAPN");
+  modem.gprsConnect("myAPN", "myUser");
+  modem.gprsConnect("myAPN", "myAPNUser", "myAPNPass");
+  modem.gprsDisconnect();
   modem.getOperator();
 #endif
 
-// Test the calling functions
-#if defined(TINY_GSM_MODEM_HAS_CALLING)
-  modem.callNumber(String("+380000000000"));
- #if not defined(TINY_GSM_MODEM_SEQUANS_MONARCH)
-  modem.callAnswer();
-  #endif
-  modem.callHangup();
-#endif
-
-// Test the SMS functions
-#if defined(TINY_GSM_MODEM_HAS_SMS)
- #if not defined(TINY_GSM_MODEM_XBEE) && not defined(TINY_GSM_MODEM_SARAR4)
-  modem.sendUSSD("*111#");
-  #endif
-  modem.sendSMS(String("+380000000000"), String("Hello from "));
- #if not defined(TINY_GSM_MODEM_XBEE) && not defined(TINY_GSM_MODEM_M590) && not defined(TINY_GSM_MODEM_SARAR4)
-  modem.sendSMS_UTF16("+380000000000", "Hello", 5);
-  #endif
-#endif
-
-// Test the GSM location functions
-#if defined(TINY_GSM_MODEM_HAS_GSM_LOCATION)
-  modem.getGsmLocation();
-  float glatitude = -9999;
-  float glongitude = -9999;
-  modem.getGsmLocation(&glatitude, &glongitude);
-#endif
-
-// Test the Network time function
-#if defined(TINY_GSM_MODEM_HAS_TIME)
-  modem.getGSMDateTime(DATE_FULL);
-  int year3 = 0;
-  int month3 = 0;
-  int day3 = 0;
-  int hour3 = 0;
-  int min3 = 0;
-  int sec3 = 0;
-  float timezone = 0;
-  modem.getNetworkTime(&year3, &month3, &day3, &hour3, &min3, &sec3, &timezone);
-#endif
-
-// Test the GPS functions
-#if defined(TINY_GSM_MODEM_HAS_GPS)
-  modem.enableGPS();
-  modem.getGPSraw();
-  float latitude = -9999;
-  float longitude = -9999;
-  modem.getGPS(&latitude, &longitude);
-#endif
-
-// Test Battery functions
-#if defined(TINY_GSM_MODEM_HAS_BATTERY)
-  uint8_t chargeState = 0;
-  int8_t chargePercent = 0;
-  uint16_t milliVolts = 0;
-  modem.getBattStats(chargeState, chargePercent, milliVolts);
-#endif
-
-// Test the temperature function
-#if defined(TINY_GSM_MODEM_HAS_TEMPERATURE)
-  modem.getTemperature();
-#endif
-
-  // Test the Networking functions
-  modem.getRegistrationStatus();
-  modem.getSignalQuality();
-  modem.localIP();
-
-#if defined(TINY_GSM_MODEM_HAS_GPRS)
-  modem.waitForNetwork();
-  modem.gprsConnect("YourAPN", "", "");
-#endif
+// Test WiFi Functions
 #if defined(TINY_GSM_MODEM_HAS_WIFI)
-  modem.networkConnect("YourSSID", "YourWiFiPass");
-  modem.waitForNetwork();
+  modem.networkConnect("mySSID", "mySSIDPassword");
+  modem.networkDisconnect();
 #endif
+
+  // Test TCP functions
+  modem.maintain();
+  TinyGsmClient client;
+  TinyGsmClient client2(modem);
+  TinyGsmClient client3(modem, 1);
+  client.init(&modem);
+  client.init(&modem, 1);
+
+  char server[]   = "somewhere";
+  char resource[] = "something";
 
   client.connect(server, 80);
 
@@ -140,6 +92,12 @@ void loop() {
   client.stop();
 
 #if defined(TINY_GSM_MODEM_HAS_SSL)
+  TinyGsmClientSecure client_secure(modem);
+  TinyGsmClientSecure client2(modem);
+  TinyGsmClientSecure client3(modem, 1);
+  client_secure.init(&modem);
+  client_secure.init(&modem, 1);
+
   client_secure.connect(server, 443);
 
   // Make a HTTP GET request:
@@ -158,10 +116,98 @@ void loop() {
   client_secure.stop();
 #endif
 
-#if defined(TINY_GSM_MODEM_HAS_GPRS)
-  modem.gprsDisconnect();
+// Test the calling functions
+#if defined(TINY_GSM_MODEM_HAS_CALLING)
+  modem.callNumber(String("+380000000000"));
+  modem.callHangup();
+
+#if not defined(TINY_GSM_MODEM_SEQUANS_MONARCH)
+  modem.callAnswer();
+  modem.dtmfSend('A', 1000);
 #endif
-#if defined(TINY_GSM_MODEM_HAS_WIFI)
-  modem.networkDisconnect();
+
+#endif
+
+// Test the SMS functions
+#if defined(TINY_GSM_MODEM_HAS_SMS)
+  modem.sendSMS(String("+380000000000"), String("Hello from "));
+
+#if not defined(TINY_GSM_MODEM_XBEE) && not defined(TINY_GSM_MODEM_SARAR4)
+  modem.sendUSSD("*111#");
+#endif
+
+#if not defined(TINY_GSM_MODEM_XBEE) && not defined(TINY_GSM_MODEM_M590) && \
+    not defined(TINY_GSM_MODEM_SARAR4)
+  modem.sendSMS_UTF16("+380000000000", "Hello", 5);
+#endif
+
+#endif
+
+// Test the GSM location functions
+#if defined(TINY_GSM_MODEM_HAS_GSM_LOCATION)
+  modem.getGsmLocationRaw();
+  modem.getGsmLocation();
+  float glatitude  = -9999;
+  float glongitude = -9999;
+  float gacc       = 0;
+  float gyear      = 0;
+  float gmonth     = 0;
+  float gday       = 0;
+  float ghour      = 0;
+  float gmin       = 0;
+  float gsec       = 0;
+  modem.getGsmLocation(&glatitude, &glongitude);
+  modem.getGsmLocation(&glatitude, &glongitude, &gacc, &gyear, &gmonth, &gday,
+                       &ghour, &gmin, &gsec);
+  modem.getGsmLocationTime(&gyear, &gmonth, &gday, &ghour, &gmin, &gsec);
+#endif
+
+// Test the GPS functions
+#if defined(TINY_GSM_MODEM_HAS_GPS)
+  modem.enableGPS();
+  modem.getGPSraw();
+  float latitude  = -9999;
+  float longitude = -9999;
+  float speed     = 0;
+  float alt       = 0;
+  int   vsat      = 0;
+  int   usat      = 0;
+  float acc       = 0;
+  float year      = 0;
+  float month     = 0;
+  float day       = 0;
+  float hour      = 0;
+  float minute    = 0;
+  float second    = 0;
+  modem.getGPS(&latitude, &longitude);
+  modem.getGPS(&latitude, &longitude, &speed, &alt, &vsat, &usat, &acc, &year,
+               &month, &day, &hour, &minute, &second);
+  modem.disableGPS();
+#endif
+
+// Test the Network time function
+#if defined(TINY_GSM_MODEM_HAS_TIME)
+  modem.getGSMDateTime(DATE_FULL);
+  int   year3    = 0;
+  int   month3   = 0;
+  int   day3     = 0;
+  int   hour3    = 0;
+  int   min3     = 0;
+  int   sec3     = 0;
+  float timezone = 0;
+  modem.getNetworkTime(&year3, &month3, &day3, &hour3, &min3, &sec3, &timezone);
+#endif
+
+// Test Battery functions
+#if defined(TINY_GSM_MODEM_HAS_BATTERY)
+  uint8_t  chargeState   = 0;
+  int8_t   chargePercent = 0;
+  uint16_t milliVolts    = 0;
+  modem.getBattStats(chargeState, chargePercent, milliVolts);
+#endif
+
+// Test the temperature function
+#if defined(TINY_GSM_MODEM_HAS_TEMPERATURE)
+  modem.getTemperature();
 #endif
 }
