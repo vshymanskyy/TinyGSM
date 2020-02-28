@@ -276,9 +276,12 @@ class TinyGsmTCP {
         rx.clear();
         at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available), mux);
       }
+      rx.clear();
+      at->streamClear();
 
 #elif defined TINY_GSM_NO_MODEM_BUFFER
-      // Do nothing
+      rx.clear();
+      at->streamClear();
 
 #else
 #error Modem client has been incorrectly created
