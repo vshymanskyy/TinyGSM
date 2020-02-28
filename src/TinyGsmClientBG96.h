@@ -202,8 +202,8 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
   bool restartImpl() {
     if (!testAT()) { return false; }
     sendAT(GF("+CFUN=1,1"));
-    if (waitResponse(60000L, GF("POWERED DOWN")) != 1) { return false; }
-    waitResponse(5000L, GF("RDY"));
+    if (waitResponse(10000L, GF("OK")) != 1) { return false; }
+    waitResponse(10000L, GF("APP RDY"));
     return init();
   }
 

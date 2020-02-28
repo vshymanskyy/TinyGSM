@@ -274,7 +274,6 @@ class TinyGsmTCP {
       uint32_t startMillis = millis();
       while (sock_available > 0 && (millis() - startMillis < maxWaitMs)) {
         rx.clear();
-        DBG(TinyGsmMin((uint16_t)rx.free(), sock_available));
         at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available), mux);
       }
 
