@@ -39,28 +39,33 @@
 
 // or Software Serial on Uno, Nano
 //#include <SoftwareSerial.h>
-//SoftwareSerial SerialAT(2, 3); // RX, TX
+// SoftwareSerial SerialAT(2, 3); // RX, TX
 
 // See all AT commands, if wanted
-//#define DUMP_AT_COMMANDS
+// #define DUMP_AT_COMMANDS
 
 // Define the serial console for debug prints, if needed
 #define TINY_GSM_DEBUG SerialMon
 
 // Range to attempt to autobaud
 #define GSM_AUTOBAUD_MIN 9600
-#define GSM_AUTOBAUD_MAX 38400
+#define GSM_AUTOBAUD_MAX 115200
 
 /*
  * Tests enabled
  */
 #define TINY_GSM_TEST_GPRS true
 #define TINY_GSM_TEST_WIFI false
+#define TINY_GSM_TEST_TCP true
+#define TINY_GSM_TEST_SSL true
 #define TINY_GSM_TEST_CALL true
 #define TINY_GSM_TEST_SMS true
 #define TINY_GSM_TEST_USSD true
 #define TINY_GSM_TEST_BATTERY true
-#define TINY_GSM_TEST_GPS false
+#define TINY_GSM_TEST_TEMPERATURE true
+#define TINY_GSM_TEST_GSM_LOCATION true
+#define TINY_GSM_TEST_TIME true
+#define TINY_GSM_TEST_GPS true
 // powerdown modem after tests
 #define TINY_GSM_POWERDOWN false
 
@@ -68,30 +73,28 @@
 #define GSM_PIN ""
 
 // Set phone numbers, if you want to test SMS and Calls
-//#define SMS_TARGET  "+380xxxxxxxxx"
-//#define CALL_TARGET "+380xxxxxxxxx"
+// #define SMS_TARGET  "+380xxxxxxxxx"
+// #define CALL_TARGET "+380xxxxxxxxx"
 
 // Your GPRS credentials, if any
-const char apn[]  = "YourAPN";
+const char apn[]      = "YourAPN";
 const char gprsUser[] = "";
 const char gprsPass[] = "";
 
 // Your WiFi connection credentials, if applicable
-const char wifiSSID[]  = "YourSSID";
+const char wifiSSID[] = "YourSSID";
 const char wifiPass[] = "YourWiFiPass";
+
+// Server details to test TCP/SSL
+const char server[] = "vsh.pp.ua";
+const char resource[] = "/TinyGSM/logo.txt";
 
 #include <TinyGsmClient.h>
 
 #if TINY_GSM_TEST_GPRS && not defined TINY_GSM_MODEM_HAS_GPRS
 #undef TINY_GSM_TEST_GPRS
-#undef TINY_GSM_TEST_CALL
-#undef TINY_GSM_TEST_SMS
-#undef TINY_GSM_TEST_USSD
 #undef TINY_GSM_TEST_WIFI
 #define TINY_GSM_TEST_GPRS false
-#define TINY_GSM_TEST_CALL false
-#define TINY_GSM_TEST_SMS false
-#define TINY_GSM_TEST_USSD false
 #define TINY_GSM_TEST_WIFI true
 #endif
 #if TINY_GSM_TEST_WIFI && not defined TINY_GSM_MODEM_HAS_WIFI
@@ -99,10 +102,6 @@ const char wifiPass[] = "YourWiFiPass";
 #undef TINY_GSM_USE_WIFI
 #define TINY_GSM_USE_GPRS true
 #define TINY_GSM_USE_WIFI false
-#endif
-#if TINY_GSM_TEST_GPS && not defined TINY_GSM_MODEM_HAS_GPS
-#undef TINY_GSM_TEST_GPS
-#define TINY_GSM_TEST_GPS false
 #endif
 
 #ifdef DUMP_AT_COMMANDS
@@ -120,28 +119,28 @@ void setup() {
 
   // !!!!!!!!!!!
   // Set your reset, enable, power pins here
+  pinMode(23, OUTPUT);
+  digitalWrite(23, HIGH);
   // !!!!!!!!!!!
 
   DBG("Wait...");
+  delay(6000);
 
   // Set GSM module baud rate
-  TinyGsmAutoBaud(SerialAT,GSM_AUTOBAUD_MIN,GSM_AUTOBAUD_MAX);
-  //SerialAT.begin(9600);
-  delay(3000);
+  TinyGsmAutoBaud(SerialAT, GSM_AUTOBAUD_MIN, GSM_AUTOBAUD_MAX);
+  // SerialAT.begin(9600);
 }
 
 void loop() {
-
   // Restart takes quite some time
   // To skip it, call init() instead of restart()
   DBG("Initializing modem...");
   if (!modem.restart()) {
-  // if (!modem.init()) {
+    // if (!modem.init()) {
     DBG("Failed to restart modem, delaying 10s and retrying");
-    delay(3000);
+    delay(10000L);
     // restart autobaud in case GSM just rebooted
-    TinyGsmAutoBaud(SerialAT,GSM_AUTOBAUD_MIN,GSM_AUTOBAUD_MAX);
-    delay(10000);
+    // TinyGsmAutoBaud(SerialAT, GSM_AUTOBAUD_MIN, GSM_AUTOBAUD_MAX);
     return;
   }
 
@@ -153,7 +152,7 @@ void loop() {
 
 #if TINY_GSM_TEST_GPRS
   // Unlock your SIM card with a PIN if needed
-  if ( GSM_PIN && modem.getSimStatus() != 3 ) {
+  if (GSM_PIN && modem.getSimStatus() != 3) {
     modem.simUnlock(GSM_PIN);
   }
 #endif
@@ -174,7 +173,7 @@ void loop() {
 #endif
 
   DBG("Waiting for network...");
-  if (!modem.waitForNetwork()) {
+  if (!modem.waitForNetwork(600000L)) {
     delay(10000);
     return;
   }
@@ -199,6 +198,9 @@ void loop() {
   String imei = modem.getIMEI();
   DBG("IMEI:", imei);
 
+  String imsi = modem.getIMSI();
+  DBG("IMSI:", imsi);
+
   String cop = modem.getOperator();
   DBG("Operator:", cop);
 
@@ -207,19 +209,9 @@ void loop() {
 
   int csq = modem.getSignalQuality();
   DBG("Signal quality:", csq);
-
-  // This is only supported on SIMxxx series
-  // String gsmLoc = modem.getGsmLocation();
-  // DBG("GSM location:", gsmLoc);
-
-  // This is only supported on SIMxxx series
-  // String gsmTime = modem.getGSMDateTime(DATE_TIME);
-  // DBG("GSM Time:", gsmTime);
-  // String gsmDate = modem.getGSMDateTime(DATE_DATE);
-  // DBG("GSM Date:", gsmDate);
 #endif
 
-#if TINY_GSM_TEST_USSD
+#if TINY_GSM_TEST_USSD && defined TINY_GSM_MODEM_HAS_SMS
   String ussd_balance = modem.sendUSSD("*111#");
   DBG("Balance (USSD):", ussd_balance);
 
@@ -227,23 +219,70 @@ void loop() {
   DBG("Phone number (USSD):", ussd_phone_num);
 #endif
 
-#if TINY_GSM_TEST_GPS
-  modem.enableGPS();
-  String gps_raw = modem.getGPSraw();
-  modem.disableGPS();
-  DBG("GPS raw data:", gps_raw);
+#if TINY_GSM_TEST_TCP && defined TINY_GSM_MODEM_HAS_TCP
+  TinyGsmClient client(modem, 0);
+  const int port = 80;
+  DBG("Connecting to ", server);
+  if (!client.connect(server, port)) {
+    DBG("... failed");
+  } else {
+    // Make a HTTP GET request:
+    client.print(String("GET ") + resource + " HTTP/1.0\r\n");
+    client.print(String("Host: ") + server + "\r\n");
+    client.print("Connection: close\r\n\r\n");
+
+    // Wait for data to arrive
+    uint32_t start = millis();
+    while (client.connected() && !client.available() &&
+           millis() - start < 30000L) {
+      delay(100);
+    };
+
+    // Read data
+    start = millis();
+    while (client.connected() && millis() - start < 5000L) {
+      while (client.available()) {
+        SerialMon.write(client.read());
+        start = millis();
+      }
+    }
+    client.stop();
+  }
 #endif
 
-#if TINY_GSM_TEST_SMS && defined(SMS_TARGET)
-  res = modem.sendSMS(SMS_TARGET, String("Hello from ") + imei);
-  DBG("SMS:", res ? "OK" : "fail");
+#if TINY_GSM_TEST_SSL && defined TINY_GSM_MODEM_HAS_SSL
+  TinyGsmClientSecure secureClient(modem, 1);
+  const int securePort = 443;
+  DBG("Connecting to ", server);
+  if (!secureClient.connect(server, securePort)) {
+    DBG("... failed");
+  } else {
+    // Make a HTTP GET request:
+    secureClient.print(String("GET ") + resource + " HTTP/1.0\r\n");
+    secureClient.print(String("Host: ") + server + "\r\n");
+    secureClient.print("Connection: close\r\n\r\n");
 
-  // This is only supported on SIMxxx series
-  res = modem.sendSMS_UTF16(SMS_TARGET, u"Привіііт!", 9);
-  DBG("UTF16 SMS:", res ? "OK" : "fail");
+    // Wait for data to arrive
+    uint32_t startS = millis();
+    while (secureClient.connected() && !secureClient.available() &&
+           millis() - startS < 30000L) {
+      delay(100);
+    };
+
+    // Read data
+    startS = millis();
+    while (secureClient.connected() && millis() - startS < 5000L) {
+      while (secureClient.available()) {
+        SerialMon.write(secureClient.read());
+        startS = millis();
+      }
+    }
+    secureClient.stop();
+  }
 #endif
 
-#if TINY_GSM_TEST_CALL && defined(CALL_TARGET)
+#if TINY_GSM_TEST_CALL && defined TINY_GSM_MODEM_HAS_CALLING && \
+    defined CALL_TARGET
   DBG("Calling:", CALL_TARGET);
 
   // This is NOT supported on M590
@@ -257,7 +296,7 @@ void loop() {
     modem.dtmfSend('A', 1000);
 
     // Play DTMF 0..4, default duration (100ms)
-    for (char tone='0'; tone<='4'; tone++) {
+    for (char tone = '0'; tone <= '4'; tone++) {
       modem.dtmfSend(tone);
     }
 
@@ -268,21 +307,120 @@ void loop() {
   }
 #endif
 
-#if TINY_GSM_TEST_BATTERY
-  uint8_t chargeState = -99;
-  int8_t percent = -99;
-  uint16_t milliVolts = -9999;
-  modem.getBattStats(chargeState, percent, milliVolts);
-  DBG("Battery charge state:", chargeState);
-  DBG("Battery charge 'percent':", percent);
-  DBG("Battery voltage:", milliVolts / 1000.0F);
+#if TINY_GSM_TEST_SMS && defined TINY_GSM_MODEM_HAS_SMS && defined SMS_TARGET
+  res = modem.sendSMS(SMS_TARGET, String("Hello from ") + imei);
+  DBG("SMS:", res ? "OK" : "fail");
 
-  float temp = modem.getTemperature();
-  DBG("Chip temperature:", temp);
+  // This is only supported on SIMxxx series
+  res = modem.sendSMS_UTF8_begin(SMS_TARGET);
+  if (res) {
+    auto stream = modem.sendSMS_UTF8_stream();
+    stream.print(F("Привіііт! Print number: "));
+    stream.print(595);
+    res = modem.sendSMS_UTF8_end();
+  }
+  DBG("UTF8 SMS:", res ? "OK" : "fail");
+
+#endif
+
+#if TINY_GSM_TEST_GSM_LOCATION && defined TINY_GSM_MODEM_HAS_GSM_LOCATION
+  float lat      = 0;
+  float lon      = 0;
+  float accuracy = 0;
+  int   year     = 0;
+  int   month    = 0;
+  int   day      = 0;
+  int   hour     = 0;
+  int   min      = 0;
+  int sec = 0;
+  for (int8_t i = 15; i; i--) {
+    DBG("Requesting current GSM location");
+    if (modem.getGsmLocation(&lat, &lon, &accuracy, &year, &month, &day, &hour,
+                             &min, &sec)) {
+      DBG("Latitude:", String(lat, 8), "\tLongitude:", String(lon, 8));
+      DBG("Accuracy:", accuracy);
+      DBG("Year:", year, "\tMonth:", month, "\tDay:", day);
+      DBG("Hour:", hour, "\tMinute:", min, "\tSecond:", sec);
+      break;
+    } else {
+      DBG("Couldn't get GSM location, retrying in 15s.");
+      delay(15000L);
+    }
+  }
+  DBG("Retrieving GSM location again as a string");
+  String location = modem.getGsmLocation();
+  DBG("GSM Based Location String:", location);
+#endif
+
+#if TINY_GSM_TEST_GPS && defined TINY_GSM_MODEM_HAS_GPS
+  DBG("Enabling GPS/GNSS/GLONASS and waiting 15s for warm-up");
+  modem.enableGPS();
+  delay(15000L);
+  float lat2      = 0;
+  float lon2      = 0;
+  float speed2    = 0;
+  float alt2      = 0;
+  int   vsat2     = 0;
+  int   usat2     = 0;
+  float accuracy2 = 0;
+  int   year2     = 0;
+  int   month2    = 0;
+  int   day2      = 0;
+  int   hour2     = 0;
+  int   min2      = 0;
+  int   sec2      = 0;
+  for (int8_t i = 15; i; i--) {
+    DBG("Requesting current GPS/GNSS/GLONASS location");
+    if (modem.getGPS(&lat2, &lon2, &speed2, &alt2, &vsat2, &usat2, &accuracy2,
+                    &year2, &month2, &day2, &hour2, &min2, &sec2)) {
+      DBG("Latitude:", String(lat2, 8), "\tLongitude:", String(lon2, 8));
+      DBG("Speed:", speed2, "\tAltitude:", alt2);
+      DBG("Visible Satellites:", vsat2, "\tUsed Satellites:", usat2);
+      DBG("Accuracy:", accuracy2);
+      DBG("Year:", year2, "\tMonth:", month2, "\tDay:", day2);
+      DBG("Hour:", hour2, "\tMinute:", min2, "\tSecond:", sec2);
+      break;
+    } else {
+      DBG("Couldn't get GPS/GNSS/GLONASS location, retrying in 15s.");
+      delay(15000L);
+    }
+  }
+  DBG("Retrieving GPS/GNSS/GLONASS location again as a string");
+  String gps_raw = modem.getGPSraw();
+  DBG("GPS/GNSS Based Location String:", gps_raw);
+  DBG("Disabling GPS");
+  modem.disableGPS();
+#endif
+
+#if TINY_GSM_TEST_TIME && defined TINY_GSM_MODEM_HAS_TIME
+  int year3 = 0;
+  int month3 = 0;
+  int day3 = 0;
+  int hour3 = 0;
+  int min3 = 0;
+  int sec3 = 0;
+  float timezone = 0;
+  for (int8_t i = 5; i; i--) {
+    DBG("Requesting current network time");
+    if (modem.getNetworkTime(&year3, &month3, &day3, &hour3, &min3, &sec3,
+                                 &timezone)) {
+      DBG("Year:", year3, "\tMonth:", month3, "\tDay:", day3);
+      DBG("Hour:", hour3, "\tMinute:", min3, "\tSecond:", sec3);
+      DBG("Timezone:", timezone);
+      break;
+    } else {
+      DBG("Couldn't get network time, retrying in 15s.");
+      delay(15000L);
+    }
+  }
+  DBG("Retrieving time again as a string");
+  String time = modem.getGSMDateTime(DATE_FULL);
+  DBG("Current Network Time:", time);
 #endif
 
 #if TINY_GSM_TEST_GPRS
   modem.gprsDisconnect();
+  delay(5000L);
   if (!modem.isGprsConnected()) {
     DBG("GPRS disconnected");
   } else {
@@ -295,12 +433,29 @@ void loop() {
   DBG("WiFi disconnected");
 #endif
 
+#if TINY_GSM_TEST_BATTERY && defined TINY_GSM_MODEM_HAS_BATTERY
+  uint8_t  chargeState = -99;
+  int8_t   percent     = -99;
+  uint16_t milliVolts  = -9999;
+  modem.getBattStats(chargeState, percent, milliVolts);
+  DBG("Battery charge state:", chargeState);
+  DBG("Battery charge 'percent':", percent);
+  DBG("Battery voltage:", milliVolts / 1000.0F);
+#endif
+
+#if TINY_GSM_TEST_TEMPERATURE && defined TINY_GSM_MODEM_HAS_TEMPERATURE
+  float temp = modem.getTemperature();
+  DBG("Chip temperature:", temp);
+#endif
+
 #if TINY_GSM_POWERDOWN
   // Try to power-off (modem may decide to restart automatically)
   // To turn off modem completely, please use Reset/Enable pins
   modem.poweroff();
   DBG("Poweroff.");
 #endif
+
+  DBG("End of tests.");
 
   // Do nothing forevermore
   while (true) {

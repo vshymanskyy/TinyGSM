@@ -6,58 +6,42 @@
  * @date     Nov 2016
  */
 
-#ifndef TinyGsmClientSIM808_h
-#define TinyGsmClientSIM808_h
-//#pragma message("TinyGSM:  TinyGsmClientSIM808")
+#ifndef SRC_TINYGSMCLIENTSIM808_H_
+#define SRC_TINYGSMCLIENTSIM808_H_
+// #pragma message("TinyGSM:  TinyGsmClientSIM808")
 
-#include <TinyGsmClientSIM800.h>
+#include "TinyGsmClientSIM800.h"
+#include "TinyGsmGPS.tpp"
 
+class TinyGsmSim808 : public TinyGsmSim800, public TinyGsmGPS<TinyGsmSim808> {
+  friend class TinyGsmGPS<TinyGsmSim808>;
 
-class TinyGsmSim808: public TinyGsmSim800
-{
+ public:
+  explicit TinyGsmSim808(Stream& stream) : TinyGsmSim800(stream) {}
 
-public:
-
-  TinyGsmSim808(Stream& stream)
-    : TinyGsmSim800(stream)
-  {}
-
-  virtual ~TinyGsmSim808(){}
 
   /*
-   * GPS location functions
+   * GPS/GNSS/GLONASS location functions
    */
-
+ protected:
   // enable GPS
-  bool enableGPS() {
-    // uint16_t state;
-
+  bool enableGPSImpl() {
     sendAT(GF("+CGNSPWR=1"));
-    if (waitResponse() != 1) {
-      return false;
-    }
-
+    if (waitResponse() != 1) { return false; }
     return true;
   }
 
-  bool disableGPS() {
-    // uint16_t state;
-
+  bool disableGPSImpl() {
     sendAT(GF("+CGNSPWR=0"));
-    if (waitResponse() != 1) {
-      return false;
-    }
-
+    if (waitResponse() != 1) { return false; }
     return true;
   }
 
   // get the RAW GPS output
   // works only with ans SIM808 V2
-  String getGPSraw() {
+  String getGPSrawImpl() {
     sendAT(GF("+CGNSINF"));
-    if (waitResponse(GF(GSM_NL "+CGNSINF:")) != 1) {
-      return "";
-    }
+    if (waitResponse(10000L, GF(GSM_NL "+CGNSINF:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     waitResponse();
     res.trim();
@@ -66,87 +50,83 @@ public:
 
   // get GPS informations
   // works only with ans SIM808 V2
-  bool getGPS(float *lat, float *lon, float *speed=0, int *alt=0, int *vsat=0, int *usat=0) {
-    //String buffer = "";
-    // char chr_buffer[12];
-    bool fix = false;
-
+  bool getGPSImpl(float* lat, float* lon, float* speed = 0, float* alt = 0,
+                  int* vsat = 0, int* usat = 0, float* accuracy = 0,
+                  int* year = 0, int* month = 0, int* day = 0, int* hour = 0,
+                  int* minute = 0, int* second = 0) {
     sendAT(GF("+CGNSINF"));
-    if (waitResponse(GF(GSM_NL "+CGNSINF:")) != 1) {
-      return false;
-    }
+    if (waitResponse(10000L, GF(GSM_NL "+CGNSINF:")) != 1) { return false; }
 
-    stream.readStringUntil(','); // mode
-    if ( stream.readStringUntil(',').toInt() == 1 ) fix = true;
-    stream.readStringUntil(','); //utctime
-    *lat =  stream.readStringUntil(',').toFloat(); //lat
-    *lon =  stream.readStringUntil(',').toFloat(); //lon
-    if (alt != NULL) *alt =  stream.readStringUntil(',').toFloat(); //lon
-    if (speed != NULL) *speed = stream.readStringUntil(',').toFloat(); //speed
-    stream.readStringUntil(',');
-    stream.readStringUntil(',');
-    stream.readStringUntil(',');
-    stream.readStringUntil(',');
-    stream.readStringUntil(',');
-    stream.readStringUntil(',');
-    stream.readStringUntil(',');
-    if (vsat != NULL) *vsat = stream.readStringUntil(',').toInt(); //viewed satelites
-    if (usat != NULL) *usat = stream.readStringUntil(',').toInt(); //used satelites
-    stream.readStringUntil('\n');
+    streamSkipUntil(',');                // GNSS run status
+    if (streamGetIntBefore(',') == 1) {  // fix status
+      // init variables
+      float ilat         = 0;
+      float ilon         = 0;
+      float ispeed       = 0;
+      float ialt         = 0;
+      int   ivsat        = 0;
+      int   iusat        = 0;
+      float iaccuracy    = 0;
+      int   iyear        = 0;
+      int   imonth       = 0;
+      int   iday         = 0;
+      int   ihour        = 0;
+      int   imin         = 0;
+      float secondWithSS = 0;
 
-    waitResponse();
+      // UTC date & Time
+      iyear  = streamGetIntLength(4);  // Four digit year
+      imonth = streamGetIntLength(2);  // Two digit month
+      iday   = streamGetIntLength(2);  // Two digit day
+      ihour  = streamGetIntLength(2);  // Two digit hour
+      imin   = streamGetIntLength(2);  // Two digit minute
+      secondWithSS =
+          streamGetFloatBefore(',');  // 6 digit second with subseconds
 
-    return fix;
-  }
+      ilat   = streamGetFloatBefore(',');  // Latitude
+      ilon   = streamGetFloatBefore(',');  // Longitude
+      ialt   = streamGetFloatBefore(',');  // MSL Altitude. Unit is meters
+      ispeed = streamGetFloatBefore(',');  // Speed Over Ground. Unit is knots.
+      streamSkipUntil(',');                // Course Over Ground. Degrees.
+      streamSkipUntil(',');                // Fix Mode
+      streamSkipUntil(',');                // Reserved1
+      iaccuracy =
+          streamGetFloatBefore(',');    // Horizontal Dilution Of Precision
+      streamSkipUntil(',');             // Position Dilution Of Precision
+      streamSkipUntil(',');             // Vertical Dilution Of Precision
+      streamSkipUntil(',');             // Reserved2
+      ivsat = streamGetIntBefore(',');  // GNSS Satellites in View
+      iusat = streamGetIntBefore(',');  // GNSS Satellites Used
+      streamSkipUntil(',');             // GLONASS Satellites Used
+      streamSkipUntil(',');             // Reserved3
+      streamSkipUntil(',');             // C/N0 max
+      streamSkipUntil(',');             // HPA
+      streamSkipUntil('\n');            // VPA
 
-  // get GPS time
-  // works only with SIM808 V2
-  bool getGPSTime(int *year, int *month, int *day, int *hour, int *minute, int *second) {
-    bool fix = false;
-    char chr_buffer[12];
-    sendAT(GF("+CGNSINF"));
-    if (waitResponse(GF(GSM_NL "+CGNSINF:")) != 1) {
-      return false;
-    }
+      // Set pointers
+      if (lat != NULL) *lat = ilat;
+      if (lon != NULL) *lon = ilon;
+      if (speed != NULL) *speed = ispeed;
+      if (alt != NULL) *alt = ialt;
+      if (vsat != NULL) *vsat = ivsat;
+      if (usat != NULL) *usat = iusat;
+      if (accuracy != NULL) *accuracy = iaccuracy;
+      if (iyear < 2000) iyear += 2000;
+      if (year != NULL) *year = iyear;
+      if (month != NULL) *month = imonth;
+      if (day != NULL) *day = iday;
+      if (hour != NULL) *hour = ihour;
+      if (minute != NULL) *minute = imin;
+      if (second != NULL) *second = static_cast<int>(secondWithSS);
 
-    for (int i = 0; i < 3; i++) {
-      String buffer = stream.readStringUntil(',');
-      buffer.toCharArray(chr_buffer, sizeof(chr_buffer));
-      switch (i) {
-        case 0:
-          //mode
-          break;
-        case 1:
-          //fixstatus
-          if ( buffer.toInt() == 1 ) {
-            fix = buffer.toInt();
-          }
-          break;
-        case 2:
-          *year = buffer.substring(0,4).toInt();
-          *month = buffer.substring(4,6).toInt();
-          *day = buffer.substring(6,8).toInt();
-          *hour = buffer.substring(8,10).toInt();
-          *minute = buffer.substring(10,12).toInt();
-          *second = buffer.substring(12,14).toInt();
-          break;
-
-        default:
-          // if nothing else matches, do the default
-          // default is optional
-          break;
-      }
-    }
-    String res = stream.readStringUntil('\n');
-    waitResponse();
-
-    if (fix) {
+      waitResponse();
       return true;
-    } else {
-      return false;
     }
-  }
 
+    streamSkipUntil('\n');  // toss the row of commas
+    waitResponse();
+    return false;
+  }
 };
 
-#endif
+#endif  // SRC_TINYGSMCLIENTSIM808_H_
