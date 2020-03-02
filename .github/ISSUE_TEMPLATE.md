@@ -22,7 +22,7 @@ with your board before submitting any issues.
 
 Main processor board: <!-- Uno, Zero, ESP32, Particle, etc -->
 Modem: <!-- Brand, model, variant, firmware version -->
-TinyGSM version: <!-- always try to use the latest (0.9.17) -->
+TinyGSM version: <!-- always try to use the latest (0.10.0) -->
 Code: <!-- Example name or paste in your code -->
 
 ### Scenario, steps to reproduce

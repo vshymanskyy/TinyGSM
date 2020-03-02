@@ -44,10 +44,12 @@
 // Chips without internal buffering (A6/A7, ESP8266, M590)
 // need enough space in the buffer for the entire response
 // else data will be lost (and the http library will fail).
+#if !defined(TINY_GSM_RX_BUFFER)
 #define TINY_GSM_RX_BUFFER 650
+#endif
 
 // See all AT commands, if wanted
-//#define DUMP_AT_COMMANDS
+// #define DUMP_AT_COMMANDS
 
 // Define the serial console for debug prints, if needed
 #define TINY_GSM_DEBUG SerialMon
@@ -57,10 +59,10 @@
 #define GSM_AUTOBAUD_MAX 115200
 
 // Add a reception delay - may be needed for a fast processor at a slow baud rate
-//#define TINY_GSM_YIELD() { delay(2); }
+// #define TINY_GSM_YIELD() { delay(2); }
 
 // Uncomment this if you want to use SSL
-//#define USE_SSL
+// #define USE_SSL
 
 // Define how you're planning to connect to the internet
 #define TINY_GSM_USE_GPRS true
@@ -210,7 +212,7 @@ void loop() {
   client.print("Connection: close\r\n\r\n");
   client.println();
 
-  unsigned long timeout = millis();
+  uint32_t timeout = millis();
   while (client.connected() && millis() - timeout < 10000L) {
     // Print available data
     while (client.available()) {

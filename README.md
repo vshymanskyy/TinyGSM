@@ -47,7 +47,7 @@ TinyGSM also pulls data gently from the modem (whenever possible), so it can ope
 - Neoway M590
 - u-blox 2G, 3G, 4G, and LTE Cat1 Cellular Modems (many modules including LEON-G100, LISA-U2xx, SARA-G3xx, SARA-U2xx, TOBY-L2xx, LARA-R2xx, MPCI-L2xx)
 - u-blox LTE-M Modems (SARA-R4xx, SARA-N4xx, _but NOT SARA-N2xx_)
-- Sequans Monarch LTE Cat M1/NB1
+- Sequans Monarch LTE Cat M1/NB1 (VZM20Q)
 - Quectel BG96
 - Quectel M95
 - Quectel MC60 ***(alpha)***
@@ -83,26 +83,29 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
         - SIM800, u-Blox, XBee _cellular_, ESP8266, and Sequans Monarch
         - Note:  only some device models or firmware revisions have this feature (SIM8xx R14.18, A7, etc.)
     - Not yet supported on:
-        - Quectel modems, SIM7000, SIM5360/5320/7100/7500/7600
+        - Quectel modems, SIM7000, SIM5360/5320, SIM7100/7500/7600
     - Not possible on:
-        - SIM900, A6/A7, M560, XBee _WiFi_
+        - SIM900, A6/A7, Neoway M590, XBee _WiFi_
 
 **USSD**
 - Sending USSD requests and decoding 7,8,16-bit responses
     - Supported on:
-        - SIM800/SIM900, SIM7000
-    - Not yet supported on:
-        - Quectel modems, SIM5360/5320/7100/7500/7600, XBee
+        - All SIMCom modems, Quectel modems, most u-blox
+    - Not possible on:
+        - XBee, u-blox SARA R4/N4, ESP8266 (obviously)
 
 **SMS**
 - Only _sending_ SMS is supported, not receiving
-    - Supported on:
-        - SIM800/SIM900, SIM7000, XBee
-    - Not yet supported on:
-        - Quectel modems, SIM5360/5320/7100/7500/7600
+    - Supported on all cellular modules
 
 **Voice Calls**
-- Only Supported on SIM800 and A6/A7/A20
+- Supported on:
+    - SIM800/SIM900, A6/A7, Quectel modems, u-blox
+- Not yet supported on:
+    - SIM7000, SIM5360/5320/7100, SIM7500/7600/7800, VZM20Q (Monarch)
+- Not possible on:
+    -  XBee (any type), u-blox SARA R4/N4, Neoway M590, ESP8266 (obviously)
+- Functions:
     - Dial, hangup
     - Receiving calls
     - Incoming event (RING)
@@ -111,9 +114,9 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
 
 **Location**
 - GPS/GNSS
-    - SIM808 and SIM7000 only
+    - SIM808, SIM7000, SIM7500/7600/7800 only
 - GSM location service
-    - SIM800, SIM and SIM7000 only
+    - SIM800, SIM7000, Quectel, u-blox
 
 **Credits**
 - Primary Authors/Contributors:

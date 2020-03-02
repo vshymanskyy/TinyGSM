@@ -28,7 +28,7 @@
 #define SerialAT Serial1
 
 // Uncomment this if you want to see all AT commands
-//#define DUMP_AT_COMMANDS
+// #define DUMP_AT_COMMANDS
 
 
 #ifdef DUMP_AT_COMMANDS
