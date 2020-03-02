@@ -103,10 +103,11 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
     void stop(uint32_t maxWaitMs) {
+      uint32_t startMillis = millis();
       dumpModemBuffer(maxWaitMs);
       at->sendAT(GF("+QICLOSE="), mux);
       sock_connected = false;
-      at->waitResponse();
+      at->waitResponse((maxWaitMs - (millis() - startMillis)));
     }
     void stop() override {
       stop(15000L);
