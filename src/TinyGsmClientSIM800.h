@@ -155,6 +155,7 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
  protected:
   bool initImpl(const char* pin = NULL) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
+    DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientSIM800"));
 
     if (!testAT()) { return false; }
 

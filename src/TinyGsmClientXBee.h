@@ -322,6 +322,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
 
   bool initImpl(const char* pin = NULL) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
+    DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientXBee"));
 
     if (resetPin >= 0) {
       pinMode(resetPin, OUTPUT);
