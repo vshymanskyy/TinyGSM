@@ -130,6 +130,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
  protected:
   bool initImpl(const char* pin = NULL) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
+    DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientA6"));
 
     if (!testAT()) { return false; }
 

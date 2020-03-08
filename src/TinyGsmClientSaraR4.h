@@ -218,6 +218,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
  protected:
   bool initImpl(const char* pin = NULL) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
+    DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientSaraR4"));
 
     if (!testAT()) { return false; }
 

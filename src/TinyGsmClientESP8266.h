@@ -139,6 +139,7 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
  protected:
   bool initImpl(const char* pin = NULL) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
+    DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientESP8266"));
 
     if (!testAT()) { return false; }
     if (pin && strlen(pin) > 0) {
