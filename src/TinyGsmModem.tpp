@@ -62,7 +62,7 @@ class TinyGsmModem {
   bool radioOff() {
     return thisModem().radioOffImpl();
   }
-  bool sleepEnable(bool enable = true) {
+  bool sleepEnable(byte enable = true) {
     return thisModem().sleepEnableImpl(enable);
   }
 
@@ -170,7 +170,7 @@ class TinyGsmModem {
     return true;
   }
 
-  bool sleepEnableImpl(bool enable = true) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool sleepEnableImpl(byte enable = true) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
   /*
    * Generic network functions
