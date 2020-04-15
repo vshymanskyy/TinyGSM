@@ -387,7 +387,7 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95>,
    */
  protected:
   float getTemperatureImpl() {
-    sendAT(GF("+QTEMP"));
+    sendAT(GF("+QTEMP?"));
     if (waitResponse(GF(GSM_NL "+QTEMP:")) != 1) {
       return static_cast<float>(-9999);
     }
