@@ -649,6 +649,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
   }
 
   size_t modemRead(size_t size, uint8_t mux) {
+    if (!sockets[mux]) return 0;
     sendAT(GF("+USORD="), mux, ',', (uint16_t)size);
     if (waitResponse(GF(GSM_NL "+USORD:")) != 1) { return 0; }
     streamSkipUntil(',');  // Skip mux
@@ -664,6 +665,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
   }
 
   size_t modemGetAvailable(uint8_t mux) {
+    if (!sockets[mux]) return 0;
     // NOTE:  Querying a closed socket gives an error "operation not allowed"
     sendAT(GF("+USORD="), mux, ",0");
     size_t  result = 0;
@@ -812,6 +814,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
 
  public:
   Stream&         stream;
+
  protected:
   GsmClientUBLOX* sockets[TINY_GSM_MUX_COUNT];
   const char*     gsmNL = GSM_NL;

@@ -315,9 +315,8 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
       // if the status is anything but 3, there are no connections open
       waitResponse();  // Returns an OK after the status
       for (int muxNo = 0; muxNo < TINY_GSM_MUX_COUNT; muxNo++) {
-        GsmClientESP8266* sock = sockets[muxNo];
-        if (sock) {
-          sock->sock_connected = false;
+        if (sockets[muxNo]) {
+          sockets[muxNo]->sock_connected = false;
         }
       }
       return false;
@@ -339,9 +338,8 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
       if (has_status == 2) break;  // once we get to the ok, stop
     }
     for (int muxNo = 0; muxNo < TINY_GSM_MUX_COUNT; muxNo++) {
-      GsmClientESP8266* sock = sockets[muxNo];
-      if (sock) {
-        sock->sock_connected = verified_connections[muxNo];
+      if (sockets[muxNo]) {
+        sockets[muxNo]->sock_connected = verified_connections[muxNo];
       }
     }
     return verified_connections[mux];
@@ -391,17 +389,21 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
           int8_t  mux      = streamGetIntBefore(',');
           int16_t len      = streamGetIntBefore(':');
           int16_t len_orig = len;
-          if (len > sockets[mux]->rx.free()) {
-            DBG("### Buffer overflow: ", len, "received vs",
-                sockets[mux]->rx.free(), "available");
-          } else {
-            // DBG("### Got Data: ", len, "on", mux);
-          }
-          while (len--) { moveCharFromStreamToFifo(mux); }
-          // TODO(SRGDamia1): deal with buffer overflow/missed characters
-          if (len_orig > sockets[mux]->available()) {
-            DBG("### Fewer characters received than expected: ",
-                sockets[mux]->available(), " vs ", len_orig);
+          if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+            if (len > sockets[mux]->rx.free()) {
+              DBG("### Buffer overflow: ", len, "received vs",
+                  sockets[mux]->rx.free(), "available");
+            } else {
+              // DBG("### Got Data: ", len, "on", mux);
+            }
+            while (len--) {
+              moveCharFromStreamToFifo(mux);
+            }
+            // TODO(SRGDamia1): deal with buffer overflow/missed characters
+            if (len_orig > sockets[mux]->available()) {
+              DBG("### Fewer characters received than expected: ",
+                  sockets[mux]->available(), " vs ", len_orig);
+            }
           }
           data = "";
         } else if (data.endsWith(GF("CLOSED"))) {
@@ -443,6 +445,7 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
 
  public:
   Stream&           stream;
+
  protected:
   GsmClientESP8266* sockets[TINY_GSM_MUX_COUNT];
   const char*       gsmNL = GSM_NL;

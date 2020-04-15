@@ -707,6 +707,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
   }
 
   size_t modemRead(size_t size, uint8_t mux) {
+    if (!sockets[mux]) return 0;
     sendAT(GF("+USORD="), mux, ',', (uint16_t)size);
     if (waitResponse(GF(GSM_NL "+USORD:")) != 1) { return 0; }
     streamSkipUntil(',');  // Skip mux
@@ -722,6 +723,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
   }
 
   size_t modemGetAvailable(uint8_t mux) {
+    if (!sockets[mux]) return 0;
     // NOTE:  Querying a closed socket gives an error "operation not allowed"
     sendAT(GF("+USORD="), mux, ",0");
     size_t  result = 0;
@@ -735,7 +737,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
       waitResponse();
     }
     if (!result) { sockets[mux]->sock_connected = modemGetConnected(mux); }
-    // DBG("### AvailablE:", result, "on", mux);
+    // DBG("### Available:", result, "on", mux);
     return result;
   }
 
@@ -879,6 +881,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
 
  public:
   Stream&          stream;
+
  protected:
   GsmClientSaraR4* sockets[TINY_GSM_MUX_COUNT];
   const char*      gsmNL = GSM_NL;

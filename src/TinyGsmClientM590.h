@@ -395,22 +395,26 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590>,
           int8_t  mux      = streamGetIntBefore(',');
           int16_t len      = streamGetIntBefore(',');
           int16_t len_orig = len;
-          if (len > sockets[mux]->rx.free()) {
-            DBG("### Buffer overflow: ", len, "->", sockets[mux]->rx.free());
-          } else {
-            DBG("### Got: ", len, "->", sockets[mux]->rx.free());
-          }
-          while (len--) { moveCharFromStreamToFifo(mux); }
-          // TODO(?): Handle lost characters
-          if (len_orig > sockets[mux]->available()) {
-            DBG("### Fewer characters received than expected: ",
-                sockets[mux]->available(), " vs ", len_orig);
+          if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+            if (len > sockets[mux]->rx.free()) {
+              DBG("### Buffer overflow: ", len, "->", sockets[mux]->rx.free());
+            } else {
+              DBG("### Got: ", len, "->", sockets[mux]->rx.free());
+            }
+            while (len--) {
+              moveCharFromStreamToFifo(mux);
+            }
+            // TODO(?): Handle lost characters
+            if (len_orig > sockets[mux]->available()) {
+              DBG("### Fewer characters received than expected: ",
+                  sockets[mux]->available(), " vs ", len_orig);
+            }
           }
           data = "";
         } else if (data.endsWith(GF("+TCPCLOSE:"))) {
           int8_t mux = streamGetIntBefore(',');
           streamSkipUntil('\n');
-          if (mux >= 0 && mux < TINY_GSM_MUX_COUNT) {
+          if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
             sockets[mux]->sock_connected = false;
           }
           data = "";
@@ -454,6 +458,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590>,
 
  public:
   Stream&        stream;
+
  protected:
   GsmClientM590* sockets[TINY_GSM_MUX_COUNT];
   const char*    gsmNL = GSM_NL;

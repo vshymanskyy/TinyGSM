@@ -471,7 +471,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
     String r5s(r5); r5s.trim();
     DBG("### ..:", r1s, ",", r2s, ",", r3s, ",", r4s, ",", r5s);*/
     data.reserve(64);
-    uint8_t  index       = 0;
+    uint8_t index = 0;
     uint32_t startMillis = millis();
     do {
       TINY_GSM_YIELD();
@@ -501,24 +501,28 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
           index = 5;
           goto finish;
         } else if (data.endsWith(GF("+CIPRCV:"))) {
-          int8_t  mux      = streamGetIntBefore(',');
-          int16_t len      = streamGetIntBefore(',');
+          int8_t mux = streamGetIntBefore(',');
+          int16_t len = streamGetIntBefore(',');
           int16_t len_orig = len;
-          if (len > sockets[mux]->rx.free()) {
-            DBG("### Buffer overflow: ", len, "->", sockets[mux]->rx.free());
-          } else {
-            DBG("### Got: ", len, "->", sockets[mux]->rx.free());
-          }
-          while (len--) { moveCharFromStreamToFifo(mux); }
-          // TODO(?) Deal with missing characters
-          if (len_orig > sockets[mux]->available()) {
-            DBG("### Fewer characters received than expected: ",
-                sockets[mux]->available(), " vs ", len_orig);
+          if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+            if (len > sockets[mux]->rx.free()) {
+              DBG("### Buffer overflow: ", len, "->", sockets[mux]->rx.free());
+            } else {
+              DBG("### Got: ", len, "->", sockets[mux]->rx.free());
+            }
+            while (len--) {
+              moveCharFromStreamToFifo(mux);
+            }
+            // TODO(?) Deal with missing characters
+            if (len_orig > sockets[mux]->available()) {
+              DBG("### Fewer characters received than expected: ",
+                  sockets[mux]->available(), " vs ", len_orig);
+            }
           }
           data = "";
         } else if (data.endsWith(GF("+TCPCLOSED:"))) {
           int8_t mux = streamGetIntBefore('\n');
-          if (mux >= 0 && mux < TINY_GSM_MUX_COUNT) {
+          if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
             sockets[mux]->sock_connected = false;
           }
           data = "";
@@ -529,7 +533,9 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
   finish:
     if (!index) {
       data.trim();
-      if (data.length()) { DBG("### Unhandled:", data); }
+      if (data.length()) {
+        DBG("### Unhandled:", data);
+      }
       data = "";
     }
     // data.replace(GSM_NL, "/");
@@ -561,10 +567,11 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
   }
 
  public:
-  Stream&      stream;
+  Stream& stream;
+
  protected:
   GsmClientA6* sockets[TINY_GSM_MUX_COUNT];
-  const char*  gsmNL = GSM_NL;
+  const char* gsmNL = GSM_NL;
 };
 
 #endif  // SRC_TINYGSMCLIENTA6_H_

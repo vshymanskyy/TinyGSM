@@ -332,6 +332,7 @@ class TinyGsmTCP {
   // !stream.available()" and then will wait again in the stream.read()
   // function.
   inline void moveCharFromStreamToFifo(uint8_t mux) {
+    if (!thisModem().sockets[mux]) return;
     uint32_t startMillis = millis();
     while (!thisModem().stream.available() &&
            (millis() - startMillis < thisModem().sockets[mux]->_timeout)) {

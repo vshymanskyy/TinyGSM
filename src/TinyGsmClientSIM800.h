@@ -528,6 +528,7 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
   }
 
   size_t modemRead(size_t size, uint8_t mux) {
+    if (!sockets[mux]) return 0;
 #ifdef TINY_GSM_USE_HEX
     sendAT(GF("+CIPRXGET=3,"), mux, ',', (uint16_t)size);
     if (waitResponse(GF("+CIPRXGET:")) != 1) { return 0; }
@@ -575,6 +576,7 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
   }
 
   size_t modemGetAvailable(uint8_t mux) {
+    if (!sockets[mux]) return 0;
     sendAT(GF("+CIPRXGET=4,"), mux);
     size_t result = 0;
     if (waitResponse(GF("+CIPRXGET:")) == 1) {
@@ -734,6 +736,7 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
 
  public:
   Stream&          stream;
+
  protected:
   GsmClientSim800* sockets[TINY_GSM_MUX_COUNT];
   const char*      gsmNL = GSM_NL;

@@ -405,7 +405,8 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60>,
   }
 
   size_t modemRead(size_t size, uint8_t mux) {
-    // TODO(?):  Does this work????
+    if (!sockets[mux]) return 0;
+    // TODO(?):  Does this even work????
     // AT+QIRD=<id>,<sc>,<sid>,<len>
     // id = GPRS context number = 0, set in GPRS connect
     // sc = role in connection = 1, client of connection
@@ -441,6 +442,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60>,
     }
   }
 
+  // Not possible to check the number of characters remaining in buffer
   size_t modemGetAvailable(uint8_t) {
     return 0;
   }
@@ -590,6 +592,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60>,
 
  public:
   Stream&        stream;
+
  protected:
   GsmClientMC60* sockets[TINY_GSM_MUX_COUNT];
   const char*    gsmNL = GSM_NL;

@@ -522,6 +522,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
   }
 
   size_t modemRead(size_t size, uint8_t mux) {
+    if (!sockets[mux]) return 0;
     sendAT(GF("+QIRD="), mux, ',', (uint16_t)size);
     if (waitResponse(GF("+QIRD:")) != 1) { return 0; }
     int16_t len = streamGetIntBefore('\n');
@@ -534,6 +535,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
   }
 
   size_t modemGetAvailable(uint8_t mux) {
+    if (!sockets[mux]) return 0;
     sendAT(GF("+QIRD="), mux, GF(",0"));
     size_t result = 0;
     if (waitResponse(GF("+QIRD:")) == 1) {
@@ -675,6 +677,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
 
  public:
   Stream&        stream;
+
  protected:
   GsmClientBG96* sockets[TINY_GSM_MUX_COUNT];
   const char*    gsmNL = GSM_NL;

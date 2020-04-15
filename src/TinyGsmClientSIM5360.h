@@ -517,6 +517,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
   }
 
   size_t modemRead(size_t size, uint8_t mux) {
+    if (!sockets[mux]) return 0;
 #ifdef TINY_GSM_USE_HEX
     sendAT(GF("+CIPRXGET=3,"), mux, ',', (uint16_t)size);
     if (waitResponse(GF("+CIPRXGET:")) != 1) { return 0; }
@@ -560,6 +561,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
   }
 
   size_t modemGetAvailable(uint8_t mux) {
+    if (!sockets[mux]) return 0;
     sendAT(GF("+CIPRXGET=4,"), mux);
     size_t result = 0;
     if (waitResponse(GF("+CIPRXGET:")) == 1) {
@@ -579,15 +581,13 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
     if (waitResponse(GF("+CIPCLOSE:")) != 1) { return false; }
     for (int muxNo = 0; muxNo < TINY_GSM_MUX_COUNT; muxNo++) {
       // +CIPCLOSE:<link0_state>,<link1_state>,...,<link9_state>
-      bool thisMuxState = stream.parseInt();
-      // Need to make sure a socket instace for the socket number exists
-      // before setting its state
-      GsmClientSim5360* sock = sockets[muxNo];
-      if (sock) {
-        sock->sock_connected = thisMuxState;
+      bool muxState = stream.parseInt();
+      if (sockets[muxNo]) {
+        sockets[muxNo]->sock_connected = muxState;
       }
     }
     waitResponse();  // Should be an OK at the end
+    if (!sockets[mux]) return false;
     return sockets[mux]->sock_connected;
   }
 
@@ -715,6 +715,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
 
  public:
   Stream&           stream;
+
  protected:
   GsmClientSim5360* sockets[TINY_GSM_MUX_COUNT];
   const char*       gsmNL = GSM_NL;
