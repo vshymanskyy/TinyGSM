@@ -601,20 +601,20 @@ class TinyGsmSequansMonarch
     return sockets[mux % TINY_GSM_MUX_COUNT]->sock_connected;
   }
 
-    /*
-     * Utilities
-     */
-   public:
-    // TODO(vshymanskyy): Optimize this!
-    int8_t waitResponse(uint32_t timeout_ms, String & data,
-                        GsmConstStr r1 = GFP(GSM_OK),
-                        GsmConstStr r2 = GFP(GSM_ERROR),
+  /*
+   * Utilities
+   */
+ public:
+  // TODO(vshymanskyy): Optimize this!
+  int8_t waitResponse(uint32_t timeout_ms, String& data,
+                      GsmConstStr r1 = GFP(GSM_OK),
+                      GsmConstStr r2 = GFP(GSM_ERROR),
 #if defined TINY_GSM_DEBUG
-                        GsmConstStr r3 = GFP(GSM_CME_ERROR),
+                      GsmConstStr r3 = GFP(GSM_CME_ERROR),
 #else
-                        GsmConstStr r3 = NULL,
+                      GsmConstStr r3 = NULL,
 #endif
-                        GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
+                      GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
     /*String r1s(r1); r1s.trim();
     String r2s(r2); r2s.trim();
     String r3s(r3); r3s.trim();
@@ -622,7 +622,7 @@ class TinyGsmSequansMonarch
     String r5s(r5); r5s.trim();
     DBG("### ..:", r1s, ",", r2s, ",", r3s, ",", r4s, ",", r5s);*/
     data.reserve(64);
-    uint8_t  index       = 0;
+    uint8_t index = 0;
     uint32_t startMillis = millis();
     do {
       TINY_GSM_YIELD();
@@ -652,11 +652,11 @@ class TinyGsmSequansMonarch
           index = 5;
           goto finish;
         } else if (data.endsWith(GF(GSM_NL "+SQNSRING:"))) {
-          int8_t  mux = streamGetIntBefore(',');
+          int8_t mux = streamGetIntBefore(',');
           int16_t len = streamGetIntBefore('\n');
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT &&
               sockets[mux % TINY_GSM_MUX_COUNT]) {
-            sockets[mux % TINY_GSM_MUX_COUNT]->got_data       = true;
+            sockets[mux % TINY_GSM_MUX_COUNT]->got_data = true;
             sockets[mux % TINY_GSM_MUX_COUNT]->sock_available = len;
           }
           data = "";
@@ -675,7 +675,9 @@ class TinyGsmSequansMonarch
   finish:
     if (!index) {
       data.trim();
-      if (data.length()) { DBG("### Unhandled:", data); }
+      if (data.length()) {
+        DBG("### Unhandled:", data);
+      }
       data = "";
     }
     // data.replace(GSM_NL, "/");
@@ -707,10 +709,11 @@ class TinyGsmSequansMonarch
   }
 
  public:
-  Stream&                  stream;
+  Stream& stream;
+
  protected:
   GsmClientSequansMonarch* sockets[TINY_GSM_MUX_COUNT];
-  const char*              gsmNL = GSM_NL;
-  };
+  const char* gsmNL = GSM_NL;
+};
 
 #endif  // SRC_TINYGSMCLIENTSEQUANSMONARCH_H_
