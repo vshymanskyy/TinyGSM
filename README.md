@@ -115,7 +115,7 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
 **Location**
 - GPS/GNSS
     - SIM808, SIM7000, SIM7500/7600/7800, BG96, u-blox
-    - NOTE:  u-blox chips do NOT have embedded GPS - this function only works if a secondary GPS is connected to primary cellular chip over I2C
+    - NOTE:  u-blox chips do _NOT_ have embedded GPS - this function only works if a secondary GPS is connected to primary cellular chip over I2C
 - GSM location service
     - SIM800, SIM7000, Quectel, u-blox
 

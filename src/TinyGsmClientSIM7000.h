@@ -239,7 +239,15 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
    */
  public:
   RegStatus getRegistrationStatus() {
-    return (RegStatus)getRegistrationStatusXREG("CEREG");
+    RegStatus epsStatus = (RegStatus)getRegistrationStatusXREG("CEREG");
+    // If we're connected on EPS, great!
+    if (epsStatus == REG_OK_HOME || epsStatus == REG_OK_ROAMING) {
+      return epsStatus;
+    } else {
+      // Otherwise, check GPRS network status
+      // We could be using GPRS fall-back or the board could be being moody
+      return (RegStatus)getRegistrationStatusXREG("CGREG");
+    }
   }
 
  protected:
