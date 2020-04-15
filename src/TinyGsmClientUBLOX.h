@@ -810,8 +810,9 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
     return waitResponse(1000, r1, r2, r3, r4, r5);
   }
 
- protected:
+ public:
   Stream&         stream;
+ protected:
   GsmClientUBLOX* sockets[TINY_GSM_MUX_COUNT];
   const char*     gsmNL = GSM_NL;
 };

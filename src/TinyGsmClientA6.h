@@ -560,8 +560,9 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
     return waitResponse(1000, r1, r2, r3, r4, r5);
   }
 
- protected:
+ public:
   Stream&      stream;
+ protected:
   GsmClientA6* sockets[TINY_GSM_MUX_COUNT];
   const char*  gsmNL = GSM_NL;
 };

@@ -806,8 +806,9 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     return waitResponse(1000, r1, r2, r3, r4, r5);
   }
 
- protected:
+ public:
   Stream&           stream;
+ protected:
   GsmClientSim7600* sockets[TINY_GSM_MUX_COUNT];
   const char*       gsmNL = GSM_NL;
 };

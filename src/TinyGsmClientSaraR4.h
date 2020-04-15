@@ -877,8 +877,9 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
     return waitResponse(1000, r1, r2, r3, r4, r5);
   }
 
- protected:
+ public:
   Stream&          stream;
+ protected:
   GsmClientSaraR4* sockets[TINY_GSM_MUX_COUNT];
   const char*      gsmNL = GSM_NL;
   bool             has2GFallback;

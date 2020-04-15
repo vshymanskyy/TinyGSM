@@ -452,8 +452,9 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590>,
     return waitResponse(1000, r1, r2, r3, r4, r5);
   }
 
- protected:
+ public:
   Stream&        stream;
+ protected:
   GsmClientM590* sockets[TINY_GSM_MUX_COUNT];
   const char*    gsmNL = GSM_NL;
 };
