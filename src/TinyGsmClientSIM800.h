@@ -392,7 +392,19 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
    * SIM card functions
    */
  protected:
-  // Able to follow all SIM card functions as inherited from the template
+  // May not return the "+CCID" before the number
+  String getSimCCIDImpl() {
+    sendAT(GF("+CCID"));
+    if (waitResponse(GF(GSM_NL)) != 1) {
+      return "";
+    }
+    String res = stream.readStringUntil('\n');
+    waitResponse();
+    // Trim out the CCID header in case it is there
+    res.replace("CCID:", "");
+    res.trim();
+    return res;
+  }
 
   /*
    * Phone Call functions
