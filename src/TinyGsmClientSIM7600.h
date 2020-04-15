@@ -672,7 +672,13 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     }
     for (int muxNo = 0; muxNo < TINY_GSM_MUX_COUNT; muxNo++) {
       // +CIPCLOSE:<link0_state>,<link1_state>,...,<link9_state>
-      sockets[muxNo]->sock_connected = stream.parseInt();
+      bool thisMuxState = stream.parseInt();
+      // Need to make sure a socket instace for the socket number exists
+      // before setting its state
+      GsmClientSim7600* sock = sockets[muxNo];
+      if (sock) {
+        sock->sock_connected = thisMuxState;
+      }
     }
     waitResponse();  // Should be an OK at the end
     return sockets[mux]->sock_connected;

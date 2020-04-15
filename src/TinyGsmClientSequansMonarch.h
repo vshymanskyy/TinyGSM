@@ -571,7 +571,9 @@ class TinyGsmSequansMonarch
     // six possible sockets.
     sendAT(GF("+SQNSS"));
     for (int muxNo = 1; muxNo <= TINY_GSM_MUX_COUNT; muxNo++) {
-      if (waitResponse(GFP(GSM_OK), GF(GSM_NL "+SQNSS: ")) != 2) { break; }
+      if (waitResponse(GFP(GSM_OK), GF(GSM_NL "+SQNSS: ")) != 2) {
+        break;
+      }
       uint8_t status = 0;
       // if (streamGetIntBefore(',') != muxNo) { // check the mux no
       //   DBG("### Warning: misaligned mux numbers!");
@@ -588,28 +590,31 @@ class TinyGsmSequansMonarch
       // SOCK_LISTENING              = 4,
       // SOCK_INCOMING               = 5,
       // SOCK_OPENING                = 6,
-      sockets[muxNo % TINY_GSM_MUX_COUNT]->sock_connected =
-          ((status != SOCK_CLOSED) && (status != SOCK_INCOMING) &&
-           (status != SOCK_OPENING));
+      GsmClientSequansMonarch* sock = sockets[mux % TINY_GSM_MUX_COUNT];
+      if (sock) {
+        sock->sock_connected =
+            ((status != SOCK_CLOSED) && (status != SOCK_INCOMING) &&
+             (status != SOCK_OPENING));
+      }
     }
     waitResponse();  // Should be an OK at the end
     return sockets[mux % TINY_GSM_MUX_COUNT]->sock_connected;
   }
 
-  /*
-   * Utilities
-   */
- public:
-  // TODO(vshymanskyy): Optimize this!
-  int8_t waitResponse(uint32_t timeout_ms, String& data,
-                      GsmConstStr r1 = GFP(GSM_OK),
-                      GsmConstStr r2 = GFP(GSM_ERROR),
+    /*
+     * Utilities
+     */
+   public:
+    // TODO(vshymanskyy): Optimize this!
+    int8_t waitResponse(uint32_t timeout_ms, String & data,
+                        GsmConstStr r1 = GFP(GSM_OK),
+                        GsmConstStr r2 = GFP(GSM_ERROR),
 #if defined TINY_GSM_DEBUG
-                      GsmConstStr r3 = GFP(GSM_CME_ERROR),
+                        GsmConstStr r3 = GFP(GSM_CME_ERROR),
 #else
-                      GsmConstStr r3 = NULL,
+                        GsmConstStr r3 = NULL,
 #endif
-                      GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
+                        GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
     /*String r1s(r1); r1s.trim();
     String r2s(r2); r2s.trim();
     String r3s(r3); r3s.trim();
@@ -705,6 +710,6 @@ class TinyGsmSequansMonarch
   Stream&                  stream;
   GsmClientSequansMonarch* sockets[TINY_GSM_MUX_COUNT];
   const char*              gsmNL = GSM_NL;
-};
+  };
 
 #endif  // SRC_TINYGSMCLIENTSEQUANSMONARCH_H_
