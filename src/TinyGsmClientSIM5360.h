@@ -217,8 +217,13 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
   bool restartImpl() {
     if (!testAT()) { return false; }
     sendAT(GF("+REBOOT"));
+    // Should return an 'OK' after reboot command is sent
     if (waitResponse(10000L) != 1) { return false; }
-    delay(3000L);  // TODO(?):  Test this delay!
+    // After booting, modem sends out messages as each of its
+    // internal modules loads.  The final message is "PB DONE".
+    if (waitResponse(40000L, GF(GSM_NL "PB DONE")) != 1) {
+      return false;
+    }
     return init();
   }
 
@@ -574,7 +579,13 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
     if (waitResponse(GF("+CIPCLOSE:")) != 1) { return false; }
     for (int muxNo = 0; muxNo < TINY_GSM_MUX_COUNT; muxNo++) {
       // +CIPCLOSE:<link0_state>,<link1_state>,...,<link9_state>
-      sockets[muxNo]->sock_connected = stream.parseInt();
+      bool thisMuxState = stream.parseInt();
+      // Need to make sure a socket instace for the socket number exists
+      // before setting its state
+      GsmClientSim5360* sock = sockets[muxNo];
+      if (sock) {
+        sock->sock_connected = thisMuxState;
+      }
     }
     waitResponse();  // Should be an OK at the end
     return sockets[mux]->sock_connected;
@@ -702,8 +713,9 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
     return waitResponse(1000, r1, r2, r3, r4, r5);
   }
 
- protected:
+ public:
   Stream&           stream;
+ protected:
   GsmClientSim5360* sockets[TINY_GSM_MUX_COUNT];
   const char*       gsmNL = GSM_NL;
 };

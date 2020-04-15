@@ -55,7 +55,7 @@ class TinyGsmBattery {
     thisModem().streamSkipUntil(',');  // Skip battery charge status
     thisModem().streamSkipUntil(',');  // Skip battery charge level
     // return voltage in mV
-    uint16_t res = thisModem().streamGetIntBefore(',');
+    uint16_t res = thisModem().streamGetIntBefore('\n');
     // Wait for final OK
     thisModem().waitResponse();
     return res;

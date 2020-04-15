@@ -315,7 +315,10 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
       // if the status is anything but 3, there are no connections open
       waitResponse();  // Returns an OK after the status
       for (int muxNo = 0; muxNo < TINY_GSM_MUX_COUNT; muxNo++) {
-        sockets[muxNo]->sock_connected = false;
+        GsmClientESP8266* sock = sockets[muxNo];
+        if (sock) {
+          sock->sock_connected = false;
+        }
       }
       return false;
     }
@@ -336,7 +339,10 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
       if (has_status == 2) break;  // once we get to the ok, stop
     }
     for (int muxNo = 0; muxNo < TINY_GSM_MUX_COUNT; muxNo++) {
-      sockets[muxNo]->sock_connected = verified_connections[muxNo];
+      GsmClientESP8266* sock = sockets[muxNo];
+      if (sock) {
+        sock->sock_connected = verified_connections[muxNo];
+      }
     }
     return verified_connections[mux];
   }
@@ -435,8 +441,9 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
     return waitResponse(1000, r1, r2, r3, r4, r5);
   }
 
- protected:
+ public:
   Stream&           stream;
+ protected:
   GsmClientESP8266* sockets[TINY_GSM_MUX_COUNT];
   const char*       gsmNL = GSM_NL;
 };

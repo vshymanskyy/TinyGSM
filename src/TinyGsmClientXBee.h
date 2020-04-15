@@ -1440,8 +1440,9 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
       return false;
   }
 
- protected:
+ public:
   Stream&        stream;
+ protected:
   GsmClientXBee* sockets[TINY_GSM_MUX_COUNT];
   const char*    gsmNL = GSM_NL;
   int16_t        guardTime;

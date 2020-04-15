@@ -317,24 +317,14 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
  public:
   RegStatus getRegistrationStatus() {
     // Check first for EPS registration
-    sendAT(GF("+CEREG?"));
-    if (waitResponse(GF(GSM_NL "+CEREG:")) != 1) { return REG_UNKNOWN; }
-    streamSkipUntil(','); /* Skip format (0) */
-    int status = streamGetIntBefore('\n');
-    waitResponse();
+    RegStatus epsStatus = (RegStatus)getRegistrationStatusXREG("CEREG");
 
     // If we're connected on EPS, great!
-    if ((RegStatus)status == REG_OK_HOME ||
-        (RegStatus)status == REG_OK_ROAMING) {
-      return (RegStatus)status;
+    if (epsStatus == REG_OK_HOME || epsStatus == REG_OK_ROAMING) {
+      return epsStatus;
     } else {
       // Otherwise, check generic network status
-      sendAT(GF("+CREG?"));
-      if (waitResponse(GF(GSM_NL "+CREG:")) != 1) { return REG_UNKNOWN; }
-      streamSkipUntil(','); /* Skip format (0) */
-      status = streamGetIntBefore('\n');
-      waitResponse();
-      return (RegStatus)status;
+      return (RegStatus)getRegistrationStatusXREG("CREG");
     }
   }
 
@@ -887,8 +877,9 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
     return waitResponse(1000, r1, r2, r3, r4, r5);
   }
 
- protected:
+ public:
   Stream&          stream;
+ protected:
   GsmClientSaraR4* sockets[TINY_GSM_MUX_COUNT];
   const char*      gsmNL = GSM_NL;
   bool             has2GFallback;
