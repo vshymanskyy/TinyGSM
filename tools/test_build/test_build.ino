@@ -10,7 +10,7 @@ TinyGsm modem(Serial);
 
 void setup() {
   Serial.begin(115200);
-  delay(3000);
+  delay(6000);
 }
 
 void loop() {

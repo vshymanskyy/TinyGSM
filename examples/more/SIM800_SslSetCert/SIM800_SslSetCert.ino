@@ -46,7 +46,7 @@ void setup() {
 
   // Set GSM module baud rate
   SerialAT.begin(115200);
-  delay(3000);
+  delay(6000);
 
   SerialMon.println(F("Initializing modem..."));
   modem.init();
@@ -70,7 +70,7 @@ void setup() {
   modem.stream.flush();
 
   if (modem.waitResponse(2000) != 1) return;
-  
+
   modem.sendAT(GF("+SSLSETCERT=\"" CERT_FILE "\""));
   if (modem.waitResponse() != 1) return;
   if (modem.waitResponse(5000L, GF(GSM_NL "+SSLSETCERT:")) != 1) return;
@@ -94,4 +94,3 @@ void loop() {
   }
   delay(0);
 }
-

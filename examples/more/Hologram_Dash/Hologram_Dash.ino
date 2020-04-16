@@ -63,7 +63,7 @@ void setup() {
 
   // Set up Passthrough
   HologramCloud.enterPassthrough();
-  delay(3000);
+  delay(6000);
 
   // Restart takes quite some time
   // To skip it, call init() instead of restart()

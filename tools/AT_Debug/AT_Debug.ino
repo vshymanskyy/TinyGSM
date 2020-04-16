@@ -45,7 +45,7 @@ uint32_t rate = 0; // Set to 0 for Auto-Detect
 void setup() {
   // Set console baud rate
   SerialMon.begin(115200);
-  delay(3000);
+  delay(6000);
 }
 
 void loop() {

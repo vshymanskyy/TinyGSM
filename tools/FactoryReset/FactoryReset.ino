@@ -49,7 +49,7 @@ void setup() {
 
   // Set GSM module baud rate
   SerialAT.begin(9600);
-  delay(3000);
+  delay(6000);
 
   if (!modem.init()) {
     SerialMon.println(F("***********************************************************"));
