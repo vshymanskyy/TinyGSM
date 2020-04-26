@@ -262,16 +262,33 @@ class TinyGsmModem {
   }
 
  protected:
-  inline int16_t streamGetIntLength(int8_t numChars) {
-    char   buf[6];
-    size_t bytesRead = thisModem().stream.readBytes(buf, numChars);
-    if (bytesRead) {
-      buf[numChars] = '\0';
-      int16_t res   = atoi(buf);
-      return res;
-    } else {
-      return -9999;
+  inline bool streamGetLength(char* buf, int8_t numChars, const uint32_t timeout_ms = 1000L) {
+    if (!buf) {
+      return false;
     }
+
+    int8_t    numCharsReady = -1;
+    uint32_t  startMillis = millis();
+    while (millis() - startMillis < timeout_ms && (numCharsReady = thisModem().stream.available()) < numChars) {
+        TINY_GSM_YIELD();
+    }
+
+    if (numCharsReady >= numChars) {
+      thisModem().stream.readBytes(buf, numChars);
+      return true;
+    }
+
+    return false;
+  }
+
+  inline int16_t streamGetIntLength(int8_t numChars, const uint32_t timeout_ms = 1000L) {
+    char      buf[numChars + 1];
+    if (streamGetLength(buf, numChars, timeout_ms)) {
+      buf[numChars] = '\0';
+      return atoi(buf);
+    }
+
+    return -9999;
   }
 
   inline int16_t streamGetIntBefore(char lastChar) {
@@ -283,34 +300,33 @@ class TinyGsmModem {
       buf[bytesRead] = '\0';
       int16_t res    = atoi(buf);
       return res;
-    } else {
-      return -9999;
     }
+
+    return -9999;
   }
 
-  inline float streamGetFloatLength(int8_t numChars) {
-    char   buf[16];
-    size_t bytesRead = thisModem().stream.readBytes(buf, numChars);
-    if (bytesRead) {
+  inline float streamGetFloatLength(int8_t numChars, const uint32_t timeout_ms = 1000L) {
+    char      buf[numChars + 1];
+    if (streamGetLength(buf, numChars, timeout_ms)) {
       buf[numChars] = '\0';
-      int16_t res   = atof(buf);
-      return res;
-    } else {
-      return static_cast<float>(-9999);
-    }
+      return atof(buf);
+    } 
+    
+    return -9999.0F;
   }
 
   inline float streamGetFloatBefore(char lastChar) {
     char   buf[16];
     size_t bytesRead = thisModem().stream.readBytesUntil(
         lastChar, buf, static_cast<size_t>(16));
-    if (bytesRead) {
+    // if we read 16 or more bytes, it's an overflow
+    if (bytesRead && bytesRead < 16) {
       buf[bytesRead] = '\0';
       float res      = atof(buf);
       return res;
-    } else {
-      return static_cast<float>(-9999);
-    }
+    } 
+      
+    return -9999.0F;
   }
 
   inline bool streamSkipUntil(const char c, const uint32_t timeout_ms = 1000L) {
