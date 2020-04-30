@@ -66,7 +66,7 @@ class TinyGsmModem {
     return thisModem().sleepEnableImpl(enable);
   }
   bool setPhoneFunctionality(uint8_t fun, bool reset = false) {
-    return thisModem().setPhoneFunctionality(fun, reset);
+    return thisModem().setPhoneFunctionalityImpl(fun, reset);
   }
 
   /*
@@ -173,6 +173,8 @@ class TinyGsmModem {
   }
 
   bool sleepEnableImpl(bool enable = true) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
+  bool setPhoneFunctionalityImpl(uint8_t fun, bool reset = false) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
   /*
    * Generic network functions
