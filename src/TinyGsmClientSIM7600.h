@@ -232,8 +232,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
   }
 
   bool radioOffImpl() {
-    sendAT(GF("+CFUN=4"));
-    if (waitResponse(10000L) != 1) { return false; }
+    if (!setPhoneFunctionality(4)) { return false; }
     delay(3000);
     return true;
   }
@@ -241,6 +240,11 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
   bool sleepEnableImpl(bool enable = true) {
     sendAT(GF("+CSCLK="), enable);
     return waitResponse() == 1;
+  }
+
+  bool setPhoneFunctionalityImpl(uint8_t fun, bool reset = false) {
+    sendAT(GF("+CFUN="), fun, reset ? ",1" : "");
+    return waitResponse(10000L) == 1;
   }
 
   /*

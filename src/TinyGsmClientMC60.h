@@ -198,10 +198,8 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60>,
  protected:
   bool restartImpl() {
     if (!testAT()) { return false; }
-    sendAT(GF("+CFUN=0"));
-    if (waitResponse(10000L) != 1) { return false; }
-    sendAT(GF("+CFUN=1,1"));
-    if (waitResponse(10000L) != 1) { return false; }
+    if (!setPhoneFunctionality(0)) { return false; }
+    if (!setPhoneFunctionality(1, true)) { return false; }
     delay(3000);
     return init();
   }
@@ -219,6 +217,11 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60>,
   bool sleepEnableImpl(bool enable = true) {
     sendAT(GF("+QSCLK="), enable);
     return waitResponse() == 1;
+  }
+
+  bool setPhoneFunctionalityImpl(uint8_t fun, bool reset = false) {
+    sendAT(GF("+CFUN="), fun, reset ? ",1" : "");
+    return waitResponse(10000L) == 1;
   }
 
   /*

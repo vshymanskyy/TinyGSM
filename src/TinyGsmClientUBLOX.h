@@ -235,8 +235,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
   bool factoryDefaultImpl() {
     sendAT(GF("+UFACTORY=0,1"));  // No factory restore, erase NVM
     waitResponse();
-    sendAT(GF("+CFUN=16"));  // Reset
-    return waitResponse() == 1;
+    return setPhoneFunctionality(16); // Reset
   }
 
   /*
@@ -245,8 +244,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
  protected:
   bool restartImpl() {
     if (!testAT()) { return false; }
-    sendAT(GF("+CFUN=16"));
-    if (waitResponse(10000L) != 1) { return false; }
+    if (!setPhoneFunctionality(16)) { return false; }
     delay(3000);  // TODO(?):  Verify delay timing here
     return init();
   }
@@ -257,6 +255,11 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
   }
 
   bool sleepEnableImpl(bool enable = true) TINY_GSM_ATTR_NOT_AVAILABLE;
+
+  bool setPhoneFunctionalityImpl(uint8_t fun, bool reset = false) {
+    sendAT(GF("+CFUN="), fun, reset ? ",1" : "");
+    return waitResponse(10000L) == 1;
+  }
 
   /*
    * Generic network functions

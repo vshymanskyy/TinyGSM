@@ -203,8 +203,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
  protected:
   bool restartImpl() {
     if (!testAT()) { return false; }
-    sendAT(GF("+CFUN=1,1"));
-    if (waitResponse(10000L, GF("OK")) != 1) { return false; }
+    if (!setPhoneFunctionality(1, true)) { return false; }
     waitResponse(10000L, GF("APP RDY"));
     return init();
   }
@@ -223,6 +222,11 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
   bool sleepEnableImpl(bool enable = true) {
     sendAT(GF("+QSCLK="), enable);
     return waitResponse() == 1;
+  }
+
+  bool setPhoneFunctionalityImpl(uint8_t fun, bool reset = false) {
+    sendAT(GF("+CFUN="), fun, reset ? ",1" : "");
+    return waitResponse(10000L, GF("OK")) == 1;
   }
 
   /*
