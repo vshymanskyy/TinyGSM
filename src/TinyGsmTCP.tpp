@@ -133,7 +133,7 @@ class TinyGsmTCP {
       // Returns the combined number of characters available in the TinyGSM
       // fifo and the modem chips internal fifo.
       if (!rx.size()) { at->maintain(); }
-      return rx.size() + sock_available;
+      return static_cast<uint16_t>(rx.size()) + sock_available;
 
 #elif defined TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
       // Returns the combined number of characters available in the TinyGSM
@@ -146,7 +146,7 @@ class TinyGsmTCP {
         }
         at->maintain();
       }
-      return rx.size() + sock_available;
+      return static_cast<uint16_t>(rx.size()) + sock_available;
 
 #else
 #error Modem client has been incorrectly created
