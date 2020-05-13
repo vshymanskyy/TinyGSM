@@ -150,16 +150,54 @@ If you have found TinyGSM to be useful in your work, research or company, please
 
 ## Getting Started
 
+#### First Steps
+
   1. Using your phone:
     - Disable PIN code on the SIM card
     - Check your balance
     - Check that APN, User, Pass are correct and you have internet
   2. Ensure the SIM card is correctly inserted into the module
   3. Ensure that GSM antenna is firmly attached
-  4. Check if serial connection is working (Hardware Serial is recommended)
+  4. Ensure that you have a stable power supply to the module of at least **2A**.
+  5. Check if serial connection is working (Hardware Serial is recommended)
      Send an ```AT``` command using [this sketch](tools/AT_Debug/AT_Debug.ino)
+  6. Try out the [WebClient](https://github.com/vshymanskyy/TinyGSM/blob/master/examples/WebClient/WebClient.ino) example/
 
-If you have any issues:
+#### Writing your own code
+
+The general flow of your code should be:
+- Define the module that you are using (choose one and only one)
+    - ie, ```#define TINY_GSM_MODEM_SIM800```
+- Included TinyGSM
+    - ```#include <TinyGsmClient.h>```
+- Create a TinyGSM modem instance
+    - ```TinyGsm modem(SerialAT);```
+- Create one or more TinyGSM client instances
+    - ```TinyGsmClient client(modem);``` for a single TCP client
+    - ```TinyGsmClient clientX(modem, #);``` for one or more TCP clients (on supported modules)
+    - ```TinyGsmClientSecure client(modem);``` for a single SSL client (on supported modules)
+    - ```TinyGsmClientSecure clientX(modem, #);``` for one or more SSL clients (on supported modules)
+- Begin your serial communication and set all your pins as required to power your module and bring it to full functionality.
+- Wait for the module to be ready (~300ms - 6s)
+- Initialize the modem
+    - ```modem.init()``` or ```modem.restart()```
+- Unlock your SIM, if necessary:
+    - ```modem.simUnlock(GSM_PIN)```
+- If using **WiFi**, specify your SSID information:
+    - ```modem.networkConnect(wifiSSID, wifiPass)```
+- Wait for network registration to be successful
+    - ```modem.waitForNetwork(600000L)```
+- If using cellular, establish the GPRS or EPS data connection _after_ your are successfully registered on the network
+    - ```modem.gprsConnect(apn, gprsUser, gprsPass)``` (or simply ```modem.gprsConnect(apn)```)
+    - The same command is used for both GPRS or EPS connection
+    - If using a **Digi** brand cellular XBee, you must specify your GPRS/EPS connection information _before_ waiting for the network.  This is true ONLY for _Digi cellular XBees_!  _For all other cellular modules, use the GPRS connect function after network registration._
+- Connect the TCP or SSL client
+    ```client.connect(server, port)```
+- Send out your data.
+
+
+
+#### If you have any issues:
 
   1. Read the whole README (you're looking at it!)
   2. Some boards require [**special configuration**](https://github.com/vshymanskyy/TinyGSM/wiki/Board-configuration).
@@ -179,19 +217,43 @@ For additional functions, please refer to [this example sketch](examples/AllFunc
 
 ## Troubleshooting
 
-### Diagnostics sketch
-
-Use this sketch to diagnose your SIM card and GPRS connection:
-  File -> Examples -> TinyGSM -> tools -> [Diagnostics](https://github.com/vshymanskyy/TinyGSM/blob/master/tools/Diagnostics/Diagnostics.ino)
-
 ### Ensure stable data & power connection
 
-Most modules require up to 2A and specific voltage - according to the module documentation.
-So this actually solves stability problems in **many** cases:
-- Provide a good stable power supply. Read about [**powering your module**](https://github.com/vshymanskyy/TinyGSM/wiki/Powering-GSM-module).
+Most modules require _**as much as 2A**_ to properly connect to the network.
+This is 4x what a "standard" USB will supply!
+Improving the power supply actually solves stability problems in **many** cases!
+- Read about [**powering your module**](https://github.com/vshymanskyy/TinyGSM/wiki/Powering-GSM-module).
 - Keep your wires as short as possible
 - Consider soldering them for a stable connection
 - Do not put your wires next to noisy signal sources (buck converters, antennas, oscillators etc.)
+- If everything else seems to be working but you are unable to connect to the network, check your power supply!
+
+### Diagnostics sketch
+
+Use this sketch to help diagnose SIM card and GPRS connection issues:
+  File -> Examples -> TinyGSM -> tools -> [Diagnostics](https://github.com/vshymanskyy/TinyGSM/blob/master/tools/Diagnostics/Diagnostics.ino)
+
+If the diagnostics fail, uncomment this line to output some debugging comments from the library:
+```cpp
+#define TINY_GSM_DEBUG SerialMon
+```
+In any custom code, ```TINY_GSM_DEBUG``` must be defined before including the TinyGSM library.
+
+If you are unable to see any obvious errors in the library debugging, use [StreamDebugger](https://github.com/vshymanskyy/StreamDebugger) to copy the entire AT command sequence to the main serial port.
+In the diagnostics example, simply uncomment the line:
+```cpp
+#define DUMP_AT_COMMANDS
+```
+In custom code, you can add this snippit:
+```cpp
+#ifdef DUMP_AT_COMMANDS
+  #include <StreamDebugger.h>
+  StreamDebugger debugger(SerialAT, SerialMon);
+  TinyGsm modem(debugger);
+#else
+  TinyGsm modem(SerialAT);
+#endif
+```
 
 ### SoftwareSerial problems
 
