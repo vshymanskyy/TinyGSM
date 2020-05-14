@@ -178,7 +178,7 @@ If you have found TinyGSM to be useful in your work, research or company, please
   4. Ensure that you have a stable power supply to the module of at least **2A**.
   5. Check if serial connection is working (Hardware Serial is recommended)
      Send an ```AT``` command using [this sketch](tools/AT_Debug/AT_Debug.ino)
-  6. Try out the [WebClient](https://github.com/vshymanskyy/TinyGSM/blob/master/examples/WebClient/WebClient.ino) example/
+  6. Try out the [WebClient](https://github.com/vshymanskyy/TinyGSM/blob/master/examples/WebClient/WebClient.ino) example
 
 #### Writing your own code
 

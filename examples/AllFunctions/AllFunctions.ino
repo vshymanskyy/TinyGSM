@@ -38,8 +38,8 @@
 #define SerialAT Serial1
 
 // or Software Serial on Uno, Nano
-//#include <SoftwareSerial.h>
-// SoftwareSerial SerialAT(2, 3); // RX, TX
+// #include <SoftwareSerial.h>
+// SoftwareSerial SerialAT(2, 3);  // RX, TX
 
 // See all AT commands, if wanted
 // #define DUMP_AT_COMMANDS
@@ -49,7 +49,7 @@
 
 // Range to attempt to autobaud
 #define GSM_AUTOBAUD_MIN 9600
-#define GSM_AUTOBAUD_MAX 115200
+#define GSM_AUTOBAUD_MAX 57600
 
 /*
  * Tests enabled
@@ -58,16 +58,16 @@
 #define TINY_GSM_TEST_WIFI false
 #define TINY_GSM_TEST_TCP true
 #define TINY_GSM_TEST_SSL true
-#define TINY_GSM_TEST_CALL true
-#define TINY_GSM_TEST_SMS true
-#define TINY_GSM_TEST_USSD true
+// #define TINY_GSM_TEST_CALL true
+// #define TINY_GSM_TEST_SMS true
+// #define TINY_GSM_TEST_USSD true
 #define TINY_GSM_TEST_BATTERY true
 #define TINY_GSM_TEST_TEMPERATURE true
 #define TINY_GSM_TEST_GSM_LOCATION true
 #define TINY_GSM_TEST_TIME true
-#define TINY_GSM_TEST_GPS true
+#define TINY_GSM_TEST_GPS false
 // powerdown modem after tests
-#define TINY_GSM_POWERDOWN false
+#define TINY_GSM_POWERDOWN true
 
 // set GSM PIN, if any
 #define GSM_PIN ""
@@ -77,7 +77,8 @@
 // #define CALL_TARGET "+380xxxxxxxxx"
 
 // Your GPRS credentials, if any
-const char apn[]      = "YourAPN";
+const char apn[] = "YourAPN";
+// const char apn[] = "ibasis.iot";
 const char gprsUser[] = "";
 const char gprsPass[] = "";
 
@@ -119,16 +120,25 @@ void setup() {
 
   // !!!!!!!!!!!
   // Set your reset, enable, power pins here
-  pinMode(23, OUTPUT);
-  digitalWrite(23, HIGH);
+  pinMode(A5, OUTPUT);
+  DBG("Pin HIGH");
+  digitalWrite(A5, HIGH);
+  delay(5000);
+  DBG("Pin LOW");
+  digitalWrite(A5, LOW);
+  delay(1300);
+  digitalWrite(A5, HIGH);
+  DBG("Pin HIGH");
+  // pinMode(20, OUTPUT);
+  // digitalWrite(20, HIGH);
   // !!!!!!!!!!!
 
   DBG("Wait...");
   delay(6000);
 
   // Set GSM module baud rate
-  TinyGsmAutoBaud(SerialAT, GSM_AUTOBAUD_MIN, GSM_AUTOBAUD_MAX);
-  // SerialAT.begin(9600);
+  // TinyGsmAutoBaud(SerialAT, GSM_AUTOBAUD_MIN, GSM_AUTOBAUD_MAX);
+  SerialAT.begin(9600);
 }
 
 void loop() {
@@ -138,7 +148,6 @@ void loop() {
   if (!modem.restart()) {
     // if (!modem.init()) {
     DBG("Failed to restart modem, delaying 10s and retrying");
-    delay(10000L);
     // restart autobaud in case GSM just rebooted
     // TinyGsmAutoBaud(SerialAT, GSM_AUTOBAUD_MIN, GSM_AUTOBAUD_MAX);
     return;
