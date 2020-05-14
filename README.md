@@ -38,15 +38,15 @@ TinyGSM also pulls data gently from the modem (whenever possible), so it can ope
 
 - SIMCom SIM800 series (SIM800A, SIM800C, SIM800L, SIM800H, SIM808, SIM868)
 - SIMCom SIM900 series (SIM900A, SIM900D, SIM908, SIM968)
-- SIMCom WCDMA/HSPA/HSPA+ Modules (SIM5360, SIM5320, SIM5300E, SIM5300EA)
+- SIMCom WCDMA/HSPA/HSPA+ Modules (SIM5360, SIM5320, SIM5300E, SIM5300E/A)
 - SIMCom LTE Modules (SIM7100E, SIM7500E, SIM7500A, SIM7600C, SIM7600E)
-- SIMCom SIM7000E CAT-M1/NB-IoT Module
+- SIMCom SIM7000E/A/G CAT-M1/NB-IoT Module
 - AI-Thinker A6, A6C, A7, A20
 - ESP8266 (AT commands interface, similar to GSM modems)
 - Digi XBee WiFi and Cellular (using XBee command mode)
 - Neoway M590
 - u-blox 2G, 3G, 4G, and LTE Cat1 Cellular Modems (many modules including LEON-G100, LISA-U2xx, SARA-G3xx, SARA-U2xx, TOBY-L2xx, LARA-R2xx, MPCI-L2xx)
-- u-blox LTE-M Modems (SARA-R4xx, SARA-N4xx, _but NOT SARA-N2xx_)
+- u-blox LTE-M/NB-IoT Modems (SARA-R4xx, SARA-N4xx, _but NOT SARA-N2xx_)
 - Sequans Monarch LTE Cat M1/NB1 (VZM20Q)
 - Quectel BG96
 - Quectel M95
