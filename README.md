@@ -201,6 +201,7 @@ The general flow of your code should be:
     - Secure and insecure clients can usually be mixed when using multiple connections.
     - The total number of connections possible varies by module
 - Begin your serial communication and set all your pins as required to power your module and bring it to full functionality.
+    - The examples attempt to guess the module's baud rate.  In working code, you should use a set baud.
 - Wait for the module to be ready (could be as much as 6s, depending on the module)
 - Initialize the modem
     - ```modem.init()``` or ```modem.restart()```
