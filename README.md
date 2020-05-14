@@ -76,6 +76,21 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
 **Data connections**
 - TCP (HTTP, MQTT, Blynk, ...)
     - ALL modules support TCP connections
+    - Most modules support multiple simultaneous connections:
+        - A6/A7 - 8
+        - ESP8266 - 5
+        - Neoway M590 - 2
+        - Quectel BG96 - 12
+        - Quectel M95 - 6
+        - Quectel MC60/MC60E - 6
+        - Sequans Monarch - 6
+        - SIM 800/900 - 5
+        - SIM 5360/5320/5300/7100 - 10
+        - SIM7000 - 8
+        - SIM 7500/7600/7800 - 10
+        - u-blox 2G/3G - 7
+        - u-blox SARA R4/N4 - 7
+        - Digi XBee - _only 1 connection supported!_
 - UDP
     - Not yet supported on any module, though it may be some day
 - SSL/TLS (HTTPS)
@@ -83,9 +98,11 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
         - SIM800, u-Blox, XBee _cellular_, ESP8266, and Sequans Monarch
         - Note:  only some device models or firmware revisions have this feature (SIM8xx R14.18, A7, etc.)
     - Not yet supported on:
-        - Quectel modems, SIM7000, SIM5360/5320, SIM7100/7500/7600
+        - Quectel modems, SIM7000, SIM 5360/5320/7100, SIM 7500/7600/7800
     - Not possible on:
         - SIM900, A6/A7, Neoway M590, XBee _WiFi_
+    - Like TCP, most modules support simultaneous connections
+    - TCP and SSL connections can usually be mixed up to the total number of possible connections
 
 **USSD**
 - Sending USSD requests and decoding 7,8,16-bit responses
@@ -173,14 +190,21 @@ The general flow of your code should be:
 - Create a TinyGSM modem instance
     - ```TinyGsm modem(SerialAT);```
 - Create one or more TinyGSM client instances
-    - ```TinyGsmClient client(modem);``` for a single TCP client
-    - ```TinyGsmClient clientX(modem, #);``` for one or more TCP clients (on supported modules)
-    - ```TinyGsmClientSecure client(modem);``` for a single SSL client (on supported modules)
-    - ```TinyGsmClientSecure clientX(modem, #);``` for one or more SSL clients (on supported modules)
+    - For a single connection, use
+        - ```TinyGsmClient client(modem);```
+        or
+        ```TinyGsmClientSecure client(modem);``` (on supported modules)
+    - For multiple connections (on supported modules) use:
+        - ```TinyGsmClient clientX(modem, 0);```, ```TinyGsmClient clientY(modem, 1);```, etc
+          or
+        - ```TinyGsmClientSecure clientX(modem, 0);```, ```TinyGsmClientSecure clientY(modem, 1);```, etc
+    - Secure and insecure clients can usually be mixed when using multiple connections.
+    - The total number of connections possible varies by module
 - Begin your serial communication and set all your pins as required to power your module and bring it to full functionality.
-- Wait for the module to be ready (~300ms - 6s)
+- Wait for the module to be ready (could be as much as 6s, depending on the module)
 - Initialize the modem
     - ```modem.init()``` or ```modem.restart()```
+    - restart generally takes longer than init but ensures the module doesn't have lingering connections
 - Unlock your SIM, if necessary:
     - ```modem.simUnlock(GSM_PIN)```
 - If using **WiFi**, specify your SSID information:
@@ -199,7 +223,7 @@ The general flow of your code should be:
 
 #### If you have any issues:
 
-  1. Read the whole README (you're looking at it!)
+  1. Read the whole README (you're looking at it!), particularly the troubleshooting section below.
   2. Some boards require [**special configuration**](https://github.com/vshymanskyy/TinyGSM/wiki/Board-configuration).
   3. Try running the Diagnostics sketch
   4. Check for [**highlighted topics here**](https://github.com/vshymanskyy/TinyGSM/issues?utf8=%E2%9C%93&q=is%3Aissue+label%3A%22for+reference%22+)
@@ -254,6 +278,34 @@ In custom code, you can add this snippit:
   TinyGsm modem(SerialAT);
 #endif
 ```
+
+### Web request formatting problems - "but it works with PostMan"
+
+This library opens a TCP (or SSL) connection to a server.
+In the [OSI model](https://en.wikipedia.org/wiki/OSI_model), that's [layer 4](http://www.tcpipguide.com/free/t_TransportLayerLayer4.htm) (or 5 for SSL).
+HTTP (GET/POST), MQTT, and most of the other functions you probably want to use live up at [layer 7](http://www.tcpipguide.com/free/t_ApplicationLayerLayer7.htm).
+This means that you need to either manually code the top layer or use another library (like [HTTPClient](https://github.com/arduino-libraries/ArduinoHttpClient) or [PubSubClient](https://pubsubclient.knolleary.net/)) to do it for you.
+Tools like PostMan also works at layer 7, not layer 4/5 like TinyGSM.
+If you are successfully connecting to a server, but getting responses of "bad request" (or no response), the issue is probably your formatting.
+Here are some tips for writing layer 7 (particularly HTTP request) manually:
+- Look at the "WebClient" example
+- Make sure you are including all required headers.
+    - If you use PostMan, make sure you un-hide and look at the "auto-generated" headers; you'll probably be surprised by how many of them there are.
+- Use ```client.print("")```, or ```client.write(buf, #)```, or even ```client.write(String(""))```, not ```client.write("")``` to help prevent text being send out one character at a time (typewriter style)
+- Enclose the entirety of each header or line within a single string or print statement
+    - use
+    ```cpp
+    client.print(String("GET ") + resource + " HTTP/1.1\r\n");
+    ```
+    instead of
+    ```cpp
+    client.print("GET ");
+    client.print(resource);
+    client.println(" HTTP/1.1")
+    ```
+- Make sure there is one entirely blank line between the last header and the content of any POST request.
+    - Add two lines to the last header ```client.print("....\r\n\r\n")``` or put in an extra ```client.println()```
+    - This is an HTTP requirement and is really easy to miss.
 
 ### SoftwareSerial problems
 
