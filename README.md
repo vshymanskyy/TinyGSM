@@ -209,6 +209,7 @@ The general flow of your code should be:
     - ```modem.simUnlock(GSM_PIN)```
 - If using **WiFi**, specify your SSID information:
     - ```modem.networkConnect(wifiSSID, wifiPass)```
+    - Network registration should be automatic on cellular modules
 - Wait for network registration to be successful
     - ```modem.waitForNetwork(600000L)```
 - If using cellular, establish the GPRS or EPS data connection _after_ your are successfully registered on the network
@@ -252,6 +253,24 @@ Improving the power supply actually solves stability problems in **many** cases!
 - Do not put your wires next to noisy signal sources (buck converters, antennas, oscillators etc.)
 - If everything else seems to be working but you are unable to connect to the network, check your power supply!
 
+### Broken initial configuration
+
+Sometimes (especially if you played with AT commands), your module configuration may become invalid.
+This may result in problems such as:
+
+ * Can't connect to the GPRS network
+ * Can't connect to the server
+ * Sent/received data contains invalid bytes
+ * etc.
+
+To return module to **Factory Defaults**, use this sketch:
+  File -> Examples -> TinyGSM -> tools -> [FactoryReset](https://github.com/vshymanskyy/TinyGSM/blob/master/tools/FactoryReset/FactoryReset.ino)
+
+In some cases, you may need to set an initial APN to connect to the cellular network.
+Try using the ```gprsConnect(APN)``` function to set an initial APN if you are unable to register on the network.
+You may need set the APN again after registering.
+(In most cases, you should set the APN after registration.)
+
 ### Diagnostics sketch
 
 Use this sketch to help diagnose SIM card and GPRS connection issues:
@@ -285,13 +304,13 @@ This library opens a TCP (or SSL) connection to a server.
 In the [OSI model](https://en.wikipedia.org/wiki/OSI_model), that's [layer 4](http://www.tcpipguide.com/free/t_TransportLayerLayer4.htm) (or 5 for SSL).
 HTTP (GET/POST), MQTT, and most of the other functions you probably want to use live up at [layer 7](http://www.tcpipguide.com/free/t_ApplicationLayerLayer7.htm).
 This means that you need to either manually code the top layer or use another library (like [HTTPClient](https://github.com/arduino-libraries/ArduinoHttpClient) or [PubSubClient](https://pubsubclient.knolleary.net/)) to do it for you.
-Tools like PostMan also works at layer 7, not layer 4/5 like TinyGSM.
+Tools like [PostMan](https://www.postman.com/) also show layer 7, not layer 4/5 like TinyGSM.
 If you are successfully connecting to a server, but getting responses of "bad request" (or no response), the issue is probably your formatting.
 Here are some tips for writing layer 7 (particularly HTTP request) manually:
 - Look at the "WebClient" example
 - Make sure you are including all required headers.
-    - If you use PostMan, make sure you un-hide and look at the "auto-generated" headers; you'll probably be surprised by how many of them there are.
-- Use ```client.print("")```, or ```client.write(buf, #)```, or even ```client.write(String(""))```, not ```client.write("")``` to help prevent text being send out one character at a time (typewriter style)
+    - If you are testing with PostMan, make sure you un-hide and look at the "auto-generated" headers; you'll probably be surprised by how many of them there are.
+- Use ```client.print("...")```, or ```client.write(buf, #)```, or even ```client.write(String("..."))```, not ```client.write("...")``` to help prevent text being sent out one character at a time (typewriter style)
 - Enclose the entirety of each header or line within a single string or print statement
     - use
     ```cpp
@@ -329,19 +348,6 @@ You will not be able to compile the HttpClient or HttpsClient examples with ESP3
 
 When using SAMD21-based boards, you may need to use a sercom uart port instead of `Serial1`.
 Please [refer to this comment](https://github.com/vshymanskyy/TinyGSM/issues/102#issuecomment-345548941).
-
-### Broken initial configuration
-
-Sometimes (especially if you played with AT commands), your module configuration may become invalid.
-This may result in problems such as:
-
- * Can't connect to the GPRS network
- * Can't connect to the server
- * Sent/received data contains invalid bytes
- * etc.
-
-To return module to **Factory Defaults**, use this sketch:
-  File -> Examples -> TinyGSM -> tools -> [FactoryReset](https://github.com/vshymanskyy/TinyGSM/blob/master/tools/FactoryReset/FactoryReset.ino)
 
 ### Goouuu Tech IOT-GA6 vs AI-Thinker A6 confusion
 
