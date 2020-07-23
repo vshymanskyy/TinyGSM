@@ -24,6 +24,7 @@ extra_envs.ini
 lib/readme.txt
 include/readme.txt
 .atomrc.cson
+.history
 
 # VSCode
 .vscode/*

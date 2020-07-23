@@ -367,7 +367,11 @@ class TinyGsmSequansMonarch
   }
 
   bool gprsDisconnectImpl() {
+    // Detach from PS network
     sendAT(GF("+CGATT=0"));
+    if (waitResponse(60000L) != 1) { return false; }
+    // Dectivate all PDP contexts
+    sendAT(GF("+CGACT=0"));
     if (waitResponse(60000L) != 1) { return false; }
 
     return true;
@@ -572,9 +576,7 @@ class TinyGsmSequansMonarch
     // six possible sockets.
     sendAT(GF("+SQNSS"));
     for (int muxNo = 1; muxNo <= TINY_GSM_MUX_COUNT; muxNo++) {
-      if (waitResponse(GFP(GSM_OK), GF(GSM_NL "+SQNSS: ")) != 2) {
-        break;
-      }
+      if (waitResponse(GFP(GSM_OK), GF(GSM_NL "+SQNSS: ")) != 2) { break; }
       uint8_t status = 0;
       // if (streamGetIntBefore(',') != muxNo) { // check the mux no
       //   DBG("### Warning: misaligned mux numbers!");
@@ -593,9 +595,9 @@ class TinyGsmSequansMonarch
       // SOCK_OPENING                = 6,
       GsmClientSequansMonarch* sock = sockets[mux % TINY_GSM_MUX_COUNT];
       if (sock) {
-        sock->sock_connected =
-            ((status != SOCK_CLOSED) && (status != SOCK_INCOMING) &&
-             (status != SOCK_OPENING));
+        sock->sock_connected = ((status != SOCK_CLOSED) &&
+                                (status != SOCK_INCOMING) &&
+                                (status != SOCK_OPENING));
       }
     }
     waitResponse();  // Should be an OK at the end
@@ -624,7 +626,7 @@ class TinyGsmSequansMonarch
     String r5s(r5); r5s.trim();
     DBG("### ..:", r1s, ",", r2s, ",", r3s, ",", r4s, ",", r5s);*/
     data.reserve(64);
-    uint8_t index = 0;
+    uint8_t  index       = 0;
     uint32_t startMillis = millis();
     do {
       TINY_GSM_YIELD();
@@ -654,11 +656,11 @@ class TinyGsmSequansMonarch
           index = 5;
           goto finish;
         } else if (data.endsWith(GF(GSM_NL "+SQNSRING:"))) {
-          int8_t mux = streamGetIntBefore(',');
+          int8_t  mux = streamGetIntBefore(',');
           int16_t len = streamGetIntBefore('\n');
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT &&
               sockets[mux % TINY_GSM_MUX_COUNT]) {
-            sockets[mux % TINY_GSM_MUX_COUNT]->got_data = true;
+            sockets[mux % TINY_GSM_MUX_COUNT]->got_data       = true;
             sockets[mux % TINY_GSM_MUX_COUNT]->sock_available = len;
           }
           data = "";
@@ -677,9 +679,7 @@ class TinyGsmSequansMonarch
   finish:
     if (!index) {
       data.trim();
-      if (data.length()) {
-        DBG("### Unhandled:", data);
-      }
+      if (data.length()) { DBG("### Unhandled:", data); }
       data = "";
     }
     // data.replace(GSM_NL, "/");
@@ -717,7 +717,7 @@ class TinyGsmSequansMonarch
 
  protected:
   GsmClientSequansMonarch* sockets[TINY_GSM_MUX_COUNT];
-  const char* gsmNL = GSM_NL;
+  const char*              gsmNL = GSM_NL;
 };
 
 #endif  // SRC_TINYGSMCLIENTSEQUANSMONARCH_H_

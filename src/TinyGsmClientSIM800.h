@@ -383,7 +383,7 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
     sendAT(GF("+CIPSHUT"));
     if (waitResponse(60000L) != 1) { return false; }
 
-    sendAT(GF("+CGATT=0"));  // Deactivate the bearer context
+    sendAT(GF("+CGATT=0"));  // Detach from GPRS
     if (waitResponse(60000L) != 1) { return false; }
 
     return true;
@@ -396,9 +396,7 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
   // May not return the "+CCID" before the number
   String getSimCCIDImpl() {
     sendAT(GF("+CCID"));
-    if (waitResponse(GF(GSM_NL)) != 1) {
-      return "";
-    }
+    if (waitResponse(GF(GSM_NL)) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     waitResponse();
     // Trim out the CCID header in case it is there
@@ -739,7 +737,7 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
   }
 
  public:
-  Stream&          stream;
+  Stream& stream;
 
  protected:
   GsmClientSim800* sockets[TINY_GSM_MUX_COUNT];
