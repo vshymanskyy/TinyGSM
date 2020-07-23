@@ -525,6 +525,32 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     return false;
   }
 
+
+   /**
+   *  CGNSSMODE: <gnss_mode>,<dpo_mode>
+   *  This command is used to configure GPS, GLONASS, BEIDOU and QZSS support mode.
+   *  0 : GLONASS
+   *  1 : BEIDOU
+   *  2 : GALILEO
+   *  3 : QZSS
+   *  dpo_mode: 1 enable , 0 disable
+   */
+  String setGNSSModeImpl(uint8_t mode,bool dpo){
+      String res;
+      sendAT(GF("+CGNSSMODE="), mode,",",dpo);
+      if (waitResponse(10000L,res) != 1) { return "";}
+      res.replace(GSM_NL, "");
+      res.trim();
+      return res;
+  }
+
+  uint8_t getGNSSModeImpl(){
+      sendAT(GF("+CGNSSMODE?"));
+      if (waitResponse(GF(GSM_NL "+CGNSSMODE:")) != 1) { return 0;}
+      return stream.readStringUntil(',').toInt();
+  }
+
+
   /*
    * Time functions
    */

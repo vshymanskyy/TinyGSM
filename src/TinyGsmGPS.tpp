@@ -43,6 +43,16 @@ class TinyGsmGPS {
                                   hour, minute, second);
   }
 
+  String setGNSSMode(uint8_t mode,bool dpo)
+  {
+    return thisModem().setGNSSModeImpl(mode,dpo);
+  }
+
+  uint8_t getGNSSMode()
+  {
+    return thisModem().getGNSSModeImpl();
+  }
+
   /*
    * CRTP Helper
    */
@@ -66,6 +76,8 @@ class TinyGsmGPS {
                     int* year = 0, int* month = 0, int* day = 0, int* hour = 0,
                     int* minute = 0,
                     int* second = 0) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  String setGNSSModeImpl(uint8_t mode,bool dpo) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  uint8_t getGNSSModeImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 };
 
 

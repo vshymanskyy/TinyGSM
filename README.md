@@ -151,20 +151,6 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
 - Other Contributors:
     - https://github.com/vshymanskyy/TinyGSM/graphs/contributors
 
-
-## Donation
-
-[![Donate BountySource](https://img.shields.io/badge/Donate-BountySource-149E5E.svg)](https://salt.bountysource.com/checkout/amount?team=tinygsm-dev)
-[![Donate Bitcoin](https://img.shields.io/badge/Donate-Bitcoin-orange.svg)](http://tny.im/aen)
-
-If you have found TinyGSM to be useful in your work, research or company, please consider making a donation to the project commensurate with your resources. Any amount helps!
-**All donations will be used strictly to fund the development of TinyGSM:**
-- Covering cellular network expenses
-- Buying new hardware and modems for integration
-- Bounty Budget (to reward other developers for their contributions)
-- Implementing new features
-- Quality Assurance
-
 ## Getting Started
 
 #### First Steps
