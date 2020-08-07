@@ -526,28 +526,25 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
   }
 
 
-   /**
+  /**
    *  CGNSSMODE: <gnss_mode>,<dpo_mode>
-   *  This command is used to configure GPS, GLONASS, BEIDOU and QZSS support mode.
-   *  0 : GLONASS
-   *  1 : BEIDOU
-   *  2 : GALILEO
-   *  3 : QZSS
-   *  dpo_mode: 1 enable , 0 disable
+   *  This command is used to configure GPS, GLONASS, BEIDOU and QZSS support
+   * mode. 0 : GLONASS 1 : BEIDOU 2 : GALILEO 3 : QZSS dpo_mode: 1 enable , 0
+   * disable
    */
-  String setGNSSModeImpl(uint8_t mode,bool dpo){
-      String res;
-      sendAT(GF("+CGNSSMODE="), mode,",",dpo);
-      if (waitResponse(10000L,res) != 1) { return "";}
-      res.replace(GSM_NL, "");
-      res.trim();
-      return res;
+  String setGNSSModeImpl(uint8_t mode, bool dpo) {
+    String res;
+    sendAT(GF("+CGNSSMODE="), mode, ",", dpo);
+    if (waitResponse(10000L, res) != 1) { return ""; }
+    res.replace(GSM_NL, "");
+    res.trim();
+    return res;
   }
 
-  uint8_t getGNSSModeImpl(){
-      sendAT(GF("+CGNSSMODE?"));
-      if (waitResponse(GF(GSM_NL "+CGNSSMODE:")) != 1) { return 0;}
-      return stream.readStringUntil(',').toInt();
+  uint8_t getGNSSModeImpl() {
+    sendAT(GF("+CGNSSMODE?"));
+    if (waitResponse(GF(GSM_NL "+CGNSSMODE:")) != 1) { return 0; }
+    return stream.readStringUntil(',').toInt();
   }
 
 
@@ -617,8 +614,12 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
     sendAT(GF("+CIPOPEN="), mux, ',', GF("\"TCP"), GF("\",\""), host, GF("\","),
            port);
-    // The reply is +CIPOPEN: ## of socket created
+    // The reply is OK followed by +CIPOPEN: <link_num>,<err> where <link_num>
+    // is the mux number and <err> should be 0 if there's no error
     if (waitResponse(timeout_ms, GF(GSM_NL "+CIPOPEN:")) != 1) { return false; }
+    uint8_t opened_mux    = streamGetIntBefore(',');
+    uint8_t opened_result = streamGetIntBefore('\n');
+    if (opened_mux != mux || opened_result != 0) return false;
     return true;
   }
 
@@ -702,9 +703,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     for (int muxNo = 0; muxNo < TINY_GSM_MUX_COUNT; muxNo++) {
       // +CIPCLOSE:<link0_state>,<link1_state>,...,<link9_state>
       bool muxState = stream.parseInt();
-      if (sockets[muxNo]) {
-        sockets[muxNo]->sock_connected = muxState;
-      }
+      if (sockets[muxNo]) { sockets[muxNo]->sock_connected = muxState; }
     }
     waitResponse();  // Should be an OK at the end
     if (!sockets[mux]) return false;
@@ -837,7 +836,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
   }
 
  public:
-  Stream&           stream;
+  Stream& stream;
 
  protected:
   GsmClientSim7600* sockets[TINY_GSM_MUX_COUNT];
