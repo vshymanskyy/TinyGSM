@@ -71,6 +71,9 @@
 // set GSM PIN, if any
 #define GSM_PIN ""
 
+// flag to force SSL client authentication, if needed
+// #define TINY_GSM_SSL_CLIENT_AUTHENTICATION
+
 // Your GPRS credentials, if any
 const char apn[]  = "YourAPN";
 const char gprsUser[] = "";
@@ -81,9 +84,9 @@ const char wifiSSID[]  = "YourSSID";
 const char wifiPass[] = "YourWiFiPass";
 
 // Server details
-const char server[] = "vsh.pp.ua";
+const char server[]   = "vsh.pp.ua";
 const char resource[] = "/TinyGSM/logo.txt";
-const int  port = 443;
+const int  port       = 443;
 
 #include <TinyGsmClient.h>
 #include <ArduinoHttpClient.h>
@@ -103,15 +106,15 @@ const int  port = 443;
 #endif
 
 #ifdef DUMP_AT_COMMANDS
-  #include <StreamDebugger.h>
-  StreamDebugger debugger(SerialAT, SerialMon);
-  TinyGsm modem(debugger);
+#include <StreamDebugger.h>
+StreamDebugger debugger(SerialAT, SerialMon);
+TinyGsm        modem(debugger);
 #else
-  TinyGsm modem(SerialAT);
+TinyGsm modem(SerialAT);
 #endif
 
 TinyGsmClientSecure client(modem);
-HttpClient http(client, server, port);
+HttpClient          http(client, server, port);
 
 void setup() {
   // Set console baud rate

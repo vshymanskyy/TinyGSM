@@ -506,6 +506,18 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
     sendAT(GF("+CIPSSL="), ssl);
     rsp = waitResponse();
     if (ssl && rsp != 1) { return false; }
+#ifdef TINY_GSM_SSL_CLIENT_AUTHENTICATION
+    // set SSL options
+    // +SSLOPT=<opt>,<enable>
+    // <opt>
+    //    0 (default) ignore invalid certificate
+    //    1 client authentication
+    // <enable>
+    //    0 (default) close
+    //    1 open
+    sendAT(GF("+CIPSSL=1,1"));
+    if (waitResponse() != 1) return false;
+#endif
 #endif
     sendAT(GF("+CIPSTART="), mux, ',', GF("\"TCP"), GF("\",\""), host,
            GF("\","), port);
