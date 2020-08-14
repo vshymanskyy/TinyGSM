@@ -3,7 +3,7 @@
  * This sketch uploads SSL certificates to the SIM8xx
  *
  * TinyGSM Getting Started guide:
- *   http://tiny.cc/tiny-gsm-readme
+ *   https://tiny.cc/tinygsm-readme
  *
  **************************************************************/
 
@@ -28,7 +28,7 @@
 #define SerialAT Serial1
 
 // Uncomment this if you want to see all AT commands
-//#define DUMP_AT_COMMANDS
+// #define DUMP_AT_COMMANDS
 
 
 #ifdef DUMP_AT_COMMANDS
@@ -46,7 +46,7 @@ void setup() {
 
   // Set GSM module baud rate
   SerialAT.begin(115200);
-  delay(3000);
+  delay(6000);
 
   SerialMon.println(F("Initializing modem..."));
   modem.init();
@@ -70,7 +70,7 @@ void setup() {
   modem.stream.flush();
 
   if (modem.waitResponse(2000) != 1) return;
-  
+
   modem.sendAT(GF("+SSLSETCERT=\"" CERT_FILE "\""));
   if (modem.waitResponse() != 1) return;
   if (modem.waitResponse(5000L, GF(GSM_NL "+SSLSETCERT:")) != 1) return;
@@ -94,4 +94,3 @@ void loop() {
   }
   delay(0);
 }
-
