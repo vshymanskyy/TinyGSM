@@ -227,6 +227,8 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95>,
     return waitResponse() == 1;
   }
 
+  bool setPhoneFunctionalityImpl(uint8_t fun, bool reset = false) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
   /*
    * Generic network functions
    */

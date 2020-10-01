@@ -65,6 +65,9 @@ class TinyGsmModem {
   bool sleepEnable(bool enable = true) {
     return thisModem().sleepEnableImpl(enable);
   }
+  bool setPhoneFunctionality(uint8_t fun, bool reset = false) {
+    return thisModem().setPhoneFunctionalityImpl(fun, reset);
+  }
 
   /*
    * Generic network functions
@@ -164,13 +167,14 @@ class TinyGsmModem {
    */
  protected:
   bool radioOffImpl() {
-    thisModem().sendAT(GF("+CFUN=0"));
-    if (thisModem().waitResponse(10000L) != 1) { return false; }
+    if (!thisModem().setPhoneFunctionality(0)) { return false; }
     delay(3000);
     return true;
   }
 
   bool sleepEnableImpl(bool enable = true) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
+  bool setPhoneFunctionalityImpl(uint8_t fun, bool reset = false) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
   /*
    * Generic network functions

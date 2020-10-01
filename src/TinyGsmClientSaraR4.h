@@ -299,8 +299,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
   // using +CFUN=15 instead of the more common CFUN=1,1
   bool restartImpl() {
     if (!testAT()) { return false; }
-    sendAT(GF("+CFUN=15"));
-    if (waitResponse(10000L) != 1) { return false; }
+    if (!setPhoneFunctionality(15)) { return false; }
     delay(3000);  // TODO(?):  Verify delay timing here
     return init();
   }
@@ -311,6 +310,11 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
   }
 
   bool sleepEnableImpl(bool enable = true) TINY_GSM_ATTR_NOT_AVAILABLE;
+
+  bool setPhoneFunctionalityImpl(uint8_t fun, bool reset = false) {
+    sendAT(GF("+CFUN="), fun, reset ? ",1" : "");
+    return waitResponse(10000L) == 1;
+  }
 
   /*
    * Generic network functions

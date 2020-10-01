@@ -254,10 +254,8 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
     if (!testAT()) { return false; }
     sendAT(GF("&W"));
     waitResponse();
-    sendAT(GF("+CFUN=0"));
-    if (waitResponse(10000L) != 1) { return false; }
-    sendAT(GF("+CFUN=1,1"));
-    if (waitResponse(10000L) != 1) { return false; }
+    if (!setPhoneFunctionality(0)) { return false; } 
+    if (!setPhoneFunctionality(1, true)) { return false; }
     delay(3000);
     return init();
   }
@@ -274,6 +272,15 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
   bool sleepEnableImpl(bool enable = true) {
     sendAT(GF("+CSCLK="), enable);
     return waitResponse() == 1;
+  }
+
+  // <fun> 0 Minimum functionality
+  // <fun> 1 Full functionality (Default)
+  // <fun> 4 Disable phone both transmit and receive RF circuits.
+  // <rst> Reset the MT before setting it to <fun> power level.
+  bool setPhoneFunctionalityImpl(uint8_t fun, bool reset = false) {
+    sendAT(GF("+CFUN="), fun, reset ? ",1" : "");
+    return waitResponse(10000L) == 1;
   }
 
   /*

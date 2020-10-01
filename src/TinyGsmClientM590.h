@@ -173,8 +173,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590>,
  protected:
   bool restartImpl() {
     if (!testAT()) { return false; }
-    sendAT(GF("+CFUN=15"));
-    if (waitResponse(10000L) != 1) { return false; }
+    if (!setPhoneFunctionality(15)) { return false; }
     // MODEM:STARTUP
     waitResponse(60000L, GF(GSM_NL "+PBREADY" GSM_NL));
     return init();
@@ -188,6 +187,11 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590>,
   bool sleepEnableImpl(bool enable = true) {
     sendAT(GF("+ENPWRSAVE="), enable);
     return waitResponse() == 1;
+  }
+
+  bool setPhoneFunctionalityImpl(uint8_t fun, bool reset = false) {
+    sendAT(GF("+CFUN="), fun, reset ? ",1" : "");
+    return waitResponse(10000L) == 1;
   }
 
   /*
