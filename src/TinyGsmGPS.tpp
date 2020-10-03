@@ -39,7 +39,7 @@ class TinyGsmGPS {
                   int* second) {
     float lat = 0;
     float lon = 0;
-    return thisModem().getGPSImpl(lat, lon, 0, 0, 0, 0, 0, year, month, day,
+    return thisModem().getGPSImpl(&lat, &lon, 0, 0, 0, 0, 0, year, month, day,
                                   hour, minute, second);
   }
 
