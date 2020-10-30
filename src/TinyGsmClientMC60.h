@@ -26,13 +26,10 @@
 #include "TinyGsmTCP.tpp"
 #include "TinyGsmTime.tpp"
 
-#include <Ethernet.h>
-
-
 #define GSM_NL "\r\n"
-static const char GSM_OK[] TINY_GSM_PROGMEM = "OK" GSM_NL;
+static const char GSM_OK[] TINY_GSM_PROGMEM    = "OK" GSM_NL;
 static const char GSM_ERROR[] TINY_GSM_PROGMEM = "ERROR" GSM_NL;
-#if defined TINY_GSM_DEBUG
+#if defined       TINY_GSM_DEBUG
 static const char GSM_CME_ERROR[] TINY_GSM_PROGMEM = GSM_NL "+CME ERROR:";
 static const char GSM_CMS_ERROR[] TINY_GSM_PROGMEM = GSM_NL "+CMS ERROR:";
 #endif
@@ -380,11 +377,11 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60>,
                     bool ssl = false, int timeout_s = 75) {
     if (ssl) { DBG("SSL not yet supported on this module!"); }
 
-    // By default, MC60 expects IP address as 'host' parameter. 
+    // By default, MC60 expects IP address as 'host' parameter.
     // If it is a domain name, "AT+QIDNSIP=1" should be executed.
     // "AT+QIDNSIP=0" is for dotted decimal IP address.
     IPAddress addr;
-    sendAT(GF("+QIDNSIP="), (addr.fromString(host)?0:1));
+    sendAT(GF("+QIDNSIP="), (addr.fromString(host) ? 0 : 1));
     if (waitResponse() != 1) { return false; }
 
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
@@ -406,7 +403,8 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60>,
     bool allAcknowledged = false;
     // bool failed = false;
     while (!allAcknowledged) {
-      sendAT(GF("+QISACK="), mux); // If 'mux' is not specified, MC60 returns 'ERRROR' (for QIMUX == 1)
+      sendAT(GF("+QISACK="), mux);  // If 'mux' is not specified, MC60 returns
+                                    // 'ERRROR' (for QIMUX == 1)
       if (waitResponse(5000L, GF(GSM_NL "+QISACK:")) != 1) {
         return -1;
       } else {
@@ -550,8 +548,10 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60>,
           // read the number of packets in the buffer
           int8_t num_packets = streamGetIntBefore(',');
           // read the length of the current packet
-          streamSkipUntil(','); // Skip the length of the current package in the buffer
-          int16_t len_total = streamGetIntBefore('\n'); // Total length of all packages
+          streamSkipUntil(
+              ',');  // Skip the length of the current package in the buffer
+          int16_t len_total =
+              streamGetIntBefore('\n');  // Total length of all packages
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux] &&
               num_packets >= 0 && len_total >= 0) {
             sockets[mux]->sock_available = len_total;
@@ -611,7 +611,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60>,
   }
 
  public:
-  Stream&        stream;
+  Stream& stream;
 
  protected:
   GsmClientMC60* sockets[TINY_GSM_MUX_COUNT];
