@@ -888,7 +888,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
   }
 
  public:
-  Stream&          stream;
+  Stream& stream;
 
  protected:
   GsmClientSaraR4* sockets[TINY_GSM_MUX_COUNT];

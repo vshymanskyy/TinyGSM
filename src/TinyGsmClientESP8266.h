@@ -200,7 +200,8 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
 
   bool sleepEnableImpl(bool enable = true) TINY_GSM_ATTR_NOT_AVAILABLE;
 
-  bool setPhoneFunctionalityImpl(uint8_t fun, bool reset = false) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool setPhoneFunctionalityImpl(uint8_t fun, bool reset = false)
+      TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
   /*
    * Generic network functions
@@ -317,9 +318,7 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
       // if the status is anything but 3, there are no connections open
       waitResponse();  // Returns an OK after the status
       for (int muxNo = 0; muxNo < TINY_GSM_MUX_COUNT; muxNo++) {
-        if (sockets[muxNo]) {
-          sockets[muxNo]->sock_connected = false;
-        }
+        if (sockets[muxNo]) { sockets[muxNo]->sock_connected = false; }
       }
       return false;
     }
@@ -398,9 +397,7 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
             } else {
               // DBG("### Got Data: ", len, "on", mux);
             }
-            while (len--) {
-              moveCharFromStreamToFifo(mux);
-            }
+            while (len--) { moveCharFromStreamToFifo(mux); }
             // TODO(SRGDamia1): deal with buffer overflow/missed characters
             if (len_orig > sockets[mux]->available()) {
               DBG("### Fewer characters received than expected: ",
@@ -446,7 +443,7 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
   }
 
  public:
-  Stream&           stream;
+  Stream& stream;
 
  protected:
   GsmClientESP8266* sockets[TINY_GSM_MUX_COUNT];

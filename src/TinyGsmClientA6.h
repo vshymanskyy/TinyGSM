@@ -191,7 +191,8 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
 
   bool sleepEnableImpl(bool enable = true) TINY_GSM_ATTR_NOT_AVAILABLE;
 
-  bool setPhoneFunctionalityImpl(uint8_t fun, bool reset = false) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool setPhoneFunctionalityImpl(uint8_t fun, bool reset = false)
+      TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
   /*
    * Generic network functions
@@ -475,7 +476,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
     String r5s(r5); r5s.trim();
     DBG("### ..:", r1s, ",", r2s, ",", r3s, ",", r4s, ",", r5s);*/
     data.reserve(64);
-    uint8_t index = 0;
+    uint8_t  index       = 0;
     uint32_t startMillis = millis();
     do {
       TINY_GSM_YIELD();
@@ -505,8 +506,8 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
           index = 5;
           goto finish;
         } else if (data.endsWith(GF("+CIPRCV:"))) {
-          int8_t mux = streamGetIntBefore(',');
-          int16_t len = streamGetIntBefore(',');
+          int8_t  mux      = streamGetIntBefore(',');
+          int16_t len      = streamGetIntBefore(',');
           int16_t len_orig = len;
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
             if (len > sockets[mux]->rx.free()) {
@@ -514,9 +515,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
             } else {
               DBG("### Got: ", len, "->", sockets[mux]->rx.free());
             }
-            while (len--) {
-              moveCharFromStreamToFifo(mux);
-            }
+            while (len--) { moveCharFromStreamToFifo(mux); }
             // TODO(?) Deal with missing characters
             if (len_orig > sockets[mux]->available()) {
               DBG("### Fewer characters received than expected: ",
@@ -537,9 +536,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
   finish:
     if (!index) {
       data.trim();
-      if (data.length()) {
-        DBG("### Unhandled:", data);
-      }
+      if (data.length()) { DBG("### Unhandled:", data); }
       data = "";
     }
     // data.replace(GSM_NL, "/");
@@ -577,7 +574,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
 
  protected:
   GsmClientA6* sockets[TINY_GSM_MUX_COUNT];
-  const char* gsmNL = GSM_NL;
+  const char*  gsmNL = GSM_NL;
 };
 
 #endif  // SRC_TINYGSMCLIENTA6_H_

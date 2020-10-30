@@ -764,7 +764,7 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
   }
 
  public:
-  Stream&           stream;
+  Stream& stream;
 
  protected:
   GsmClientSim7000* sockets[TINY_GSM_MUX_COUNT];

@@ -684,7 +684,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
   }
 
  public:
-  Stream&        stream;
+  Stream& stream;
 
  protected:
   GsmClientBG96* sockets[TINY_GSM_MUX_COUNT];

@@ -407,9 +407,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590>,
             } else {
               DBG("### Got: ", len, "->", sockets[mux]->rx.free());
             }
-            while (len--) {
-              moveCharFromStreamToFifo(mux);
-            }
+            while (len--) { moveCharFromStreamToFifo(mux); }
             // TODO(?): Handle lost characters
             if (len_orig > sockets[mux]->available()) {
               DBG("### Fewer characters received than expected: ",
@@ -465,7 +463,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590>,
   }
 
  public:
-  Stream&        stream;
+  Stream& stream;
 
  protected:
   GsmClientM590* sockets[TINY_GSM_MUX_COUNT];

@@ -174,7 +174,8 @@ class TinyGsmModem {
 
   bool sleepEnableImpl(bool enable = true) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
-  bool setPhoneFunctionalityImpl(uint8_t fun, bool reset = false) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool setPhoneFunctionalityImpl(uint8_t fun, bool reset = false)
+      TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
   /*
    * Generic network functions
@@ -266,15 +267,15 @@ class TinyGsmModem {
   }
 
  protected:
-  inline bool streamGetLength(char* buf, int8_t numChars, const uint32_t timeout_ms = 1000L) {
-    if (!buf) {
-      return false;
-    }
+  inline bool streamGetLength(char* buf, int8_t numChars,
+                              const uint32_t timeout_ms = 1000L) {
+    if (!buf) { return false; }
 
-    int8_t    numCharsReady = -1;
-    uint32_t  startMillis = millis();
-    while (millis() - startMillis < timeout_ms && (numCharsReady = thisModem().stream.available()) < numChars) {
-        TINY_GSM_YIELD();
+    int8_t   numCharsReady = -1;
+    uint32_t startMillis   = millis();
+    while (millis() - startMillis < timeout_ms &&
+           (numCharsReady = thisModem().stream.available()) < numChars) {
+      TINY_GSM_YIELD();
     }
 
     if (numCharsReady >= numChars) {
@@ -285,8 +286,9 @@ class TinyGsmModem {
     return false;
   }
 
-  inline int16_t streamGetIntLength(int8_t numChars, const uint32_t timeout_ms = 1000L) {
-    char      buf[numChars + 1];
+  inline int16_t streamGetIntLength(int8_t         numChars,
+                                    const uint32_t timeout_ms = 1000L) {
+    char buf[numChars + 1];
     if (streamGetLength(buf, numChars, timeout_ms)) {
       buf[numChars] = '\0';
       return atoi(buf);
@@ -309,13 +311,14 @@ class TinyGsmModem {
     return -9999;
   }
 
-  inline float streamGetFloatLength(int8_t numChars, const uint32_t timeout_ms = 1000L) {
-    char      buf[numChars + 1];
+  inline float streamGetFloatLength(int8_t         numChars,
+                                    const uint32_t timeout_ms = 1000L) {
+    char buf[numChars + 1];
     if (streamGetLength(buf, numChars, timeout_ms)) {
       buf[numChars] = '\0';
       return atof(buf);
-    } 
-    
+    }
+
     return -9999.0F;
   }
 
@@ -328,8 +331,8 @@ class TinyGsmModem {
       buf[bytesRead] = '\0';
       float res      = atof(buf);
       return res;
-    } 
-      
+    }
+
     return -9999.0F;
   }
 

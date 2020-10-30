@@ -316,7 +316,8 @@ class TinyGsmSequansMonarch
     return waitResponse() == 1;
   }
 
-  bool setPhoneFunctionality(uint8_t fun, bool reset = false) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool setPhoneFunctionality(uint8_t fun,
+                             bool reset = false) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
   /*
    * Generic network functions

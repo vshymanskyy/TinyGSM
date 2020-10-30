@@ -254,7 +254,7 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
     if (!testAT()) { return false; }
     sendAT(GF("&W"));
     waitResponse();
-    if (!setPhoneFunctionality(0)) { return false; } 
+    if (!setPhoneFunctionality(0)) { return false; }
     if (!setPhoneFunctionality(1, true)) { return false; }
     delay(3000);
     return init();

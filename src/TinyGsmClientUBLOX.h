@@ -236,7 +236,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
   bool factoryDefaultImpl() {
     sendAT(GF("+UFACTORY=0,1"));  // No factory restore, erase NVM
     waitResponse();
-    return setPhoneFunctionality(16); // Reset
+    return setPhoneFunctionality(16);  // Reset
   }
 
   /*
@@ -820,7 +820,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
   }
 
  public:
-  Stream&         stream;
+  Stream& stream;
 
  protected:
   GsmClientUBLOX* sockets[TINY_GSM_MUX_COUNT];
