@@ -124,10 +124,7 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
     -  XBee (any type), u-blox SARA R4/N4, Neoway M590, ESP8266 (obviously)
 - Functions:
     - Dial, hangup
-    - Receiving calls
-    - Incoming event (RING)
     - DTMF sending
-    - DTMF decoding
 
 **Location**
 - GPS/GNSS
