@@ -26,6 +26,9 @@
 #include "TinyGsmTCP.tpp"
 #include "TinyGsmTime.tpp"
 
+#include <Ethernet.h>
+
+
 #define GSM_NL "\r\n"
 static const char GSM_OK[] TINY_GSM_PROGMEM = "OK" GSM_NL;
 static const char GSM_ERROR[] TINY_GSM_PROGMEM = "ERROR" GSM_NL;
@@ -280,6 +283,10 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60>,
     sendAT(GF("+QIMUX=1"));
     if (waitResponse() != 1) { return false; }
 
+    // Modem is used as a client
+    sendAT(GF("+QISRVC=1"));
+    if (waitResponse() != 1) { return false; }
+
     // Start TCPIP Task and Set APN, User Name and Password
     sendAT("+QIREGAPP=\"", apn, "\",\"", user, "\",\"", pwd, "\"");
     if (waitResponse() != 1) { return false; }
@@ -372,6 +379,14 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60>,
   bool modemConnect(const char* host, uint16_t port, uint8_t mux,
                     bool ssl = false, int timeout_s = 75) {
     if (ssl) { DBG("SSL not yet supported on this module!"); }
+
+    // By default, MC60 expects IP address as 'host' parameter. 
+    // If it is a domain name, "AT+QIDNSIP=1" should be executed.
+    // "AT+QIDNSIP=0" is for dotted decimal IP address.
+    IPAddress addr;
+    sendAT(GF("+QIDNSIP="), (addr.fromString(host)?0:1));
+    if (waitResponse() != 1) { return false; }
+
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
     sendAT(GF("+QIOPEN="), mux, GF(",\""), GF("TCP"), GF("\",\""), host,
            GF("\","), port);
@@ -391,7 +406,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60>,
     bool allAcknowledged = false;
     // bool failed = false;
     while (!allAcknowledged) {
-      sendAT(GF("+QISACK"));
+      sendAT(GF("+QISACK="), mux); // If 'mux' is not specified, MC60 returns 'ERRROR' (for QIMUX == 1)
       if (waitResponse(5000L, GF(GSM_NL "+QISACK:")) != 1) {
         return -1;
       } else {
@@ -535,13 +550,14 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60>,
           // read the number of packets in the buffer
           int8_t num_packets = streamGetIntBefore(',');
           // read the length of the current packet
-          int16_t len_packet = streamGetIntBefore('\n');
+          streamSkipUntil(','); // Skip the length of the current package in the buffer
+          int16_t len_total = streamGetIntBefore('\n'); // Total length of all packages
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux] &&
-              num_packets >= 0 && len_packet >= 0) {
-            sockets[mux]->sock_available = len_packet * num_packets;
+              num_packets >= 0 && len_total >= 0) {
+            sockets[mux]->sock_available = len_total;
           }
           data = "";
-          // DBG("### Got Data:", len_packet * num_packets, "on", mux);
+          // DBG("### Got Data:", len_total, "on", mux);
         } else if (data.endsWith(GF("CLOSED" GSM_NL))) {
           int8_t nl   = data.lastIndexOf(GSM_NL, data.length() - 8);
           int8_t coma = data.indexOf(',', nl + 2);
