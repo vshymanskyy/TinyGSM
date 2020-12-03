@@ -235,7 +235,16 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
    */
  public:
   RegStatus getRegistrationStatus() {
-    return (RegStatus)getRegistrationStatusXREG("CREG");
+    // Check first for EPS registration
+    RegStatus epsStatus = (RegStatus)getRegistrationStatusXREG("CEREG");
+
+    // If we're connected on EPS, great!
+    if (epsStatus == REG_OK_HOME || epsStatus == REG_OK_ROAMING) {
+      return epsStatus;
+    } else {
+      // Otherwise, check generic network status
+      return (RegStatus)getRegistrationStatusXREG("CREG");
+    }
   }
 
  protected:
