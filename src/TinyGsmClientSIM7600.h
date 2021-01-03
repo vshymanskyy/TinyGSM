@@ -435,7 +435,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
 
   // get the RAW GPS output
   String getGPSrawImpl() {
-    sendAT(GF("+CGNSSINFO=32"));
+    sendAT(GF("+CGNSSINFO"));
     if (waitResponse(GF(GSM_NL "+CGNSSINFO:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     waitResponse();
