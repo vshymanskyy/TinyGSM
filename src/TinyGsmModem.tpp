@@ -200,7 +200,7 @@ class TinyGsmModem {
   bool waitForNetworkImpl(uint32_t timeout_ms = 60000L) {
     for (uint32_t start = millis(); millis() - start < timeout_ms;) {
       if (thisModem().isNetworkConnected()) { return true; }
-      delay(250);
+      delay(1000);
     }
     return false;
   }
@@ -343,7 +343,13 @@ class TinyGsmModem {
              !thisModem().stream.available()) {
         TINY_GSM_YIELD();
       }
-      if (thisModem().stream.read() == c) { return true; }
+      const char read = thisModem().stream.read();
+      if (read == c) { return true; }
+      /*
+      else {
+        Serial.print("\nNOT USED: "); Serial.print(read); Serial.print("\n");
+      }
+      */
     }
     return false;
   }

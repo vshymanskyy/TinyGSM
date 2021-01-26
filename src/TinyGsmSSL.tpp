@@ -23,8 +23,14 @@ class TinyGsmSSL {
   bool addCertificate(const char* filename) {
     return thisModem().addCertificateImpl(filename);
   }
+  bool addCertificateAsString(String certificatestring) {
+    return thisModem().addCertificateAsStringImpl(certificatestring);
+  }
   bool deleteCertificate() {
     return thisModem().deleteCertificateImpl();
+  }
+  bool configureSSL(uint8 contextId, uint8 connectId, String cmd, uint8 arg = 0) {
+    return thisModem().configureSSLImpl(contextId, connectId, cmd, arg);
   }
 
   /*
@@ -65,7 +71,9 @@ class TinyGsmSSL {
    */
  protected:
   bool addCertificateImpl(const char* filename) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool addCertificateAsStringImpl(String certificatestring) TINY_GSM_ATTR_NOT_IMPLEMENTED;
   bool deleteCertificateImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool configureSSLImpl(uint8 contextId, uint8 connectId, String cmd) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 };
 
 #endif  // SRC_TINYGSMSSL_H_
