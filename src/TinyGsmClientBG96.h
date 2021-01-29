@@ -202,11 +202,11 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
    * Power functions
    */
  protected:
-  bool restartImpl() {
+  bool restartImpl(const char* pin = NULL) {
     if (!testAT()) { return false; }
     if (!setPhoneFunctionality(1, true)) { return false; }
     waitResponse(10000L, GF("APP RDY"));
-    return init();
+    return init(pin);
   }
 
   bool powerOffImpl() {

@@ -176,11 +176,11 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
    * Power functions
    */
  protected:
-  bool restartImpl() {
+  bool restartImpl(const char* pin = NULL) {
     if (!testAT()) { return false; }
     sendAT(GF("+RST=1"));
     delay(3000);
-    return init();
+    return init(pin);
   }
 
   bool powerOffImpl() {

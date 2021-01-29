@@ -197,12 +197,12 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60>,
    * Power functions
    */
  protected:
-  bool restartImpl() {
+  bool restartImpl(const char* pin = NULL) {
     if (!testAT()) { return false; }
     if (!setPhoneFunctionality(0)) { return false; }
     if (!setPhoneFunctionality(1, true)) { return false; }
     delay(3000);
-    return init();
+    return init(pin);
   }
 
   bool powerOffImpl() {

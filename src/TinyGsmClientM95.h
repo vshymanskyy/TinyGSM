@@ -198,7 +198,7 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95>,
    * Power functions
    */
  protected:
-  bool restartImpl() {
+  bool restartImpl(const char* pin = NULL) {
     if (!testAT()) { return false; }
     sendAT(GF("+CFUN=0"));
     if (waitResponse(10000L, GF("NORMAL POWER DOWN"), GF("OK"), GF("FAIL")) ==
@@ -209,7 +209,7 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95>,
     if (waitResponse(10000L, GF("Call Ready"), GF("OK"), GF("FAIL")) == 3) {
       return false;
     }
-    return init();
+    return init(pin);
   }
 
   bool powerOffImpl() {

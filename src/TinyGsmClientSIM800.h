@@ -250,14 +250,14 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
    * Power functions
    */
  protected:
-  bool restartImpl() {
+  bool restartImpl(const char* pin = NULL) {
     if (!testAT()) { return false; }
     sendAT(GF("&W"));
     waitResponse();
     if (!setPhoneFunctionality(0)) { return false; }
     if (!setPhoneFunctionality(1, true)) { return false; }
     delay(3000);
-    return init();
+    return init(pin);
   }
 
   bool powerOffImpl() {
