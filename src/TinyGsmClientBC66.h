@@ -49,20 +49,20 @@ enum RegStatus {
 class TinyGsmBC66 : public TinyGsmModem<TinyGsmBC66>,
                     public TinyGsmGPRS<TinyGsmBC66>,
                     public TinyGsmTCP<TinyGsmBC66, TINY_GSM_MUX_COUNT>,
-                    public TinyGsmCalling<TinyGsmBC66>,
-                    public TinyGsmSMS<TinyGsmBC66>,
+                  //  public TinyGsmCalling<TinyGsmBC66>,
+                  //  public TinyGsmSMS<TinyGsmBC66>,
                     public TinyGsmSSL<TinyGsmBC66>,
-                    public TinyGsmTime<TinyGsmBC66>,
-                    public TinyGsmBattery<TinyGsmBC66>,
+                  //  public TinyGsmTime<TinyGsmBC66>,
+                  //  public TinyGsmBattery<TinyGsmBC66>,
                     public TinyGsmMqtt<TinyGsmBC66>  {
   friend class TinyGsmModem<TinyGsmBC66>;
   friend class TinyGsmGPRS<TinyGsmBC66>;
   friend class TinyGsmTCP<TinyGsmBC66, TINY_GSM_MUX_COUNT>;
-  friend class TinyGsmCalling<TinyGsmBC66>;
-  friend class TinyGsmSMS<TinyGsmBC66>;
+//  friend class TinyGsmCalling<TinyGsmBC66>;
+//  friend class TinyGsmSMS<TinyGsmBC66>;
   friend class TinyGsmSSL<TinyGsmBC66>;
-  friend class TinyGsmTime<TinyGsmBC66>;
-  friend class TinyGsmBattery<TinyGsmBC66>;
+//  friend class TinyGsmTime<TinyGsmBC66>;
+//  friend class TinyGsmBattery<TinyGsmBC66>;
   friend class TinyGsmMqtt<TinyGsmBC66>;
 
   /*
@@ -687,6 +687,237 @@ class TinyGsmBC66 : public TinyGsmModem<TinyGsmBC66>,
     return false;
   }
 
+  bool disconnectMqttImpl(uint8 connectId)
+  {
+    // From TCP Docu of Bc66
+    // <connectID> aka tcpconnectId - Integer type. Socket service index. The range is 0-4.
+    uint8 tcpconnectId = connectId;
+    if(tcpconnectId > 4)
+    {
+      DBG("TCPCONNECTID OUT OF RANGE!");
+      return false;
+    }
+
+    sendAT(GF("+QMTDISC="), tcpconnectId);
+    for (uint32_t start = millis(); millis() - start < 75000L;) {
+      if (waitResponse(2000L, GF(GSM_NL "+QMTDISC:")) != 1) {
+        continue;
+      } else {
+        // connection ID
+        streamSkipUntil(','); // instead of int8_t mux = streamGetIntBefore(','); // UNUSED
+        // read the result (0 if ok, -1 if bad)
+        int8_t result = streamGetIntBefore('\n');
+        if (result == 0) {
+          return true;
+        } else {
+          return false;
+        }
+      }
+    }
+    return false;
+  }
+  bool closeMqttImpl(uint8 connectId)
+  {
+    // From TCP Docu of Bc66
+    // <connectID> aka tcpconnectId - Integer type. Socket service index. The range is 0-4.
+    uint8 tcpconnectId = connectId;
+    if(tcpconnectId > 4)
+    {
+      DBG("TCPCONNECTID OUT OF RANGE!");
+      return false;
+    }
+
+    sendAT(GF("+QMTCLOSE="), tcpconnectId);
+    for (uint32_t start = millis(); millis() - start < 75000L;) {
+      if (waitResponse(2000L, GF(GSM_NL "+QMTCLOSE:")) != 1) {
+        continue;
+      } else {
+        // connection ID
+        streamSkipUntil(','); // instead of int8_t mux = streamGetIntBefore(','); // UNUSED
+        // read the result (0 if ok, -1 if bad)
+        int8_t result = streamGetIntBefore('\n');
+        if (result == 0) {
+          return true;
+        } else {
+          return false;
+        }
+      }
+    }
+    return false;
+  }
+
+  bool subscribeMqttImpl(uint8 connectId, uint16 msgId, String topic, uint8 qos = 0)
+  {
+    // From TCP Docu of Bc66
+    // <connectID> aka tcpconnectId - Integer type. Socket service index. The range is 0-4.
+    // <msgID> Integer type. Message identifier of packet. The range is 1-65535
+    // <qos> Integer type. The QoS level at which the client wants to publish the messages (0 at most once, 1 at least once, 2 exactly once)
+    uint8 tcpconnectId = connectId;
+    if(tcpconnectId > 4 || msgId < 1 || qos > 2)
+    {
+      DBG("TCPCONNECTID/MSGID/QOS OUT OF RANGE!");
+      return false;
+    }
+    sendAT(GF("+QMTSUB="), tcpconnectId, GF(","), msgId, GF(",\""), topic.c_str(), GF("\","), qos);
+    if (waitResponse(5000L) != 1) { return false; }
+
+    for (uint32_t start = millis(); millis() - start < 75000L;) {
+      if (waitResponse(2000L, GF(GSM_NL "+QMTSUB:")) != 1) {
+        continue;
+      } else {
+        // connection ID
+        streamSkipUntil(','); // instead of int8_t mux = streamGetIntBefore(','); // UNUSED
+        // msgId
+        streamSkipUntil(','); // unused
+        // read the result (0 if ok, 1 or 2 if bad)
+        int8_t result = streamGetIntBefore('\n');
+        if (result == 0) {
+          return true;
+        } else {
+          return false;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  bool unsubscribeMqttImpl(uint8 connectId, uint16 msgId, String topic)
+  {
+    // From TCP Docu of Bc66
+    // <connectID> aka tcpconnectId - Integer type. Socket service index. The range is 0-4.
+    // <msgID> Integer type. Message identifier of packet. The range is 1-65535
+    uint8 tcpconnectId = connectId;
+    if(tcpconnectId > 4 || msgId < 1)
+    {
+      DBG("TCPCONNECTID/MSGID OUT OF RANGE!");
+      return false;
+    }
+    sendAT(GF("+QMTUNS="), tcpconnectId, GF(","), msgId, GF(",\""), topic.c_str(), GF("\""));
+    if (waitResponse(5000L) != 1) { return false; }
+
+    for (uint32_t start = millis(); millis() - start < 75000L;) {
+      if (waitResponse(2000L, GF(GSM_NL "+QMTUNS:")) != 1) {
+        continue;
+      } else {
+        // connection ID
+        streamSkipUntil(','); // instead of int8_t mux = streamGetIntBefore(','); // UNUSED
+        // msgId
+        streamSkipUntil(','); // unused
+        // read the result (0 if ok, 1 or 2 if bad)
+        int8_t result = streamGetIntBefore('\n');
+        if (result == 0) {
+          return true;
+        } else {
+          return false;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  bool publishMqttImpl(uint8 connectId, uint16 msgId, String topic, String msg, uint8 qos = 0, uint8 retain = 0)
+  {
+    // From TCP Docu of Bc66
+    // <connectID> aka tcpconnectId - Integer type. Socket service index. The range is 0-4.
+    // <msgID> Integer type. Message identifier of packet. The range is 1-65535
+    // <qos> Integer type. The QoS level at which the client wants to publish the messages (0 at most once, 1 at least once, 2 exactly once)
+    // <retain> Integer type. Whether or not the server will retain the message after it has been delivered to the current subscribers. (0 server will not retain mgs, 1 will retain the message)
+    uint8 tcpconnectId = connectId;
+    uint16 tmsgId = msgId;
+    uint8 tqos = qos;
+    if(tcpconnectId > 4 || tmsgId < 1 || tqos > 2 || retain > 1)
+    {
+      DBG("TCPCONNECTID/MSGID/QOS/RETAIN OUT OF RANGE!");
+      return false;
+    }
+
+    // need to fix
+    if(tqos == 0)
+      tmsgId = 0;
+
+    sendAT(GF("+QMTPUB="), tcpconnectId, GF(","), tmsgId, GF(","), tqos, GF(","), retain, GF(",\""), topic.c_str(), GF("\",\""),
+      msg.c_str(), GF("\""));
+    if (waitResponse(5000L) != 1) { return false; }
+
+    for (uint32_t start = millis(); millis() - start < 75000L;) {
+      if (waitResponse(2000L, GF(GSM_NL "+QMTPUB:")) != 1) {
+        continue;
+      } else {
+        // connection ID
+        streamSkipUntil(','); // instead of int8_t mux = streamGetIntBefore(','); // UNUSED
+        // msgId
+        streamSkipUntil(','); // unused
+        // read the result (0 if ok, 1 or 2 if bad)
+        int8_t result = streamGetIntBefore('\n');
+        if (result == 0) {
+          return true;
+        } else {
+          return false;
+        }
+      }
+    }
+    return false;
+  }
+
+  void setRecvCallbackMqttImpl(MQTT_CALLBACK_SIGNATURE callback)
+  {
+    m_cb = callback;
+  }
+
+
+  inline bool streamReadUntil(String& strRead, const char c, const uint32_t timeout_ms = 1000L) {
+    uint32_t startMillis = millis();
+    bool open = false;
+    while (millis() - startMillis < timeout_ms) {
+      while (millis() - startMillis < timeout_ms &&
+        !stream.available()) {
+        TINY_GSM_YIELD();
+      }
+      const char read = stream.read();
+
+      // toggle exit
+      if(read == '"') {
+        open = !open;
+        continue;
+      }
+
+      if (read == c && !open)
+      {
+        return true;
+      }
+      strRead += read;
+    }
+    return false;
+  }
+
+  void loopMqttImpl()
+  {
+    for (uint32_t start = millis(); millis() - start < 1000L;) {
+      if (waitResponse(1000L, GF(GSM_NL "+QMTRECV:")) != 1) {
+        continue;
+      } else {
+        // connection ID
+        streamSkipUntil(','); // instead of int8_t mux = streamGetIntBefore(','); // UNUSED
+        // msgId
+        streamSkipUntil(','); // unused
+        // topic
+        String topic;
+        streamReadUntil(topic,',');
+        // message
+        String msg;
+        streamReadUntil(msg,'\n');
+
+        if(m_cb) {
+          int len = msg.length();
+          uint8 payload[1024];
+          msg.getBytes(payload, len);
+          m_cb(const_cast<char*>(topic.c_str()), reinterpret_cast<uint8*>(payload), len);
+        }
+      }
+    }
+  }
 
   /*
    * Utilities
@@ -848,6 +1079,7 @@ class TinyGsmBC66 : public TinyGsmModem<TinyGsmBC66>,
  private:
   IPAddress m_localIP;
   String m_sslServerCertificate;
+  MQTT_CALLBACK_SIGNATURE m_cb;
 
  protected:
   GsmClientBC66* sockets[TINY_GSM_MUX_COUNT];
