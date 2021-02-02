@@ -15,7 +15,7 @@
 
 // TAKEN FROM PUB-SUB-CLIENT
 #include <functional>
-#define MQTT_CALLBACK_SIGNATURE std::function<void(char*, uint8_t*, unsigned int)>
+#define MQTT_CALLBACK_SIGNATURE_T std::function<void(char*, uint8_t*, unsigned int)>
 
 template <class modemType>
 class TinyGsmMqtt {
@@ -47,7 +47,7 @@ class TinyGsmMqtt {
   bool unsubscribeMqtt(uint8 connectId, uint16 msgId, String topic) {
     return thisModem().unsubscribeMqttImpl(connectId, msgId, topic);
   }
-  void setRecvCallbackMqtt(MQTT_CALLBACK_SIGNATURE callback) {
+  void setRecvCallbackMqtt(MQTT_CALLBACK_SIGNATURE_T callback) {
     thisModem().setRecvCallbackMqttImpl(callback);
   }
   void loopMqtt() {
@@ -77,7 +77,7 @@ class TinyGsmMqtt {
   bool subscribeMqttImpl(uint8 connectId, uint16 msgId, String topic, uint8 qos) TINY_GSM_ATTR_NOT_IMPLEMENTED;
   bool unsubscribeMqttImpl(uint8 connectId, uint16 msgId, String topic) TINY_GSM_ATTR_NOT_IMPLEMENTED;
   bool publishMqttImpl(uint8 connectId, uint16 msgId, String topic, String msg, uint8 qos, uint8 retain) TINY_GSM_ATTR_NOT_IMPLEMENTED;
-  void setRecvCallbackMqttImpl(MQTT_CALLBACK_SIGNATURE callback) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  void setRecvCallbackMqttImpl(MQTT_CALLBACK_SIGNATURE_T callback) TINY_GSM_ATTR_NOT_IMPLEMENTED;
   void loopMqttImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 };
 

@@ -187,6 +187,7 @@ class TinyGsmTCP {
         } /* TODO: Read directly into user buffer? */
         at->maintain();
         if (sock_available > 0) {
+          // Serial.println("================ READNOCHECK ================");
           int n = at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available),
                                 mux);
           if (n == 0) break;
@@ -217,6 +218,7 @@ class TinyGsmTCP {
         // TODO(vshymanskyy): Read directly into user buffer?
         at->maintain();
         if (sock_available > 0) {
+          // Serial.println("================ READWCHECK ================");
           int n = at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available),
                                 mux);
           if (n == 0) break;
@@ -274,6 +276,7 @@ class TinyGsmTCP {
       uint32_t startMillis = millis();
       while (sock_available > 0 && (millis() - startMillis < maxWaitMs)) {
         rx.clear();
+        Serial.println("================ DUMP ================");
         at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available), mux);
       }
       rx.clear();

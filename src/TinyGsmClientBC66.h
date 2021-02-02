@@ -1,11 +1,9 @@
 /**
  * @file       TinyGsmClientBC66.h
- * @author     Volodymyr Shymanskyy
+ * @author     Clemens Arth
  * @license    LGPL-3.0
- * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
- * @date       Nov 2016
- *
- * @MC60 support added by Tamas Dajka 2017.10.15 - with fixes by Sara Damiano
+ * @copyright  Copyright (c) 2021 Clemens Arth
+ * @date       Jan 2021
  *
  */
 
@@ -15,18 +13,20 @@
 
 // #define TINY_GSM_DEBUG Serial
 
-#define TINY_GSM_MUX_COUNT 6
+#define TINY_GSM_MUX_COUNT 5
 #define TINY_GSM_BUFFER_READ_NO_CHECK
 
-#include "TinyGsmBattery.tpp"
-#include "TinyGsmCalling.tpp"
+// #include "TinyGsmBattery.tpp"
+// #include "TinyGsmCalling.tpp"
 #include "TinyGsmGPRS.tpp"
 #include "TinyGsmModem.tpp"
 #include "TinyGsmMqtt.tpp"
-#include "TinyGsmSMS.tpp"
+// #include "TinyGsmSMS.tpp"
 #include "TinyGsmSSL.tpp"
 #include "TinyGsmTCP.tpp"
 #include "TinyGsmTime.tpp"
+
+#include <Time.h>
 
 #define GSM_NL "\r\n"
 static const char GSM_OK[] TINY_GSM_PROGMEM    = "OK" GSM_NL;
@@ -49,21 +49,15 @@ enum RegStatus {
 class TinyGsmBC66 : public TinyGsmModem<TinyGsmBC66>,
                     public TinyGsmGPRS<TinyGsmBC66>,
                     public TinyGsmTCP<TinyGsmBC66, TINY_GSM_MUX_COUNT>,
-                  //  public TinyGsmCalling<TinyGsmBC66>,
-                  //  public TinyGsmSMS<TinyGsmBC66>,
                     public TinyGsmSSL<TinyGsmBC66>,
-                  //  public TinyGsmTime<TinyGsmBC66>,
-                  //  public TinyGsmBattery<TinyGsmBC66>,
-                    public TinyGsmMqtt<TinyGsmBC66>  {
+                    public TinyGsmMqtt<TinyGsmBC66>,
+                    public TinyGsmTime<TinyGsmBC66>  {
   friend class TinyGsmModem<TinyGsmBC66>;
   friend class TinyGsmGPRS<TinyGsmBC66>;
   friend class TinyGsmTCP<TinyGsmBC66, TINY_GSM_MUX_COUNT>;
-//  friend class TinyGsmCalling<TinyGsmBC66>;
-//  friend class TinyGsmSMS<TinyGsmBC66>;
   friend class TinyGsmSSL<TinyGsmBC66>;
-//  friend class TinyGsmTime<TinyGsmBC66>;
-//  friend class TinyGsmBattery<TinyGsmBC66>;
   friend class TinyGsmMqtt<TinyGsmBC66>;
+  friend class TinyGsmTime<TinyGsmBC66>;
 
   /*
    * Inner Client
@@ -95,6 +89,7 @@ class TinyGsmBC66 : public TinyGsmModem<TinyGsmBC66>,
     }
 
    public:
+   // CLEMENS: THIS NEEDS FULL OVERHAUL - UNTESTED!!!
     virtual int connect(const char* host, uint16_t port, int timeout_s) {
       stop();
       TINY_GSM_YIELD();
@@ -109,8 +104,10 @@ class TinyGsmBC66 : public TinyGsmModem<TinyGsmBC66>,
       dumpModemBuffer(maxWaitMs);
       at->sendAT(GF("+QICLOSE="), mux);
       sock_connected = false;
+      //Serial.println("...1...");
       at->waitResponse((maxWaitMs - (millis() - startMillis)), GF("CLOSED"),
                        GF("CLOSE OK"), GF("ERROR"));
+      //Serial.println("\n...2...");
     }
     void stop() override {
       stop(75000L);
@@ -172,7 +169,11 @@ class TinyGsmBC66 : public TinyGsmModem<TinyGsmBC66>,
     // waitResponse();
 
     sendAT(GF("E0"));  // Echo Off
-    if (waitResponse() != 1) { return false; }
+    if (waitResponse() != 1)
+    {
+      DBG("### E0 issue!");
+      return false;
+    }
 
 #ifdef TINY_GSM_DEBUG
     sendAT(GF("+CMEE=2"));  // turn on verbose error codes
@@ -183,6 +184,15 @@ class TinyGsmBC66 : public TinyGsmModem<TinyGsmBC66>,
 
     DBG(GF("### Modem:"), getModemName());
 
+    // set show length
+    sendAT(GF("+QICFG=\"showlength\",1"));
+    if (waitResponse() != 1)
+    {
+      DBG("### showlength issue!");
+      return false;
+    }
+
+    // CLEMENS UNSUPPORTED ON BC66
     // Enable network time synchronization - not available on BC66
     //sendAT(GF("+QNITZ=1"));
     //if (waitResponse(10000L) != 1) { return false; }
@@ -272,6 +282,8 @@ class TinyGsmBC66 : public TinyGsmModem<TinyGsmBC66>,
    * GPRS functions
    */
  protected:
+   // CLEMENS: THIS NEEDS FULL OVERHAUL
+   /*
   bool gprsConnectImpl(const char* apn, const char* user = NULL,
                        const char* pwd = NULL) {
     gprsDisconnect();
@@ -329,7 +341,7 @@ class TinyGsmBC66 : public TinyGsmModem<TinyGsmBC66>,
     sendAT(GF("+QIDEACT"));  // Deactivate the bearer context
     return waitResponse(60000L, GF("DEACT OK"), GF("ERROR")) == 1;
   }
-
+    */
   /*
    * SIM card functions
    */
@@ -394,55 +406,80 @@ class TinyGsmBC66 : public TinyGsmModem<TinyGsmBC66>,
    * Client related functions
    */
  protected:
+   // CLEMENS: THIS NEEDS FULL OVERHAUL
   bool modemConnect(const char* host, uint16_t port, uint8_t mux,
                     bool ssl = false, int timeout_s = 75) {
+
     if (ssl) { DBG("SSL not yet supported on this module!"); }
+    // <contextID> Integer type. Context ID. The range is 1-3. -> only 1 is supported!!!!
 
-    // By default, MC60 expects IP address as 'host' parameter.
-    // If it is a domain name, "AT+QIDNSIP=1" should be executed.
-    // "AT+QIDNSIP=0" is for dotted decimal IP address.
-    IPAddress addr;
-    sendAT(GF("+QIDNSIP="), (addr.fromString(host) ? 0 : 1));
-    if (waitResponse() != 1) { return false; }
 
+    // +QIOPEN=1,mux,"TCP","54.73.62.155",5566
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
-    sendAT(GF("+QIOPEN="), mux, GF(",\""), GF("TCP"), GF("\",\""), host,
+    sendAT(GF("+QIOPEN=1,"), mux, GF(",\""), GF("TCP"), GF("\",\""), host,
            GF("\","), port);
-    int8_t rsp = waitResponse(timeout_ms, GF("CONNECT OK" GSM_NL),
-                              GF("CONNECT FAIL" GSM_NL),
-                              GF("ALREADY CONNECT" GSM_NL));
-    return (1 == rsp);
+
+    if (waitResponse(5000L) != 1) { return false; }
+
+    // +QIOPEN: mux,0
+    for (uint32_t start = millis(); millis() - start < 75000L;) {
+      if (waitResponse(2000L, GF(GSM_NL "+QIOPEN:")) != 1) {
+        continue;
+      } else {
+        // connection ID
+        streamSkipUntil(','); // instead of int8_t mux = streamGetIntBefore(','); // UNUSED
+        // read the result (0 if ok, -1 if bad)
+        int8_t result = streamGetIntBefore('\n');
+        if (result == 0) {
+          //Serial.println("\n=========== OK WITH QIOPEN!!! ===========");
+          return true;
+        } else {
+          //Serial.println("\n=========== ERROR WITH QIOPEN!!! ===========");
+          return false;
+        }
+      }
+    }
+    return false;
   }
 
+
+
+
+
+    // CLEMENS: THIS NEEDS FULL OVERHAUL
   int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
+
     sendAT(GF("+QISEND="), mux, ',', (uint16_t)len);
     if (waitResponse(GF(">")) != 1) { return 0; }
     stream.write(reinterpret_cast<const uint8_t*>(buff), len);
+    stream.write(static_cast<char>(0x1A));
     stream.flush();
-    if (waitResponse(GF(GSM_NL "SEND OK")) != 1) { return 0; }
-
+    if (waitResponse(GF(GSM_NL "SEND OK")) != 1)
+    {
+      //Serial.println("\n=========== ERROR WITH QISEND!!! ===========");
+      return 0;
+    }
+    //Serial.println("\n=========== OK WITH QISEND!!! ===========");
+/*
     bool allAcknowledged = false;
     // bool failed = false;
     while (!allAcknowledged) {
-      sendAT(GF("+QISACK="), mux);  // If 'mux' is not specified, MC60 returns
-                                    // 'ERRROR' (for QIMUX == 1)
-      if (waitResponse(5000L, GF(GSM_NL "+QISACK:")) != 1) {
+      sendAT(GF("+QISEND"));
+      if (waitResponse(5000L, GF(GSM_NL "+QISEND:")) != 1) {
         return -1;
       } else {
-        streamSkipUntil(','); /** Skip total */
-        streamSkipUntil(','); /** Skip acknowledged data size */
+        streamSkipUntil(','); // Skip total
+        streamSkipUntil(','); // Skip acknowledged data size
         if (streamGetIntBefore('\n') == 0) { allAcknowledged = true; }
       }
     }
-    waitResponse(5000L);
-
-    // streamSkipUntil(','); // Skip mux
-    // return streamGetIntBefore('\n');
-
-    return len;  // TODO(?): verify len/ack
+*/
+    return len;
   }
 
+    // CLEMENS: THIS NEEDS FULL OVERHAUL
   size_t modemRead(size_t size, uint8_t mux) {
+
     if (!sockets[mux]) return 0;
     // TODO(?):  Does this even work????
     // AT+QIRD=<id>,<sc>,<sid>,<len>
@@ -450,16 +487,32 @@ class TinyGsmBC66 : public TinyGsmModem<TinyGsmBC66>,
     // sc = role in connection = 1, client of connection
     // sid = index of connection = mux
     // len = maximum length of data to retrieve
-    sendAT(GF("+QIRD=0,1,"), mux, ',', (uint16_t)size);
+    // sendAT(GF("+QIRD=0,1,"), mux, ',', (uint16_t)size);
+    //Serial.print("\nMODEM READ...\n");
+    sendAT(GF("+QIRD="), mux, ',', (uint16_t)size);
     // If it replies only OK for the write command, it means there is no
     // received data in the buffer of the connection.
     int8_t res = waitResponse(GF("+QIRD:"), GFP(GSM_OK), GFP(GSM_ERROR));
     if (res == 1) {
-      streamSkipUntil(':');  // skip IP address
-      streamSkipUntil(',');  // skip port
-      streamSkipUntil(',');  // skip connection type (TCP/UDP)
+      //streamSkipUntil(':');  // skip IP address
+      //streamSkipUntil(',');  // skip port
+      //streamSkipUntil(',');  // skip connection type (TCP/UDP)
       // read the real length of the retrieved data
-      uint16_t len = streamGetIntBefore('\n');
+      //uint16_t len = streamGetIntBefore(',');
+
+      uint16_t len;
+      String bla; streamReadUntil(bla,'\n');
+      int com = bla.indexOf(',');
+      if( com < 0 )
+        len = atoi(bla.c_str());
+      else
+        len = atoi(bla.substring(0,com).c_str());
+
+      //Serial.print("\nWILL TRY READING... ");
+      //Serial.print(len);
+      //Serial.print(" CHARS...\n");
+
+      // streamSkipUntil('\n');
       // It's possible that the real length available is less than expected
       // This is quite likely if the buffer is broken into packets - which may
       // be different sizes.
@@ -472,12 +525,15 @@ class TinyGsmBC66 : public TinyGsmModem<TinyGsmBC66>,
         // FIFO
       }
       waitResponse();  // ends with an OK
-      // DBG("### READ:", len, "from", mux);
+      //DBG("### READ:", len, "from", mux);
       return len;
     } else {
+      //DBG("### XIT:");
       sockets[mux]->sock_available = 0;
       return 0;
     }
+    //DBG("### XIT2");
+    return 0;
   }
 
   // Not possible to check the number of characters remaining in buffer
@@ -861,7 +917,7 @@ class TinyGsmBC66 : public TinyGsmModem<TinyGsmBC66>,
     return false;
   }
 
-  void setRecvCallbackMqttImpl(MQTT_CALLBACK_SIGNATURE callback)
+  void setRecvCallbackMqttImpl(MQTT_CALLBACK_SIGNATURE_T callback)
   {
     m_cb = callback;
   }
@@ -974,8 +1030,10 @@ class TinyGsmBC66 : public TinyGsmModem<TinyGsmBC66>,
         } else if (r6 && data.endsWith(r6)) {
           index = 6;
           goto finish;
+          /*
         } else if (data.endsWith(
-                       GF(GSM_NL "+QIRDI:"))) {  // TODO(?):  QIRD? or QIRDI?
+                       GF(GSM_NL "+QIRD:"))) {  // TODO(?):  QIRD? or QIRDI?
+          // Serial.print("\nQUIRDI ANSWER...\n");
           // +QIRDI: <id>,<sc>,<sid>,<num>,<len>,< tlen>
           streamSkipUntil(',');  // Skip the context
           streamSkipUntil(',');  // Skip the role
@@ -1002,44 +1060,48 @@ class TinyGsmBC66 : public TinyGsmModem<TinyGsmBC66>,
             sockets[mux]->sock_connected = false;
           }
           data = "";
-          DBG("### Closed: ", mux);
-        } else if (data.endsWith(GF("+QNITZ:"))) {
-          streamSkipUntil('\n');  // URC for time sync
+          DBG("### Closed: ", mux);*/
+        }
+        else if (data.endsWith(GF("+QNTP:"))) {
+          streamSkipUntil(',');
+          // read time...
+          String timestrng;
+          streamReadUntil(timestrng,'\r');
+          processTimeStrng(timestrng);
           DBG("### Network time updated.");
           data = "";
         }
-        /*else if(data.startsWith(GF(GSM_NL "+IP:")))
-        {
-          DBG("TODO: SHOULD BE CHANGED!!!!!");
-          // Serial.println("IP NEEDS TO BE PARSED HERE???");
-          index = 6;
-        }
-        else if(data.endsWith(GF(GSM_NL "+QMTOPEN:")))
-        {
-            // +QMTOPEN: <id>,<res>
-            // read the connection id
+        else if (data.endsWith(GF("+QIURC: "))) {
+          String inf;
+          streamReadUntil(inf,',');
+          //Serial.println("INF = ");
+          //Serial.println(inf.c_str());
+          if(inf.compareTo("recv") == 0)
+          {
             int8_t mux = streamGetIntBefore(',');
-            // read the result (0 if ok, -1 if bad)
-            int8_t result = streamGetIntBefore('\n');
-            data = "";
-        }
-        else if(data.endsWith(GF(GSM_NL "+QMTCONN:")))
-        {
-          // +QMTCONN: <id>,<res>
-          // read the connection id
-          int8_t mux = streamGetIntBefore(',');
-          // read the result (0 ok, 1 retransmit, 2 failed)
-          int8_t result = streamGetIntBefore(',');
-          // read the retcode (0 accepted, 1 protocol bad, 2 identifier reject, 3 refused (unavail), 4 bad user/pwd,  5 unauthorized
-          int8_t retcode = streamGetIntBefore('\n');
+            int8_t szpkt = streamGetIntBefore('\n'); // this one is the mux
+            // DBG("### DATA received.");
+            //modemRead(szpkt, mux);
+            if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+              // We have no way of knowing how much data actually came in, so
+              // we set the value to 1500, the maximum possible size.
+              sockets[mux]->sock_available = 1500;
+            }
+          } else if(inf.compareTo("closed") == 0)
+          {
+            int8_t mux = streamGetIntBefore('\n');
+            // DBG("### CLOSED CONNECTION received.");
+          }
+          //sendAT(GF("+QIRD="), mux, GF(","), szpkt);
+          //if (waitResponse() != 1) { return false; }
           data = "";
-        }*/
+        }
       }
     } while (millis() - startMillis < timeout_ms);
   finish:
     if (!index) {
       data.trim();
-      if (data.length()) { DBG("### Unhandled:", data); }
+      if (data.length()) { DBG("### Unhandled: ", data); }
       data = "";
     }
     // data.replace(GSM_NL, "/");
@@ -1072,14 +1134,37 @@ class TinyGsmBC66 : public TinyGsmModem<TinyGsmBC66>,
     return waitResponse(1000, r1, r2, r3, r4, r5, r6);
   }
 
+  bool processTimeStrng(String timestrng)
+  {
+    //Serial.println("TIMESTRNG: ");
+    // Serial.println(timestrng.c_str());
+    struct tm mdt;
+    int tz;
+    sscanf(timestrng.c_str(),"%02d/%02d/%02d,%02d:%02d:%02d+%02d",
+      &(mdt.tm_year), &(mdt.tm_mon), &(mdt.tm_mday), &(mdt.tm_hour), &(mdt.tm_min), &(mdt.tm_sec), &tz);
+    mdt.tm_year += 100; mdt.tm_mon -= 1;
+    // set chip date/tz
+
+    //Serial.printf("--- %s ---\n",timestrng.c_str());
+
+    sendAT(GF("+CCLK="), GF("\""), timestrng.c_str(), GF("\""));
+    if(waitResponse(1000L) == 1) {
+      m_dt = mktime ( &mdt );
+      //Serial.printf("SETTING CLOCK: %d %d %d %d %d %d\n", mdt.tm_year, mdt.tm_mon, mdt.tm_mday, mdt.tm_hour, mdt.tm_min, mdt.tm_sec);
+      return true;
+    }
+    return false;
+  }
+
  public:
   Stream& stream;
 
  // BC66 specific internals
  private:
-  IPAddress m_localIP;
-  String m_sslServerCertificate;
-  MQTT_CALLBACK_SIGNATURE m_cb;
+  IPAddress                   m_localIP;
+  String                      m_sslServerCertificate;
+  MQTT_CALLBACK_SIGNATURE_T   m_cb;
+  time_t                      m_dt;
 
  protected:
   GsmClientBC66* sockets[TINY_GSM_MUX_COUNT];
