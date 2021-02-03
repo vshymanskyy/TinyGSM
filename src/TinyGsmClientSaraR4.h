@@ -297,11 +297,11 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
    */
  protected:
   // using +CFUN=15 instead of the more common CFUN=1,1
-  bool restartImpl() {
+  bool restartImpl(const char* pin = NULL) {
     if (!testAT()) { return false; }
     if (!setPhoneFunctionality(15)) { return false; }
     delay(3000);  // TODO(?):  Verify delay timing here
-    return init();
+    return init(pin);
   }
 
   bool powerOffImpl() {

@@ -283,7 +283,7 @@ class TinyGsmSequansMonarch
    * Power functions
    */
  protected:
-  bool restartImpl() {
+  bool restartImpl(const char* pin = NULL) {
     if (!testAT()) { return false; }
 
     sendAT(GF("+CFUN=0"));
@@ -295,7 +295,7 @@ class TinyGsmSequansMonarch
     res = waitResponse(20000L, GF("+SYSSTART"), GFP(GSM_ERROR));
     if (res != 1 && res != 3) { return false; }
     delay(1000);
-    return init();
+    return init(pin);
   }
 
   bool powerOffImpl() {
