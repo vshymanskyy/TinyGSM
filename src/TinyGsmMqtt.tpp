@@ -23,28 +23,28 @@ class TinyGsmMqtt {
   /*
    * MQTT functions
    */
-  bool configureMqtt(String cmd, uint8 arg1, uint8 arg2, uint8 arg3 = 0, uint8 arg4 = 0) {
+  bool configureMqtt(String cmd, uint8_t arg1, uint8_t arg2, uint8_t arg3 = 0, uint8_t arg4 = 0) {
     return thisModem().configureMqttImpl(cmd, arg1, arg2, arg3, arg4);
   }
-  bool openMqtt(uint8 connectId, String servername, uint16 serverport) {
+  bool openMqtt(uint8_t connectId, String servername, uint16_t serverport) {
     return thisModem().openMqttImpl(connectId, servername, serverport);
   }
-  bool connectMqtt(uint8 connectId, String clientname, String username = "", String password = "") {
+  bool connectMqtt(uint8_t connectId, String clientname, String username = "", String password = "") {
     return thisModem().connectMqttImpl(connectId, clientname, username, password);
   }
-  bool disconnectMqtt(uint8 connectId) {
+  bool disconnectMqtt(uint8_t connectId) {
     return thisModem().disconnectMqttImpl(connectId);
   }
-  bool closeMqtt(uint8 connectId) {
+  bool closeMqtt(uint8_t connectId) {
     return thisModem().closeMqttImpl(connectId);
   }
-  bool publishMqtt(uint8 connectId, uint16 msgId, String topic, String msg, uint8 qos = 0, uint8 retain = 0) {
+  bool publishMqtt(uint8_t connectId, uint16_t msgId, String topic, String msg, uint8_t qos = 0, uint8_t retain = 0) {
     return thisModem().publishMqttImpl(connectId, msgId, topic, msg, qos, retain);
   }
-  bool subscribeMqtt(uint8 connectId, uint16 msgId, String topic, uint8 qos = 0) {
+  bool subscribeMqtt(uint8_t connectId, uint16_t msgId, String topic, uint8_t qos = 0) {
     return thisModem().subscribeMqttImpl(connectId, msgId, topic, qos);
   }
-  bool unsubscribeMqtt(uint8 connectId, uint16 msgId, String topic) {
+  bool unsubscribeMqtt(uint8_t connectId, uint16_t msgId, String topic) {
     return thisModem().unsubscribeMqttImpl(connectId, msgId, topic);
   }
   void setRecvCallbackMqtt(MQTT_CALLBACK_SIGNATURE_T callback) {
@@ -69,14 +69,14 @@ class TinyGsmMqtt {
    * MQTT functions
    */
  protected:
-  bool configureMqttImpl(String cmd, uint8 arg1, uint8 arg2, uint8 arg3, uint8 arg4) TINY_GSM_ATTR_NOT_IMPLEMENTED;
-  bool openMqttImpl(uint8 connectId, String servername, uint16 serverport) TINY_GSM_ATTR_NOT_IMPLEMENTED;
-  bool connectMqttImpl(uint8 connectId, String clientname, String username, String password) TINY_GSM_ATTR_NOT_IMPLEMENTED;
-  bool disconnectMqttImpl(uint8 connectId) TINY_GSM_ATTR_NOT_IMPLEMENTED;
-  bool closeMqttImpl(uint8 connectId) TINY_GSM_ATTR_NOT_IMPLEMENTED;
-  bool subscribeMqttImpl(uint8 connectId, uint16 msgId, String topic, uint8 qos) TINY_GSM_ATTR_NOT_IMPLEMENTED;
-  bool unsubscribeMqttImpl(uint8 connectId, uint16 msgId, String topic) TINY_GSM_ATTR_NOT_IMPLEMENTED;
-  bool publishMqttImpl(uint8 connectId, uint16 msgId, String topic, String msg, uint8 qos, uint8 retain) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool configureMqttImpl(String cmd, uint8_t arg1, uint8_t arg2, uint8_t arg3, uint8_t arg4) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool openMqttImpl(uint8_t connectId, String servername, uint16_t serverport) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool connectMqttImpl(uint8_t connectId, String clientname, String username, String password) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool disconnectMqttImpl(uint8_t connectId) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool closeMqttImpl(uint8_t connectId) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool subscribeMqttImpl(uint8_t connectId, uint16_t msgId, String topic, uint8_t qos) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool unsubscribeMqttImpl(uint8_t connectId, uint16_t msgId, String topic) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool publishMqttImpl(uint8_t connectId, uint16_t msgId, String topic, String msg, uint8_t qos, uint8_t retain) TINY_GSM_ATTR_NOT_IMPLEMENTED;
   void setRecvCallbackMqttImpl(MQTT_CALLBACK_SIGNATURE_T callback) TINY_GSM_ATTR_NOT_IMPLEMENTED;
   void loopMqttImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 };

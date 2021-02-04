@@ -573,7 +573,7 @@ class TinyGsmBC66 : public TinyGsmModem<TinyGsmBC66>,
     return false;
   }
 
-  bool configureSSLImpl(uint8 contextId, uint8 connectId, String cmd, uint8 arg = 0)
+  bool configureSSLImpl(uint8_t contextId, uint8_t connectId, String cmd, uint8_t arg = 0)
   {
     // From SSL Docu of Bc66
     // <contextID> aka sslconectId - Integer type. SSL context index. The range is 1-3.
@@ -582,14 +582,14 @@ class TinyGsmBC66 : public TinyGsmModem<TinyGsmBC66>,
     // 0 No authentication
     // 1 Manage server authentication
     // 2 Manage server and client authentication if requested by the remote server
-    uint8 sslconnectId = connectId;
-    uint8 sslcontextId = contextId;
+    uint8_t sslconnectId = connectId;
+    uint8_t sslcontextId = contextId;
     if(sslcontextId < 1 || sslcontextId > 3 || sslconnectId > 5) {
       DBG("CONTEXTID/CONNECTID OUT OF RANGE!");
       return false;
     }
     if(cmd.compareTo("seclevel") == 0) {
-      uint8 seclvl = arg;
+      uint8_t seclvl = arg;
       if( seclvl > 2) {
         DBG("SECLEVEL OUT OF RANGE!");
         return false;
@@ -627,17 +627,17 @@ class TinyGsmBC66 : public TinyGsmModem<TinyGsmBC66>,
   /*
    * MQTT related functions
    */
-  bool configureMqttImpl(String cmd, uint8 arg1, uint8 arg2, uint8 arg3 = 0, uint8 arg4 = 0)
+  bool configureMqttImpl(String cmd, uint8_t arg1, uint8_t arg2, uint8_t arg3 = 0, uint8_t arg4 = 0)
   {
     // From TCP Docu of Bc66
     // <contextID> aka tcpcontextId - Integer type. Context ID. The range is 1-3.
     // <connectID> aka tcpconnectId - Integer type. Socket service index. The range is 0-4.
     if(cmd.compareTo("ssl") == 0) {
       // modem.configureMqtt("ssl",tcpconnectId,enable,sslcontextId,sslconnectId)
-      uint8 tcpconnectId = arg1;
-      uint8 enable = arg2 == 1; // 0 or 1
-      uint8 sslcontextId = arg3;
-      uint8 sslconnectId = arg4;
+      uint8_t tcpconnectId = arg1;
+      uint8_t enable = arg2 == 1; // 0 or 1
+      uint8_t sslcontextId = arg3;
+      uint8_t sslconnectId = arg4;
       if(tcpconnectId > 4 || sslcontextId < 1 || sslcontextId > 3 || sslconnectId > 5)
       {
         DBG("TCPCONNECTID/SSLCONNECTID/SSLCONTEXTID OUT OF RANGE!");
@@ -649,8 +649,8 @@ class TinyGsmBC66 : public TinyGsmModem<TinyGsmBC66>,
     }
     else if(cmd.compareTo("version") == 0) {
       // modem.configureMqtt("version",tcpconnectId,mqttVersion)
-      uint8 tcpconnectId = arg1;
-      uint8 mqttVersion = arg2;
+      uint8_t tcpconnectId = arg1;
+      uint8_t mqttVersion = arg2;
       if(tcpconnectId > 4 || mqttVersion < 3 || mqttVersion > 4)
       {
         DBG("TCPCONNECTID/MQTTVERSION OUT OF RANGE!");
@@ -667,16 +667,16 @@ class TinyGsmBC66 : public TinyGsmModem<TinyGsmBC66>,
       // <pkt_timeout> Integer type. Timeout of the packet delivery. The range is 1-60. The default value is 10. Unit: second.
       // <retry_times> Integer type. Retry times when packet delivery times out. The range is 0-10. The default value is 3.
       // <timeout_notice> Integer type. Whether to report timeout message when transmitting packet. 0 Not report, 1 Report
-      uint8 tcpconnectId = arg1;
+      uint8_t tcpconnectId = arg1;
     }
     */
     return false;
   }
 
-  bool openMqttImpl(uint8 connectId, String servername, uint16 serverport) {
+  bool openMqttImpl(uint8_t connectId, String servername, uint16_t serverport) {
     // From TCP Docu of Bc66
     // <connectID> aka tcpconnectId - Integer type. Socket service index. The range is 0-4.
-    uint8 tcpconnectId = connectId;
+    uint8_t tcpconnectId = connectId;
     if(tcpconnectId > 4)
     {
       DBG("TCPCONNECTID OUT OF RANGE!");
@@ -704,10 +704,10 @@ class TinyGsmBC66 : public TinyGsmModem<TinyGsmBC66>,
     return false;
   }
 
-  bool connectMqttImpl(uint8 connectId, String clientname, String username = "", String password = "") {
+  bool connectMqttImpl(uint8_t connectId, String clientname, String username = "", String password = "") {
     // From TCP Docu of Bc66
     // <connectID> aka tcpconnectId - Integer type. Socket service index. The range is 0-4.
-    uint8 tcpconnectId = connectId;
+    uint8_t tcpconnectId = connectId;
     if(tcpconnectId > 4)
     {
       DBG("TCPCONNECTID OUT OF RANGE!");
@@ -743,11 +743,11 @@ class TinyGsmBC66 : public TinyGsmModem<TinyGsmBC66>,
     return false;
   }
 
-  bool disconnectMqttImpl(uint8 connectId)
+  bool disconnectMqttImpl(uint8_t connectId)
   {
     // From TCP Docu of Bc66
     // <connectID> aka tcpconnectId - Integer type. Socket service index. The range is 0-4.
-    uint8 tcpconnectId = connectId;
+    uint8_t tcpconnectId = connectId;
     if(tcpconnectId > 4)
     {
       DBG("TCPCONNECTID OUT OF RANGE!");
@@ -772,11 +772,11 @@ class TinyGsmBC66 : public TinyGsmModem<TinyGsmBC66>,
     }
     return false;
   }
-  bool closeMqttImpl(uint8 connectId)
+  bool closeMqttImpl(uint8_t connectId)
   {
     // From TCP Docu of Bc66
     // <connectID> aka tcpconnectId - Integer type. Socket service index. The range is 0-4.
-    uint8 tcpconnectId = connectId;
+    uint8_t tcpconnectId = connectId;
     if(tcpconnectId > 4)
     {
       DBG("TCPCONNECTID OUT OF RANGE!");
@@ -802,13 +802,13 @@ class TinyGsmBC66 : public TinyGsmModem<TinyGsmBC66>,
     return false;
   }
 
-  bool subscribeMqttImpl(uint8 connectId, uint16 msgId, String topic, uint8 qos = 0)
+  bool subscribeMqttImpl(uint8_t connectId, uint16_t msgId, String topic, uint8_t qos = 0)
   {
     // From TCP Docu of Bc66
     // <connectID> aka tcpconnectId - Integer type. Socket service index. The range is 0-4.
     // <msgID> Integer type. Message identifier of packet. The range is 1-65535
     // <qos> Integer type. The QoS level at which the client wants to publish the messages (0 at most once, 1 at least once, 2 exactly once)
-    uint8 tcpconnectId = connectId;
+    uint8_t tcpconnectId = connectId;
     if(tcpconnectId > 4 || msgId < 1 || qos > 2)
     {
       DBG("TCPCONNECTID/MSGID/QOS OUT OF RANGE!");
@@ -838,12 +838,12 @@ class TinyGsmBC66 : public TinyGsmModem<TinyGsmBC66>,
     return false;
   }
 
-  bool unsubscribeMqttImpl(uint8 connectId, uint16 msgId, String topic)
+  bool unsubscribeMqttImpl(uint8_t connectId, uint16_t msgId, String topic)
   {
     // From TCP Docu of Bc66
     // <connectID> aka tcpconnectId - Integer type. Socket service index. The range is 0-4.
     // <msgID> Integer type. Message identifier of packet. The range is 1-65535
-    uint8 tcpconnectId = connectId;
+    uint8_t tcpconnectId = connectId;
     if(tcpconnectId > 4 || msgId < 1)
     {
       DBG("TCPCONNECTID/MSGID OUT OF RANGE!");
@@ -873,16 +873,16 @@ class TinyGsmBC66 : public TinyGsmModem<TinyGsmBC66>,
     return false;
   }
 
-  bool publishMqttImpl(uint8 connectId, uint16 msgId, String topic, String msg, uint8 qos = 0, uint8 retain = 0)
+  bool publishMqttImpl(uint8_t connectId, uint16_t msgId, String topic, String msg, uint8_t qos = 0, uint8_t retain = 0)
   {
     // From TCP Docu of Bc66
     // <connectID> aka tcpconnectId - Integer type. Socket service index. The range is 0-4.
     // <msgID> Integer type. Message identifier of packet. The range is 1-65535
     // <qos> Integer type. The QoS level at which the client wants to publish the messages (0 at most once, 1 at least once, 2 exactly once)
     // <retain> Integer type. Whether or not the server will retain the message after it has been delivered to the current subscribers. (0 server will not retain mgs, 1 will retain the message)
-    uint8 tcpconnectId = connectId;
-    uint16 tmsgId = msgId;
-    uint8 tqos = qos;
+    uint8_t tcpconnectId = connectId;
+    uint16_t tmsgId = msgId;
+    uint8_t tqos = qos;
     if(tcpconnectId > 4 || tmsgId < 1 || tqos > 2 || retain > 1)
     {
       DBG("TCPCONNECTID/MSGID/QOS/RETAIN OUT OF RANGE!");
@@ -967,9 +967,9 @@ class TinyGsmBC66 : public TinyGsmModem<TinyGsmBC66>,
 
         if(m_cb) {
           int len = msg.length();
-          uint8 payload[1024];
+          uint8_t payload[1024];
           msg.getBytes(payload, len);
-          m_cb(const_cast<char*>(topic.c_str()), reinterpret_cast<uint8*>(payload), len);
+          m_cb(const_cast<char*>(topic.c_str()), reinterpret_cast<uint8_t*>(payload), len);
         }
       }
     }
