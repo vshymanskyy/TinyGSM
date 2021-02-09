@@ -215,7 +215,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
    * Power functions
    */
  protected:
-  bool restartImpl() {
+  bool restartImpl(const char* pin = NULL) {
     if (!testAT()) { return false; }
     sendAT(GF("+REBOOT"));
     // Should return an 'OK' after reboot command is sent
@@ -223,7 +223,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
     // After booting, modem sends out messages as each of its
     // internal modules loads.  The final message is "PB DONE".
     if (waitResponse(40000L, GF(GSM_NL "PB DONE")) != 1) { return false; }
-    return init();
+    return init(pin);
   }
 
   bool powerOffImpl() {
