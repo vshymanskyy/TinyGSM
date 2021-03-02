@@ -212,11 +212,11 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
    * Power functions
    */
  protected:
-  bool restartImpl() {
+  bool restartImpl(const char* pin = NULL) {
     if (!setPhoneFunctionality(0)) { return false; }
     if (!setPhoneFunctionality(1, true)) { return false; }
     waitResponse(10000L, GF("SMS Ready"), GF("RDY"));
-    return init();
+    return init(pin);
   }
 
   bool powerOffImpl() {

@@ -53,8 +53,8 @@ class TinyGsmModem {
   /*
    * Power functions
    */
-  bool restart() {
-    return thisModem().restartImpl();
+  bool restart(const char* pin = NULL) {
+    return thisModem().restartImpl(pin);
   }
   bool poweroff() {
     return thisModem().powerOffImpl();

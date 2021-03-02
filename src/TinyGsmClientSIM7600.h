@@ -219,12 +219,12 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
    * Power functions
    */
  protected:
-  bool restartImpl() {
+  bool restartImpl(const char* pin = NULL) {
     if (!testAT()) { return false; }
     sendAT(GF("+CRESET"));
     if (waitResponse(10000L) != 1) { return false; }
     delay(5000L);  // TODO(?):  Test this delay!
-    return init();
+    return init(pin);
   }
 
   bool powerOffImpl() {
