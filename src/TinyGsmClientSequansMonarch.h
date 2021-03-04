@@ -585,7 +585,7 @@ class TinyGsmSequansMonarch
       //   DBG("### Warning: misaligned mux numbers!");
       // }
       streamSkipUntil(',');        // skip mux [use muxNo]
-      status = stream.parseInt();  // Read the status
+      status = stream.parseInt() - 48;  // Read the status and map ascii code to int
       // if mux is in use, will have comma then other info after the status
       // if not, there will be new line immediately after status
       // streamSkipUntil('\n'); // Skip port and IP info
