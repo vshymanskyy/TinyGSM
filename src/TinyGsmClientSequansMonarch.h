@@ -597,7 +597,7 @@ class TinyGsmSequansMonarch
       // SOCK_INCOMING               = 5,
       // SOCK_OPENING                = 6,
       GsmClientSequansMonarch* sock = sockets[mux % TINY_GSM_MUX_COUNT];
-      if (sock) {
+      if (sock && muxNo == mux) {
         sock->sock_connected = ((status != SOCK_CLOSED) &&
                                 (status != SOCK_INCOMING) &&
                                 (status != SOCK_OPENING));
