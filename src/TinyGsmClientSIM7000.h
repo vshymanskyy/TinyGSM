@@ -262,11 +262,20 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
 
  public:
   String getNetworkModes() {
+    // Get the help string, not the setting value
     sendAT(GF("+CNMP=?"));
     if (waitResponse(GF(GSM_NL "+CNMP:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     waitResponse();
     return res;
+  }
+
+  bool getNetworkMode(int16_t & mode) {
+    sendAT(GF("+CNMP?"));
+    if (waitResponse(GF(GSM_NL "+CNMP:")) != 1) { return false; }
+    mode = streamGetIntBefore('\n');
+    waitResponse();
+    return true;
   }
 
   String setNetworkMode(uint8_t mode) {
@@ -278,6 +287,7 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
   }
 
   String getPreferredModes() {
+    // Get the help string, not the setting value
     sendAT(GF("+CMNB=?"));
     if (waitResponse(GF(GSM_NL "+CMNB:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
@@ -285,9 +295,37 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
     return res;
   }
 
+  bool getPreferredMode(int16_t & mode) {
+    sendAT(GF("+CMNB?"));
+    if (waitResponse(GF(GSM_NL "+CMNB:")) != 1) { return false; }
+    mode = streamGetIntBefore('\n');
+    waitResponse();
+    return true;
+  }
+
   String setPreferredMode(uint8_t mode) {
     sendAT(GF("+CMNB="), mode);
     if (waitResponse(GF(GSM_NL "+CMNB:")) != 1) { return "OK"; }
+    String res = stream.readStringUntil('\n');
+    waitResponse();
+    return res;
+  }
+
+  bool getNetworkSystemMode(bool & n, int16_t & stat) {
+    // n: whether to automatically report the system mode info
+    // stat: the current service. 0 if it not connected
+    sendAT(GF("+CNSMOD?"));
+    if (waitResponse(GF(GSM_NL "+CNSMOD:")) != 1) { return false; }
+    n = streamGetIntBefore(',') != 0;
+    stat = streamGetIntBefore('\n');
+    waitResponse();
+    return true;
+  }
+
+  String setNetworkSystemMode(bool n) {
+    // n: whether to automatically report the system mode info
+    sendAT(GF("+CNSMOD="), int8_t(n));
+    if (waitResponse(GF(GSM_NL "+CNSMOD:")) != 1) { return "OK"; }
     String res = stream.readStringUntil('\n');
     waitResponse();
     return res;
