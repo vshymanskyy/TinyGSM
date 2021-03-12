@@ -201,7 +201,18 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
   }
 
   bool factoryDefaultImpl() {  // these commands aren't supported
-    return false;
+    sendAT(GF("&FZE0&W"));  // Factory + Reset + Echo Off + Write
+    waitResponse();
+    sendAT(GF("+IPR=0"));  // Auto-baud
+    waitResponse();
+    sendAT(GF("+IFC=0,0"));  // No Flow Control
+    waitResponse();
+    sendAT(GF("+ICF=3,3"));  // 8 data 0 parity 1 stop
+    waitResponse();
+    sendAT(GF("+CSCLK=0"));  // Disable Slow Clock
+    waitResponse();
+    sendAT(GF("&W"));  // Write configuration
+    return waitResponse() == 1;
   }
 
   /*
