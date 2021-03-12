@@ -577,7 +577,6 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
   int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
     sendAT(GF("+CASEND="), mux, ',', (uint16_t)len);
     if (waitResponse(GF(">")) != 1) {
-        Serial.println("SEND ERROR: 0");
         return 0;
     }
 
@@ -585,15 +584,12 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
     stream.flush();
 
     if (waitResponse(GF(GSM_NL "+CASEND:")) != 1) {
-        Serial.println("SEND ERROR: 1");
         return 0;
     }
     streamSkipUntil(',');                            // Skip mux
     if (streamGetIntBefore(',') != 0) {
-        Serial.println("SEND ERROR: 2");
         return 0;
     }  // If result != success
-    Serial.println("SEND SUCCESS");
     return streamGetIntBefore('\n');
   }
 
