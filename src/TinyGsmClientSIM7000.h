@@ -276,7 +276,7 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
 
   String setNetworkMode(uint8_t mode) {
     sendAT(GF("+CNMP="), mode);
-    waitResponse();
+    if (waitResponse() != 1) return "";
     return "OK";
   }
 
@@ -299,7 +299,7 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
 
   String setPreferredMode(uint8_t mode) {
     sendAT(GF("+CMNB="), mode);
-    waitResponse();
+    if (waitResponse() != 1) return "";
     return "OK";
   }
 
@@ -317,7 +317,7 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
   String setNetworkSystemMode(bool n) {
     // n: whether to automatically report the system mode info
     sendAT(GF("+CNSMOD="), int8_t(n));
-    waitResponse();
+    if (waitResponse() != 1) return "";
     return "OK";
   }
 
@@ -595,17 +595,18 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
 
   size_t modemRead(size_t size, uint8_t mux) {
     if (!sockets[mux]) return 0;
-    sockets[mux]->sock_available = 0;
 
     sendAT(GF("+CARECV="), mux, ',', (uint16_t)size);
 
     if (waitResponse(GF("+CARECV:")) != 1) {
+        sockets[mux]->sock_available = 0;
       return 0;
     }
 
     const int16_t len_confirmed = streamGetIntBefore(',');
     if (len_confirmed <= 0) {
-        streamSkipUntil('\n');
+        sockets[mux]->sock_available = 0;
+        waitResponse();
         return 0;
     }
 
@@ -620,7 +621,9 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
     }
     // DBG("### READ:", len_requested, "from", mux);
     // sockets[mux]->sock_available = modemGetAvailable(mux);
-    sockets[mux]->sock_available = len_confirmed;
+    auto diff = int64_t(size) - int64_t(len_confirmed);
+    if (diff < 0) diff = 0;
+    sockets[mux]->sock_available = diff;
     waitResponse();
     return len_confirmed;
   }
@@ -763,6 +766,17 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
           }
           data = "";
           // DBG("### Got Data:", mux);
+        } else if (data.endsWith(GF(GSM_NL "+CASTATE:"))) {
+          int8_t mux = streamGetIntBefore(',');
+          int8_t state = streamGetIntBefore('\n');
+          if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+              if (state != 1)
+              {
+                sockets[mux]->sock_connected = false;
+                DBG("### Closed: ", mux);
+              }
+          }
+          data = "";
         } else if (data.endsWith(GF(GSM_NL "+RECEIVE:"))) {
           int8_t  mux = streamGetIntBefore(',');
           int16_t len = streamGetIntBefore('\n');
