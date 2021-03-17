@@ -694,7 +694,7 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
     sendAT(GF("+CASTATE?"));
     int8_t readMux = -1;
     while (readMux != mux) {
-      if (waitResponse(GF("+CASTATE:"),GF(GSM_OK)) != 1) {
+      if (waitResponse(3000, GF("+CASTATE:"),GF(GSM_OK)) != 1) {
           return 0;
       }
       readMux = streamGetIntBefore(',');
