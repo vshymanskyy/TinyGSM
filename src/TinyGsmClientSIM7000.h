@@ -126,6 +126,10 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
         : GsmClientSim7000(modem, mux) {}
 
    public:
+    bool setCertificate(const String & certificateName) {
+        return at->setCertificate(certificateName, mux);
+    }
+
     int connect(const char* host, uint16_t port, int timeout_s) override {
       stop();
       TINY_GSM_YIELD();
@@ -140,7 +144,10 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
    * Constructor
    */
  public:
-  explicit TinyGsmSim7000(Stream& stream) : stream(stream) {
+  explicit TinyGsmSim7000(Stream& stream):
+    stream(stream),
+    certificates()
+  {
     memset(sockets, 0, sizeof(sockets));
   }
 
@@ -262,6 +269,13 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
   }
 
  protected:
+  bool setCertificate(const String & certificateName, const uint8_t mux = 0) {
+    if (mux >= TINY_GSM_MUX_COUNT) return false;
+    certificates[mux] = certificateName;
+    return true;
+  }
+
+
   bool isNetworkConnectedImpl() {
     RegStatus s = getRegistrationStatus();
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
@@ -388,8 +402,6 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
     // Attach to GPRS
     sendAT(GF("+CGATT=1"));
     if (waitResponse(60000L) != 1) { return false; }
-
-    // TODO(?): wait AT+CGATT?
 
     // Check data connection
 
@@ -563,10 +575,16 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
 
     if (ssl) {
       sendAT(GF("+CSSLCFG=\"sslversion\",0,3"));  // TLS 1.2
-      waitResponse();
+      if (waitResponse() != 1) return false;
 
       sendAT(GF("+CSSLCFG=\"ctxindex\",0"));
-      waitResponse();
+      if (waitResponse() != 1) return false;
+
+      if (certificates[mux] != "")
+      {
+        sendAT(GF("+CASSLCFG="), mux, ",CACERT,\"", certificates[mux].c_str(),"\"");
+        if (waitResponse() != 1) return false;
+      }
     }
 
     sendAT(GF("+CASSLCFG="), mux, ',', GF("ssl,"), ssl);
@@ -877,6 +895,7 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
 
  protected:
   GsmClientSim7000* sockets[TINY_GSM_MUX_COUNT];
+  String certificates[TINY_GSM_MUX_COUNT];
   const char*       gsmNL = GSM_NL;
 };
 
