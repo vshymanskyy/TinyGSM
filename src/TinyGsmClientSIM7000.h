@@ -581,6 +581,7 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
     streamSkipUntil(',');  // Skip mux
 
     int8_t res = streamGetIntBefore('\n');
+    waitResponse();
 
     return 0 == res;
   }
