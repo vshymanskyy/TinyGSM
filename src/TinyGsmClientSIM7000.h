@@ -101,7 +101,7 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
       dumpModemBuffer(maxWaitMs);
       at->sendAT(GF("+CACLOSE="), mux);
       sock_connected = false;
-      at->waitResponse();
+      at->waitResponse(3000);
     }
     void stop() override {
       stop(15000L);
@@ -614,7 +614,14 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
         sockets[mux]->sock_available = 0;
       return 0;
     }
-
+/*
+    stream.read();
+    if (stream.peek() == '0') {
+        waitResponse();
+        sockets[mux]->sock_available = 0;
+        return 0;
+    }
+*/
     const int16_t len_confirmed = streamGetIntBefore(',');
     if (len_confirmed <= 0) {
         sockets[mux]->sock_available = 0;
@@ -669,7 +676,9 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
     sendAT(GF("+CASTATE?"));
     int8_t readMux = -1;
     while (readMux != mux) {
-      if (waitResponse(GF("+CASTATE:")) != 1) return 0;
+      if (waitResponse(GF("+CASTATE:"),GF(GSM_OK)) != 1) {
+          return 0;
+      }
       readMux = streamGetIntBefore(',');
     }
     int8_t res = streamGetIntBefore('\n');
