@@ -632,14 +632,14 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
         sockets[mux]->sock_available = 0;
       return 0;
     }
-/*
+
     stream.read();
     if (stream.peek() == '0') {
         waitResponse();
         sockets[mux]->sock_available = 0;
         return 0;
     }
-*/
+
     const int16_t len_confirmed = streamGetIntBefore(',');
     if (len_confirmed <= 0) {
         sockets[mux]->sock_available = 0;
