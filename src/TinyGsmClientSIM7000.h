@@ -593,6 +593,9 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
     sendAT(GF("+CASSLCFG="), mux, ',', GF("protocol,0"));
     waitResponse();
 
+    sendAT(GF("+CSSLCFG=\"sni\","), mux, ',', GF("\""), host, GF("\""));
+    waitResponse();
+
     sendAT(GF("+CAOPEN="), mux, ',', GF("\""), host, GF("\","), port);
 
     if (waitResponse(timeout_ms, GF(GSM_NL "+CAOPEN:")) != 1) { return 0; }
