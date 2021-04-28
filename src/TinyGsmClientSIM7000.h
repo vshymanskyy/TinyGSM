@@ -140,6 +140,51 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
   };
 
+public:
+  boolean isValidNumber(String str) {
+    if (!(str.charAt(0) == '+' || str.charAt(0) == '-' ||
+          isDigit(str.charAt(0))))
+      return false;
+
+    for (byte i = 1; i < str.length(); i++) {
+      if (!(isDigit(str.charAt(i)) || str.charAt(i) == '.')) { return false; }
+    }
+    return true;
+  }
+
+  String ShowNTPError(byte error) {
+    switch (error) {
+      case 1: return "Network time synchronization is successful";
+      case 61: return "Network error";
+      case 62: return "DNS resolution error";
+      case 63: return "Connection error";
+      case 64: return "Service response error";
+      case 65: return "Service response timeout";
+      default: return "Unknown error: " + String(error);
+    }
+  }
+
+  byte NTPServerSync(String server = "pool.ntp.org", byte TimeZone = 3) {
+    // Set GPRS bearer profile to associate with NTP sync
+    sendAT(GF("+CNTPCID=1"));
+    if (waitResponse(10000L) != 1) { return -1; }
+
+    // Set NTP server and timezone
+    sendAT(GF("+CNTP="), server, ',', String(TimeZone));
+    if (waitResponse(10000L) != 1) { return -1; }
+
+    // Request network synchronization
+    sendAT(GF("+CNTP"));
+    if (waitResponse(10000L, GF(GSM_NL "+CNTP:"))) {
+      String result = stream.readStringUntil('\n');
+      result.trim();
+      if (isValidNumber(result)) { return result.toInt(); }
+    } else {
+      return -1;
+    }
+    return -1;
+  }
+                         
   /*
    * Constructor
    */
