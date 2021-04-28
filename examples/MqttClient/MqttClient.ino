@@ -55,7 +55,6 @@
 // Use Hardware Serial on Mega, Leonardo, Micro
 #ifndef __AVR_ATmega328P__
 #define SerialAT Serial1
-#endif
 
 // or Software Serial on Uno, Nano
 #else
