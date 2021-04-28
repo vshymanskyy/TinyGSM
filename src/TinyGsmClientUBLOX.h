@@ -193,7 +193,9 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
 
     // Enable automatic time zome update
     sendAT(GF("+CTZU=1"));
-    if (waitResponse(10000L) != 1) { return false; }
+    waitResponse(10000L);
+    // Ignore the response, in case the network doesn't support it.
+    // if (waitResponse(10000L) != 1) { return false; }
 
     SimStatus ret = getSimStatus();
     // if the sim isn't ready and a pin has been provided, try to unlock the sim
