@@ -192,7 +192,7 @@ class TinyGsmModem {
                                            GF("+CEREG:"));
     if (resp != 1 && resp != 2 && resp != 3) { return -1; }
     thisModem().streamSkipUntil(','); /* Skip format (0) */
-    int status = thisModem().streamGetIntBefore('\n');
+    int status = thisModem().stream.parseInt();
     thisModem().waitResponse();
     return status;
   }
