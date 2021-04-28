@@ -37,11 +37,14 @@
 
 // Set serial for AT commands (to the module)
 // Use Hardware Serial on Mega, Leonardo, Micro
+#ifndef __AVR_ATmega328P__
 #define SerialAT Serial1
 
 // or Software Serial on Uno, Nano
-//#include <SoftwareSerial.h>
-//SoftwareSerial SerialAT(2, 3); // RX, TX
+#else
+#include <SoftwareSerial.h>
+SoftwareSerial SerialAT(2, 3);  // RX, TX
+#endif
 
 // Increase RX buffer to capture the entire response
 // Chips without internal buffering (A6/A7, ESP8266, M590)

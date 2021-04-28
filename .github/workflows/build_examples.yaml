@@ -16,9 +16,8 @@ jobs:
             examples/FileDownload,
             examples/MqttClient,
             examples/WebClient,
-            tools/AT_Debug,
+            tools/test_build,
             tools/Diagnostics,
-            tools/FactoryReset,
           ]
         modem:
           [
@@ -86,5 +85,6 @@ jobs:
           echo "${{ env.LIBRARY_INSTALL_SOURCE }}"
           pio lib --global install ${{ env.LIBRARY_INSTALL_SOURCE }}
           pio lib --global install 89 415 1202 1286
+          sed -i 's/\/\/ #define TINY_GSM_MODEM_SIM800/#define TINY_GSM_MODEM_SIM800/'
           platformio ci --project-option='build_flags=-D ${{ env.TINYGSM_MODEM_TO_USE }}' --project-option='framework=arduino' --board=uno --board=leonardo --board=yun --board=megaatmega2560 --board=genuino101 --board=mkr1000USB --board=zero --board=teensy31 --board=bluepill_f103c8 --board=uno_pic32 --board=esp01 --board=nodemcuv2 --board=esp32dev
           pio lib --global uninstall TinyGSM

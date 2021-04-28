@@ -53,11 +53,15 @@
 
 // Set serial for AT commands (to the module)
 // Use Hardware Serial on Mega, Leonardo, Micro
+#ifndef __AVR_ATmega328P__
 #define SerialAT Serial1
+#endif
 
 // or Software Serial on Uno, Nano
-//#include <SoftwareSerial.h>
-//SoftwareSerial SerialAT(2, 3); // RX, TX
+#else
+#include <SoftwareSerial.h>
+SoftwareSerial SerialAT(2, 3);  // RX, TX
+#endif
 
 // See all AT commands, if wanted
 // #define DUMP_AT_COMMANDS
