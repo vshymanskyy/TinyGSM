@@ -86,7 +86,7 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
         - Sequans Monarch - 6
         - SIM 800/900 - 5
         - SIM 5360/5320/5300/7100 - 10
-        - SIM7000 - 8
+        - SIM7000 - 2 (8 possible without SSL, only 2 with)
         - SIM 7500/7600/7800 - 10
         - u-blox 2G/3G - 7
         - u-blox SARA R4/N4 - 7
@@ -95,10 +95,10 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
     - Not yet supported on any module, though it may be some day
 - SSL/TLS (HTTPS)
     - Supported on:
-        - SIM800, u-Blox, XBee _cellular_, ESP8266, and Sequans Monarch
+        - SIM800, SIM7000, u-Blox, XBee _cellular_, ESP8266, and Sequans Monarch
         - Note:  only some device models or firmware revisions have this feature (SIM8xx R14.18, A7, etc.)
     - Not yet supported on:
-        - Quectel modems, SIM7000, SIM 5360/5320/7100, SIM 7500/7600/7800
+        - Quectel modems, SIM 5360/5320/7100, SIM 7500/7600/7800
     - Not possible on:
         - SIM900, A6/A7, Neoway M590, XBee _WiFi_
     - Like TCP, most modules support simultaneous connections
@@ -129,7 +129,7 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
 **Location**
 - GPS/GNSS
     - SIM808, SIM7000, SIM7500/7600/7800, BG96, u-blox
-    - NOTE:  u-blox chips do _NOT_ have embedded GPS - this function only works if a secondary GPS is connected to primary cellular chip over I2C
+    - NOTE:  u-blox chips do _NOT_ have embedded GPS - this functionality only works if a secondary GPS is connected to primary cellular chip over I2C
 - GSM location service
     - SIM800, SIM7000, Quectel, u-blox
 
@@ -139,6 +139,7 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
     - [SRGDamia1](https://github.com/SRGDamia1/)
 - SIM7000:
     - [captFuture](https://github.com/captFuture/)
+    - [FStefanni](https://github.com/FStefanni/)
 - Sequans Monarch:
     - [nootropicdesign](https://github.com/nootropicdesign/)
 - Quectel M9C60
