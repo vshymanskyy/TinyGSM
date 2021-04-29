@@ -126,8 +126,8 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
         : GsmClientSim7000(modem, mux) {}
 
    public:
-    bool setCertificate(const String & certificateName) {
-        return at->setCertificate(certificateName, mux);
+    bool setCertificate(const String& certificateName) {
+      return at->setCertificate(certificateName, mux);
     }
 
     int connect(const char* host, uint16_t port, int timeout_s) override {
@@ -140,7 +140,7 @@ class TinyGsmSim7000 : public TinyGsmModem<TinyGsmSim7000>,
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
   };
 
-public:
+ public:
   boolean isValidNumber(String str) {
     if (!(str.charAt(0) == '+' || str.charAt(0) == '-' ||
           isDigit(str.charAt(0))))
@@ -184,15 +184,12 @@ public:
     }
     return -1;
   }
-                         
+
   /*
    * Constructor
    */
  public:
-  explicit TinyGsmSim7000(Stream& stream):
-    stream(stream),
-    certificates()
-  {
+  explicit TinyGsmSim7000(Stream& stream) : stream(stream), certificates() {
     memset(sockets, 0, sizeof(sockets));
   }
 
@@ -253,7 +250,7 @@ public:
   }
 
   bool factoryDefaultImpl() {  // these commands aren't supported
-    sendAT(GF("&FZE0&W"));  // Factory + Reset + Echo Off + Write
+    sendAT(GF("&FZE0&W"));     // Factory + Reset + Echo Off + Write
     waitResponse();
     sendAT(GF("+IPR=0"));  // Auto-baud
     waitResponse();
@@ -314,7 +311,7 @@ public:
   }
 
  protected:
-  bool setCertificate(const String & certificateName, const uint8_t mux = 0) {
+  bool setCertificate(const String& certificateName, const uint8_t mux = 0) {
     if (mux >= TINY_GSM_MUX_COUNT) return false;
     certificates[mux] = certificateName;
     return true;
@@ -336,7 +333,7 @@ public:
     return res;
   }
 
-  bool getNetworkMode(int16_t & mode) {
+  bool getNetworkMode(int16_t& mode) {
     sendAT(GF("+CNMP?"));
     if (waitResponse(GF(GSM_NL "+CNMP:")) != 1) { return false; }
     mode = streamGetIntBefore('\n');
@@ -359,7 +356,7 @@ public:
     return res;
   }
 
-  bool getPreferredMode(int16_t & mode) {
+  bool getPreferredMode(int16_t& mode) {
     sendAT(GF("+CMNB?"));
     if (waitResponse(GF(GSM_NL "+CMNB:")) != 1) { return false; }
     mode = streamGetIntBefore('\n');
@@ -373,12 +370,12 @@ public:
     return "OK";
   }
 
-  bool getNetworkSystemMode(bool & n, int16_t & stat) {
+  bool getNetworkSystemMode(bool& n, int16_t& stat) {
     // n: whether to automatically report the system mode info
     // stat: the current service. 0 if it not connected
     sendAT(GF("+CNSMOD?"));
     if (waitResponse(GF(GSM_NL "+CNSMOD:")) != 1) { return false; }
-    n = streamGetIntBefore(',') != 0;
+    n    = streamGetIntBefore(',') != 0;
     stat = streamGetIntBefore('\n');
     waitResponse();
     return true;
@@ -625,9 +622,9 @@ public:
       sendAT(GF("+CSSLCFG=\"ctxindex\",0"));
       if (waitResponse() != 1) return false;
 
-      if (certificates[mux] != "")
-      {
-        sendAT(GF("+CASSLCFG="), mux, ",CACERT,\"", certificates[mux].c_str(),"\"");
+      if (certificates[mux] != "") {
+        sendAT(GF("+CASSLCFG="), mux, ",CACERT,\"", certificates[mux].c_str(),
+               "\"");
         if (waitResponse() != 1) return false;
       }
     }
@@ -654,20 +651,14 @@ public:
 
   int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
     sendAT(GF("+CASEND="), mux, ',', (uint16_t)len);
-    if (waitResponse(GF(">")) != 1) {
-        return 0;
-    }
+    if (waitResponse(GF(">")) != 1) { return 0; }
 
     stream.write(reinterpret_cast<const uint8_t*>(buff), len);
     stream.flush();
 
-    if (waitResponse(GF(GSM_NL "+CASEND:")) != 1) {
-        return 0;
-    }
+    if (waitResponse(GF(GSM_NL "+CASEND:")) != 1) { return 0; }
     streamSkipUntil(',');                            // Skip mux
-    if (streamGetIntBefore(',') != 0) {
-        return 0;
-    }  // If result != success
+    if (streamGetIntBefore(',') != 0) { return 0; }  // If result != success
     return streamGetIntBefore('\n');
   }
 
@@ -677,28 +668,28 @@ public:
     sendAT(GF("+CARECV="), mux, ',', (uint16_t)size);
 
     if (waitResponse(GF("+CARECV:")) != 1) {
-        sockets[mux]->sock_available = 0;
+      sockets[mux]->sock_available = 0;
       return 0;
     }
 
     stream.read();
     if (stream.peek() == '0') {
-        waitResponse();
-        sockets[mux]->sock_available = 0;
-        return 0;
+      waitResponse();
+      sockets[mux]->sock_available = 0;
+      return 0;
     }
 
     const int16_t len_confirmed = streamGetIntBefore(',');
     if (len_confirmed <= 0) {
-        sockets[mux]->sock_available = 0;
-        waitResponse();
-        return 0;
+      sockets[mux]->sock_available = 0;
+      waitResponse();
+      return 0;
     }
 
     for (int i = 0; i < len_confirmed; i++) {
       uint32_t startMillis = millis();
       while (!stream.available() &&
-            (millis() - startMillis < sockets[mux]->_timeout)) {
+             (millis() - startMillis < sockets[mux]->_timeout)) {
         TINY_GSM_YIELD();
       }
       char c = stream.read();
@@ -724,14 +715,14 @@ public:
     sendAT(GF("+CARECV?"));
 
     int8_t readMux = -1;
-    size_t result = 0;
+    size_t result  = 0;
     while (readMux != mux) {
       if (waitResponse(GF("+CARECV:")) != 1) {
         sockets[mux]->sock_connected = modemGetConnected(mux);
         return 0;
       };
       readMux = streamGetIntBefore(',');
-      result = streamGetIntBefore('\n');
+      result  = streamGetIntBefore('\n');
     }
     waitResponse();
 
@@ -742,9 +733,7 @@ public:
     sendAT(GF("+CASTATE?"));
     int8_t readMux = -1;
     while (readMux != mux) {
-      if (waitResponse(3000, GF("+CASTATE:"),GF(GSM_OK)) != 1) {
-          return 0;
-      }
+      if (waitResponse(3000, GF("+CASTATE:"), GFP(GSM_OK)) != 1) { return 0; }
       readMux = streamGetIntBefore(',');
     }
     int8_t res = streamGetIntBefore('\n');
@@ -854,14 +843,13 @@ public:
           data = "";
           // DBG("### Got Data:", mux);
         } else if (data.endsWith(GF(GSM_NL "+CASTATE:"))) {
-          int8_t mux = streamGetIntBefore(',');
+          int8_t mux   = streamGetIntBefore(',');
           int8_t state = streamGetIntBefore('\n');
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
-              if (state != 1)
-              {
-                sockets[mux]->sock_connected = false;
-                DBG("### Closed: ", mux);
-              }
+            if (state != 1) {
+              sockets[mux]->sock_connected = false;
+              DBG("### Closed: ", mux);
+            }
           }
           data = "";
         } else if (data.endsWith(GF(GSM_NL "+RECEIVE:"))) {
@@ -943,7 +931,7 @@ public:
 
  protected:
   GsmClientSim7000* sockets[TINY_GSM_MUX_COUNT];
-  String certificates[TINY_GSM_MUX_COUNT];
+  String            certificates[TINY_GSM_MUX_COUNT];
   const char*       gsmNL = GSM_NL;
 };
 
