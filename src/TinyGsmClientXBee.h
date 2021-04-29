@@ -1129,7 +1129,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
   // after data has been sent on the socket.  If it returns 0xFF the socket may
   // really be open, but no data has yet been sent.  We return this unknown
   // value as true so there's a possibility it's wrong.
-  bool modemGetConnected() {
+  bool modemGetConnected(uint8_t) {
     // If the IP address is 0, it's not valid so we can't be connected
     if (savedIP == IPAddress(0, 0, 0, 0)) { return false; }
 
