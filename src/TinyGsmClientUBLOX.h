@@ -224,7 +224,6 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
     res2.trim();
 
     String name = res1 + String(' ') + res2;
-    DBG("### Modem:", name);
     if (name.startsWith("u-blox SARA-R4") ||
         name.startsWith("u-blox SARA-N4")) {
       DBG("### WARNING:  You are using the wrong TinyGSM modem!");
@@ -270,6 +269,29 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
  public:
   RegStatus getRegistrationStatus() {
     return (RegStatus)getRegistrationStatusXREG("CGREG");
+  }
+
+  bool setRadioAccessTecnology(int selected) {
+    // selected:
+    // 0: GSM / GPRS / eGPRS (single mode)
+    // 1: GSM / UMTS (dual mode)
+    // 2: UMTS (single mode)
+    // 3: LTE (single mode)
+    // 4: GSM / UMTS / LTE (tri mode)
+    // 5: GSM / LTE (dual mode)
+    // 6: UMTS / LTE (dual mode)
+    // preferred:
+    // 0: GSM / GPRS / eGPRS
+    // 2: UTRAN
+    // 3: LTE
+    sendAT(GF("+URAT="), selected, GF(","), preferred);
+    if (waitResponse() != 1) { return false; }
+    return true;
+  }
+
+  bool getCurrentRadioAccessTecnology(int & selected) {
+    // @TODO
+    return false;
   }
 
  protected:
@@ -774,7 +796,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
             if (len >= 0 && len <= 1024) { sockets[mux]->sock_available = len; }
           }
           data = "";
-          DBG("### URC Data Received:", len, "on", mux);
+          //DBG("### URC Data Received:", len, "on", mux);
         } else if (data.endsWith(GF("+UUSOCL:"))) {
           int8_t mux = streamGetIntBefore('\n');
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
