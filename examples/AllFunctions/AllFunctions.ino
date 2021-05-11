@@ -164,9 +164,7 @@ void loop() {
 
 #if TINY_GSM_TEST_GPRS
   // Unlock your SIM card with a PIN if needed
-  if (GSM_PIN && modem.getSimStatus() != 3) {
-    modem.simUnlock(GSM_PIN);
-  }
+  if (GSM_PIN && modem.getSimStatus() != 3) { modem.simUnlock(GSM_PIN); }
 #endif
 
 #if TINY_GSM_TEST_WIFI
@@ -190,9 +188,7 @@ void loop() {
     return;
   }
 
-  if (modem.isNetworkConnected()) {
-    DBG("Network connected");
-  }
+  if (modem.isNetworkConnected()) { DBG("Network connected"); }
 
 #if TINY_GSM_TEST_GPRS
   DBG("Connecting to", apn);
@@ -233,7 +229,7 @@ void loop() {
 
 #if TINY_GSM_TEST_TCP && defined TINY_GSM_MODEM_HAS_TCP
   TinyGsmClient client(modem, 0);
-  const int port = 80;
+  const int     port = 80;
   DBG("Connecting to ", server);
   if (!client.connect(server, port)) {
     DBG("... failed");
@@ -252,7 +248,7 @@ void loop() {
 
     // Read data
     start = millis();
-    while (client.connected() && millis() - start < 5000L) {
+    while (client.connected() && millis() - start < 10000L) {
       while (client.available()) {
         SerialMon.write(client.read());
         start = millis();
@@ -264,7 +260,7 @@ void loop() {
 
 #if TINY_GSM_TEST_SSL && defined TINY_GSM_MODEM_HAS_SSL
   TinyGsmClientSecure secureClient(modem, 1);
-  const int securePort = 443;
+  const int           securePort = 443;
   DBG("Connecting to ", server);
   if (!secureClient.connect(server, securePort)) {
     DBG("... failed");
@@ -294,7 +290,7 @@ void loop() {
 #endif
 
 #if TINY_GSM_TEST_CALL && defined TINY_GSM_MODEM_HAS_CALLING && \
-    defined CALL_TARGET
+    defined                       CALL_TARGET
   DBG("Calling:", CALL_TARGET);
 
   // This is NOT supported on M590
@@ -308,9 +304,7 @@ void loop() {
     modem.dtmfSend('A', 1000);
 
     // Play DTMF 0..4, default duration (100ms)
-    for (char tone = '0'; tone <= '4'; tone++) {
-      modem.dtmfSend(tone);
-    }
+    for (char tone = '0'; tone <= '4'; tone++) { modem.dtmfSend(tone); }
 
     delay(5000);
 
@@ -344,7 +338,7 @@ void loop() {
   int   day      = 0;
   int   hour     = 0;
   int   min      = 0;
-  int sec = 0;
+  int   sec      = 0;
   for (int8_t i = 15; i; i--) {
     DBG("Requesting current GSM location");
     if (modem.getGsmLocation(&lat, &lon, &accuracy, &year, &month, &day, &hour,
@@ -384,7 +378,7 @@ void loop() {
   for (int8_t i = 15; i; i--) {
     DBG("Requesting current GPS/GNSS/GLONASS location");
     if (modem.getGPS(&lat2, &lon2, &speed2, &alt2, &vsat2, &usat2, &accuracy2,
-                    &year2, &month2, &day2, &hour2, &min2, &sec2)) {
+                     &year2, &month2, &day2, &hour2, &min2, &sec2)) {
       DBG("Latitude:", String(lat2, 8), "\tLongitude:", String(lon2, 8));
       DBG("Speed:", speed2, "\tAltitude:", alt2);
       DBG("Visible Satellites:", vsat2, "\tUsed Satellites:", usat2);
@@ -405,17 +399,17 @@ void loop() {
 #endif
 
 #if TINY_GSM_TEST_TIME && defined TINY_GSM_MODEM_HAS_TIME
-  int year3 = 0;
-  int month3 = 0;
-  int day3 = 0;
-  int hour3 = 0;
-  int min3 = 0;
-  int sec3 = 0;
+  int   year3    = 0;
+  int   month3   = 0;
+  int   day3     = 0;
+  int   hour3    = 0;
+  int   min3     = 0;
+  int   sec3     = 0;
   float timezone = 0;
   for (int8_t i = 5; i; i--) {
     DBG("Requesting current network time");
     if (modem.getNetworkTime(&year3, &month3, &day3, &hour3, &min3, &sec3,
-                                 &timezone)) {
+                             &timezone)) {
       DBG("Year:", year3, "\tMonth:", month3, "\tDay:", day3);
       DBG("Hour:", hour3, "\tMinute:", min3, "\tSecond:", sec3);
       DBG("Timezone:", timezone);
@@ -470,7 +464,5 @@ void loop() {
   DBG("End of tests.");
 
   // Do nothing forevermore
-  while (true) {
-    modem.maintain();
-  }
+  while (true) { modem.maintain(); }
 }

@@ -23,6 +23,7 @@
 #include "TinyGsmTCP.tpp"
 #include "TinyGsmTemperature.tpp"
 #include "TinyGsmTime.tpp"
+#include "TinyGsmNTP.tpp"
 
 #define GSM_NL "\r\n"
 static const char GSM_OK[] TINY_GSM_PROGMEM    = "OK" GSM_NL;
@@ -47,6 +48,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
                        public TinyGsmTCP<TinyGsmSim5360, TINY_GSM_MUX_COUNT>,
                        public TinyGsmSMS<TinyGsmSim5360>,
                        public TinyGsmTime<TinyGsmSim5360>,
+                       public TinyGsmNTP<TinyGsmSim5360>,
                        public TinyGsmGSMLocation<TinyGsmSim5360>,
                        public TinyGsmBattery<TinyGsmSim5360>,
                        public TinyGsmTemperature<TinyGsmSim5360> {
@@ -55,6 +57,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
   friend class TinyGsmTCP<TinyGsmSim5360, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmSMS<TinyGsmSim5360>;
   friend class TinyGsmTime<TinyGsmSim5360>;
+  friend class TinyGsmNTP<TinyGsmSim5360>;
   friend class TinyGsmGSMLocation<TinyGsmSim5360>;
   friend class TinyGsmBattery<TinyGsmSim5360>;
   friend class TinyGsmTemperature<TinyGsmSim5360>;
@@ -270,12 +273,17 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
     return res;
   }
 
-  String setNetworkMode(uint8_t mode) {
-    sendAT(GF("+CNMP="), mode);
-    if (waitResponse(GF(GSM_NL "+CNMP:")) != 1) { return "OK"; }
-    String res = stream.readStringUntil('\n');
+  int16_t getNetworkMode() {
+    sendAT(GF("+CNMP?"));
+    if (waitResponse(GF(GSM_NL "+CNMP:")) != 1) { return false; }
+    int16_t mode = streamGetIntBefore('\n');
     waitResponse();
-    return res;
+    return mode;
+  }
+
+  bool setNetworkMode(uint8_t mode) {
+    sendAT(GF("+CNMP="), mode);
+    return waitResponse() == 1;
   }
 
   String getLocalIPImpl() {
@@ -434,6 +442,11 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
    */
  protected:
   // Can follow the standard CCLK function in the template
+
+  /*
+   * NTP server functions
+   */
+  // Can sync with server using CNTP as per template
 
   /*
    * Battery functions

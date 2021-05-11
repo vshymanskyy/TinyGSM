@@ -25,6 +25,7 @@
 #include "TinyGsmSSL.tpp"
 #include "TinyGsmTCP.tpp"
 #include "TinyGsmTime.tpp"
+#include "TinyGsmNTP.tpp"
 
 #define GSM_NL "\r\n"
 static const char GSM_OK[] TINY_GSM_PROGMEM    = "OK" GSM_NL;
@@ -51,6 +52,7 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
                       public TinyGsmSMS<TinyGsmSim800>,
                       public TinyGsmGSMLocation<TinyGsmSim800>,
                       public TinyGsmTime<TinyGsmSim800>,
+                      public TinyGsmNTP<TinyGsmSim800>,
                       public TinyGsmBattery<TinyGsmSim800> {
   friend class TinyGsmModem<TinyGsmSim800>;
   friend class TinyGsmGPRS<TinyGsmSim800>;
@@ -60,6 +62,7 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
   friend class TinyGsmSMS<TinyGsmSim800>;
   friend class TinyGsmGSMLocation<TinyGsmSim800>;
   friend class TinyGsmTime<TinyGsmSim800>;
+  friend class TinyGsmNTP<TinyGsmSim800>;
   friend class TinyGsmBattery<TinyGsmSim800>;
 
   /*
@@ -315,20 +318,23 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
                        const char* pwd = NULL) {
     gprsDisconnect();
 
-    // Set the Bearer for the IP
-    sendAT(GF(
-        "+SAPBR=3,1,\"Contype\",\"GPRS\""));  // Set the connection type to GPRS
+    // Bearer settings for applications based on IP
+    // Set the connection type to GPRS
+    sendAT(GF("+SAPBR=3,1,\"Contype\",\"GPRS\""));
     waitResponse();
 
-    sendAT(GF("+SAPBR=3,1,\"APN\",\""), apn, '"');  // Set the APN
+    // Set the APN
+    sendAT(GF("+SAPBR=3,1,\"APN\",\""), apn, '"');
     waitResponse();
 
+    // Set the user name
     if (user && strlen(user) > 0) {
-      sendAT(GF("+SAPBR=3,1,\"USER\",\""), user, '"');  // Set the user name
+      sendAT(GF("+SAPBR=3,1,\"USER\",\""), user, '"');
       waitResponse();
     }
+    // Set the password
     if (pwd && strlen(pwd) > 0) {
-      sendAT(GF("+SAPBR=3,1,\"PWD\",\""), pwd, '"');  // Set the password
+      sendAT(GF("+SAPBR=3,1,\"PWD\",\""), pwd, '"');
       waitResponse();
     }
 
@@ -350,8 +356,6 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
     // Attach to GPRS
     sendAT(GF("+CGATT=1"));
     if (waitResponse(60000L) != 1) { return false; }
-
-    // TODO(?): wait AT+CGATT?
 
     // Set to multi-IP
     sendAT(GF("+CIPMUX=1"));
@@ -448,6 +452,11 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
   // Can follow the standard CCLK function in the template
 
   /*
+   * NTP server functions
+   */
+  // Can sync with server using CNTP as per template
+
+  /*
    * Battery functions
    */
  protected:
@@ -456,50 +465,7 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
   /*
    * NTP server functions
    */
- public:
-  boolean isValidNumber(String str) {
-    if (!(str.charAt(0) == '+' || str.charAt(0) == '-' ||
-          isDigit(str.charAt(0))))
-      return false;
-
-    for (byte i = 1; i < str.length(); i++) {
-      if (!(isDigit(str.charAt(i)) || str.charAt(i) == '.')) { return false; }
-    }
-    return true;
-  }
-
-  String ShowNTPError(byte error) {
-    switch (error) {
-      case 1: return "Network time synchronization is successful";
-      case 61: return "Network error";
-      case 62: return "DNS resolution error";
-      case 63: return "Connection error";
-      case 64: return "Service response error";
-      case 65: return "Service response timeout";
-      default: return "Unknown error: " + String(error);
-    }
-  }
-
-  byte NTPServerSync(String server = "pool.ntp.org", byte TimeZone = 3) {
-    // Set GPRS bearer profile to associate with NTP sync
-    sendAT(GF("+CNTPCID=1"));
-    if (waitResponse(10000L) != 1) { return -1; }
-
-    // Set NTP server and timezone
-    sendAT(GF("+CNTP="), server, ',', String(TimeZone));
-    if (waitResponse(10000L) != 1) { return -1; }
-
-    // Request network synchronization
-    sendAT(GF("+CNTP"));
-    if (waitResponse(10000L, GF(GSM_NL "+CNTP:"))) {
-      String result = stream.readStringUntil('\n');
-      result.trim();
-      if (isValidNumber(result)) { return result.toInt(); }
-    } else {
-      return -1;
-    }
-    return -1;
-  }
+  // Can sync with server using CNTP as per template
 
   /*
    * Client related functions

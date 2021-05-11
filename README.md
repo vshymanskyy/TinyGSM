@@ -17,6 +17,31 @@ If you like **TinyGSM** - give it a star, or fork it and contribute!
 You can also join our chat:
 [![Gitter](https://img.shields.io/gitter/room/vshymanskyy/TinyGSM.svg)](https://gitter.im/tinygsm)
 
+- [Supported modems](#supported-modems)
+  - [Supported boards/modules](#supported-boardsmodules)
+- [Features](#features)
+- [Getting Started](#getting-started)
+    - [First Steps](#first-steps)
+    - [Writing your own code](#writing-your-own-code)
+    - [If you have any issues](#if-you-have-any-issues)
+- [How does it work?](#how-does-it-work)
+- [API Reference](#api-reference)
+- [Troubleshooting](#troubleshooting)
+  - [Ensure stable data & power connection](#ensure-stable-data--power-connection)
+  - [Baud rates](#baud-rates)
+  - [Broken initial configuration](#broken-initial-configuration)
+  - [Diagnostics sketch](#diagnostics-sketch)
+  - [Web request formatting problems - "but it works with PostMan"](#web-request-formatting-problems---but-it-works-with-postman)
+  - [SoftwareSerial problems](#softwareserial-problems)
+  - [ESP32 Notes](#esp32-notes)
+    - [HardwareSerial](#hardwareserial)
+    - [HttpClient](#httpclient)
+  - [SAMD21](#samd21)
+  - [Goouuu Tech IOT-GA6 vs AI-Thinker A6 confusion](#goouuu-tech-iot-ga6-vs-ai-thinker-a6-confusion)
+  - [SIM800 and SSL](#sim800-and-ssl)
+  - [Which versions of the SIM7000 code to use](#which-versions-of-the-sim7000-code-to-use)
+  - [License](#license)
+
 ### Arduino Client interface support
 This library is easy to integrate with lots of sketches which use Ethernet or WiFi.
 **PubSubClient ([MQTT](http://mqtt.org/))**, **[Blynk](http://blynk.cc)**, **HTTP Client** and **File Download** examples are provided.
@@ -41,6 +66,7 @@ TinyGSM also pulls data gently from the modem (whenever possible), so it can ope
 - SIMCom WCDMA/HSPA/HSPA+ Modules (SIM5360, SIM5320, SIM5300E, SIM5300E/A)
 - SIMCom LTE Modules (SIM7100E, SIM7500E, SIM7500A, SIM7600C, SIM7600E)
 - SIMCom SIM7000E/A/G CAT-M1/NB-IoT Module
+- SIMCom SIM7070/SIM7080/SIM7090 CAT-M1/NB-IoT Module ***(alpha)***
 - AI-Thinker A6, A6C, A7, A20
 - ESP8266 (AT commands interface, similar to GSM modems)
 - Digi XBee WiFi and Cellular (using XBee command mode)
@@ -86,7 +112,8 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
         - Sequans Monarch - 6
         - SIM 800/900 - 5
         - SIM 5360/5320/5300/7100 - 10
-        - SIM7000 - 2 (8 possible without SSL, only 2 with)
+        - SIM7000 - 8 possible without SSL, only 2 with
+        - SIM 7070/7080/7090 - 12
         - SIM 7500/7600/7800 - 10
         - u-blox 2G/3G - 7
         - u-blox SARA R4/N4 - 7
@@ -96,7 +123,7 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
 - SSL/TLS (HTTPS)
     - Supported on:
         - SIM800, SIM7000, u-Blox, XBee _cellular_, ESP8266, and Sequans Monarch
-        - Note:  only some device models or firmware revisions have this feature (SIM8xx R14.18, A7, etc.)
+        - Note:  **only some device models or firmware revisions have this feature** (SIM8xx R14.18, A7, etc.)
     - Not yet supported on:
         - Quectel modems, SIM 5360/5320/7100, SIM 7500/7600/7800
     - Not possible on:
@@ -207,7 +234,7 @@ The general flow of your code should be:
 
 
 
-#### If you have any issues:
+#### If you have any issues
 
   1. Read the whole README (you're looking at it!), particularly the troubleshooting section below.
   2. Some boards require [**special configuration**](https://github.com/vshymanskyy/TinyGSM/wiki/Board-configuration).
@@ -237,6 +264,13 @@ Improving the power supply actually solves stability problems in **many** cases!
 - Consider soldering them for a stable connection
 - Do not put your wires next to noisy signal sources (buck converters, antennas, oscillators etc.)
 - If everything else seems to be working but you are unable to connect to the network, check your power supply!
+
+### Baud rates
+
+Most modules support some sort of "auto-bauding" feature where the module will attempt to adjust it's baud rate to match what it is receiving.
+TinyGSM also implements its own auto bauding function (`TinyGsmAutoBaud(SerialAT, GSM_AUTOBAUD_MIN, GSM_AUTOBAUD_MAX);`).
+While very useful when initially connecting to a module and doing tests, these should **NOT** be used in any sort of production code.
+Once you've established communication with the module, set the baud rate using the `setBaud(#)` function and stick with that rate.
 
 ### Broken initial configuration
 
@@ -337,6 +371,24 @@ Please [refer to this comment](https://github.com/vshymanskyy/TinyGSM/issues/102
 ### Goouuu Tech IOT-GA6 vs AI-Thinker A6 confusion
 
 It turns out that **Goouuu Tech IOT-GA6** is not the same as **AI-Thinker A6**. Unfortunately IOT-GA6 is not supported out of the box yet. There are some hints that IOT-GA6 firmware may be updated to match A6... See [this topic](https://github.com/vshymanskyy/TinyGSM/issues/164).
+
+### SIM800 and SSL
+
+Some, but not all, versions of the SIM800 support SSL.
+Having SSL support depends on the firmware version and the individual module.
+Users have had varying levels of success in using SSL on the SIM800 even with apparently identical firmware.
+If you need SSL and it does not appear to be working on your SIM800, try a different module or try using a secondary SSL library.
+
+### Which versions of the SIM7000 code to use
+
+There are two versions of the SIM7000 code, one using `TINY_GSM_MODEM_SIM7000` and another with `TINY_GSM_MODEM_SIM7000SSL`.
+The `TINY_GSM_MODEM_SIM7000` version *does not support SSL*.
+The `TINY_GSM_MODEM_SIM7000SSL` version supports both SSL *and unsecured connections*.
+So why are there two versions?
+The "SSL" version uses the SIM7000's "application" commands while the other uses the "TCP-IP toolkit".
+Depending on your region/firmware, one or the other may not work for you.
+Try both and use whichever is more stable.
+If you do not need SSL, I recommend starting with `TINY_GSM_MODEM_SIM7000`.
 
 __________
 

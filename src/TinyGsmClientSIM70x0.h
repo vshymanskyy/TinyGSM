@@ -1,0 +1,676 @@
+/**
+ * @file       TinyGsmClientSim70x0.h
+ * @author     Volodymyr Shymanskyy
+ * @license    LGPL-3.0
+ * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
+ * @date       Nov 2016
+ */
+
+#ifndef SRC_TINYGSMCLIENTSIM70X0_H_
+#define SRC_TINYGSMCLIENTSIM70X0_H_
+
+// #define TINY_GSM_DEBUG Serial
+// #define TINY_GSM_USE_HEX
+
+#define TINY_GSM_MUX_COUNT 12
+#define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
+
+#include "TinyGsmClientSIM70xx.h"
+#include "TinyGsmTCP.tpp"
+#include "TinyGsmSSL.tpp"
+
+class TinyGsmSim70x0 : public TinyGsmSim70xx<TinyGsmSim70x0>,
+                       public TinyGsmTCP<TinyGsmSim70x0, TINY_GSM_MUX_COUNT>,
+                       public TinyGsmSSL<TinyGsmSim70x0> {
+  friend class TinyGsmSim70xx<TinyGsmSim70x0>;
+  friend class TinyGsmTCP<TinyGsmSim70x0, TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmSSL<TinyGsmSim70x0>;
+
+  /*
+   * Inner Client
+   */
+ public:
+  class GsmClientSim70x0 : public GsmClient {
+    friend class TinyGsmSim70x0;
+
+   public:
+    GsmClientSim70x0() {}
+
+    explicit GsmClientSim70x0(TinyGsmSim70x0& modem, uint8_t mux = 0) {
+      init(&modem, mux);
+    }
+
+    bool init(TinyGsmSim70x0* modem, uint8_t mux = 0) {
+      this->at       = modem;
+      sock_available = 0;
+      prev_check     = 0;
+      sock_connected = false;
+      got_data       = false;
+
+      if (mux < TINY_GSM_MUX_COUNT) {
+        this->mux = mux;
+      } else {
+        this->mux = (mux % TINY_GSM_MUX_COUNT);
+      }
+      at->sockets[this->mux] = this;
+
+      return true;
+    }
+
+   public:
+    virtual int connect(const char* host, uint16_t port, int timeout_s) {
+      stop();
+      TINY_GSM_YIELD();
+      rx.clear();
+      sock_connected = at->modemConnect(host, port, mux, false, timeout_s);
+      return sock_connected;
+    }
+    TINY_GSM_CLIENT_CONNECT_OVERRIDES
+
+    void stop(uint32_t maxWaitMs) {
+      dumpModemBuffer(maxWaitMs);
+      at->sendAT(GF("+CACLOSE="), mux);
+      sock_connected = false;
+      at->waitResponse(3000);
+    }
+    void stop() override {
+      stop(15000L);
+    }
+
+    /*
+     * Extended API
+     */
+
+    String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  };
+
+  /*
+   * Inner Secure Client
+   */
+
+  class GsmClientSecureSIM70x0 : public GsmClientSim70x0 {
+   public:
+    GsmClientSecureSIM70x0() {}
+
+    GsmClientSecureSIM70x0(TinyGsmSim70x0& modem, uint8_t mux = 0)
+        : GsmClientSim70x0(modem, mux) {}
+
+   public:
+    bool setCertificate(const String& certificateName) {
+      return at->setCertificate(certificateName, mux);
+    }
+
+    int connect(const char* host, uint16_t port, int timeout_s) {
+      stop();
+      TINY_GSM_YIELD();
+      rx.clear();
+      sock_connected = at->modemConnect(host, port, mux, true, timeout_s);
+      return sock_connected;
+    }
+    TINY_GSM_CLIENT_CONNECT_OVERRIDES
+  };
+
+  /*
+   * Constructor
+   */
+ public:
+  explicit TinyGsmSim70x0(Stream& stream)
+      : TinyGsmSim70xx<TinyGsmSim70x0>(stream),
+        certificates() {
+    memset(sockets, 0, sizeof(sockets));
+  }
+
+  /*
+   * Basic functions
+   */
+ protected:
+  bool initImpl(const char* pin = NULL) {
+    DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
+    DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientSIM70x0"));
+
+    if (!testAT()) { return false; }
+
+    sendAT(GF("E0"));  // Echo Off
+    if (waitResponse() != 1) { return false; }
+
+#ifdef TINY_GSM_DEBUG
+    sendAT(GF("+CMEE=2"));  // turn on verbose error codes
+#else
+    sendAT(GF("+CMEE=0"));  // turn off error codes
+#endif
+    waitResponse();
+
+    DBG(GF("### Modem:"), getModemName());
+
+    // Enable Local Time Stamp for getting network time
+    sendAT(GF("+CLTS=1"));
+    if (waitResponse(10000L) != 1) { return false; }
+
+    // Enable battery checks
+    sendAT(GF("+CBATCHK=1"));
+    if (waitResponse() != 1) { return false; }
+
+    SimStatus ret = getSimStatus();
+    // if the sim isn't ready and a pin has been provided, try to unlock the sim
+    if (ret != SIM_READY && pin != NULL && strlen(pin) > 0) {
+      simUnlock(pin);
+      return (getSimStatus() == SIM_READY);
+    } else {
+      // if the sim is ready, or it's locked but no pin has been provided,
+      // return true
+      return (ret == SIM_READY || ret == SIM_LOCKED);
+    }
+  }
+
+  /*
+   * Power functions
+   */
+ protected:
+  // Follows the SIM70xx template
+
+  /*
+   * Generic network functions
+   */
+ protected:
+  String getLocalIPImpl() {
+    sendAT(GF("+CNACT?"));
+    if (waitResponse(GF(GSM_NL "+CNACT:")) != 1) { return ""; }
+    streamSkipUntil('\"');
+    String res = stream.readStringUntil('\"');
+    waitResponse();
+    return res;
+  }
+
+  /*
+   * Secure socket layer functions
+   */
+ protected:
+  bool setCertificate(const String& certificateName, const uint8_t mux = 0) {
+    if (mux >= TINY_GSM_MUX_COUNT) return false;
+    certificates[mux] = certificateName;
+    return true;
+  }
+
+  /*
+   * GPRS functions
+   */
+ protected:
+  bool gprsConnectImpl(const char* apn, const char* user = NULL,
+                       const char* pwd = NULL) {
+    gprsDisconnect();
+
+    // Bearer settings for applications based on IP
+    // Set the connection type to GPRS
+    sendAT(GF("+SAPBR=3,1,\"Contype\",\"GPRS\""));
+    waitResponse();
+
+    // Set the APN
+    sendAT(GF("+SAPBR=3,1,\"APN\",\""), apn, '"');
+    waitResponse();
+
+    // Set the user name
+    if (user && strlen(user) > 0) {
+      sendAT(GF("+SAPBR=3,1,\"USER\",\""), user, '"');
+      waitResponse();
+    }
+    // Set the password
+    if (pwd && strlen(pwd) > 0) {
+      sendAT(GF("+SAPBR=3,1,\"PWD\",\""), pwd, '"');
+      waitResponse();
+    }
+
+    // Define the PDP context
+    sendAT(GF("+CGDCONT=1,\"IP\",\""), apn, '"');
+    waitResponse();
+
+    // Attach to GPRS
+    sendAT(GF("+CGATT=1"));
+    if (waitResponse(60000L) != 1) { return false; }
+
+    // Activate the PDP context
+    sendAT(GF("+CGACT=1,1"));
+    waitResponse(60000L);
+
+    // Open the definied GPRS bearer context
+    sendAT(GF("+SAPBR=1,1"));
+    waitResponse(85000L);
+    // Query the GPRS bearer context status
+    sendAT(GF("+SAPBR=2,1"));
+    if (waitResponse(30000L) != 1) { return false; }
+
+    // Bearer settings for applications based on IP
+    // Set the user name and password
+    // AT+CNCFG=<pdpidx>,<ip_type>,[<APN>,[<usename>,<password>,[<authentication>]]]
+    // <pdpidx> PDP Context Identifier (1 is setup above)
+    // <ip_type> 0: Dual PDN Stack
+    //           1: Internet Protocol Version 4
+    //           2: Internet Protocol Version 6
+    // <authentication> 0: NONE
+    //                  1: PAP
+    //                  2: CHAP
+    //                  3: PAP or CHAP
+    if (pwd && strlen(pwd) > 0 && user && strlen(user) > 0) {
+      sendAT(GF("+CNCFG=1,1,\""), apn, "\",\"", "\",\"", user, pwd, '"');
+      waitResponse();
+    } else if (user && strlen(user) > 0) {
+      // Set the user name only
+      sendAT(GF("+CNCFG=1,1,\""), apn, "\",\"", user, '"');
+      waitResponse();
+    } else {
+      // Set the APN only
+      sendAT(GF("+CNCFG=1,1,\""), apn, '"');
+      waitResponse();
+    }
+
+    // Activate application network connection
+    // This is for most other supported applications outside of the
+    // TCP application toolkit (ie, SSL)
+    // AT+CNACT=<pdpidx>,<action>
+    // <pdpidx> PDP Context Identifier (1 is setup above)
+    // <action> 0: Deactive
+    //          1: Active
+    //          2: Auto Active
+    int res    = 0;
+    int ntries = 0;
+    while (res != 1 && ntries < 5) {
+      sendAT(GF("+CNACT=1,1,\""), apn, GF("\""));
+      res = waitResponse(60000L, GF(GSM_NL "+APP PDP: ACTIVE"),
+                         GF(GSM_NL "+APP PDP: DEACTIVE"));
+      waitResponse();
+      ntries++;
+    }
+
+    // return res == 1;
+    return true;
+  }
+
+  bool gprsDisconnectImpl() {
+    // Shut down the general application TCP/IP connection
+    // CNACT will close *all* open application connections
+    sendAT(GF("+CNACT=1,0"));
+    if (waitResponse(60000L) != 1) { return false; }
+
+    sendAT(GF("+CGATT=0"));  // Deactivate the bearer context
+    if (waitResponse(60000L) != 1) { return false; }
+
+    return true;
+  }
+
+  /*
+   * SIM card functions
+   */
+ protected:
+  // Follows the SIM70xx template
+
+  /*
+   * Messaging functions
+   */
+ protected:
+  // Follows all messaging functions per template
+
+  /*
+   * GPS/GNSS/GLONASS location functions
+   */
+ protected:
+  // Follows the SIM70xx template
+
+  /*
+   * Time functions
+   */
+  // Can follow CCLK as per template
+
+  /*
+   * NTP server functions
+   */
+  // Can sync with server using CNTP as per template
+
+  /*
+   * Battery functions
+   */
+ protected:
+  // Follows all battery functions per template
+
+  /*
+   * Client related functions
+   */
+ protected:
+  bool modemConnect(const char* host, uint16_t port, uint8_t mux,
+                    bool ssl = false, int timeout_s = 75) {
+    uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
+
+    // set the connection (mux) identifier to use
+    sendAT(GF("+CACID="), mux);
+    if (waitResponse(timeout_ms) != 1) return false;
+
+
+    if (ssl) {
+      // set the ssl version
+      // AT+CSSLCFG="SSLVERSION",<ctxindex>,<sslversion>
+      // <ctxindex> PDP context identifier
+      // <sslversion> 0: QAPI_NET_SSL_PROTOCOL_UNKNOWN
+      //              1: QAPI_NET_SSL_PROTOCOL_TLS_1_0
+      //              2: QAPI_NET_SSL_PROTOCOL_TLS_1_1
+      //              3: QAPI_NET_SSL_PROTOCOL_TLS_1_2
+      //              4: QAPI_NET_SSL_PROTOCOL_DTLS_1_0
+      //              5: QAPI_NET_SSL_PROTOCOL_DTLS_1_2
+      sendAT(GF("+CSSLCFG=\"SSLVERSION\",0,3"));  // TLS 1.2
+      if (waitResponse(5000L) != 1) return false;
+
+      // set the PDP context to apply SSL to
+      // AT+CSSLCFG="CTXINDEX",<ctxindex>
+      // <ctxindex> PDP context identifier
+      sendAT(GF("+CSSLCFG=\"CTXINDEX\",0"));
+      if (waitResponse(5000L, GF("+CSSLCFG:")) != 1) return false;
+      streamSkipUntil('\n');  // read out the certificate information
+      waitResponse();
+
+      if (certificates[mux] != "") {
+        // apply the correct certificate to the connection
+        // AT+CASSLCFG=<cid>,"CACERT",<caname>
+        // <cid> Application connection ID (set with AT+CACID above)
+        // <certname> certificate name
+        sendAT(GF("+CASSLCFG="), mux, ",CACERT,\"", certificates[mux].c_str(),
+               "\"");
+        if (waitResponse(5000L) != 1) return false;
+      }
+    }
+
+    // enable or disable ssl
+    // AT+CASSLCFG=<cid>,"SSL",<sslFlag>
+    // <cid> Application connection ID (set with AT+CACID above)
+    // <sslFlag> 0: Not support SSL
+    //           1: Support SSL
+    sendAT(GF("+CASSLCFG="), mux, ',', GF("SSL,"), ssl);
+    waitResponse();
+
+    // set the SSL SNI (server name indication)
+    sendAT(GF("+CSSLCFG=\"SNI\","), mux, ',', GF("\""), host, GF("\""));
+    waitResponse();
+
+    // actually open the connection
+    // AT+CAOPEN=<cid>,<pdp_index>,<conn_type>,<server>,<port>[,<recv_mode>]
+    // <cid> TCP/UDP identifier
+    // <pdp_index> Index of PDP connection; we set up PCP context 1 above
+    // <conn_type> "TCP" or "UDP"
+    // <recv_mode> 0: The received data can only be read manually using
+    // AT+CARECV=<cid>
+    //             1: After receiving the data, it will automatically report
+    //             URC:
+    //                +CAURC:
+    //                "recv",<id>,<length>,<remoteIP>,<remote_port><CR><LF><data>
+    sendAT(GF("+CAOPEN="), mux, GF(",0,\"TCP\",\""), host, GF("\","), port, ',',
+           0);
+    if (waitResponse(timeout_ms, GF(GSM_NL "+CAOPEN:")) != 1) { return 0; }
+    // returns OK/r/n/r/n+CAOPEN: <cid>,<result>
+    // <result> 0: Success
+    //          1: Socket error
+    //          2: No memory
+    //          3: Connection limit
+    //          4: Parameter invalid
+    //          6: Invalid IP address
+    //          7: Not support the function
+    //          12: Can’t bind the port
+    //          13: Can’t listen the port
+    //          20: Can’t resolve the host
+    //          21: Network not active
+    //          23: Remote refuse
+    //          24: Certificate’s time expired
+    //          25: Certificate’s common name does not match
+    //          26: Certificate’s common name does not match and time expired
+    //          27: Connect failed
+    streamSkipUntil(',');  // Skip mux
+
+    // make sure the connection really opened
+    int8_t res = streamGetIntBefore('\n');
+    waitResponse();
+
+    return 0 == res;
+  }
+
+  int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
+    sendAT(GF("+CASEND="), mux, ',', (uint16_t)len);
+    if (waitResponse(GF(">")) != 1) { return 0; }
+
+    stream.write(reinterpret_cast<const uint8_t*>(buff), len);
+    stream.flush();
+
+    if (waitResponse(GF(GSM_NL "+CASEND:")) != 1) { return 0; }
+    streamSkipUntil(',');                            // Skip mux
+    if (streamGetIntBefore(',') != 0) { return 0; }  // If result != success
+    return streamGetIntBefore('\n');
+  }
+
+  size_t modemRead(size_t size, uint8_t mux) {
+    if (!sockets[mux]) return 0;
+
+    sendAT(GF("+CARECV="), mux, ',', (uint16_t)size);
+
+    if (waitResponse(GF("+CARECV:")) != 1) {
+      sockets[mux]->sock_available = 0;
+      return 0;
+    }
+
+    stream.read();
+    if (stream.peek() == '0') {
+      waitResponse();
+      sockets[mux]->sock_available = 0;
+      return 0;
+    }
+
+    const int16_t len_confirmed = streamGetIntBefore(',');
+    if (len_confirmed <= 0) {
+      sockets[mux]->sock_available = 0;
+      waitResponse();
+      return 0;
+    }
+
+    for (int i = 0; i < len_confirmed; i++) {
+      uint32_t startMillis = millis();
+      while (!stream.available() &&
+             (millis() - startMillis < sockets[mux]->_timeout)) {
+        TINY_GSM_YIELD();
+      }
+      char c = stream.read();
+      sockets[mux]->rx.put(c);
+    }
+    // DBG("### READ:", len_requested, "from", mux);
+    // sockets[mux]->sock_available = modemGetAvailable(mux);
+    auto diff = int64_t(size) - int64_t(len_confirmed);
+    if (diff < 0) diff = 0;
+    sockets[mux]->sock_available = diff;
+    waitResponse();
+    return len_confirmed;
+  }
+
+  size_t modemGetAvailable(uint8_t mux) {
+    // NOTE: This gets how many characters are available on all connections
+    sendAT(GF("+CARECV?"));
+    for (int muxNo = 0; muxNo < TINY_GSM_MUX_COUNT; muxNo++) {
+      if (waitResponse(3000, GF(GSM_NL "+CARECV: ")) != 1) { break; }
+      size_t result = 0;
+      // if (streamGetIntBefore(',') != muxNo) { // check the mux no
+      //   DBG("### Warning: misaligned mux numbers!");
+      // }
+      streamSkipUntil(',');  // skip mux [use muxNo]
+      result                 = streamGetIntBefore('\n');
+      GsmClientSim70x0* sock = sockets[mux];
+      if (sock && muxNo == mux) { sock->sock_available = result; }
+    }
+    waitResponse();  // Should be an OK at the end
+    modemGetConnected(mux);
+    if (!sockets[mux]) return 0;
+    return sockets[mux]->sock_available;
+  }
+
+  bool modemGetConnected(uint8_t mux) {
+    // NOTE:  This gets the state of all connections
+    sendAT(GF("+CASTATE?"));
+
+    for (int muxNo = 0; muxNo < TINY_GSM_MUX_COUNT; muxNo++) {
+      if (waitResponse(3000, GF(GSM_NL "+CASTATE: ")) != 1) { break; }
+      uint8_t status = 0;
+      // if (streamGetIntBefore(',') != muxNo) { // check the mux no
+      //   DBG("### Warning: misaligned mux numbers!");
+      // }
+      streamSkipUntil(',');        // skip mux [use muxNo]
+      status = stream.parseInt();  // Read the status
+      // 0: Closed by remote server or internal error
+      // 1: Connected to remote server
+      // 2: Listening (server mode)
+      GsmClientSim70x0* sock = sockets[mux];
+      if (sock && muxNo == mux) { sock->sock_connected = (status == 1); }
+    }
+    waitResponse();  // Should be an OK at the end
+    return sockets[mux]->sock_connected;
+  }
+
+  /*
+   * Utilities
+   */
+ public:
+  // TODO(vshymanskyy): Optimize this!
+  int8_t waitResponse(uint32_t timeout_ms, String& data,
+                      GsmConstStr r1 = GFP(GSM_OK),
+                      GsmConstStr r2 = GFP(GSM_ERROR),
+#if defined TINY_GSM_DEBUG
+                      GsmConstStr r3 = GFP(GSM_CME_ERROR),
+                      GsmConstStr r4 = GFP(GSM_CMS_ERROR),
+#else
+                      GsmConstStr r3 = NULL, GsmConstStr r4 = NULL,
+#endif
+                      GsmConstStr r5 = NULL) {
+    /*String r1s(r1); r1s.trim();
+    String r2s(r2); r2s.trim();
+    String r3s(r3); r3s.trim();
+    String r4s(r4); r4s.trim();
+    String r5s(r5); r5s.trim();
+    DBG("### ..:", r1s, ",", r2s, ",", r3s, ",", r4s, ",", r5s);*/
+    data.reserve(64);
+    uint8_t  index       = 0;
+    uint32_t startMillis = millis();
+    do {
+      TINY_GSM_YIELD();
+      while (stream.available() > 0) {
+        TINY_GSM_YIELD();
+        int8_t a = stream.read();
+        if (a <= 0) continue;  // Skip 0x00 bytes, just in case
+        data += static_cast<char>(a);
+        if (r1 && data.endsWith(r1)) {
+          index = 1;
+          goto finish;
+        } else if (r2 && data.endsWith(r2)) {
+          index = 2;
+          goto finish;
+        } else if (r3 && data.endsWith(r3)) {
+#if defined TINY_GSM_DEBUG
+          if (r3 == GFP(GSM_CME_ERROR)) {
+            streamSkipUntil('\n');  // Read out the error
+          }
+#endif
+          index = 3;
+          goto finish;
+        } else if (r4 && data.endsWith(r4)) {
+          index = 4;
+          goto finish;
+        } else if (r5 && data.endsWith(r5)) {
+          index = 5;
+          goto finish;
+        } else if (data.endsWith(GF(GSM_NL "+CARECV:"))) {
+          int8_t mux = streamGetIntBefore(',');
+          if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+            sockets[mux]->got_data = true;
+          }
+          data = "";
+          DBG("### Got Data:", mux);
+        } else if (data.endsWith(GF(GSM_NL "+CADATAIND:"))) {
+          int8_t mux = streamGetIntBefore('\n');
+          if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+            sockets[mux]->got_data = true;
+          }
+          data = "";
+          DBG("### Got Data:", mux);
+        } else if (data.endsWith(GF(GSM_NL "+CASTATE:"))) {
+          int8_t mux   = streamGetIntBefore(',');
+          int8_t state = streamGetIntBefore('\n');
+          if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+            if (state != 1) {
+              sockets[mux]->sock_connected = false;
+              DBG("### Closed: ", mux);
+            }
+          }
+          data = "";
+        } else if (data.endsWith(GF("CLOSED" GSM_NL))) {
+          int8_t nl   = data.lastIndexOf(GSM_NL, data.length() - 8);
+          int8_t coma = data.indexOf(',', nl + 2);
+          int8_t mux  = data.substring(nl + 2, coma).toInt();
+          if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+            sockets[mux]->sock_connected = false;
+          }
+          data = "";
+          DBG("### Closed: ", mux);
+        } else if (data.endsWith(GF("*PSNWID:"))) {
+          streamSkipUntil('\n');  // Refresh network name by network
+          data = "";
+          DBG("### Network name updated.");
+        } else if (data.endsWith(GF("*PSUTTZ:"))) {
+          streamSkipUntil('\n');  // Refresh time and time zone by network
+          data = "";
+          DBG("### Network time and time zone updated.");
+        } else if (data.endsWith(GF("+CTZV:"))) {
+          streamSkipUntil('\n');  // Refresh network time zone by network
+          data = "";
+          DBG("### Network time zone updated.");
+        } else if (data.endsWith(GF("DST: "))) {
+          streamSkipUntil(
+              '\n');  // Refresh Network Daylight Saving Time by network
+          data = "";
+          DBG("### Daylight savings time state updated.");
+        } else if (data.endsWith(GF(GSM_NL "SMS Ready" GSM_NL))) {
+          data = "";
+          DBG("### Unexpected module reset!");
+          init();
+        }
+      }
+    } while (millis() - startMillis < timeout_ms);
+  finish:
+    if (!index) {
+      data.trim();
+      if (data.length()) { DBG("### Unhandled:", data); }
+      data = "";
+    }
+    // data.replace(GSM_NL, "/");
+    // DBG('<', index, '>', data);
+    return index;
+  }
+
+  int8_t waitResponse(uint32_t timeout_ms, GsmConstStr r1 = GFP(GSM_OK),
+                      GsmConstStr r2 = GFP(GSM_ERROR),
+#if defined TINY_GSM_DEBUG
+                      GsmConstStr r3 = GFP(GSM_CME_ERROR),
+                      GsmConstStr r4 = GFP(GSM_CMS_ERROR),
+#else
+                      GsmConstStr r3 = NULL, GsmConstStr r4 = NULL,
+#endif
+                      GsmConstStr r5 = NULL) {
+    String data;
+    return waitResponse(timeout_ms, data, r1, r2, r3, r4, r5);
+  }
+
+  int8_t waitResponse(GsmConstStr r1 = GFP(GSM_OK),
+                      GsmConstStr r2 = GFP(GSM_ERROR),
+#if defined TINY_GSM_DEBUG
+                      GsmConstStr r3 = GFP(GSM_CME_ERROR),
+                      GsmConstStr r4 = GFP(GSM_CMS_ERROR),
+#else
+                      GsmConstStr r3 = NULL, GsmConstStr r4 = NULL,
+#endif
+                      GsmConstStr r5 = NULL) {
+    return waitResponse(1000, r1, r2, r3, r4, r5);
+  }
+
+ protected:
+  GsmClientSim70x0* sockets[TINY_GSM_MUX_COUNT];
+  String            certificates[TINY_GSM_MUX_COUNT];
+};
+
+#endif  // SRC_TINYGSMCLIENTSIM70X0_H_

@@ -32,6 +32,8 @@ jobs:
             TINY_GSM_MODEM_SIM5360,
             TINY_GSM_MODEM_SIM7600,
             TINY_GSM_MODEM_SIM7000,
+            TINY_GSM_MODEM_SIM7000SSL,
+            TINY_GSM_MODEM_SIM7070,
             TINY_GSM_MODEM_UBLOX,
             TINY_GSM_MODEM_SARAR4,
             TINY_GSM_MODEM_XBEE,
