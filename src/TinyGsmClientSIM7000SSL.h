@@ -344,10 +344,20 @@ class TinyGsmSim7000SSL
 
     if (ssl) {
       // set the ssl version
+      // AT+CSSLCFG="SSLVERSION",<ctxindex>,<sslversion>
+      // <ctxindex> PDP context identifier
+      // <sslversion> 0: QAPI_NET_SSL_PROTOCOL_UNKNOWN
+      //              1: QAPI_NET_SSL_PROTOCOL_TLS_1_0
+      //              2: QAPI_NET_SSL_PROTOCOL_TLS_1_1
+      //              3: QAPI_NET_SSL_PROTOCOL_TLS_1_2
+      //              4: QAPI_NET_SSL_PROTOCOL_DTLS_1_0
+      //              5: QAPI_NET_SSL_PROTOCOL_DTLS_1_2
       sendAT(GF("+CSSLCFG=\"sslversion\",0,3"));  // TLS 1.2
       if (waitResponse(5000L) != 1) return false;
 
       // set the PDP context to apply SSL to
+      // AT+CSSLCFG="CTXINDEX",<ctxindex>
+      // <ctxindex> PDP context identifier
       sendAT(GF("+CSSLCFG=\"ctxindex\",0"));
       if (waitResponse(5000L, GF("+CSSLCFG:")) != 1) return false;
       streamSkipUntil('\n');  // read out the certificate information
@@ -355,6 +365,9 @@ class TinyGsmSim7000SSL
 
       if (certificates[mux] != "") {
         // apply the correct certificate to the connection
+        // AT+CASSLCFG=<cid>,"CACERT",<caname>
+        // <cid> Application connection ID (set with AT+CACID above)
+        // <certname> certificate name
         sendAT(GF("+CASSLCFG="), mux, ",CACERT,\"", certificates[mux].c_str(),
                "\"");
         if (waitResponse(5000L) != 1) return false;
@@ -362,6 +375,10 @@ class TinyGsmSim7000SSL
     }
 
     // enable or disable ssl
+    // AT+CASSLCFG=<cid>,"SSL",<sslFlag>
+    // <cid> Application connection ID (set with AT+CACID above)
+    // <sslFlag> 0: Not support SSL
+    //           1: Support SSL
     sendAT(GF("+CASSLCFG="), mux, ',', GF("ssl,"), ssl);
     waitResponse();
 
@@ -390,7 +407,7 @@ class TinyGsmSim7000SSL
     //          7: Not support the function
     //          12: Can’t bind the port
     //          13: Can’t listen the port
-    //          20: Can’t resolv the host
+    //          20: Can’t resolve the host
     //          21: Network not active
     //          23: Remote refuse
     //          24: Certificate’s time expired
@@ -462,36 +479,45 @@ class TinyGsmSim7000SSL
   }
 
   size_t modemGetAvailable(uint8_t mux) {
-    if (!sockets[mux]) return 0;
-
+    // NOTE: This gets how many characters are available on all connections
     sendAT(GF("+CARECV?"));
-
-    int8_t readMux = -1;
-    size_t result  = 0;
-    while (readMux != mux) {
-      if (waitResponse(GF("+CARECV:")) != 1) {
-        sockets[mux]->sock_connected = modemGetConnected(mux);
-        return 0;
-      };
-      readMux = streamGetIntBefore(',');
-      result  = streamGetIntBefore('\n');
+    for (int muxNo = 0; muxNo < TINY_GSM_MUX_COUNT; muxNo++) {
+      if (waitResponse(3000, GF(GSM_NL "+CARECV: ")) != 1) { break; }
+      size_t result = 0;
+      // if (streamGetIntBefore(',') != muxNo) { // check the mux no
+      //   DBG("### Warning: misaligned mux numbers!");
+      // }
+      streamSkipUntil(',');  // skip mux [use muxNo]
+      result                 = streamGetIntBefore('\n');
+      GsmClientSim7000SSL* sock = sockets[mux];
+      if (sock && muxNo == mux) { sock->sock_available = result; }
     }
-    waitResponse();
-    // DBG("### Available:", result, "on", mux);
-    if (!result) { sockets[mux]->sock_connected = modemGetConnected(mux); }
-    return result;
+    waitResponse();  // Should be an OK at the end
+    modemGetConnected(mux);
+    if (!sockets[mux]) return 0;
+    return sockets[mux]->sock_available;
   }
 
   bool modemGetConnected(uint8_t mux) {
+    // NOTE:  This gets the state of all connections
     sendAT(GF("+CASTATE?"));
-    int8_t readMux = -1;
-    while (readMux != mux) {
-      if (waitResponse(3000, GF("+CASTATE:"), GFP(GSM_OK)) != 1) { return 0; }
-      readMux = streamGetIntBefore(',');
+
+    for (int muxNo = 0; muxNo < TINY_GSM_MUX_COUNT; muxNo++) {
+      if (waitResponse(3000, GF(GSM_NL "+CASTATE: ")) != 1) { break; }
+      uint8_t status = 0;
+      // if (streamGetIntBefore(',') != muxNo) { // check the mux no
+      //   DBG("### Warning: misaligned mux numbers!");
+      // }
+      streamSkipUntil(',');        // skip mux [use muxNo]
+      status = stream.parseInt();  // Read the status
+      // 0: Closed by remote server or internal error
+      // 1: Connected to remote server
+      // 2: Listening (server mode)
+      GsmClientSim7000SSL* sock = sockets[mux];
+      if (sock && muxNo == mux) { sock->sock_connected = (status == 1); }
     }
-    int8_t res = streamGetIntBefore('\n');
-    waitResponse();
-    return 1 == res;
+    waitResponse();  // Should be an OK at the end
+    return sockets[mux]->sock_connected;
   }
 
   /*
