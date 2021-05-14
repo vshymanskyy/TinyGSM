@@ -19,6 +19,8 @@
 // #define TINY_GSM_MODEM_SIM868
 // #define TINY_GSM_MODEM_SIM900
 // #define TINY_GSM_MODEM_SIM7000
+// #define TINY_GSM_MODEM_SIM7000SSL
+// #define TINY_GSM_MODEM_SIM7080
 // #define TINY_GSM_MODEM_SIM5360
 // #define TINY_GSM_MODEM_SIM7600
 // #define TINY_GSM_MODEM_UBLOX
@@ -63,10 +65,12 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 #define TINY_GSM_DEBUG SerialMon
 // #define LOGGING  // <- Logging is for the HTTP library
 
-// Add a reception delay - may be needed for a fast processor at a slow baud rate
+// Add a reception delay, if needed.
+// This may be needed for a fast processor at a slow baud rate.
 // #define TINY_GSM_YIELD() { delay(2); }
 
-// Define how you're planning to connect to the internet
+// Define how you're planning to connect to the internet.
+// This is only needed for this example, not in other code.
 #define TINY_GSM_USE_GPRS true
 #define TINY_GSM_USE_WIFI false
 
@@ -74,17 +78,17 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 #define GSM_PIN ""
 
 // Your GPRS credentials, if any
-const char apn[]  = "YourAPN";
+const char apn[]      = "YourAPN";
 const char gprsUser[] = "";
 const char gprsPass[] = "";
 
 // Your WiFi connection credentials, if applicable
-const char wifiSSID[]  = "YourSSID";
+const char wifiSSID[] = "YourSSID";
 const char wifiPass[] = "YourWiFiPass";
 
 // Server details
 const char server[] = "vsh.pp.ua";
-const int  port = 80;
+const int  port     = 80;
 
 #include <TinyGsmClient.h>
 #include <CRC32.h>
@@ -103,16 +107,16 @@ const int  port = 80;
 #define TINY_GSM_USE_WIFI false
 #endif
 
-const char resource[]  = "/TinyGSM/test_1k.bin";
-uint32_t knownCRC32    = 0x6f50d767;
-uint32_t knownFileSize = 1024;   // In case server does not send it
+const char resource[]    = "/TinyGSM/test_1k.bin";
+uint32_t   knownCRC32    = 0x6f50d767;
+uint32_t   knownFileSize = 1024;  // In case server does not send it
 
 #ifdef DUMP_AT_COMMANDS
-  #include <StreamDebugger.h>
-  StreamDebugger debugger(SerialAT, SerialMon);
-  TinyGsm modem(debugger);
+#include <StreamDebugger.h>
+StreamDebugger debugger(SerialAT, SerialMon);
+TinyGsm        modem(debugger);
 #else
-  TinyGsm modem(SerialAT);
+TinyGsm        modem(SerialAT);
 #endif
 
 TinyGsmClient client(modem);
@@ -144,9 +148,7 @@ void setup() {
 
 #if TINY_GSM_USE_GPRS
   // Unlock your SIM card with a PIN if needed
-  if ( GSM_PIN && modem.getSimStatus() != 3 ) {
-    modem.simUnlock(GSM_PIN);
-  }
+  if (GSM_PIN && modem.getSimStatus() != 3) { modem.simUnlock(GSM_PIN); }
 #endif
 }
 
@@ -162,7 +164,6 @@ void printPercent(uint32_t readLength, uint32_t contentLength) {
 }
 
 void loop() {
-
 #if TINY_GSM_USE_WIFI
   // Wifi connection parameters must be set before waiting for the network
   SerialMon.print(F("Setting SSID/password..."));
@@ -187,9 +188,7 @@ void loop() {
   }
   SerialMon.println(" success");
 
-  if (modem.isNetworkConnected()) {
-    SerialMon.println("Network connected");
-  }
+  if (modem.isNetworkConnected()) { SerialMon.println("Network connected"); }
 
 #if TINY_GSM_USE_GPRS
   // GPRS connection parameters are usually set after network registration
@@ -202,9 +201,7 @@ void loop() {
   }
   SerialMon.println(" success");
 
-  if (modem.isGprsConnected()) {
-    SerialMon.println("GPRS connected");
-  }
+  if (modem.isGprsConnected()) { SerialMon.println("GPRS connected"); }
 #endif
 
   SerialMon.print(F("Connecting to "));
@@ -226,15 +223,16 @@ void loop() {
 
   SerialMon.println(F("Waiting for response header"));
 
-  // While we are still looking for the end of the header (i.e. empty line FOLLOWED by a newline),
-  // continue to read data into the buffer, parsing each line (data FOLLOWED by a newline).
-  // If it takes too long to get data from the client, we need to exit.
+  // While we are still looking for the end of the header (i.e. empty line
+  // FOLLOWED by a newline), continue to read data into the buffer, parsing each
+  // line (data FOLLOWED by a newline). If it takes too long to get data from
+  // the client, we need to exit.
 
-  const uint32_t clientReadTimeout = 5000;
-  uint32_t clientReadStartTime = millis();
-  String headerBuffer;
-  bool finishedHeader = false;
-  uint32_t contentLength = 0;
+  const uint32_t clientReadTimeout   = 5000;
+  uint32_t       clientReadStartTime = millis();
+  String         headerBuffer;
+  bool           finishedHeader = false;
+  uint32_t       contentLength  = 0;
 
   while (!finishedHeader) {
     int nlPos;
@@ -257,11 +255,9 @@ void loop() {
         // SerialMon.print(' ');
 
         // Let's exit and process if we find a new line
-        if (headerBuffer.indexOf(F("\r\n")) >= 0)
-          break;
+        if (headerBuffer.indexOf(F("\r\n")) >= 0) break;
       }
-    }
-    else {
+    } else {
       if (millis() - clientReadStartTime > clientReadTimeout) {
         // Time-out waiting for data from client
         SerialMon.println(F(">>> Client Timeout !"));
@@ -276,37 +272,42 @@ void loop() {
       headerBuffer.toLowerCase();
       // Check if line contains content-length
       if (headerBuffer.startsWith(F("content-length:"))) {
-        contentLength = headerBuffer.substring(headerBuffer.indexOf(':') + 1).toInt();
+        contentLength =
+            headerBuffer.substring(headerBuffer.indexOf(':') + 1).toInt();
         // SerialMon.print(F("Got Content Length: "));  // uncomment for
         // SerialMon.println(contentLength);            // confirmation
       }
 
       headerBuffer.remove(0, nlPos + 2);  // remove the line
-    }
-    else if (nlPos == 0) {
-      // if the new line is empty (i.e. "\r\n" is at the beginning of the line), we are done with the header.
+    } else if (nlPos == 0) {
+      // if the new line is empty (i.e. "\r\n" is at the beginning of the line),
+      // we are done with the header.
       finishedHeader = true;
     }
   }
 
   // The two cases which are not managed properly are as follows:
-  // 1. The client doesn't provide data quickly enough to keep up with this loop.
-  // 2. If the client data is segmented in the middle of the 'Content-Length: ' header,
+  // 1. The client doesn't provide data quickly enough to keep up with this
+  // loop.
+  // 2. If the client data is segmented in the middle of the 'Content-Length: '
+  // header,
   //    then that header may be missed/damaged.
   //
 
   uint32_t readLength = 0;
-  CRC32 crc;
+  CRC32    crc;
 
   if (finishedHeader && contentLength == knownFileSize) {
     SerialMon.println(F("Reading response data"));
     clientReadStartTime = millis();
 
     printPercent(readLength, contentLength);
-    while (readLength < contentLength && client.connected() && millis() - clientReadStartTime < clientReadTimeout) {
+    while (readLength < contentLength && client.connected() &&
+           millis() - clientReadStartTime < clientReadTimeout) {
       while (client.available()) {
         uint8_t c = client.read();
-        //SerialMon.print(reinterpret_cast<char>c);  // Uncomment this to show data
+        // SerialMon.print(reinterpret_cast<char>c);  // Uncomment this to show
+        // data
         crc.update(c);
         readLength++;
         if (readLength % (contentLength / 13) == 0) {
@@ -338,14 +339,18 @@ void loop() {
   float duration = float(timeElapsed) / 1000;
 
   SerialMon.println();
-  SerialMon.print("Content-Length: ");   SerialMon.println(contentLength);
-  SerialMon.print("Actually read:  ");   SerialMon.println(readLength);
-  SerialMon.print("Calc. CRC32:    0x"); SerialMon.println(crc.finalize(), HEX);
-  SerialMon.print("Known CRC32:    0x"); SerialMon.println(knownCRC32, HEX);
-  SerialMon.print("Duration:       ");   SerialMon.print(duration); SerialMon.println("s");
+  SerialMon.print("Content-Length: ");
+  SerialMon.println(contentLength);
+  SerialMon.print("Actually read:  ");
+  SerialMon.println(readLength);
+  SerialMon.print("Calc. CRC32:    0x");
+  SerialMon.println(crc.finalize(), HEX);
+  SerialMon.print("Known CRC32:    0x");
+  SerialMon.println(knownCRC32, HEX);
+  SerialMon.print("Duration:       ");
+  SerialMon.print(duration);
+  SerialMon.println("s");
 
   // Do nothing forevermore
-  while (true) {
-    delay(1000);
-  }
+  while (true) { delay(1000); }
 }
