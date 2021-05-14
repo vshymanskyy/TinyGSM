@@ -124,17 +124,6 @@ void setup() {
 
   // !!!!!!!!!!!
   // Set your reset, enable, power pins here
-  pinMode(A5, OUTPUT);
-  DBG("Pin HIGH");
-  digitalWrite(A5, HIGH);
-  delay(5000);
-  DBG("Pin LOW");
-  digitalWrite(A5, LOW);
-  delay(1300);
-  digitalWrite(A5, HIGH);
-  DBG("Pin HIGH");
-  // pinMode(20, OUTPUT);
-  // digitalWrite(20, HIGH);
   // !!!!!!!!!!!
 
   DBG("Wait...");
@@ -248,17 +237,21 @@ void loop() {
     };
 
     // Read data
-    start = millis();
-    char logo[634];
-    int  read_chars = 0;
+    start          = millis();
+    char logo[640] = {
+        '\0',
+    };
+    int read_chars = 0;
     while (client.connected() && millis() - start < 10000L) {
       while (client.available()) {
-        logo[read_chars] = client.read();
+        logo[read_chars]     = client.read();
+        logo[read_chars + 1] = '\0';
         read_chars++;
         start = millis();
       }
     }
     SerialMon.println(logo);
+    DBG("#####  RECEIVED:", strlen(logo), "CHARACTERS");
     client.stop();
   }
 #endif
@@ -283,17 +276,21 @@ void loop() {
     };
 
     // Read data
-    startS = millis();
-    char logoS[634];
-    int  read_charsS = 0;
+    startS          = millis();
+    char logoS[640] = {
+        '\0',
+    };
+    int read_charsS = 0;
     while (secureClient.connected() && millis() - startS < 10000L) {
       while (secureClient.available()) {
-        logoS[read_charsS] = secureClient.read();
+        logoS[read_charsS]     = secureClient.read();
+        logoS[read_charsS + 1] = '\0';
         read_charsS++;
         startS = millis();
       }
     }
     SerialMon.println(logoS);
+    DBG("#####  RECEIVED:", strlen(logoS), "CHARACTERS");
     secureClient.stop();
   }
 #endif
