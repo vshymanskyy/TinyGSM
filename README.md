@@ -382,8 +382,8 @@ If you need SSL and it does not appear to be working on your SIM800, try a diffe
 ### Which versions of the SIM7000 code to use
 
 There are two versions of the SIM7000 code, one using `TINY_GSM_MODEM_SIM7000` and another with `TINY_GSM_MODEM_SIM7000SSL`.
-The `TINY_GSM_MODEM_SIM7000` version *does not support SSL*.
-The `TINY_GSM_MODEM_SIM7000SSL` version supports both SSL *and unsecured connections*.
+The `TINY_GSM_MODEM_SIM7000` version *does not support SSL* but supports up to 8 simultaneous connections.
+The `TINY_GSM_MODEM_SIM7000SSL` version supports both SSL *and unsecured connections* with up to 2 simultaneous connections.
 So why are there two versions?
 The "SSL" version uses the SIM7000's "application" commands while the other uses the "TCP-IP toolkit".
 Depending on your region/firmware, one or the other may not work for you.
