@@ -37,6 +37,7 @@ void loop() {
   modem.isNetworkConnected();
   modem.waitForNetwork();
   modem.waitForNetwork(15000L);
+  modem.waitForNetwork(15000L, true);
   modem.getSignalQuality();
   modem.getLocalIP();
   modem.localIP();
@@ -118,7 +119,7 @@ void loop() {
 #endif
 
 // Test the calling functions
-#if defined(TINY_GSM_MODEM_HAS_CALLING)
+#if defined(TINY_GSM_MODEM_HAS_CALLING) && not defined(__AVR_ATmega32U4__)
   modem.callNumber(String("+380000000000"));
   modem.callHangup();
 
@@ -130,7 +131,7 @@ void loop() {
 #endif
 
 // Test the SMS functions
-#if defined(TINY_GSM_MODEM_HAS_SMS)
+#if defined(TINY_GSM_MODEM_HAS_SMS) && not defined(__AVR_ATmega32U4__)
   modem.sendSMS(String("+380000000000"), String("Hello from "));
 
 #if not defined(TINY_GSM_MODEM_XBEE) && not defined(TINY_GSM_MODEM_SARAR4)
@@ -145,7 +146,7 @@ void loop() {
 #endif
 
 // Test the GSM location functions
-#if defined(TINY_GSM_MODEM_HAS_GSM_LOCATION)
+#if defined(TINY_GSM_MODEM_HAS_GSM_LOCATION) && not defined(__AVR_ATmega32U4__)
   modem.getGsmLocationRaw();
   modem.getGsmLocation();
   float glatitude  = -9999;
@@ -164,7 +165,7 @@ void loop() {
 #endif
 
 // Test the GPS functions
-#if defined(TINY_GSM_MODEM_HAS_GPS)
+#if defined(TINY_GSM_MODEM_HAS_GPS) && not defined(__AVR_ATmega32U4__)
   modem.enableGPS();
   modem.getGPSraw();
   float latitude  = -9999;
@@ -187,7 +188,12 @@ void loop() {
 #endif
 
 // Test the Network time function
-#if defined(TINY_GSM_MODEM_HAS_TIME)
+#if defined(TINY_GSM_MODEM_HAS_NTP) && not defined(__AVR_ATmega32U4__)
+  modem.NTPServerSync("pool.ntp.org", 3);
+#endif
+
+// Test the Network time function
+#if defined(TINY_GSM_MODEM_HAS_TIME) && not defined(__AVR_ATmega32U4__)
   modem.getGSMDateTime(DATE_FULL);
   int   year3    = 0;
   int   month3   = 0;

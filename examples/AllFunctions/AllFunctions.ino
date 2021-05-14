@@ -74,10 +74,10 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 #define TINY_GSM_TEST_USSD false
 #define TINY_GSM_TEST_BATTERY true
 #define TINY_GSM_TEST_TEMPERATURE true
-#define TINY_GSM_TEST_GSM_LOCATION true
-#define TINY_GSM_TEST_NTP true
-#define TINY_GSM_TEST_TIME true
-#define TINY_GSM_TEST_GPS true
+#define TINY_GSM_TEST_GSM_LOCATION false
+#define TINY_GSM_TEST_NTP false
+#define TINY_GSM_TEST_TIME false
+#define TINY_GSM_TEST_GPS false
 // disconnect and power down modem after tests
 #define TINY_GSM_POWERDOWN false
 
@@ -99,7 +99,7 @@ const char wifiSSID[] = "YourSSID";
 const char wifiPass[] = "YourWiFiPass";
 
 // Server details to test TCP/SSL
-const char server[] = "vsh.pp.ua";
+const char server[]   = "vsh.pp.ua";
 const char resource[] = "/TinyGSM/logo.txt";
 
 #include <TinyGsmClient.h>
