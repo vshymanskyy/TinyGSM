@@ -93,7 +93,8 @@ class TinyGsmSim7000SSL
    public:
     GsmClientSecureSIM7000SSL() {}
 
-    GsmClientSecureSIM7000SSL(TinyGsmSim7000SSL& modem, uint8_t mux = 0)
+    explicit GsmClientSecureSIM7000SSL(TinyGsmSim7000SSL& modem,
+                                       uint8_t            mux = 0)
         : GsmClientSim7000SSL(modem, mux) {}
 
    public:
@@ -101,7 +102,8 @@ class TinyGsmSim7000SSL
       return at->setCertificate(certificateName, mux);
     }
 
-    int connect(const char* host, uint16_t port, int timeout_s) {
+    virtual int connect(const char* host, uint16_t port,
+                        int timeout_s) override {
       stop();
       TINY_GSM_YIELD();
       rx.clear();
@@ -217,26 +219,6 @@ class TinyGsmSim7000SSL
                        const char* pwd = NULL) {
     gprsDisconnect();
 
-    // Bearer settings for applications based on IP
-    // Set the connection type to GPRS
-    sendAT(GF("+SAPBR=3,1,\"Contype\",\"GPRS\""));
-    waitResponse();
-
-    // Set the APN
-    sendAT(GF("+SAPBR=3,1,\"APN\",\""), apn, '"');
-    waitResponse();
-
-    // Set the user name
-    if (user && strlen(user) > 0) {
-      sendAT(GF("+SAPBR=3,1,\"USER\",\""), user, '"');
-      waitResponse();
-    }
-    // Set the password
-    if (pwd && strlen(pwd) > 0) {
-      sendAT(GF("+SAPBR=3,1,\"PWD\",\""), pwd, '"');
-      waitResponse();
-    }
-
     // Define the PDP context
     sendAT(GF("+CGDCONT=1,\"IP\",\""), apn, '"');
     waitResponse();
@@ -248,13 +230,6 @@ class TinyGsmSim7000SSL
     // NOTE:  **DO NOT** activate the PDP context
     // For who only knows what reason, doing so screws up the rest of the
     // process
-
-    // Open the definied GPRS bearer context
-    sendAT(GF("+SAPBR=1,1"));
-    waitResponse(85000L);
-    // Query the GPRS bearer context status
-    sendAT(GF("+SAPBR=2,1"));
-    if (waitResponse(30000L) != 1) { return false; }
 
     // Bearer settings for applications based on IP
     // Set the user name and password
@@ -286,17 +261,17 @@ class TinyGsmSim7000SSL
     // <mode> 0: Deactive
     //        1: Active
     //        2: Auto Active
-    int res    = 0;
-    int ntries = 0;
-    while (res != 1 && ntries < 5) {
+    bool res    = false;
+    int  ntries = 0;
+    while (!res && ntries < 5) {
       sendAT(GF("+CNACT=1,\""), apn, GF("\""));
       res = waitResponse(60000L, GF(GSM_NL "+APP PDP: ACTIVE"),
-                         GF(GSM_NL "+APP PDP: DEACTIVE"));
+                         GF(GSM_NL "+APP PDP: DEACTIVE")) == 1;
       waitResponse();
       ntries++;
     }
 
-    return res == 1;
+    return res;
   }
 
   bool gprsDisconnectImpl() {
@@ -527,8 +502,8 @@ class TinyGsmSim7000SSL
         // we need to fill in the missing muxes
         if (ret_mux > muxNo) {
           for (int extra_mux = muxNo; extra_mux < ret_mux; extra_mux++) {
-            GsmClientSim7000SSL* sock = sockets[extra_mux];
-            if (sock) { sock->sock_available = 0; }
+            GsmClientSim7000SSL* isock = sockets[extra_mux];
+            if (isock) { isock->sock_available = 0; }
           }
           muxNo = ret_mux;
         }
@@ -537,8 +512,8 @@ class TinyGsmSim7000SSL
         // so we set any we haven't gotten to yet to 0
         for (int extra_mux = muxNo; extra_mux < TINY_GSM_MUX_COUNT;
              extra_mux++) {
-          GsmClientSim7000SSL* sock = sockets[extra_mux];
-          if (sock) { sock->sock_available = 0; }
+          GsmClientSim7000SSL* isock = sockets[extra_mux];
+          if (isock) { isock->sock_available = 0; }
         }
         break;
       } else {
@@ -577,8 +552,8 @@ class TinyGsmSim7000SSL
         // we need to fill in the missing muxes
         if (ret_mux > muxNo) {
           for (int extra_mux = muxNo; extra_mux < ret_mux; extra_mux++) {
-            GsmClientSim7000SSL* sock = sockets[extra_mux];
-            if (sock) { sock->sock_connected = false; }
+            GsmClientSim7000SSL* isock = sockets[extra_mux];
+            if (isock) { isock->sock_connected = false; }
           }
           muxNo = ret_mux;
         }
@@ -587,8 +562,8 @@ class TinyGsmSim7000SSL
         // so we set any we haven't gotten to yet to 0
         for (int extra_mux = muxNo; extra_mux < TINY_GSM_MUX_COUNT;
              extra_mux++) {
-          GsmClientSim7000SSL* sock = sockets[extra_mux];
-          if (sock) { sock->sock_connected = false; }
+          GsmClientSim7000SSL* isock = sockets[extra_mux];
+          if (isock) { isock->sock_connected = false; }
         }
         break;
       } else {
@@ -680,15 +655,6 @@ class TinyGsmSim7000SSL
             }
           }
           data = "";
-        } else if (data.endsWith(GF("CLOSED" GSM_NL))) {
-          int8_t nl   = data.lastIndexOf(GSM_NL, data.length() - 8);
-          int8_t coma = data.indexOf(',', nl + 2);
-          int8_t mux  = data.substring(nl + 2, coma).toInt();
-          if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
-            sockets[mux]->sock_connected = false;
-          }
-          data = "";
-          DBG("### Closed: ", mux);
         } else if (data.endsWith(GF("*PSNWID:"))) {
           streamSkipUntil('\n');  // Refresh network name by network
           data = "";
