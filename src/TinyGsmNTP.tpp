@@ -21,7 +21,7 @@ class TinyGsmNTP {
    */
 
  public:
-  boolean TinyGsmIsValidNumber(String str) {
+  bool TinyGsmIsValidNumber(String str) {
     if (!(str.charAt(0) == '+' || str.charAt(0) == '-' ||
           isDigit(str.charAt(0))))
       return false;
