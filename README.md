@@ -40,8 +40,8 @@ You can also join our chat:
   - [SAMD21](#samd21)
   - [Goouuu Tech IOT-GA6 vs AI-Thinker A6 confusion](#goouuu-tech-iot-ga6-vs-ai-thinker-a6-confusion)
   - [SIM800 and SSL](#sim800-and-ssl)
-  - [Which versions of the SIM7000 code to use](#which-versions-of-the-sim7000-code-to-use)
-  - [License](#license)
+  - [Which version of the SIM7000 code to use](#which-version-of-the-sim7000-code-to-use)
+- [License](#license)
 
 ### Arduino Client interface support
 This library is easy to integrate with lots of sketches which use Ethernet or WiFi.
@@ -303,8 +303,9 @@ You may need set the APN again after registering.
 
 The first connection with a new SIM card, a new module, or at a new location/tower may take a *LONG* time - up to 15 minutes or even more, especially if the signal quality isn't excellent.
 If it is your first connection, you may need to adjust your wait times and possibly go to lunch while you're waiting.
+
 If you are able to open a TCP connection but have the connection close before receiving data, try adding a keep-alive header to your request.
-Some modules (ie, the SIM7000 in SSL mode) will immediately throw away any un-read data when the remote server closes the connection - sometimes without even reporting the data arrived in the first place.
+Some modules (ie, the SIM7000 in SSL mode) will immediately throw away any un-read data when the remote server closes the connection - sometimes without even giving a notification that data arrived in the first place.
 When using MQTT, to keep a continuous connection you may need to reduce your keep-alive interval (PINGREQ/PINGRESP).
 
 ### Diagnostics sketch
@@ -396,7 +397,7 @@ Having SSL support depends on the firmware version and the individual module.
 Users have had varying levels of success in using SSL on the SIM800 even with apparently identical firmware.
 If you need SSL and it does not appear to be working on your SIM800, try a different module or try using a secondary SSL library.
 
-### Which versions of the SIM7000 code to use
+### Which version of the SIM7000 code to use
 
 There are two versions of the SIM7000 code, one using `TINY_GSM_MODEM_SIM7000` and another with `TINY_GSM_MODEM_SIM7000SSL`.
 The `TINY_GSM_MODEM_SIM7000` version *does not support SSL* but supports up to 8 simultaneous connections.
@@ -409,6 +410,6 @@ If you do not need SSL, I recommend starting with `TINY_GSM_MODEM_SIM7000`.
 
 __________
 
-### License
+## License
 This project is released under
 The GNU Lesser General Public License (LGPL-3.0)
