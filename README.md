@@ -30,6 +30,7 @@ You can also join our chat:
   - [Ensure stable data & power connection](#ensure-stable-data--power-connection)
   - [Baud rates](#baud-rates)
   - [Broken initial configuration](#broken-initial-configuration)
+  - [Failed connection or no data received](#failed-connection-or-no-data-received)
   - [Diagnostics sketch](#diagnostics-sketch)
   - [Web request formatting problems - "but it works with PostMan"](#web-request-formatting-problems---but-it-works-with-postman)
   - [SoftwareSerial problems](#softwareserial-problems)
@@ -66,9 +67,9 @@ TinyGSM also pulls data gently from the modem (whenever possible), so it can ope
 - SIMCom WCDMA/HSPA/HSPA+ Modules (SIM5360, SIM5320, SIM5300E, SIM5300E/A)
 - SIMCom LTE Modules (SIM7100E, SIM7500E, SIM7500A, SIM7600C, SIM7600E)
 - SIMCom SIM7000E/A/G CAT-M1/NB-IoT Module
-- SIMCom SIM7070/SIM7080/SIM7090 CAT-M1/NB-IoT Module ***(alpha)***
+- SIMCom SIM7070/SIM7080/SIM7090 CAT-M1/NB-IoT Module
 - AI-Thinker A6, A6C, A7, A20
-- ESP8266 (AT commands interface, similar to GSM modems)
+- ESP8266/ESP32 (AT commands interface, similar to GSM modems)
 - Digi XBee WiFi and Cellular (using XBee command mode)
 - Neoway M590
 - u-blox 2G, 3G, 4G, and LTE Cat1 Cellular Modems (many modules including LEON-G100, LISA-U2xx, SARA-G3xx, SARA-U2xx, TOBY-L2xx, LARA-R2xx, MPCI-L2xx)
@@ -233,7 +234,6 @@ The general flow of your code should be:
 - Send out your data.
 
 
-
 #### If you have any issues
 
   1. Read the whole README (you're looking at it!), particularly the troubleshooting section below.
@@ -246,6 +246,15 @@ The general flow of your code should be:
 
 Many GSM modems, WiFi and radio modules can be controlled by sending AT commands over Serial.
 TinyGSM knows which commands to send, and how to handle AT responses, and wraps that into standard Arduino Client interface.
+
+This library is "blocking" in all of its communication.
+Depending on the function, your code may be blocked for a long time waiting for the module responses.
+Apart from the obvious (ie, `waitForNetwork()`) several other functions may block your code for up to several *minutes*.
+The `gprsConnect()` and `client.connect()` functions commonly block the longest, especially in poorer service regions.
+The module shutdown and restart may also be quite slow.
+
+This libary *does not* support any sort of "hardware" or pin level controls for the modules.
+If you need to turn your module on or reset it using some sort of High/Low/High pin sequence, you must write those functions yourself.
 
 ## API Reference
 
@@ -289,6 +298,14 @@ In some cases, you may need to set an initial APN to connect to the cellular net
 Try using the ```gprsConnect(APN)``` function to set an initial APN if you are unable to register on the network.
 You may need set the APN again after registering.
 (In most cases, you should set the APN after registration.)
+
+### Failed connection or no data received
+
+The first connection with a new SIM card, a new module, or at a new location/tower may take a *LONG* time - up to 15 minutes or even more, especially if the signal quality isn't excellent.
+If it is your first connection, you may need to adjust your wait times and possibly go to lunch while you're waiting.
+If you are able to open a TCP connection but have the connection close before receiving data, try adding a keep-alive header to your request.
+Some modules (ie, the SIM7000 in SSL mode) will immediately throw away any un-read data when the remote server closes the connection - sometimes without even reporting the data arrived in the first place.
+When using MQTT, to keep a continuous connection you may need to reduce your keep-alive interval (PINGREQ/PINGRESP).
 
 ### Diagnostics sketch
 
