@@ -61,16 +61,17 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 #define TINY_GSM_TEST_WIFI false
 #define TINY_GSM_TEST_TCP true
 #define TINY_GSM_TEST_SSL true
-// #define TINY_GSM_TEST_CALL true
-// #define TINY_GSM_TEST_SMS true
-// #define TINY_GSM_TEST_USSD true
+#define TINY_GSM_TEST_CALL false
+#define TINY_GSM_TEST_SMS false
+#define TINY_GSM_TEST_USSD false
 #define TINY_GSM_TEST_BATTERY true
 #define TINY_GSM_TEST_TEMPERATURE true
 #define TINY_GSM_TEST_GSM_LOCATION true
+#define TINY_GSM_TEST_NTP true
 #define TINY_GSM_TEST_TIME true
-#define TINY_GSM_TEST_GPS false
-// powerdown modem after tests
-#define TINY_GSM_POWERDOWN true
+#define TINY_GSM_TEST_GPS true
+// disconnect and power down modem after tests
+#define TINY_GSM_POWERDOWN false
 
 // set GSM PIN, if any
 #define GSM_PIN ""
@@ -183,7 +184,7 @@ void loop() {
 #endif
 
   DBG("Waiting for network...");
-  if (!modem.waitForNetwork(600000L)) {
+  if (!modem.waitForNetwork(600000L, true)) {
     delay(10000);
     return;
   }
@@ -230,7 +231,7 @@ void loop() {
 #if TINY_GSM_TEST_TCP && defined TINY_GSM_MODEM_HAS_TCP
   TinyGsmClient client(modem, 0);
   const int     port = 80;
-  DBG("Connecting to ", server);
+  DBG("Connecting to", server);
   if (!client.connect(server, port)) {
     DBG("... failed");
   } else {
@@ -248,12 +249,16 @@ void loop() {
 
     // Read data
     start = millis();
+    char logo[634];
+    int  read_chars = 0;
     while (client.connected() && millis() - start < 10000L) {
       while (client.available()) {
-        SerialMon.write(client.read());
+        logo[read_chars] = client.read();
+        read_chars++;
         start = millis();
       }
     }
+    SerialMon.println(logo);
     client.stop();
   }
 #endif
@@ -261,7 +266,7 @@ void loop() {
 #if TINY_GSM_TEST_SSL && defined TINY_GSM_MODEM_HAS_SSL
   TinyGsmClientSecure secureClient(modem, 1);
   const int           securePort = 443;
-  DBG("Connecting to ", server);
+  DBG("Connecting securely to", server);
   if (!secureClient.connect(server, securePort)) {
     DBG("... failed");
   } else {
@@ -279,12 +284,16 @@ void loop() {
 
     // Read data
     startS = millis();
-    while (secureClient.connected() && millis() - startS < 5000L) {
+    char logoS[634];
+    int  read_charsS = 0;
+    while (secureClient.connected() && millis() - startS < 10000L) {
       while (secureClient.available()) {
-        SerialMon.write(secureClient.read());
+        logoS[read_charsS] = secureClient.read();
+        read_charsS++;
         startS = millis();
       }
     }
+    SerialMon.println(logoS);
     secureClient.stop();
   }
 #endif
@@ -398,6 +407,11 @@ void loop() {
   modem.disableGPS();
 #endif
 
+#if TINY_GSM_TEST_NTP && defined TINY_GSM_MODEM_HAS_NTP
+  DBG("Asking modem to sync with NTP");
+  modem.NTPServerSync("132.163.96.5", 20);
+#endif
+
 #if TINY_GSM_TEST_TIME && defined TINY_GSM_MODEM_HAS_TIME
   int   year3    = 0;
   int   month3   = 0;
@@ -424,21 +438,6 @@ void loop() {
   DBG("Current Network Time:", time);
 #endif
 
-#if TINY_GSM_TEST_GPRS
-  modem.gprsDisconnect();
-  delay(5000L);
-  if (!modem.isGprsConnected()) {
-    DBG("GPRS disconnected");
-  } else {
-    DBG("GPRS disconnect: Failed.");
-  }
-#endif
-
-#if TINY_GSM_TEST_WIFI
-  modem.networkDisconnect();
-  DBG("WiFi disconnected");
-#endif
-
 #if TINY_GSM_TEST_BATTERY && defined TINY_GSM_MODEM_HAS_BATTERY
   uint8_t  chargeState = -99;
   int8_t   percent     = -99;
@@ -455,6 +454,22 @@ void loop() {
 #endif
 
 #if TINY_GSM_POWERDOWN
+
+#if TINY_GSM_TEST_GPRS
+  modem.gprsDisconnect();
+  delay(5000L);
+  if (!modem.isGprsConnected()) {
+    DBG("GPRS disconnected");
+  } else {
+    DBG("GPRS disconnect: Failed.");
+  }
+#endif
+
+#if TINY_GSM_TEST_WIFI
+  modem.networkDisconnect();
+  DBG("WiFi disconnected");
+#endif
+
   // Try to power-off (modem may decide to restart automatically)
   // To turn off modem completely, please use Reset/Enable pins
   modem.poweroff();

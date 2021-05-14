@@ -128,8 +128,8 @@ class TinyGsmSim70xx : public TinyGsmModem<TinyGsmSim70xx<modemType>>,
 
   // During sleep, the SIM70xx module has its serial communication disabled.
   // In order to reestablish communication pull the DRT-pin of the SIM70xx
-  // module LOW for at least 50ms. Then use this function to disable sleep mode.
-  // The DTR-pin can then be released again.
+  // module LOW for at least 50ms. Then use this function to disable sleep
+  // mode. The DTR-pin can then be released again.
   bool sleepEnableImpl(bool enable = true) {
     thisModem().sendAT(GF("+CSCLK="), enable);
     return thisModem().waitResponse() == 1;

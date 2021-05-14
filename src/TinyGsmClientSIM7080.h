@@ -1,13 +1,13 @@
 /**
- * @file       TinyGsmClientSim70x0.h
+ * @file       TinyGsmClientSim7080.h
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
  * @date       Nov 2016
  */
 
-#ifndef SRC_TINYGSMCLIENTSIM70X0_H_
-#define SRC_TINYGSMCLIENTSIM70X0_H_
+#ifndef SRC_TINYGSMCLIENTSIM7080_H_
+#define SRC_TINYGSMCLIENTSIM7080_H_
 
 // #define TINY_GSM_DEBUG Serial
 // #define TINY_GSM_USE_HEX
@@ -19,28 +19,28 @@
 #include "TinyGsmTCP.tpp"
 #include "TinyGsmSSL.tpp"
 
-class TinyGsmSim70x0 : public TinyGsmSim70xx<TinyGsmSim70x0>,
-                       public TinyGsmTCP<TinyGsmSim70x0, TINY_GSM_MUX_COUNT>,
-                       public TinyGsmSSL<TinyGsmSim70x0> {
-  friend class TinyGsmSim70xx<TinyGsmSim70x0>;
-  friend class TinyGsmTCP<TinyGsmSim70x0, TINY_GSM_MUX_COUNT>;
-  friend class TinyGsmSSL<TinyGsmSim70x0>;
+class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
+                       public TinyGsmTCP<TinyGsmSim7080, TINY_GSM_MUX_COUNT>,
+                       public TinyGsmSSL<TinyGsmSim7080> {
+  friend class TinyGsmSim70xx<TinyGsmSim7080>;
+  friend class TinyGsmTCP<TinyGsmSim7080, TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmSSL<TinyGsmSim7080>;
 
   /*
    * Inner Client
    */
  public:
-  class GsmClientSim70x0 : public GsmClient {
-    friend class TinyGsmSim70x0;
+  class GsmClientSim7080 : public GsmClient {
+    friend class TinyGsmSim7080;
 
    public:
-    GsmClientSim70x0() {}
+    GsmClientSim7080() {}
 
-    explicit GsmClientSim70x0(TinyGsmSim70x0& modem, uint8_t mux = 0) {
+    explicit GsmClientSim7080(TinyGsmSim7080& modem, uint8_t mux = 0) {
       init(&modem, mux);
     }
 
-    bool init(TinyGsmSim70x0* modem, uint8_t mux = 0) {
+    bool init(TinyGsmSim7080* modem, uint8_t mux = 0) {
       this->at       = modem;
       sock_available = 0;
       prev_check     = 0;
@@ -88,12 +88,12 @@ class TinyGsmSim70x0 : public TinyGsmSim70xx<TinyGsmSim70x0>,
    * Inner Secure Client
    */
 
-  class GsmClientSecureSIM70x0 : public GsmClientSim70x0 {
+  class GsmClientSecureSIM7080 : public GsmClientSim7080 {
    public:
-    GsmClientSecureSIM70x0() {}
+    GsmClientSecureSIM7080() {}
 
-    GsmClientSecureSIM70x0(TinyGsmSim70x0& modem, uint8_t mux = 0)
-        : GsmClientSim70x0(modem, mux) {}
+    GsmClientSecureSIM7080(TinyGsmSim7080& modem, uint8_t mux = 0)
+        : GsmClientSim7080(modem, mux) {}
 
    public:
     bool setCertificate(const String& certificateName) {
@@ -114,8 +114,8 @@ class TinyGsmSim70x0 : public TinyGsmSim70xx<TinyGsmSim70x0>,
    * Constructor
    */
  public:
-  explicit TinyGsmSim70x0(Stream& stream)
-      : TinyGsmSim70xx<TinyGsmSim70x0>(stream),
+  explicit TinyGsmSim7080(Stream& stream)
+      : TinyGsmSim70xx<TinyGsmSim7080>(stream),
         certificates() {
     memset(sockets, 0, sizeof(sockets));
   }
@@ -126,7 +126,7 @@ class TinyGsmSim70x0 : public TinyGsmSim70xx<TinyGsmSim70x0>,
  protected:
   bool initImpl(const char* pin = NULL) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
-    DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientSIM70x0"));
+    DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientSIM7080"));
 
     if (!testAT()) { return false; }
 
@@ -160,6 +160,23 @@ class TinyGsmSim70x0 : public TinyGsmSim70xx<TinyGsmSim70x0>,
       // return true
       return (ret == SIM_READY || ret == SIM_LOCKED);
     }
+  }
+
+  void maintainImpl() {
+    // Keep listening for modem URC's and proactively iterate through
+    // sockets asking if any data is avaiable
+    bool check_socks = false;
+    for (int mux = 0; mux < TINY_GSM_MUX_COUNT; mux++) {
+      GsmClientSim7080* sock = sockets[mux];
+      if (sock && sock->got_data) {
+        sock->got_data = false;
+        check_socks    = true;
+      }
+    }
+    // modemGetAvailable checks all socks, so we only want to do it once
+    // modemGetAvailable calls modemGetConnected(), which also checks allf
+    if (check_socks) { modemGetAvailable(0); }
+    while (stream.available()) { waitResponse(15, NULL, NULL); }
   }
 
   /*
@@ -199,26 +216,6 @@ class TinyGsmSim70x0 : public TinyGsmSim70xx<TinyGsmSim70x0>,
                        const char* pwd = NULL) {
     gprsDisconnect();
 
-    // Bearer settings for applications based on IP
-    // Set the connection type to GPRS
-    sendAT(GF("+SAPBR=3,1,\"Contype\",\"GPRS\""));
-    waitResponse();
-
-    // Set the APN
-    sendAT(GF("+SAPBR=3,1,\"APN\",\""), apn, '"');
-    waitResponse();
-
-    // Set the user name
-    if (user && strlen(user) > 0) {
-      sendAT(GF("+SAPBR=3,1,\"USER\",\""), user, '"');
-      waitResponse();
-    }
-    // Set the password
-    if (pwd && strlen(pwd) > 0) {
-      sendAT(GF("+SAPBR=3,1,\"PWD\",\""), pwd, '"');
-      waitResponse();
-    }
-
     // Define the PDP context
     sendAT(GF("+CGDCONT=1,\"IP\",\""), apn, '"');
     waitResponse();
@@ -227,21 +224,20 @@ class TinyGsmSim70x0 : public TinyGsmSim70xx<TinyGsmSim70x0>,
     sendAT(GF("+CGATT=1"));
     if (waitResponse(60000L) != 1) { return false; }
 
-    // Activate the PDP context
-    sendAT(GF("+CGACT=1,1"));
-    waitResponse(60000L);
+    // NOTE:  **DO NOT** activate the PDP context
+    // For who only knows what reason, doing so screws up the rest of the
+    // process
 
-    // Open the definied GPRS bearer context
-    sendAT(GF("+SAPBR=1,1"));
-    waitResponse(85000L);
-    // Query the GPRS bearer context status
-    sendAT(GF("+SAPBR=2,1"));
-    if (waitResponse(30000L) != 1) { return false; }
+    // Check the APN returned by the server
+    // not sure why, but the connection is more consistent with this
+    sendAT(GF("+CGNAPN"));
+    waitResponse();
 
     // Bearer settings for applications based on IP
     // Set the user name and password
     // AT+CNCFG=<pdpidx>,<ip_type>,[<APN>,[<usename>,<password>,[<authentication>]]]
-    // <pdpidx> PDP Context Identifier (1 is setup above)
+    // <pdpidx> PDP Context Identifier - for reasons not understood by me,
+    //          use PDP context identifier of 0 for what we defined as 1 above
     // <ip_type> 0: Dual PDN Stack
     //           1: Internet Protocol Version 4
     //           2: Internet Protocol Version 6
@@ -250,44 +246,42 @@ class TinyGsmSim70x0 : public TinyGsmSim70xx<TinyGsmSim70x0>,
     //                  2: CHAP
     //                  3: PAP or CHAP
     if (pwd && strlen(pwd) > 0 && user && strlen(user) > 0) {
-      sendAT(GF("+CNCFG=1,1,\""), apn, "\",\"", "\",\"", user, pwd, '"');
+      sendAT(GF("+CNCFG=0,1,\""), apn, "\",\"", "\",\"", user, pwd, '"');
       waitResponse();
     } else if (user && strlen(user) > 0) {
       // Set the user name only
-      sendAT(GF("+CNCFG=1,1,\""), apn, "\",\"", user, '"');
+      sendAT(GF("+CNCFG=0,1,\""), apn, "\",\"", user, '"');
       waitResponse();
     } else {
       // Set the APN only
-      sendAT(GF("+CNCFG=1,1,\""), apn, '"');
+      sendAT(GF("+CNCFG=0,1,\""), apn, '"');
       waitResponse();
     }
 
     // Activate application network connection
-    // This is for most other supported applications outside of the
-    // TCP application toolkit (ie, SSL)
     // AT+CNACT=<pdpidx>,<action>
-    // <pdpidx> PDP Context Identifier (1 is setup above)
+    // <pdpidx> PDP Context Identifier - for reasons not understood by me,
+    //          use PDP context identifier of 0 for what we defined as 1 above
     // <action> 0: Deactive
     //          1: Active
     //          2: Auto Active
     int res    = 0;
     int ntries = 0;
     while (res != 1 && ntries < 5) {
-      sendAT(GF("+CNACT=1,1,\""), apn, GF("\""));
-      res = waitResponse(60000L, GF(GSM_NL "+APP PDP: ACTIVE"),
-                         GF(GSM_NL "+APP PDP: DEACTIVE"));
+      sendAT(GF("+CNACT=0,1"));
+      res = waitResponse(60000L, GF(GSM_NL "+APP PDP: 0,ACTIVE"),
+                         GF(GSM_NL "+APP PDP: 0,DEACTIVE"));
       waitResponse();
       ntries++;
     }
 
-    // return res == 1;
-    return true;
+    return res == 1;
   }
 
   bool gprsDisconnectImpl() {
     // Shut down the general application TCP/IP connection
     // CNACT will close *all* open application connections
-    sendAT(GF("+CNACT=1,0"));
+    sendAT(GF("+CNACT=0,0"));
     if (waitResponse(60000L) != 1) { return false; }
 
     sendAT(GF("+CGATT=0"));  // Deactivate the bearer context
@@ -353,13 +347,26 @@ class TinyGsmSim70x0 : public TinyGsmSim70xx<TinyGsmSim70x0>,
       //              3: QAPI_NET_SSL_PROTOCOL_TLS_1_2
       //              4: QAPI_NET_SSL_PROTOCOL_DTLS_1_0
       //              5: QAPI_NET_SSL_PROTOCOL_DTLS_1_2
-      sendAT(GF("+CSSLCFG=\"SSLVERSION\",0,3"));  // TLS 1.2
+      // NOTE:  despite docs using caps, "sslversion" must be in lower case
+      sendAT(GF("+CSSLCFG=\"sslversion\",0,3"));  // TLS 1.2
       if (waitResponse(5000L) != 1) return false;
+    }
 
+    // enable or disable ssl
+    // AT+CASSLCFG=<cid>,"SSL",<sslFlag>
+    // <cid> Application connection ID (set with AT+CACID above)
+    // <sslFlag> 0: Not support SSL
+    //           1: Support SSL
+    sendAT(GF("+CASSLCFG="), mux, ',', GF("SSL,"), ssl);
+    waitResponse();
+
+    if (ssl) {
       // set the PDP context to apply SSL to
       // AT+CSSLCFG="CTXINDEX",<ctxindex>
       // <ctxindex> PDP context identifier
-      sendAT(GF("+CSSLCFG=\"CTXINDEX\",0"));
+      // NOTE:  despite docs using "CRINDEX" in all caps, the module only
+      // accepts the command "ctxindex" and it must be in lower case
+      sendAT(GF("+CSSLCFG=\"ctxindex\",0"));
       if (waitResponse(5000L, GF("+CSSLCFG:")) != 1) return false;
       streamSkipUntil('\n');  // read out the certificate information
       waitResponse();
@@ -373,19 +380,12 @@ class TinyGsmSim70x0 : public TinyGsmSim70xx<TinyGsmSim70x0>,
                "\"");
         if (waitResponse(5000L) != 1) return false;
       }
+
+      // set the SSL SNI (server name indication)
+      // NOTE:  despite docs using caps, "sni" must be in lower case
+      sendAT(GF("+CSSLCFG=\"sni\","), mux, ',', GF("\""), host, GF("\""));
+      waitResponse();
     }
-
-    // enable or disable ssl
-    // AT+CASSLCFG=<cid>,"SSL",<sslFlag>
-    // <cid> Application connection ID (set with AT+CACID above)
-    // <sslFlag> 0: Not support SSL
-    //           1: Support SSL
-    sendAT(GF("+CASSLCFG="), mux, ',', GF("SSL,"), ssl);
-    waitResponse();
-
-    // set the SSL SNI (server name indication)
-    sendAT(GF("+CSSLCFG=\"SNI\","), mux, ',', GF("\""), host, GF("\""));
-    waitResponse();
 
     // actually open the connection
     // AT+CAOPEN=<cid>,<pdp_index>,<conn_type>,<server>,<port>[,<recv_mode>]
@@ -398,8 +398,8 @@ class TinyGsmSim70x0 : public TinyGsmSim70xx<TinyGsmSim70x0>,
     //             URC:
     //                +CAURC:
     //                "recv",<id>,<length>,<remoteIP>,<remote_port><CR><LF><data>
-    sendAT(GF("+CAOPEN="), mux, GF(",0,\"TCP\",\""), host, GF("\","), port, ',',
-           0);
+    // NOTE:  including the <recv_mode> fails
+    sendAT(GF("+CAOPEN="), mux, GF(",0,\"TCP\",\""), host, GF("\","), port);
     if (waitResponse(timeout_ms, GF(GSM_NL "+CAOPEN:")) != 1) { return 0; }
     // returns OK/r/n/r/n+CAOPEN: <cid>,<result>
     // <result> 0: Success
@@ -428,39 +428,46 @@ class TinyGsmSim70x0 : public TinyGsmSim70xx<TinyGsmSim70x0>,
   }
 
   int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
+    // send data on prompt
     sendAT(GF("+CASEND="), mux, ',', (uint16_t)len);
     if (waitResponse(GF(">")) != 1) { return 0; }
 
     stream.write(reinterpret_cast<const uint8_t*>(buff), len);
     stream.flush();
 
-    if (waitResponse(GF(GSM_NL "+CASEND:")) != 1) { return 0; }
-    streamSkipUntil(',');                            // Skip mux
-    if (streamGetIntBefore(',') != 0) { return 0; }  // If result != success
-    return streamGetIntBefore('\n');
+    // OK after posting data
+    if (waitResponse() != 1) { return 0; }
+
+    return len;
   }
 
   size_t modemRead(size_t size, uint8_t mux) {
-    if (!sockets[mux]) return 0;
+    if (!sockets[mux]) { return 0; }
 
     sendAT(GF("+CARECV="), mux, ',', (uint16_t)size);
 
-    if (waitResponse(GF("+CARECV:")) != 1) {
-      sockets[mux]->sock_available = 0;
-      return 0;
-    }
+    if (waitResponse(GF("+CARECV:")) != 1) { return 0; }
 
-    stream.read();
-    if (stream.peek() == '0') {
-      waitResponse();
-      sockets[mux]->sock_available = 0;
-      return 0;
-    }
+    // uint8_t ret_mux = stream.parseInt();
+    // streamSkipUntil(',');
+    // const int16_t len_confirmed = streamGetIntBefore('\n');
+    // DBG("### READING:", len_confirmed, "from", ret_mux);
 
-    const int16_t len_confirmed = streamGetIntBefore(',');
+    // if (ret_mux != mux) {
+    //   DBG("### Data from wrong mux! Got", ret_mux, "expected", mux);
+    //   waitResponse();
+    //   sockets[mux]->sock_available = modemGetAvailable(mux);
+    //   return 0;
+    // }
+
+    // NOTE:  manual says the mux number is returned before the number of
+    // characters available, but in tests only the number is returned
+
+    int16_t len_confirmed = stream.parseInt();
+    streamSkipUntil(',');  // skip the comma
     if (len_confirmed <= 0) {
-      sockets[mux]->sock_available = 0;
       waitResponse();
+      sockets[mux]->sock_available = modemGetAvailable(mux);
       return 0;
     }
 
@@ -473,54 +480,103 @@ class TinyGsmSim70x0 : public TinyGsmSim70xx<TinyGsmSim70x0>,
       char c = stream.read();
       sockets[mux]->rx.put(c);
     }
-    // DBG("### READ:", len_requested, "from", mux);
-    // sockets[mux]->sock_available = modemGetAvailable(mux);
-    auto diff = int64_t(size) - int64_t(len_confirmed);
-    if (diff < 0) diff = 0;
-    sockets[mux]->sock_available = diff;
     waitResponse();
+    // make sure the sock available number is accurate again
+    sockets[mux]->sock_available = modemGetAvailable(mux);
     return len_confirmed;
   }
 
   size_t modemGetAvailable(uint8_t mux) {
-    // NOTE: This gets how many characters are available on all connections
+    // NOTE: This gets how many characters are available on all connections that
+    // have data.  It does not return all the connections, just those with data.
     sendAT(GF("+CARECV?"));
     for (int muxNo = 0; muxNo < TINY_GSM_MUX_COUNT; muxNo++) {
-      if (waitResponse(3000, GF(GSM_NL "+CARECV: ")) != 1) { break; }
-      size_t result = 0;
-      // if (streamGetIntBefore(',') != muxNo) { // check the mux no
-      //   DBG("### Warning: misaligned mux numbers!");
-      // }
-      streamSkipUntil(',');  // skip mux [use muxNo]
-      result                 = streamGetIntBefore('\n');
-      GsmClientSim70x0* sock = sockets[mux];
-      if (sock && muxNo == mux) { sock->sock_available = result; }
+      // after the last connection, there's an ok, so we catch it right away
+      int res = waitResponse(3000, GF("+CARECV:"), GFP(GSM_OK), GFP(GSM_ERROR));
+      // if we get the +CARECV: response, read the mux number and the number of
+      // characters available
+      if (res == 1) {
+        int               ret_mux = streamGetIntBefore(',');
+        size_t            result  = streamGetIntBefore('\n');
+        GsmClientSim7080* sock    = sockets[ret_mux];
+        if (sock) { sock->sock_available = result; }
+        // if the first returned mux isn't 0 (or is higher than expected)
+        // we need to fill in the missing muxes
+        if (ret_mux > muxNo) {
+          for (int extra_mux = muxNo; extra_mux < ret_mux; extra_mux++) {
+            GsmClientSim7080* sock = sockets[extra_mux];
+            if (sock) { sock->sock_available = 0; }
+          }
+          muxNo = ret_mux;
+        }
+      } else if (res == 2) {
+        // if we get an OK, we've reached the last socket with available data
+        // so we set any we haven't gotten to yet to 0
+        for (int extra_mux = muxNo; extra_mux < TINY_GSM_MUX_COUNT;
+             extra_mux++) {
+          GsmClientSim7080* sock = sockets[extra_mux];
+          if (sock) { sock->sock_available = 0; }
+        }
+        break;
+      } else {
+        // if we got an error, give up
+        break;
+      }
+      // Should be a final OK at the end.
+      // If every connection was returned, catch the OK here.
+      // If only a portion were returned, catch it above.
+      if (muxNo == TINY_GSM_MUX_COUNT - 1) { waitResponse(); }
     }
-    waitResponse();  // Should be an OK at the end
-    modemGetConnected(mux);
-    if (!sockets[mux]) return 0;
+    modemGetConnected(mux);  // check the state of all connections
+    if (!sockets[mux]) { return 0; }
     return sockets[mux]->sock_available;
   }
 
   bool modemGetConnected(uint8_t mux) {
-    // NOTE:  This gets the state of all connections
+    // NOTE:  This gets the state of all connections that have been opened
+    // since the last connection
     sendAT(GF("+CASTATE?"));
 
     for (int muxNo = 0; muxNo < TINY_GSM_MUX_COUNT; muxNo++) {
-      if (waitResponse(3000, GF(GSM_NL "+CASTATE: ")) != 1) { break; }
-      uint8_t status = 0;
-      // if (streamGetIntBefore(',') != muxNo) { // check the mux no
-      //   DBG("### Warning: misaligned mux numbers!");
-      // }
-      streamSkipUntil(',');        // skip mux [use muxNo]
-      status = stream.parseInt();  // Read the status
-      // 0: Closed by remote server or internal error
-      // 1: Connected to remote server
-      // 2: Listening (server mode)
-      GsmClientSim70x0* sock = sockets[mux];
-      if (sock && muxNo == mux) { sock->sock_connected = (status == 1); }
+      // after the last connection, there's an ok, so we catch it right away
+      int res = waitResponse(3000, GF("+CASTATE:"), GFP(GSM_OK),
+                             GFP(GSM_ERROR));
+      // if we get the +CASTATE: response, read the mux number and the status
+      if (res == 1) {
+        int    ret_mux = streamGetIntBefore(',');
+        size_t status  = streamGetIntBefore('\n');
+        // 0: Closed by remote server or internal error
+        // 1: Connected to remote server
+        // 2: Listening (server mode)
+        GsmClientSim7080* sock = sockets[ret_mux];
+        if (sock) { sock->sock_connected = (status == 1); }
+        // if the first returned mux isn't 0 (or is higher than expected)
+        // we need to fill in the missing muxes
+        if (ret_mux > muxNo) {
+          for (int extra_mux = muxNo; extra_mux < ret_mux; extra_mux++) {
+            GsmClientSim7080* sock = sockets[extra_mux];
+            if (sock) { sock->sock_connected = false; }
+          }
+          muxNo = ret_mux;
+        }
+      } else if (res == 2) {
+        // if we get an OK, we've reached the last socket with available data
+        // so we set any we haven't gotten to yet to 0
+        for (int extra_mux = muxNo; extra_mux < TINY_GSM_MUX_COUNT;
+             extra_mux++) {
+          GsmClientSim7080* sock = sockets[extra_mux];
+          if (sock) { sock->sock_connected = false; }
+        }
+        break;
+      } else {
+        // if we got an error, give up
+        break;
+      }
+      // Should be a final OK at the end.
+      // If every connection was returned, catch the OK here.
+      // If only a portion were returned, catch it above.
+      if (muxNo == TINY_GSM_MUX_COUNT - 1) { waitResponse(); }
     }
-    waitResponse();  // Should be an OK at the end
     return sockets[mux]->sock_connected;
   }
 
@@ -575,21 +631,23 @@ class TinyGsmSim70x0 : public TinyGsmSim70xx<TinyGsmSim70x0>,
         } else if (r5 && data.endsWith(r5)) {
           index = 5;
           goto finish;
-        } else if (data.endsWith(GF(GSM_NL "+CARECV:"))) {
-          int8_t mux = streamGetIntBefore(',');
+        } else if (data.endsWith(GF("+CARECV:"))) {
+          int8_t  mux = streamGetIntBefore(',');
+          int16_t len = streamGetIntBefore('\n');
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
             sockets[mux]->got_data = true;
+            if (len >= 0 && len <= 1024) { sockets[mux]->sock_available = len; }
           }
           data = "";
-          DBG("### Got Data:", mux);
-        } else if (data.endsWith(GF(GSM_NL "+CADATAIND:"))) {
+          DBG("### Got Data:", len, "on", mux);
+        } else if (data.endsWith(GF("+CADATAIND:"))) {
           int8_t mux = streamGetIntBefore('\n');
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
             sockets[mux]->got_data = true;
           }
           data = "";
           DBG("### Got Data:", mux);
-        } else if (data.endsWith(GF(GSM_NL "+CASTATE:"))) {
+        } else if (data.endsWith(GF("+CASTATE:"))) {
           int8_t mux   = streamGetIntBefore(',');
           int8_t state = streamGetIntBefore('\n');
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
@@ -629,6 +687,7 @@ class TinyGsmSim70x0 : public TinyGsmSim70xx<TinyGsmSim70x0>,
           data = "";
           DBG("### Unexpected module reset!");
           init();
+          data = "";
         }
       }
     } while (millis() - startMillis < timeout_ms);
@@ -669,8 +728,8 @@ class TinyGsmSim70x0 : public TinyGsmSim70xx<TinyGsmSim70x0>,
   }
 
  protected:
-  GsmClientSim70x0* sockets[TINY_GSM_MUX_COUNT];
+  GsmClientSim7080* sockets[TINY_GSM_MUX_COUNT];
   String            certificates[TINY_GSM_MUX_COUNT];
 };
 
-#endif  // SRC_TINYGSMCLIENTSIM70X0_H_
+#endif  // SRC_TINYGSMCLIENTSIM7080_H_

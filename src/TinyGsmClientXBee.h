@@ -391,9 +391,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
       case 115200: changesMade |= changeSettingIfNeeded(GF("BD"), 0x7); break;
       case 230400: changesMade |= changeSettingIfNeeded(GF("BD"), 0x8); break;
       case 460800: changesMade |= changeSettingIfNeeded(GF("BD"), 0x9); break;
-      case 921600:
-        changesMade |= changeSettingIfNeeded(GF("BD"), 0xA);
-        break;
+      case 921600: changesMade |= changeSettingIfNeeded(GF("BD"), 0xA); break;
       default: {
         DBG(GF("Specified baud rate is unsupported! Setting to 9600 baud."));
         changesMade |= changeSettingIfNeeded(GF("BD"),
@@ -735,10 +733,12 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
     }
   }
 
-  bool waitForNetworkImpl(uint32_t timeout_ms = 60000L) {
+  bool waitForNetworkImpl(uint32_t timeout_ms   = 60000L,
+                          bool     check_signal = false) {
     bool retVal = false;
     XBEE_COMMAND_START_DECORATOR(5, false)
     for (uint32_t start = millis(); millis() - start < timeout_ms;) {
+      if (check_signal) { getSignalQuality(); }
       if (isNetworkConnected()) {
         retVal = true;
         break;
