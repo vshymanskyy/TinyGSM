@@ -485,6 +485,12 @@ class TinyGsmSim7000SSL
   }
 
   size_t modemGetAvailable(uint8_t mux) {
+    // If the socket doesn't exist, just return
+    if (!sockets[mux]) { return 0; }
+    // We need to check if there are any connections open *before* checking for
+    // available characters.  The SIM7000 *will crash* if you ask about data
+    // when there are no open connections.
+    if (!modemGetConnected(mux)) { return 0; }
     // NOTE: This gets how many characters are available on all connections that
     // have data.  It does not return all the connections, just those with data.
     sendAT(GF("+CARECV?"));

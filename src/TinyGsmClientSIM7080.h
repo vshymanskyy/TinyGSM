@@ -488,6 +488,8 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
   }
 
   size_t modemGetAvailable(uint8_t mux) {
+    // If the socket doesn't exist, just return
+    if (!sockets[mux]) { return 0; }
     // NOTE: This gets how many characters are available on all connections that
     // have data.  It does not return all the connections, just those with data.
     sendAT(GF("+CARECV?"));

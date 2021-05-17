@@ -10,20 +10,15 @@
  * For more MQTT examples, see PubSubClient library
  *
  **************************************************************
- * Use Mosquitto client tools to work with MQTT
- *   Ubuntu/Linux: sudo apt-get install mosquitto-clients
- *   Windows:      https://mosquitto.org/download/
+ * This example connects to HiveMQ's showcase broker.
  *
- * Subscribe for messages:
- *   mosquitto_sub -h test.mosquitto.org -t GsmClientTest/init -t GsmClientTest/ledStatus -q 1
- * Toggle led:
- *   mosquitto_pub -h test.mosquitto.org -t GsmClientTest/led -q 1 -m "toggle"
+ * You can quickly test sending and receiving messages from the HiveMQ webclient
+ * available at http://www.hivemq.com/demos/websocket-client/.
  *
- * You can use Node-RED for wiring together MQTT-enabled devices
- *   https://nodered.org/
- * Also, take a look at these additional Node-RED modules:
- *   node-red-contrib-blynk-ws
- *   node-red-dashboard
+ * Subscribe to the topic GsmClientTest/ledStatus
+ * Publish "toggle" to the topic GsmClientTest/led and the LED on your board
+ * should toggle and you should see a new message published to
+ * GsmClientTest/ledStatus with the newest LED status.
  *
  **************************************************************/
 
@@ -251,6 +246,34 @@ void setup() {
 }
 
 void loop() {
+  // Make sure we're still registered on the network
+  if (!modem.isNetworkConnected()) {
+    SerialMon.println("Network disconnected");
+    if (!modem.waitForNetwork(180000L, true)) {
+      SerialMon.println(" fail");
+      delay(10000);
+      return;
+    }
+    if (modem.isNetworkConnected()) {
+      SerialMon.println("Network re-connected");
+    }
+
+#if TINY_GSM_USE_GPRS
+    // and make sure GPRS/EPS is still connected
+    if (!modem.isGprsConnected()) {
+      SerialMon.println("GPRS disconnected!");
+      SerialMon.print(F("Connecting to "));
+      SerialMon.print(apn);
+      if (!modem.gprsConnect(apn, gprsUser, gprsPass)) {
+        SerialMon.println(" fail");
+        delay(10000);
+        return;
+      }
+      if (modem.isGprsConnected()) { SerialMon.println("GPRS reconnected"); }
+    }
+#endif
+  }
+
   if (!mqtt.connected()) {
     SerialMon.println("=== MQTT NOT CONNECTED ===");
     // Reconnect every 10 seconds

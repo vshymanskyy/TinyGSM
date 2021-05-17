@@ -52,15 +52,15 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 // Define the serial console for debug prints, if needed
 #define TINY_GSM_DEBUG SerialMon
 
-// Add a reception delay, if needed.
-// This may be needed for a fast processor at a slow baud rate.
-// #define TINY_GSM_YIELD() { delay(2); }
-
 // Range to attempt to autobaud
 // NOTE:  DO NOT AUTOBAUD in production code.  Once you've established
 // communication, set a fixed baud rate using modem.setBaud(#).
 #define GSM_AUTOBAUD_MIN 9600
 #define GSM_AUTOBAUD_MAX 57600
+
+// Add a reception delay, if needed.
+// This may be needed for a fast processor at a slow baud rate.
+// #define TINY_GSM_YIELD() { delay(2); }
 
 /*
  * Tests enabled
