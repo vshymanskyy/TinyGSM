@@ -484,7 +484,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
    * NTP server functions
    */
 
-  byte NTPServerSyncImpl(String server = "pool.ntp.org", byte) {
+  byte NTPServerSyncImpl(String server = "pool.ntp.org", byte = -5) {
     // Request network synchronization
     // AT+QNTP=<contextID>,<server>[,<port>][,<autosettime>]
     sendAT(GF("+QNTP=1,\""), server, '"');

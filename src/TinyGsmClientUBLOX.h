@@ -271,7 +271,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
     return (RegStatus)getRegistrationStatusXREG("CGREG");
   }
 
-  bool setRadioAccessTecnology(int selected) {
+  bool setRadioAccessTecnology(int selected, int preferred) {
     // selected:
     // 0: GSM / GPRS / eGPRS (single mode)
     // 1: GSM / UMTS (dual mode)
@@ -289,7 +289,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
     return true;
   }
 
-  bool getCurrentRadioAccessTecnology(int & selected) {
+  bool getCurrentRadioAccessTecnology(int&) {
     // @TODO
     return false;
   }
@@ -796,7 +796,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
             if (len >= 0 && len <= 1024) { sockets[mux]->sock_available = len; }
           }
           data = "";
-          //DBG("### URC Data Received:", len, "on", mux);
+          // DBG("### URC Data Received:", len, "on", mux);
         } else if (data.endsWith(GF("+UUSOCL:"))) {
           int8_t mux = streamGetIntBefore('\n');
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
