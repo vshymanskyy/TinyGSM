@@ -50,6 +50,10 @@ class TinyGsmModem {
     return thisModem().factoryDefaultImpl();
   }
 
+  bool statusLedEnable(bool enable = true) {
+    return thisModem().statusLedEnableImpl(enable);
+  }
+
   /*
    * Power functions
    */
