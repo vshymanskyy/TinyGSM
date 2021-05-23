@@ -29,6 +29,34 @@ class TinyGsmSMS {
     return thisModem().sendSMS_UTF16Impl(number, text, len);
   }
 
+  bool changeCharacterSet(const String &alphabet) {
+    return thisModem().changeCharacterSetImpl(alphabet);
+  }
+
+  bool receiveNewSMSIndication(const bool enabled = true, const bool cbmIndication = false, const bool statusReport = false) {
+    return receiveNewSMSIndicationImpl(enabled,cbmIndication,statusReport);
+  }
+
+  Sms readSMS(const uint8_t index, const bool changeStatusToRead = true) {
+    return thisModem().readSMSImpl(index,changeStatusToRead);
+  }
+
+  bool deleteSMS(const uint8_t index) {
+    return thisModem().deleteSMSImpl(index);
+  }
+
+  bool deleteAllSMS(const DeleteAllSmsMethod method) {
+    return thisModem().deleteAllSMSImpl(method);
+  }
+
+  MessageStorage getPreferredSMSStorage() {
+    return thisModem().getPreferredSMSStorageImpl();
+  }
+
+  bool setPreferredSMSStorage(const MessageStorageType type[3]) {
+    return thisModem().setPreferredSMSStorageImpl(type);
+  }
+
   /*
    * CRTP Helper
    */
@@ -44,7 +72,7 @@ class TinyGsmSMS {
    * Messaging functions
    */
  protected:
-  static inline String TinyGsmDecodeHex7bit(String& instr) {
+  static inline String TinyGsmDecodeHex7bit(const String& instr) {
     String result;
     byte   reminder = 0;
     int8_t bitstate = 7;
@@ -71,7 +99,7 @@ class TinyGsmSMS {
     return result;
   }
 
-  static inline String TinyGsmDecodeHex8bit(String& instr) {
+  static inline String TinyGsmDecodeHex8bit(const String& instr) {
     String result;
     for (uint16_t i = 0; i < instr.length(); i += 2) {
       char buf[4] = {
@@ -85,7 +113,7 @@ class TinyGsmSMS {
     return result;
   }
 
-  static inline String TinyGsmDecodeHex16bit(String& instr) {
+  static inline String TinyGsmDecodeHex16bit(const String& instr) {
     String result;
     for (uint16_t i = 0; i < instr.length(); i += 4) {
       char buf[4] = {
@@ -116,8 +144,7 @@ class TinyGsmSMS {
     thisModem().sendAT(GF("+CMGF=1"));
     thisModem().waitResponse();
     // Set 8-bit hexadecimal alphabet (3GPP TS 23.038)
-    thisModem().sendAT(GF("+CSCS=\"HEX\""));
-    thisModem().waitResponse();
+    changeCharacterSet(GF("HEX"));
     // Send the message
     thisModem().sendAT(GF("+CUSD=1,\""), code, GF("\""));
     if (thisModem().waitResponse() != 1) { return ""; }
@@ -141,8 +168,7 @@ class TinyGsmSMS {
     thisModem().sendAT(GF("+CMGF=1"));
     thisModem().waitResponse();
     // Set GSM 7 bit default alphabet (3GPP TS 23.038)
-    thisModem().sendAT(GF("+CSCS=\""),charset,GF("\""));
-    thisModem().waitResponse();
+    changeCharacterSet(charset);
     thisModem().sendAT(GF("+CMGS=\""), number, GF("\""));
     if (thisModem().waitResponse(GF(">")) != 1) { return false; }
     thisModem().stream.print(text);  // Actually send the message
@@ -185,8 +211,7 @@ class TinyGsmSMS {
   bool sendSMS_UTF8_begin(const char* const number) {
     thisModem().sendAT(GF("+CMGF=1"));
     thisModem().waitResponse();
-    thisModem().sendAT(GF("+CSCS=\"HEX\""));
-    thisModem().waitResponse();
+    thisModem().changeCharacterSetImpl("HEX");
     thisModem().sendAT(GF("+CSMP=17,167,0,8"));
     thisModem().waitResponse();
 
@@ -218,6 +243,208 @@ class TinyGsmSMS {
     }
 
     return sendSMS_UTF8_end();
+  }
+
+  bool changeCharacterSetImpl(const String &alphabet) {
+    thisModem().sendAT(GF("+CSCS=\""), alphabet, '"');
+    return thisModem().waitResponse() == 1;
+  }
+
+  // Supported by: SIM800 other is not tested
+  Sms readSMSImpl(const uint8_t index, const bool changeStatusToRead = true) {
+    thisModem().sendAT(GF("+CMGR="), index, GF(","), static_cast<const uint8_t>(!changeStatusToRead)); // Read SMS Message
+    if (thisModem().waitResponse(5000L, GF("+CMGR: \"")) != 1) {
+      thisModem().stream.readString();
+      return {};
+    }
+
+    Sms sms;
+
+    // AT reply:
+    // <stat>,<oa>[,<alpha>],<scts>[,<tooa>,<fo>,<pid>,<dcs>,<sca>,<tosca>,<length>]<CR><LF><data>
+
+    //<stat>
+    const String res = thisModem().stream.readStringUntil('"');
+    if (res == GF("REC READ")) {
+      sms.status = SmsStatus::REC_READ;
+    } else if (res == GF("REC UNREAD")) {
+      sms.status = SmsStatus::REC_UNREAD;
+    } else if (res == GF("STO UNSENT")) {
+      sms.status = SmsStatus::STO_UNSENT;
+    } else if (res == GF("STO SENT")) {
+      sms.status = SmsStatus::STO_SENT;
+    } else if (res == GF("ALL")) {
+      sms.status = SmsStatus::ALL;
+    } else {
+      thisModem().stream.readString();
+      return {};
+    }
+
+    // <oa>
+    thisModem().streamSkipUntil('"');
+    sms.originatingAddress = thisModem().stream.readStringUntil('"');
+
+    // <alpha>
+    thisModem().streamSkipUntil('"');
+    sms.phoneBookEntry = thisModem().stream.readStringUntil('"');
+
+    // <scts>
+    thisModem().streamSkipUntil('"');
+    sms.serviceCentreTimeStamp = thisModem().stream.readStringUntil('"');
+    thisModem().streamSkipUntil(',');
+
+    thisModem().streamSkipUntil(','); // <tooa>
+    thisModem().streamSkipUntil(','); // <fo>
+    thisModem().streamSkipUntil(','); // <pid>
+
+    // <dcs>
+    const uint8_t alphabet = (thisModem().streamGetIntBefore(',') >> 2) & B11;
+    switch (alphabet) {
+    case B00:
+      sms.alphabet = SmsAlphabet::GSM_7bit;
+      break;
+    case B01:
+      sms.alphabet = SmsAlphabet::Data_8bit;
+      break;
+    case B10:
+      sms.alphabet = SmsAlphabet::UCS2;
+      break;
+    case B11:
+    default:
+      sms.alphabet = SmsAlphabet::Reserved;
+      break;
+    }
+
+    thisModem().streamSkipUntil(','); // <sca>
+    thisModem().streamSkipUntil(','); // <tosca>
+
+    // <length>, CR, LF
+    const long length = thisModem().streamGetIntBefore('\n');
+
+    // <data>
+    String data = thisModem().stream.readString();
+    data.remove(static_cast<const unsigned int>(length));
+    switch (sms.alphabet) {
+    case SmsAlphabet::GSM_7bit:
+      sms.message = data;
+      break;
+    case SmsAlphabet::Data_8bit:
+      sms.message = TinyGsmDecodeHex8bit(data);
+      break;
+    case SmsAlphabet::UCS2:
+      sms.message = TinyGsmDecodeHex16bit(data);
+      break;
+    case SmsAlphabet::Reserved:
+      return {};
+    }
+
+    return sms;
+  }
+
+  // Supported by: SIM800 other is not tested
+  MessageStorage getPreferredSMSStorageImpl() {
+    thisModem().sendAT(GF("+CPMS?")); // Preferred SMS Message Storage
+    if (thisModem().waitResponse(GF("+CPMS:")) != 1) {
+      thisModem().stream.readString();
+      return {};
+    }
+
+    // AT reply:
+    // +CPMS: <mem1>,<used1>,<total1>,<mem2>,<used2>,<total2>,<mem3>,<used3>,<total3>
+
+    MessageStorage messageStorage;
+    for (uint8_t i = 0; i < 3; ++i) {
+      // type
+      thisModem().streamSkipUntil('"');
+      const String mem = thisModem().stream.readStringUntil('"');
+      if (mem == GF("SM")) {
+        messageStorage.type[i] = MessageStorageType::SIM;
+      } else if (mem == GF("ME")) {
+        messageStorage.type[i] = MessageStorageType::Phone;
+      } else if (mem == GF("SM_P")) {
+        messageStorage.type[i] = MessageStorageType::SIMPreferred;
+      } else if (mem == GF("ME_P")) {
+        messageStorage.type[i] = MessageStorageType::PhonePreferred;
+      } else if (mem == GF("MT")) {
+        messageStorage.type[i] = MessageStorageType::Either_SIMPreferred;
+      } else {
+        thisModem().stream.readString();
+        return {};
+      }
+
+      // used
+      thisModem().streamSkipUntil(',');
+      messageStorage.used[i] = static_cast<uint8_t>(thisModem().streamGetIntBefore(','));
+
+      // total
+      if (i < 2) {
+        messageStorage.total[i] = static_cast<uint8_t>(thisModem().streamGetIntBefore(','));
+      } else {
+        messageStorage.total[i] = static_cast<uint8_t>(thisModem().streamGetIntBefore());
+      }
+    }
+
+    return messageStorage;
+  }
+
+  // Supported by: SIM800 other is not tested
+  bool setPreferredSMSStorageImpl(const MessageStorageType type[3]) {
+    const auto convertMstToString = [](const MessageStorageType &type) {
+      switch (type) {
+      case MessageStorageType::SIM:
+        return GF("\"SM\"");
+      case MessageStorageType::Phone:
+        return GF("\"ME\"");
+      case MessageStorageType::SIMPreferred:
+        return GF("\"SM_P\"");
+      case MessageStorageType::PhonePreferred:
+        return GF("\"ME_P\"");
+      case MessageStorageType::Either_SIMPreferred:
+        return GF("\"MT\"");
+      }
+
+      return GF("");
+    };
+
+    thisModem().sendAT(GF("+CPMS="),
+           convertMstToString(type[0]), GF(","),
+           convertMstToString(type[1]), GF(","),
+           convertMstToString(type[2]));
+
+    return thisModem().waitResponse() == 1;
+  }
+
+  // Supported by: SIM800 other is not tested
+  bool deleteSMSImpl(const uint8_t index) {
+    thisModem().sendAT(GF("+CMGD="), index, GF(","), 0); // Delete SMS Message from <mem1> location
+    return thisModem().waitResponse(5000L) == 1;
+  }
+
+  // Supported by: SIM800 other is not tested
+  bool deleteAllSMSImpl(const DeleteAllSmsMethod method) {
+    // Select SMS Message Format: PDU mode. Spares us space now
+    thisModem().sendAT(GF("+CMGF=0"));
+    if (thisModem().waitResponse() != 1) {
+        return false;
+    }
+
+    thisModem().sendAT(GF("+CMGDA="), static_cast<const uint8_t>(method)); // Delete All SMS
+    const bool ok = thisModem().waitResponse(25000L) == 1;
+
+    thisModem().sendAT(GF("+CMGF=1"));
+    thisModem().waitResponse();
+
+    return ok;
+  }
+
+  // Supported by: SIM800 other is not tested
+  bool receiveNewSMSIndicationImpl(const bool enabled = true, const bool cbmIndication = false, const bool statusReport = false) {
+    thisModem().sendAT(GF("+CNMI=2,"),           // New SMS Message Indications
+           enabled, GF(","),         // format: +CMTI: <mem>,<index>
+           cbmIndication, GF(","),   // format: +CBM: <sn>,<mid>,<dcs>,<page>,<pages><CR><LF><data>
+           statusReport, GF(",0"));  // format: +CDS: <fo>,<mr>[,<ra>][,<tora>],<scts>,<dt>,<st>
+
+    return thisModem().waitResponse() == 1;
   }
 };
 
