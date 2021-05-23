@@ -284,7 +284,8 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
   bool setPhoneFunctionalityImpl(uint8_t fun, bool reset = false) {
     sendAT(GF("+CFUN="), fun, reset ? ",1" : "");
     return waitResponse(10000L) == 1;
-
+  }
+  
   bool statusLedEnableImpl(bool enable = true) {
       sendAT(GF("+CNETLIGHT="), enable);
       bool ok = waitResponse() == 1;
