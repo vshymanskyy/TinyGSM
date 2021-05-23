@@ -22,8 +22,8 @@ class TinyGsmSMS {
   String sendUSSD(const String& code) {
     return thisModem().sendUSSDImpl(code);
   }
-  bool sendSMS(const String& number, const String& text) {
-    return thisModem().sendSMSImpl(number, text);
+  bool sendSMS(const String& number, const String& text, const String &charset = "GSM") {
+    return thisModem().sendSMSImpl(number, text,charset);
   }
   bool sendSMS_UTF16(const char* const number, const void* text, size_t len) {
     return thisModem().sendSMS_UTF16Impl(number, text, len);
@@ -136,12 +136,12 @@ class TinyGsmSMS {
     }
   }
 
-  bool sendSMSImpl(const String& number, const String& text) {
+  bool sendSMSImpl(const String& number, const String& text,const String &charset = "GSM") {
     // Set preferred message format to text mode
     thisModem().sendAT(GF("+CMGF=1"));
     thisModem().waitResponse();
     // Set GSM 7 bit default alphabet (3GPP TS 23.038)
-    thisModem().sendAT(GF("+CSCS=\"GSM\""));
+    thisModem().sendAT(GF("+CSCS=\""),charset,GF("\""));
     thisModem().waitResponse();
     thisModem().sendAT(GF("+CMGS=\""), number, GF("\""));
     if (thisModem().waitResponse(GF(">")) != 1) { return false; }
