@@ -252,28 +252,45 @@ class TinyGsmSMS {
 
   // Supported by: SIM800 other is not tested
   Sms readSMSImpl(const uint8_t index, const bool changeStatusToRead = true) {
+
+    thisModem().sendAT(GF("+CMGF=1"));
+    thisModem().waitResponse();
+
     thisModem().sendAT(GF("+CMGR="), index, GF(","), static_cast<const uint8_t>(!changeStatusToRead)); // Read SMS Message
-    if (thisModem().waitResponse(5000L, GF("+CMGR: \"")) != 1) {
-      thisModem().stream.readString();
+    if (thisModem().waitResponse(5000L, GF("+CMGR: ")) != 1) {
+      String s = thisModem().stream.readString();
       return {};
     }
 
-    Sms sms;
 
     // AT reply:
     // <stat>,<oa>[,<alpha>],<scts>[,<tooa>,<fo>,<pid>,<dcs>,<sca>,<tosca>,<length>]<CR><LF><data>
 
+    int res = 0;
+    String args[10];
+    int argsNbr = 0;
+
+    while( (argsNbr < 10 ) && ( res == 0) )
+    {
+        res = thisModem().streamGetAtValue(args[argsNbr]);
+        if ( res < 0 ) { return {}; }
+        argsNbr ++;
+        Serial.printf("Args %d : '%s'\n",argsNbr,args[argsNbr-1].c_str());
+        if ( res > 0 ) { break; }
+    }
+
+    Sms sms;
+
     //<stat>
-    const String res = thisModem().stream.readStringUntil('"');
-    if (res == GF("REC READ")) {
+    if (args[0] == GF("REC READ")) {
       sms.status = SmsStatus::REC_READ;
-    } else if (res == GF("REC UNREAD")) {
+    } else if (args[0] == GF("REC UNREAD")) {
       sms.status = SmsStatus::REC_UNREAD;
-    } else if (res == GF("STO UNSENT")) {
+    } else if (args[0] == GF("STO UNSENT")) {
       sms.status = SmsStatus::STO_UNSENT;
-    } else if (res == GF("STO SENT")) {
+    } else if (args[0] == GF("STO SENT")) {
       sms.status = SmsStatus::STO_SENT;
-    } else if (res == GF("ALL")) {
+    } else if (args[0] == GF("ALL")) {
       sms.status = SmsStatus::ALL;
     } else {
       thisModem().stream.readString();
