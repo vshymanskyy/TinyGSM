@@ -321,6 +321,22 @@ class TinyGsmModem {
     return -9999;
   }
 
+  inline int streamWaitAvailable(uint8_t numChars,
+                                 const uint32_t timeout_ms = 1000L) {
+      int ret = 0;
+      int end = millis() + timeout_ms;
+      do 
+      {
+        ret = thisModem().stream.available() ;
+        if ( ret >= numChars )
+        {
+          break;
+        }
+      }while( end > millis() ); 
+
+      return ret;
+  }
+
   /*
    * read and answer value, it manage quoted string and end of line.
    * return :
@@ -338,6 +354,14 @@ class TinyGsmModem {
       if ( bytesRead == 0 ) { return -1; } /* Timeout */
       if ( ( c == '\r' ) or ( c == '\n' ) )
       {
+        /* remove \n if present after \r */
+        if ( ( c == '\r' ) && ( streamWaitAvailable(1) == 1 ) )
+        {
+            if ( thisModem().stream.peek() == '\n' )
+            {
+                thisModem().stream.read();
+            }
+        }
         if ( quoted ) 
         { 
           return -1;  /* not terminated quoted string */

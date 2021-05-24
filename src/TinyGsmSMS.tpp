@@ -37,8 +37,12 @@ class TinyGsmSMS {
     return receiveNewSMSIndicationImpl(enabled,cbmIndication,statusReport);
   }
 
-  Sms readSMS(const uint8_t index, const bool changeStatusToRead = true) {
-    return thisModem().readSMSImpl(index,changeStatusToRead);
+  Sms readSMSText(const uint8_t index, const bool changeStatusToRead = true) {
+    return thisModem().readSMSTextImpl(index,changeStatusToRead);
+  }
+
+  String readSMSPDU(const uint8_t index, const bool changeStatusToRead = true) {
+    return thisModem().readSMSPDUImpl(index,changeStatusToRead);
   }
 
   bool deleteSMS(const uint8_t index) {
@@ -251,7 +255,42 @@ class TinyGsmSMS {
   }
 
   // Supported by: SIM800 other is not tested
-  Sms readSMSImpl(const uint8_t index, const bool changeStatusToRead = true) {
+  String readSMSPDUImpl(const uint8_t index, const bool changeStatusToRead = true) {
+
+    thisModem().sendAT(GF("+CMGF=0"));
+    thisModem().waitResponse();
+
+    thisModem().sendAT(GF("+CMGR="), index, GF(","), static_cast<const uint8_t>(!changeStatusToRead)); // Read SMS Message
+    if (thisModem().waitResponse(5000L, GF("+CMGR: ")) != 1) {
+      String s = thisModem().stream.readString();
+      return {};
+    }
+
+    // AT reply:
+    // <stat>,<oa>[,<alpha>],<scts>[,<tooa>,<fo>,<pid>,<dcs>,<sca>,<tosca>,<length>]<CR><LF><data>
+
+    int res = 0;
+    String args[10];
+    int argsNbr = 0;
+
+    while( (argsNbr < 10 ) && ( res == 0) )
+    {
+        res = thisModem().streamGetAtValue(args[argsNbr]);
+        if ( res < 0 ) { return {}; }
+        argsNbr ++;
+        if ( res > 0 ) { break; }
+    }
+
+    String data;
+    if ( thisModem().streamGetAtValue(data) != 1 )
+    {
+        return "";
+    }
+
+    return data;
+  }
+  // Supported by: SIM800 other is not tested
+  Sms readSMSTextImpl(const uint8_t index, const bool changeStatusToRead = true) {
 
     thisModem().sendAT(GF("+CMGF=1"));
     thisModem().waitResponse();
@@ -278,6 +317,14 @@ class TinyGsmSMS {
         Serial.printf("Args %d : '%s'\n",argsNbr,args[argsNbr-1].c_str());
         if ( res > 0 ) { break; }
     }
+
+    char c;
+    String data;
+    while(thisModem().stream.readBytes(&c,1) == 1)
+    {
+        Serial.printf("\n c=%d : '%c'\n",c,c);
+    }
+    Serial.println("fin\n");
 
     Sms sms;
 
@@ -338,8 +385,6 @@ class TinyGsmSMS {
     // <length>, CR, LF
     const long length = thisModem().streamGetIntBefore('\n');
 
-    // <data>
-    String data = thisModem().stream.readString();
     data.remove(static_cast<const unsigned int>(length));
     switch (sms.alphabet) {
     case SmsAlphabet::GSM_7bit:
