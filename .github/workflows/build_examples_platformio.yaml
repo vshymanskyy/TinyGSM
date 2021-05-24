@@ -1,4 +1,4 @@
-name: Build Examples
+name: Build Examples with PlatformIO
 
 # Triggers the workflow on push or pull request events
 on: [push, pull_request]
@@ -53,23 +53,6 @@ jobs:
             echo "LIBRARY_INSTALL_SOURCE=https://github.com/${GITHUB_REPOSITORY}.git#${GITHUB_HEAD_REF}" >> $GITHUB_ENV
           fi
 
-      - name: Restore or Cache pip
-        uses: actions/cache@v2.1.4
-        with:
-          path: ~/.cache/pip
-          # if requirements.txt hasn't changed, then it will be a "cache hit" and pip will be restored
-          # if requirements.txt HAS changed, it will be a "cache miss" and a new cache of pip will be created if the job completes successfully
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: ${{ runner.os }}-pip-
-
-      - name: Restore or Cache PlatformIO and Libraries
-        uses: actions/cache@v2.1.4
-        with:
-          path: ~/.platformio
-          # if nothing in the lock files has changed, then it will be a "cache hit" and pip will be restored
-          # otherwise, it will be a "cache miss" and a new cache of libraries will be created if the job completes successfully
-          key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
-
       - name: Set up Python
         uses: actions/setup-python@v2
 
@@ -79,6 +62,21 @@ jobs:
           python -m pip install --upgrade pip
           pip install --upgrade platformio
 
+      - name: Restore or Cache Platforms and Libraries
+        uses: actions/cache@v2.1.5
+        id: cache_pio
+        with:
+          path: ~/.platformio
+          # if nothing in the example_dependencies.json file has changed, then it will
+          # be a "cache hit" and we can restore libraries from cache and not
+          # download them.  If it has changed we have to re-download.
+          key: ${{ hashFiles('./examples/example_dependencies.json') }}
+
+      # Install cores and library dependencies for the Arduino CLI, iff no cache
+      - name: Install the Arduino libraries
+        if: steps.cache_pio.outputs.cache-hit != 'true'
+        run: pio lib --global install 89 415 1202 1286
+
       - name: Run PlatformIO
         env:
           PLATFORMIO_CI_SRC: ${{ matrix.example }}
@@ -86,7 +84,6 @@ jobs:
         run: |
           echo "${{ env.LIBRARY_INSTALL_SOURCE }}"
           pio lib --global install ${{ env.LIBRARY_INSTALL_SOURCE }}
-          pio lib --global install 89 415 1202 1286
           sed -i 's/\/\/ #define TINY_GSM_MODEM_SIM800/#define TINY_GSM_MODEM_SIM800/g' ${{ matrix.example }}/*
           platformio ci --project-option='build_flags=-D ${{ env.TINYGSM_MODEM_TO_USE }}' --project-option='framework=arduino' --board=uno --board=leonardo --board=yun --board=megaatmega2560 --board=genuino101 --board=mkr1000USB --board=zero --board=teensy31 --board=bluepill_f103c8 --board=uno_pic32 --board=esp01 --board=nodemcuv2 --board=esp32dev
           pio lib --global uninstall TinyGSM
