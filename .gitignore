@@ -11,6 +11,7 @@
 *.bak
 
 # IDE project files
+*.sw?
 .cproject
 .project
 .settings
