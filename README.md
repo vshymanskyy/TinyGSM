@@ -1,3 +1,5 @@
+This is a fork of [vshymanskyy's](https://github.com/vshymanskyy/TinyGSM) repository with my own changes. I try to keep this repository in pair with that one and sync back the code changes from there.
+
 ![TinyGSM logo](https://cdn.rawgit.com/vshymanskyy/TinyGSM/d18e93dc51fe988a0b175aac647185457ef640b5/extras/logo.svg)
 
 A small Arduino library for GSM modules, that just works.
@@ -140,8 +142,14 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
         - XBee, u-blox SARA R4/N4, ESP8266 (obviously)
 
 **SMS**
+- Sending, receiving (both also in Unicode), and being notified about incoming messages:
+    - SIM800
 - Only _sending_ SMS is supported, not receiving
     - Supported on all cellular modules
+
+**Phonebook**
+- Add, delete, read, and find entries
+    - SIM800
 
 **Voice Calls**
 - Supported on:
@@ -160,6 +168,10 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
     - NOTE:  u-blox chips do _NOT_ have embedded GPS - this functionality only works if a secondary GPS is connected to primary cellular chip over I2C
 - GSM location service
     - SIM800, SIM7000, Quectel, u-blox
+
+**Miscellaneous**
+- NETLIGHT (blinking LED) control
+    - SIM800
 
 **Credits**
 - Primary Authors/Contributors:

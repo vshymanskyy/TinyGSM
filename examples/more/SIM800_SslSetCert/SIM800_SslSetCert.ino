@@ -74,7 +74,7 @@ void setup() {
   modem.sendAT(GF("+SSLSETCERT=\"" CERT_FILE "\""));
   if (modem.waitResponse() != 1) return;
   if (modem.waitResponse(5000L, GF(GSM_NL "+SSLSETCERT:")) != 1) return;
-  const int retCode = modem.stream.readStringUntil('\n').toInt();
+  const int retCode = modem.streamGetIntBefore('\n');
 
 
   SerialMon.println();
