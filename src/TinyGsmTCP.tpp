@@ -241,10 +241,9 @@ class TinyGsmTCP {
       return -1;
     }
 
-    // TODO(SRGDamia1): Implement peek
-    int peek() override {
-      return -1;
-    }
+	int peek() override {
+		return (uint8_t)rx.peek();
+	}
 
     void flush() override {
       at->stream.flush();
