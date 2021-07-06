@@ -98,7 +98,7 @@ class TinyGsmSequansMonarch
       } else {
         this->mux = (mux % TINY_GSM_MUX_COUNT) + 1;
       }
-      at->sockets[mux % TINY_GSM_MUX_COUNT] = this;
+      at->sockets[this->mux % TINY_GSM_MUX_COUNT] = this;
 
       return true;
     }
