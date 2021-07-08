@@ -68,6 +68,14 @@ typedef TinyGsmSaraR4                    TinyGsm;
 typedef TinyGsmSaraR4::GsmClientSaraR4   TinyGsmClient;
 typedef TinyGsmSaraR4::GsmClientSecureR4 TinyGsmClientSecure;
 
+#elif defined(TINY_GSM_MODEM_SARAG450)
+  #define TINY_GSM_MODEM_HAS_GPRS
+  #define TINY_GSM_MODEM_HAS_SSL
+  #include "TinyGsmClientSaraG450.h"
+  typedef TinyGsmSaraG450 TinyGsm;
+  typedef TinyGsmSaraG450::GsmClient TinyGsmClient;
+  typedef TinyGsmSaraG450::GsmClientSecure TinyGsmClientSecure;
+
 #elif defined(TINY_GSM_MODEM_M95)
 #include "TinyGsmClientM95.h"
 typedef TinyGsmM95               TinyGsm;
