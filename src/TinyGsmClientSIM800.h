@@ -294,6 +294,31 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
     return (RegStatus)getRegistrationStatusXREG("CREG");
   }
 
+  String getCellIdImpl()
+  {
+    sendAT(GF("+CREG=2"));
+    waitResponse(GF(GSM_NL "OK" GSM_NL));
+
+    sendAT(GF("+CREG?"));
+    if(waitResponse(GF(GSM_NL "+CREG:")) != 1)
+    {
+      return "";
+    }
+
+    streamSkipUntil(',');
+    streamSkipUntil('"');
+    String res = stream.readStringUntil('"');
+    streamSkipUntil(',');
+    streamSkipUntil('"');
+    res += stream.readStringUntil('"');
+
+    waitResponse();
+    res.trim();
+    sendAT(GF("+CREG=1"));
+    waitResponse(GF(GSM_NL "OK" GSM_NL));
+    return res;
+  }
+
  protected:
   bool isNetworkConnectedImpl() {
     RegStatus s = getRegistrationStatus();
