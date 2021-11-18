@@ -28,5 +28,5 @@
   },
   "frameworks": ["arduino", "energia", "wiringpi"],
   "platforms": "*",
-  "examples": "examples/*/*.ino"
+  "headers": "TinyGsmClient.h"
 }
