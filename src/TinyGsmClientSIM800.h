@@ -449,42 +449,41 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
    * Audio functions
    */
  public:
-  bool setVolume(uint8_t volume = 50){
-	//Set speaker volume
+  bool setVolume(uint8_t volume = 50) {
+    // Set speaker volume
     sendAT(GF("+CLVL="), volume);
     return waitResponse() == 1;
   }
-  
-  uint8_t getVolume(){
-	//Get speaker volume
-	sendAT(GF("+CLVL?"));
-	if (waitResponse(GF(GSM_NL)) != 1) { return 0; }
+
+  uint8_t getVolume() {
+    // Get speaker volume
+    sendAT(GF("+CLVL?"));
+    if (waitResponse(GF(GSM_NL)) != 1) { return 0; }
     String res = stream.readStringUntil('\n');
-	waitResponse();
-	res.replace("+CLVL:", "");
+    waitResponse();
+    res.replace("+CLVL:", "");
     res.trim();
-	return res.toInt();
+    return res.toInt();
   }
-  
-  bool setMicVolume(uint8_t channel, uint8_t level){
-    if(channel > 4){
-	  return 0;
-	}
+
+  bool setMicVolume(uint8_t channel, uint8_t level) {
+    if (channel > 4) { return 0; }
     sendAT(GF("+CMIC="), level);
     return waitResponse() == 1;
   }
-  
-  bool setAudioChannel(uint8_t channel){
+
+  bool setAudioChannel(uint8_t channel) {
     sendAT(GF("+CHFA="), channel);
     return waitResponse() == 1;
   }
-  
-  bool playToolkitTone(uint8_t tone, uint32_t duration){
+
+  bool playToolkitTone(uint8_t tone, uint32_t duration) {
     sendAT(GF("STTONE="), 1, tone);
-	delay(duration);
-	sendAT(GF("STTONE="), 0);
-	return waitResponse();
+    delay(duration);
+    sendAT(GF("STTONE="), 0);
+    return waitResponse();
   }
+
   /*
    * Time functions
    */
