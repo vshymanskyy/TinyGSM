@@ -145,9 +145,9 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
 
 **Voice Calls**
 - Supported on:
-    - SIM800/SIM900, A6/A7, Quectel modems, u-blox
+    - SIM800/SIM900, SIM7600, A6/A7, Quectel modems, u-blox
 - Not yet supported on:
-    - SIM7000, SIM5360/5320/7100, SIM7500/7600/7800, VZM20Q (Monarch)
+    - SIM7000, SIM5360/5320/7100, SIM7500/7800, VZM20Q (Monarch)
 - Not possible on:
     -  XBee (any type), u-blox SARA R4/N4, Neoway M590, ESP8266 (obviously)
 - Functions:

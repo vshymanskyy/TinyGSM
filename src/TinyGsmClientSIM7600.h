@@ -16,6 +16,7 @@
 #define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
 
 #include "TinyGsmBattery.tpp"
+#include "TinyGsmCalling.tpp"
 #include "TinyGsmGPRS.tpp"
 #include "TinyGsmGPS.tpp"
 #include "TinyGsmGSMLocation.tpp"
@@ -54,7 +55,8 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
                        public TinyGsmTime<TinyGsmSim7600>,
                        public TinyGsmNTP<TinyGsmSim7600>,
                        public TinyGsmBattery<TinyGsmSim7600>,
-                       public TinyGsmTemperature<TinyGsmSim7600> {
+                       public TinyGsmTemperature<TinyGsmSim7600>,
+                       public TinyGsmCalling<TinyGsmSim7600> {
   friend class TinyGsmModem<TinyGsmSim7600>;
   friend class TinyGsmGPRS<TinyGsmSim7600>;
   friend class TinyGsmTCP<TinyGsmSim7600, TINY_GSM_MUX_COUNT>;
@@ -65,6 +67,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
   friend class TinyGsmNTP<TinyGsmSim7600>;
   friend class TinyGsmBattery<TinyGsmSim7600>;
   friend class TinyGsmTemperature<TinyGsmSim7600>;
+  friend class TinyGsmCalling<TinyGsmSim7600>;
 
   /*
    * Inner Client
@@ -407,11 +410,10 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
    * Phone Call functions
    */
  protected:
-  bool callAnswerImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
-  bool callNumberImpl(const String& number) TINY_GSM_ATTR_NOT_IMPLEMENTED;
-  bool callHangupImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
-  bool dtmfSendImpl(char cmd,
-                    int  duration_ms = 100) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool callHangupImpl() {
+    sendAT(GF("+CHUP"));
+    return waitResponse() == 1;
+  }
 
   /*
    * Messaging functions
