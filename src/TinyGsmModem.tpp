@@ -42,12 +42,21 @@ class TinyGsmModem {
   String getModemInfo() {
     return thisModem().getModemInfoImpl();
   }
+
+  String getModemRev() {
+    return thisModem().getModemRevImpl();
+  }
+
   // Gets the modem name (as it calls itself)
   String getModemName() {
     return thisModem().getModemNameImpl();
   }
   bool factoryDefault() {
     return thisModem().factoryDefaultImpl();
+  }
+
+  bool statusLedEnable(bool enable = true) {
+    return thisModem().statusLedEnableImpl(enable);
   }
 
   /*
@@ -122,6 +131,19 @@ class TinyGsmModem {
 
   String getModemInfoImpl() {
     thisModem().sendAT(GF("I"));
+    String res;
+    if (thisModem().waitResponse(1000L, res) != 1) { return ""; }
+    // Do the replaces twice so we cover both \r and \r\n type endings
+    res.replace("\r\nOK\r\n", "");
+    res.replace("\rOK\r", "");
+    res.replace("\r\n", " ");
+    res.replace("\r", " ");
+    res.trim();
+    return res;
+  }
+
+  String getModemRevImpl() {
+    thisModem().sendAT(GF("+CGMR"));
     String res;
     if (thisModem().waitResponse(1000L, res) != 1) { return ""; }
     // Do the replaces twice so we cover both \r and \r\n type endings
@@ -297,6 +319,70 @@ class TinyGsmModem {
     }
 
     return -9999;
+  }
+
+  inline int streamWaitAvailable(uint8_t numChars,
+                                 const uint32_t timeout_ms = 1000L) {
+      int ret = 0;
+      int end = millis() + timeout_ms;
+      do 
+      {
+        ret = thisModem().stream.available() ;
+        if ( ret >= numChars )
+        {
+          break;
+        }
+      }while( end > millis() ); 
+
+      return ret;
+  }
+
+  /*
+   * read and answer value, it manage quoted string and end of line.
+   * return :
+   *  - (-1): timeout or unterminated quoted string. 
+   *  - 0 : line is not ended, last byte read is an comma.
+   *  - 1 : line is ended, last byte read is an \r and/or \n.
+   */
+  inline int streamGetAtValue(String& value) {
+    bool quoted = false;
+    value = "";
+    for(;;)
+    {
+      char c;
+      size_t bytesRead = thisModem().stream.readBytes(&c,1);
+      if ( bytesRead == 0 ) { return -1; } /* Timeout */
+      if ( ( c == '\r' ) or ( c == '\n' ) )
+      {
+        /* remove \n if present after \r */
+        if ( ( c == '\r' ) && ( streamWaitAvailable(1) == 1 ) )
+        {
+            if ( thisModem().stream.peek() == '\n' )
+            {
+                thisModem().stream.read();
+            }
+        }
+        if ( quoted ) 
+        { 
+          return -1;  /* not terminated quoted string */
+        }
+        else
+        {
+          return 1; /* line is ended */
+        }
+      }
+      else if ( c == '"' ) { 
+        quoted = !quoted;
+      }
+      else if ( ( ! quoted ) && ( c == ',' ) )
+      {
+        return 0; /* Value ended but not the line */
+      }
+      else
+      { 
+        value += c;
+      }
+    }
   }
 
   inline int16_t streamGetIntBefore(char lastChar) {

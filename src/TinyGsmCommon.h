@@ -32,6 +32,10 @@
 #define TINY_GSM_YIELD_MS 0
 #endif
 
+#ifndef TINY_GSM_PHONEBOOK_RESULTS
+#define TINY_GSM_PHONEBOOK_RESULTS 5
+#endif
+
 #ifndef TINY_GSM_YIELD
 #define TINY_GSM_YIELD() \
   { delay(TINY_GSM_YIELD_MS); }
@@ -84,6 +88,81 @@ template <class T>
 const T& TinyGsmMin(const T& a, const T& b) {
   return (b < a) ? b : a;
 }
+
+enum class SmsStatus : uint8_t {
+  REC_UNREAD  = 0,
+  REC_READ    = 1,
+  STO_UNSENT  = 2,
+  STO_SENT    = 3,
+  ALL         = 4
+};
+
+enum class SmsAlphabet : uint8_t {
+  GSM_7bit   = B00,
+  Data_8bit  = B01,
+  UCS2       = B10,
+  Reserved   = B11
+};
+
+struct Sms {
+  SmsStatus status;              // <stat>
+  SmsAlphabet alphabet;          // alphabet part of TP-DCS
+  String originatingAddress;     // <oa>
+  String phoneBookEntry;         // <alpha>
+  String serviceCentreTimeStamp; // <scts>, format: yy/MM/dd,hh:mm:ss±zz; zz: time zone, quarter of an hour
+  String message;                // <data>
+};
+
+enum class MessageStorageType : uint8_t {
+  SIM,                // SM
+  Phone,              // ME
+  SIMPreferred,       // SM_P
+  PhonePreferred,     // ME_P
+  Either_SIMPreferred // MT (use both)
+};
+
+struct MessageStorage {
+  /*
+   * [0]: Messages to be read and deleted from this memory storage
+   * [1]: Messages will be written and sent to this memory storage
+   * [2]: Received messages will be placed in this memory storage
+   */
+  MessageStorageType type[3];
+  uint8_t used[3]  = {0};
+  uint8_t total[3] = {0};
+};
+
+enum class DeleteAllSmsMethod : uint8_t {
+  Read     = 1,
+  Unread   = 2,
+  Sent     = 3,
+  Unsent   = 4,
+  Received = 5,
+  All      = 6
+};
+
+enum class PhonebookStorageType : uint8_t {
+  SIM,    // Typical size: 250
+  Phone,  // Typical size: 100
+  Invalid
+};
+
+struct PhonebookStorage {
+  PhonebookStorageType type = PhonebookStorageType::Invalid;
+  uint8_t used  = {0};
+  uint8_t total = {0};
+};
+
+struct PhonebookEntry {
+  String number;
+  String text;
+};
+
+struct PhonebookMatches {
+  uint8_t index[TINY_GSM_PHONEBOOK_RESULTS] = {0};
+};
+
+
 
 template <class T>
 const T& TinyGsmMax(const T& a, const T& b) {
