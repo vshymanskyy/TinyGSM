@@ -24,6 +24,7 @@
 #include "TinyGsmTCP.tpp"
 #include "TinyGsmTemperature.tpp"
 #include "TinyGsmTime.tpp"
+#include "TinyGsmNTP.tpp"
 
 #define GSM_NL "\r\n"
 static const char GSM_OK[] TINY_GSM_PROGMEM    = "OK" GSM_NL;
@@ -49,6 +50,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
                     public TinyGsmCalling<TinyGsmBG96>,
                     public TinyGsmSMS<TinyGsmBG96>,
                     public TinyGsmTime<TinyGsmBG96>,
+                    public TinyGsmNTP<TinyGsmBG96>,
                     public TinyGsmGPS<TinyGsmBG96>,
                     public TinyGsmBattery<TinyGsmBG96>,
                     public TinyGsmTemperature<TinyGsmBG96> {
@@ -58,6 +60,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
   friend class TinyGsmCalling<TinyGsmBG96>;
   friend class TinyGsmSMS<TinyGsmBG96>;
   friend class TinyGsmTime<TinyGsmBG96>;
+  friend class TinyGsmNTP<TinyGsmBG96>;
   friend class TinyGsmGPS<TinyGsmBG96>;
   friend class TinyGsmBattery<TinyGsmBG96>;
   friend class TinyGsmTemperature<TinyGsmBG96>;
@@ -476,6 +479,27 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
     waitResponse();  // Ends with OK
     return true;
   }
+
+  /*
+   * NTP server functions
+   */
+
+  byte NTPServerSyncImpl(String server = "pool.ntp.org", byte = -5) {
+    // Request network synchronization
+    // AT+QNTP=<contextID>,<server>[,<port>][,<autosettime>]
+    sendAT(GF("+QNTP=1,\""), server, '"');
+    if (waitResponse(10000L, GF("+QNTP:"))) {
+      String result = stream.readStringUntil(',');
+      streamSkipUntil('\n');
+      result.trim();
+      if (TinyGsmIsValidNumber(result)) { return result.toInt(); }
+    } else {
+      return -1;
+    }
+    return -1;
+  }
+
+  String ShowNTPErrorImpl(byte error) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
   /*
    * Battery functions

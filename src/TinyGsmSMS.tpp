@@ -73,7 +73,7 @@ class TinyGsmSMS {
 
   static inline String TinyGsmDecodeHex8bit(String& instr) {
     String result;
-    for (uint8_t i = 0; i < instr.length(); i += 2) {
+    for (uint16_t i = 0; i < instr.length(); i += 2) {
       char buf[4] = {
           0,
       };
@@ -87,7 +87,7 @@ class TinyGsmSMS {
 
   static inline String TinyGsmDecodeHex16bit(String& instr) {
     String result;
-    for (uint8_t i = 0; i < instr.length(); i += 4) {
+    for (uint16_t i = 0; i < instr.length(); i += 4) {
       char buf[4] = {
           0,
       };

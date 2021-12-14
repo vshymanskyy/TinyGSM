@@ -98,7 +98,7 @@ class TinyGsmSequansMonarch
       } else {
         this->mux = (mux % TINY_GSM_MUX_COUNT) + 1;
       }
-      at->sockets[mux % TINY_GSM_MUX_COUNT] = this;
+      at->sockets[this->mux % TINY_GSM_MUX_COUNT] = this;
 
       return true;
     }
@@ -467,8 +467,8 @@ class TinyGsmSequansMonarch
     // <recvDataMode1> = Receive data mode = 0  - data as text (1 for hex)
     // <keepalive1> = unused = 0
     // <listenAutoRsp1> = Listen auto-response mode = 0 - deactivated
-    // <sendDataMode1> = Send data mode = 0  - data as text (1 for hex)
-    sendAT(GF("+SQNSCFGEXT="), mux, GF(",1,0,0,0,0"));
+    // <sendDataMode1> = Send data mode = 1  - data as hex (0 for text)
+    sendAT(GF("+SQNSCFGEXT="), mux, GF(",1,0,0,0,1"));
     waitResponse(5000L);
 
     // Socket dial
@@ -508,7 +508,13 @@ class TinyGsmSequansMonarch
 
     sendAT(GF("+SQNSSENDEXT="), mux, ',', (uint16_t)len);
     waitResponse(10000L, GF(GSM_NL "> "));
-    stream.write(reinterpret_cast<const uint8_t*>(buff), len);
+    // Translate bytes into char to be able to send them as an hex string
+    char char_command[2];
+    for (int i=0; i<len; i++) {
+      memset(&char_command, 0, sizeof(char_command));
+      sprintf(&char_command[0], "%02X", reinterpret_cast<const uint8_t*>(buff)[i]);
+      stream.write(char_command, sizeof(char_command));
+    }
     stream.flush();
     if (waitResponse() != 1) {
       DBG("### no OK after send");
@@ -596,8 +602,8 @@ class TinyGsmSequansMonarch
       // SOCK_LISTENING              = 4,
       // SOCK_INCOMING               = 5,
       // SOCK_OPENING                = 6,
-      GsmClientSequansMonarch* sock = sockets[mux % TINY_GSM_MUX_COUNT];
-      if (sock && muxNo == mux) {
+      GsmClientSequansMonarch* sock = sockets[muxNo % TINY_GSM_MUX_COUNT];
+      if (sock) {
         sock->sock_connected = ((status != SOCK_CLOSED) &&
                                 (status != SOCK_INCOMING) &&
                                 (status != SOCK_OPENING));
@@ -720,7 +726,8 @@ class TinyGsmSequansMonarch
 
  protected:
   GsmClientSequansMonarch* sockets[TINY_GSM_MUX_COUNT];
-  const char*              gsmNL = GSM_NL;
+  // GSM_NL (\r\n) is not accepted with SQNSSENDEXT in data mode so use \n
+  const char*              gsmNL = "\n";
 };
 
 #endif  // SRC_TINYGSMCLIENTSEQUANSMONARCH_H_

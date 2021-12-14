@@ -34,6 +34,8 @@
 // #define TINY_GSM_MODEM_SIM868
 // #define TINY_GSM_MODEM_SIM900
 // #define TINY_GSM_MODEM_SIM7000
+// #define TINY_GSM_MODEM_SIM7000SSL
+// #define TINY_GSM_MODEM_SIM7080
 // #define TINY_GSM_MODEM_SIM5360
 // #define TINY_GSM_MODEM_SIM7600
 // #define TINY_GSM_MODEM_UBLOX
@@ -56,11 +58,14 @@
 #define SerialMon Serial
 
 // Hardware Serial on Mega, Leonardo, Micro
+#ifndef __AVR_ATmega328P__
 #define SerialAT Serial1
 
 // or Software Serial on Uno, Nano
-//#include <SoftwareSerial.h>
-//SoftwareSerial SerialAT(2, 3); // RX, TX
+#else
+#include <SoftwareSerial.h>
+SoftwareSerial SerialAT(2, 3);  // RX, TX
+#endif
 
 
 // Your GPRS credentials, if any

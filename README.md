@@ -17,6 +17,32 @@ If you like **TinyGSM** - give it a star, or fork it and contribute!
 You can also join our chat:
 [![Gitter](https://img.shields.io/gitter/room/vshymanskyy/TinyGSM.svg)](https://gitter.im/tinygsm)
 
+- [Supported modems](#supported-modems)
+  - [Supported boards/modules](#supported-boardsmodules)
+- [Features](#features)
+- [Getting Started](#getting-started)
+    - [First Steps](#first-steps)
+    - [Writing your own code](#writing-your-own-code)
+    - [If you have any issues](#if-you-have-any-issues)
+- [How does it work?](#how-does-it-work)
+- [API Reference](#api-reference)
+- [Troubleshooting](#troubleshooting)
+  - [Ensure stable data & power connection](#ensure-stable-data--power-connection)
+  - [Baud rates](#baud-rates)
+  - [Broken initial configuration](#broken-initial-configuration)
+  - [Failed connection or no data received](#failed-connection-or-no-data-received)
+  - [Diagnostics sketch](#diagnostics-sketch)
+  - [Web request formatting problems - "but it works with PostMan"](#web-request-formatting-problems---but-it-works-with-postman)
+  - [SoftwareSerial problems](#softwareserial-problems)
+  - [ESP32 Notes](#esp32-notes)
+    - [HardwareSerial](#hardwareserial)
+    - [HttpClient](#httpclient)
+  - [SAMD21](#samd21)
+  - [Goouuu Tech IOT-GA6 vs AI-Thinker A6 confusion](#goouuu-tech-iot-ga6-vs-ai-thinker-a6-confusion)
+  - [SIM800 and SSL](#sim800-and-ssl)
+  - [Which version of the SIM7000 code to use](#which-version-of-the-sim7000-code-to-use)
+- [License](#license)
+
 ### Arduino Client interface support
 This library is easy to integrate with lots of sketches which use Ethernet or WiFi.
 **PubSubClient ([MQTT](http://mqtt.org/))**, **[Blynk](http://blynk.cc)**, **HTTP Client** and **File Download** examples are provided.
@@ -41,8 +67,9 @@ TinyGSM also pulls data gently from the modem (whenever possible), so it can ope
 - SIMCom WCDMA/HSPA/HSPA+ Modules (SIM5360, SIM5320, SIM5300E, SIM5300E/A)
 - SIMCom LTE Modules (SIM7100E, SIM7500E, SIM7500A, SIM7600C, SIM7600E)
 - SIMCom SIM7000E/A/G CAT-M1/NB-IoT Module
+- SIMCom SIM7070/SIM7080/SIM7090 CAT-M1/NB-IoT Module
 - AI-Thinker A6, A6C, A7, A20
-- ESP8266 (AT commands interface, similar to GSM modems)
+- ESP8266/ESP32 (AT commands interface, similar to GSM modems)
 - Digi XBee WiFi and Cellular (using XBee command mode)
 - Neoway M590
 - u-blox 2G, 3G, 4G, and LTE Cat1 Cellular Modems (many modules including LEON-G100, LISA-U2xx, SARA-G3xx, SARA-U2xx, TOBY-L2xx, LARA-R2xx, MPCI-L2xx)
@@ -86,7 +113,8 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
         - Sequans Monarch - 6
         - SIM 800/900 - 5
         - SIM 5360/5320/5300/7100 - 10
-        - SIM7000 - 8
+        - SIM7000 - 8 possible without SSL, only 2 with
+        - SIM 7070/7080/7090 - 12
         - SIM 7500/7600/7800 - 10
         - u-blox 2G/3G - 7
         - u-blox SARA R4/N4 - 7
@@ -95,10 +123,10 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
     - Not yet supported on any module, though it may be some day
 - SSL/TLS (HTTPS)
     - Supported on:
-        - SIM800, u-Blox, XBee _cellular_, ESP8266, and Sequans Monarch
-        - Note:  only some device models or firmware revisions have this feature (SIM8xx R14.18, A7, etc.)
+        - SIM800, SIM7000, u-Blox, XBee _cellular_, ESP8266, and Sequans Monarch
+        - Note:  **only some device models or firmware revisions have this feature** (SIM8xx R14.18, A7, etc.)
     - Not yet supported on:
-        - Quectel modems, SIM7000, SIM 5360/5320/7100, SIM 7500/7600/7800
+        - Quectel modems, SIM 5360/5320/7100, SIM 7500/7600/7800
     - Not possible on:
         - SIM900, A6/A7, Neoway M590, XBee _WiFi_
     - Like TCP, most modules support simultaneous connections
@@ -117,9 +145,9 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
 
 **Voice Calls**
 - Supported on:
-    - SIM800/SIM900, A6/A7, Quectel modems, u-blox
+    - SIM800/SIM900, SIM7600, A6/A7, Quectel modems, u-blox
 - Not yet supported on:
-    - SIM7000, SIM5360/5320/7100, SIM7500/7600/7800, VZM20Q (Monarch)
+    - SIM7000, SIM5360/5320/7100, SIM7500/7800, VZM20Q (Monarch)
 - Not possible on:
     -  XBee (any type), u-blox SARA R4/N4, Neoway M590, ESP8266 (obviously)
 - Functions:
@@ -129,7 +157,7 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
 **Location**
 - GPS/GNSS
     - SIM808, SIM7000, SIM7500/7600/7800, BG96, u-blox
-    - NOTE:  u-blox chips do _NOT_ have embedded GPS - this function only works if a secondary GPS is connected to primary cellular chip over I2C
+    - NOTE:  u-blox chips do _NOT_ have embedded GPS - this functionality only works if a secondary GPS is connected to primary cellular chip over I2C
 - GSM location service
     - SIM800, SIM7000, Quectel, u-blox
 
@@ -139,6 +167,7 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
     - [SRGDamia1](https://github.com/SRGDamia1/)
 - SIM7000:
     - [captFuture](https://github.com/captFuture/)
+    - [FStefanni](https://github.com/FStefanni/)
 - Sequans Monarch:
     - [nootropicdesign](https://github.com/nootropicdesign/)
 - Quectel M9C60
@@ -205,8 +234,7 @@ The general flow of your code should be:
 - Send out your data.
 
 
-
-#### If you have any issues:
+#### If you have any issues
 
   1. Read the whole README (you're looking at it!), particularly the troubleshooting section below.
   2. Some boards require [**special configuration**](https://github.com/vshymanskyy/TinyGSM/wiki/Board-configuration).
@@ -218,6 +246,15 @@ The general flow of your code should be:
 
 Many GSM modems, WiFi and radio modules can be controlled by sending AT commands over Serial.
 TinyGSM knows which commands to send, and how to handle AT responses, and wraps that into standard Arduino Client interface.
+
+This library is "blocking" in all of its communication.
+Depending on the function, your code may be blocked for a long time waiting for the module responses.
+Apart from the obvious (ie, `waitForNetwork()`) several other functions may block your code for up to several *minutes*.
+The `gprsConnect()` and `client.connect()` functions commonly block the longest, especially in poorer service regions.
+The module shutdown and restart may also be quite slow.
+
+This libary *does not* support any sort of "hardware" or pin level controls for the modules.
+If you need to turn your module on or reset it using some sort of High/Low/High pin sequence, you must write those functions yourself.
 
 ## API Reference
 
@@ -237,6 +274,13 @@ Improving the power supply actually solves stability problems in **many** cases!
 - Do not put your wires next to noisy signal sources (buck converters, antennas, oscillators etc.)
 - If everything else seems to be working but you are unable to connect to the network, check your power supply!
 
+### Baud rates
+
+Most modules support some sort of "auto-bauding" feature where the module will attempt to adjust it's baud rate to match what it is receiving.
+TinyGSM also implements its own auto bauding function (`TinyGsmAutoBaud(SerialAT, GSM_AUTOBAUD_MIN, GSM_AUTOBAUD_MAX);`).
+While very useful when initially connecting to a module and doing tests, these should **NOT** be used in any sort of production code.
+Once you've established communication with the module, set the baud rate using the `setBaud(#)` function and stick with that rate.
+
 ### Broken initial configuration
 
 Sometimes (especially if you played with AT commands), your module configuration may become invalid.
@@ -254,6 +298,15 @@ In some cases, you may need to set an initial APN to connect to the cellular net
 Try using the ```gprsConnect(APN)``` function to set an initial APN if you are unable to register on the network.
 You may need set the APN again after registering.
 (In most cases, you should set the APN after registration.)
+
+### Failed connection or no data received
+
+The first connection with a new SIM card, a new module, or at a new location/tower may take a *LONG* time - up to 15 minutes or even more, especially if the signal quality isn't excellent.
+If it is your first connection, you may need to adjust your wait times and possibly go to lunch while you're waiting.
+
+If you are able to open a TCP connection but have the connection close before receiving data, try adding a keep-alive header to your request.
+Some modules (ie, the SIM7000 in SSL mode) will immediately throw away any un-read data when the remote server closes the connection - sometimes without even giving a notification that data arrived in the first place.
+When using MQTT, to keep a continuous connection you may need to reduce your keep-alive interval (PINGREQ/PINGRESP).
 
 ### Diagnostics sketch
 
@@ -337,8 +390,26 @@ Please [refer to this comment](https://github.com/vshymanskyy/TinyGSM/issues/102
 
 It turns out that **Goouuu Tech IOT-GA6** is not the same as **AI-Thinker A6**. Unfortunately IOT-GA6 is not supported out of the box yet. There are some hints that IOT-GA6 firmware may be updated to match A6... See [this topic](https://github.com/vshymanskyy/TinyGSM/issues/164).
 
+### SIM800 and SSL
+
+Some, but not all, versions of the SIM800 support SSL.
+Having SSL support depends on the firmware version and the individual module.
+Users have had varying levels of success in using SSL on the SIM800 even with apparently identical firmware.
+If you need SSL and it does not appear to be working on your SIM800, try a different module or try using a secondary SSL library.
+
+### Which version of the SIM7000 code to use
+
+There are two versions of the SIM7000 code, one using `TINY_GSM_MODEM_SIM7000` and another with `TINY_GSM_MODEM_SIM7000SSL`.
+The `TINY_GSM_MODEM_SIM7000` version *does not support SSL* but supports up to 8 simultaneous connections.
+The `TINY_GSM_MODEM_SIM7000SSL` version supports both SSL *and unsecured connections* with up to 2 simultaneous connections.
+So why are there two versions?
+The "SSL" version uses the SIM7000's "application" commands while the other uses the "TCP-IP toolkit".
+Depending on your region/firmware, one or the other may not work for you.
+Try both and use whichever is more stable.
+If you do not need SSL, I recommend starting with `TINY_GSM_MODEM_SIM7000`.
+
 __________
 
-### License
+## License
 This project is released under
 The GNU Lesser General Public License (LGPL-3.0)

@@ -10,20 +10,15 @@
  * For more MQTT examples, see PubSubClient library
  *
  **************************************************************
- * Use Mosquitto client tools to work with MQTT
- *   Ubuntu/Linux: sudo apt-get install mosquitto-clients
- *   Windows:      https://mosquitto.org/download/
+ * This example connects to HiveMQ's showcase broker.
  *
- * Subscribe for messages:
- *   mosquitto_sub -h test.mosquitto.org -t GsmClientTest/init -t GsmClientTest/ledStatus -q 1
- * Toggle led:
- *   mosquitto_pub -h test.mosquitto.org -t GsmClientTest/led -q 1 -m "toggle"
+ * You can quickly test sending and receiving messages from the HiveMQ webclient
+ * available at http://www.hivemq.com/demos/websocket-client/.
  *
- * You can use Node-RED for wiring together MQTT-enabled devices
- *   https://nodered.org/
- * Also, take a look at these additional Node-RED modules:
- *   node-red-contrib-blynk-ws
- *   node-red-dashboard
+ * Subscribe to the topic GsmClientTest/ledStatus
+ * Publish "toggle" to the topic GsmClientTest/led and the LED on your board
+ * should toggle and you should see a new message published to
+ * GsmClientTest/ledStatus with the newest LED status.
  *
  **************************************************************/
 
@@ -33,6 +28,8 @@
 // #define TINY_GSM_MODEM_SIM868
 // #define TINY_GSM_MODEM_SIM900
 // #define TINY_GSM_MODEM_SIM7000
+// #define TINY_GSM_MODEM_SIM7000SSL
+// #define TINY_GSM_MODEM_SIM7080
 // #define TINY_GSM_MODEM_SIM5360
 // #define TINY_GSM_MODEM_SIM7600
 // #define TINY_GSM_MODEM_UBLOX
@@ -53,11 +50,14 @@
 
 // Set serial for AT commands (to the module)
 // Use Hardware Serial on Mega, Leonardo, Micro
+#ifndef __AVR_ATmega328P__
 #define SerialAT Serial1
 
 // or Software Serial on Uno, Nano
-//#include <SoftwareSerial.h>
-//SoftwareSerial SerialAT(2, 3); // RX, TX
+#else
+#include <SoftwareSerial.h>
+SoftwareSerial SerialAT(2, 3);  // RX, TX
+#endif
 
 // See all AT commands, if wanted
 // #define DUMP_AT_COMMANDS
@@ -66,13 +66,17 @@
 #define TINY_GSM_DEBUG SerialMon
 
 // Range to attempt to autobaud
+// NOTE:  DO NOT AUTOBAUD in production code.  Once you've established
+// communication, set a fixed baud rate using modem.setBaud(#).
 #define GSM_AUTOBAUD_MIN 9600
 #define GSM_AUTOBAUD_MAX 115200
 
-// Add a reception delay - may be needed for a fast processor at a slow baud rate
+// Add a reception delay, if needed.
+// This may be needed for a fast processor at a slow baud rate.
 // #define TINY_GSM_YIELD() { delay(2); }
 
-// Define how you're planning to connect to the internet
+// Define how you're planning to connect to the internet.
+// This is only needed for this example, not in other code.
 #define TINY_GSM_USE_GPRS true
 #define TINY_GSM_USE_WIFI false
 
@@ -80,7 +84,7 @@
 #define GSM_PIN ""
 
 // Your GPRS credentials, if any
-const char apn[] = "YourAPN";
+const char apn[]      = "YourAPN";
 const char gprsUser[] = "";
 const char gprsPass[] = "";
 
@@ -91,8 +95,8 @@ const char wifiPass[] = "YourWiFiPass";
 // MQTT details
 const char* broker = "broker.hivemq.com";
 
-const char* topicLed = "GsmClientTest/led";
-const char* topicInit = "GsmClientTest/init";
+const char* topicLed       = "GsmClientTest/led";
+const char* topicInit      = "GsmClientTest/init";
 const char* topicLedStatus = "GsmClientTest/ledStatus";
 
 #include <TinyGsmClient.h>
@@ -113,14 +117,14 @@ const char* topicLedStatus = "GsmClientTest/ledStatus";
 #endif
 
 #ifdef DUMP_AT_COMMANDS
-  #include <StreamDebugger.h>
-  StreamDebugger debugger(SerialAT, SerialMon);
-  TinyGsm modem(debugger);
+#include <StreamDebugger.h>
+StreamDebugger debugger(SerialAT, SerialMon);
+TinyGsm        modem(debugger);
 #else
-TinyGsm modem(SerialAT);
+TinyGsm        modem(SerialAT);
 #endif
 TinyGsmClient client(modem);
-PubSubClient mqtt(client);
+PubSubClient  mqtt(client);
 
 #define LED_PIN 13
 int ledStatus = LOW;
@@ -150,7 +154,7 @@ boolean mqttConnect() {
   boolean status = mqtt.connect("GsmClientTest");
 
   // Or, if you want to authenticate MQTT:
-  //boolean status = mqtt.connect("GsmClientName", "mqtt_user", "mqtt_pass");
+  // boolean status = mqtt.connect("GsmClientName", "mqtt_user", "mqtt_pass");
 
   if (status == false) {
     SerialMon.println(" fail");
@@ -193,13 +197,11 @@ void setup() {
 
 #if TINY_GSM_USE_GPRS
   // Unlock your SIM card with a PIN if needed
-  if ( GSM_PIN && modem.getSimStatus() != 3 ) {
-    modem.simUnlock(GSM_PIN);
-  }
+  if (GSM_PIN && modem.getSimStatus() != 3) { modem.simUnlock(GSM_PIN); }
 #endif
 
 #if TINY_GSM_USE_WIFI
-    // Wifi connection parameters must be set before waiting for the network
+  // Wifi connection parameters must be set before waiting for the network
   SerialMon.print(F("Setting SSID/password..."));
   if (!modem.networkConnect(wifiSSID, wifiPass)) {
     SerialMon.println(" fail");
@@ -222,24 +224,20 @@ void setup() {
   }
   SerialMon.println(" success");
 
-  if (modem.isNetworkConnected()) {
-    SerialMon.println("Network connected");
-  }
+  if (modem.isNetworkConnected()) { SerialMon.println("Network connected"); }
 
 #if TINY_GSM_USE_GPRS
   // GPRS connection parameters are usually set after network registration
-    SerialMon.print(F("Connecting to "));
-    SerialMon.print(apn);
-    if (!modem.gprsConnect(apn, gprsUser, gprsPass)) {
-      SerialMon.println(" fail");
-      delay(10000);
-      return;
-    }
-    SerialMon.println(" success");
-
-  if (modem.isGprsConnected()) {
-    SerialMon.println("GPRS connected");
+  SerialMon.print(F("Connecting to "));
+  SerialMon.print(apn);
+  if (!modem.gprsConnect(apn, gprsUser, gprsPass)) {
+    SerialMon.println(" fail");
+    delay(10000);
+    return;
   }
+  SerialMon.println(" success");
+
+  if (modem.isGprsConnected()) { SerialMon.println("GPRS connected"); }
 #endif
 
   // MQTT Broker setup
@@ -248,6 +246,33 @@ void setup() {
 }
 
 void loop() {
+  // Make sure we're still registered on the network
+  if (!modem.isNetworkConnected()) {
+    SerialMon.println("Network disconnected");
+    if (!modem.waitForNetwork(180000L, true)) {
+      SerialMon.println(" fail");
+      delay(10000);
+      return;
+    }
+    if (modem.isNetworkConnected()) {
+      SerialMon.println("Network re-connected");
+    }
+
+#if TINY_GSM_USE_GPRS
+    // and make sure GPRS/EPS is still connected
+    if (!modem.isGprsConnected()) {
+      SerialMon.println("GPRS disconnected!");
+      SerialMon.print(F("Connecting to "));
+      SerialMon.print(apn);
+      if (!modem.gprsConnect(apn, gprsUser, gprsPass)) {
+        SerialMon.println(" fail");
+        delay(10000);
+        return;
+      }
+      if (modem.isGprsConnected()) { SerialMon.println("GPRS reconnected"); }
+    }
+#endif
+  }
 
   if (!mqtt.connected()) {
     SerialMon.println("=== MQTT NOT CONNECTED ===");
@@ -255,9 +280,7 @@ void loop() {
     uint32_t t = millis();
     if (t - lastReconnectAttempt > 10000L) {
       lastReconnectAttempt = t;
-      if (mqttConnect()) {
-        lastReconnectAttempt = 0;
-      }
+      if (mqttConnect()) { lastReconnectAttempt = 0; }
     }
     delay(100);
     return;

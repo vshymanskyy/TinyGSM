@@ -149,8 +149,12 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
     if (waitResponse() != 1) { return false; }
     sendAT(GF("+CIPMUX=1"));  // Enable Multiple Connections
     if (waitResponse() != 1) { return false; }
-    sendAT(GF("+CWMODE_CUR=1"));  // Put into "station" mode
-    if (waitResponse() != 1) { return false; }
+    sendAT(GF("+CWMODE=1"));  // Put into "station" mode
+    if (waitResponse() != 1) {
+      sendAT(GF("+CWMODE_CUR=1"));  // Attempt "current" station mode command
+                                    // for some firmware variants if needed
+      if (waitResponse() != 1) { return false; }
+    }
     DBG(GF("### Modem:"), getModemName());
     return true;
   }
@@ -161,6 +165,15 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
 
   void setBaudImpl(uint32_t baud) {
     sendAT(GF("+UART_CUR="), baud, "8,1,0,0");
+    if (waitResponse() != 1) {
+      sendAT(GF("+UART="), baud,
+             "8,1,0,0");  // Really old firmwares might need this
+      // if (waitResponse() != 1) {
+      //   sendAT(GF("+IPR="), baud);  // First release firmwares might need
+      //   this
+      waitResponse();
+      // }
+    }
   }
 
   bool factoryDefaultImpl() {
@@ -218,11 +231,17 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
 
  protected:
   int8_t getSignalQualityImpl() {
-    sendAT(GF("+CWJAP_CUR?"));
-    int8_t res1 = waitResponse(GF("No AP"), GF("+CWJAP_CUR:"));
+    sendAT(GF("+CWJAP?"));
+    int8_t res1 = waitResponse(GF("No AP"), GF("+CWJAP:"));
     if (res1 != 2) {
       waitResponse();
-      return 0;
+      sendAT(GF("+CWJAP_CUR?"));  // attempt "current" as used by some firmware
+                                  // versions
+      int8_t res1 = waitResponse(GF("No AP"), GF("+CWJAP_CUR:"));
+      if (res1 != 2) {
+        waitResponse();
+        return 0;
+      }
     }
     streamSkipUntil(',');             // Skip SSID
     streamSkipUntil(',');             // Skip BSSID/MAC address
@@ -250,10 +269,18 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
   }
 
   String getLocalIPImpl() {
-    sendAT(GF("+CIPSTA_CUR?"));
-    int8_t res1 = waitResponse(GF("ERROR"), GF("+CWJAP_CUR:"));
-    if (res1 != 2) { return ""; }
-    String res2 = stream.readStringUntil('"');
+    // attempt with and without 'current' flag
+    sendAT(GF("+CIPSTA?"));
+    int8_t res1 = waitResponse(GF("ERROR"), GF("+CIPSTA:"));
+    if (res1 != 2) {
+      sendAT(GF("+CIPSTA_CUR?"));
+      res1 = waitResponse(GF("ERROR"), GF("+CIPSTA_CUR:"));
+      if (res1 != 2) { return ""; }
+    }
+    String res2 = stream.readStringUntil('\n');
+    res2.replace("ip:", "");  // newer firmwares have this
+    res2.replace("\"", "");
+    res2.trim();
     waitResponse();
     return res2;
   }
@@ -263,9 +290,14 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
    */
  protected:
   bool networkConnectImpl(const char* ssid, const char* pwd) {
-    sendAT(GF("+CWJAP_CUR=\""), ssid, GF("\",\""), pwd, GF("\""));
+    // attempt first without than with the 'current' flag used in some firmware
+    // versions
+    sendAT(GF("+CWJAP=\""), ssid, GF("\",\""), pwd, GF("\""));
     if (waitResponse(30000L, GFP(GSM_OK), GF(GSM_NL "FAIL" GSM_NL)) != 1) {
-      return false;
+      sendAT(GF("+CWJAP_CUR=\""), ssid, GF("\",\""), pwd, GF("\""));
+      if (waitResponse(30000L, GFP(GSM_OK), GF(GSM_NL "FAIL" GSM_NL)) != 1) {
+        return false;
+      }
     }
 
     return true;

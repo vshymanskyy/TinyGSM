@@ -45,3 +45,5 @@ extras/At Command Manuals - Unsupported/*
 # Filters
 .gitconfig
 filters/*
+platformio_extra_envs.ini
+*.tar.gz

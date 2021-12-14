@@ -79,7 +79,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590>,
     }
 
    public:
-    int connect(const char* host, uint16_t port, int timeout_s) {
+    virtual int connect(const char* host, uint16_t port, int timeout_s) {
       stop();
       TINY_GSM_YIELD();
       rx.clear();
