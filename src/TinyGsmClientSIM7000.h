@@ -108,11 +108,7 @@ class TinyGsmSim7000 : public TinyGsmSim70xx<TinyGsmSim7000>,
           return client;
         }
       }
-      #if defined(ESP32) || defined(ESP8266)
-        log_e("Cannot create client, TINYGSM_MUX_COUNT [%d] exceeded", TINY_GSM_MUX_COUNT);
-      #else
-        DBG(GF("ERROR: Cannot create client, TINYGSM_MUX_COUNT ["), TINY_GSM_MUX_COUNT, GF("] exceeded."));
-      #endif
+      DBG(GF("ERROR: Cannot create client, TINYGSM_MUX_COUNT ["), TINY_GSM_MUX_COUNT, GF("] exceeded."));
       return nullptr;
     }
 
