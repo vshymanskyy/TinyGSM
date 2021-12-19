@@ -18,7 +18,6 @@
 #include "TinyGsmClientSIM70xx.h"
 #include "TinyGsmTCP.tpp"
 #include "TinyGsmClient.h"
-#include <memory>
 
 class TinyGsmSim7000 : public TinyGsmSim70xx<TinyGsmSim7000>,
   public TinyGsmTCP<TinyGsmSim7000, TINY_GSM_MUX_COUNT> {
