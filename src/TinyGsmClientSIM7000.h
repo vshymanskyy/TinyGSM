@@ -333,7 +333,7 @@ class TinyGsmSim7000 : public TinyGsmSim70xx<TinyGsmSim7000>,
       return true;
     }
 
-    String ShowNTPError(byte error) {
+    String ShowNTPErrorImpl(byte error) {
       switch (error) {
         case 1:
           return "Network time synchronization is successful";
@@ -352,7 +352,7 @@ class TinyGsmSim7000 : public TinyGsmSim70xx<TinyGsmSim7000>,
       }
     }
 
-    byte NTPServerSync(String server = "pool.ntp.org", byte TimeZone = 3) {
+    byte NTPServerSyncImpl(String server = "pool.ntp.org", byte TimeZone = 3) {
       // Set GPRS bearer profile to associate with NTP sync
       sendAT(GF("+CNTPCID=1"));
       if (waitResponse(10000L) != 1) {
