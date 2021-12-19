@@ -97,7 +97,7 @@ class TinyGsmSim7000 : public TinyGsmSim70xx<TinyGsmSim7000>,
   public:
     explicit TinyGsmSim7000(Stream& stream)
       : TinyGsmSim70xx<TinyGsmSim7000>(stream) {
-      // memset(sockets, 0, sizeof(sockets));
+      memset(sockets, 0, sizeof(sockets));
     }
 
     GsmClientSim7000* createClient() {
