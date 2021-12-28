@@ -483,11 +483,15 @@ class TinyGsmSim7000 : public TinyGsmSim70xx<TinyGsmSim7000>,
 
       sendAT(GF("+CIPRXGET=4,"), mux);
       size_t result = 0;
-      if (waitResponse(GF("+CIPRXGET:")) == 1) {
-        streamSkipUntil(',');  // Skip mode 4
+      while (waitResponse(GF("+CIPRXGET:")) == 1) {
+        int8_t mode = streamGetIntBefore(',');
+        if (mode != 4) {
+          continue;
+        }
         streamSkipUntil(',');  // Skip mux
         result = streamGetIntBefore('\n');
         waitResponse();
+        break;
       }
       // DBG("### Available:", result, "on", mux);
       if (!result) {
@@ -527,6 +531,7 @@ class TinyGsmSim7000 : public TinyGsmSim70xx<TinyGsmSim7000>,
       String r4s(r4); r4s.trim();
       String r5s(r5); r5s.trim();
       DBG("### ..:", r1s, ",", r2s, ",", r3s, ",", r4s, ",", r5s);*/
+
       data.reserve(64);
       uint8_t  index       = 0;
       uint32_t startMillis = millis();
@@ -535,7 +540,7 @@ class TinyGsmSim7000 : public TinyGsmSim70xx<TinyGsmSim7000>,
         while (stream.available() > 0) {
           TINY_GSM_YIELD();
           int8_t a = stream.read();
-          if (a <= 0) {
+          if (a == 0) {
             continue;  // Skip 0x00 bytes, just in case
           }
           data += static_cast<char>(a);
