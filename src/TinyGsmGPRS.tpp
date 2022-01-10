@@ -30,6 +30,9 @@ class TinyGsmGPRS {
   bool simUnlock(const char* pin) {
     return thisModem().simUnlockImpl(pin);
   }
+    bool simLock(const char* pin) {
+    return thisModem().simLockImpl(pin);
+  }
   // Gets the CCID of a sim card via AT+CCID
   String getSimCCID() {
     return thisModem().getSimCCIDImpl();
