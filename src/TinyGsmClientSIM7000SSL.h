@@ -486,18 +486,12 @@ class TinyGsmSim7000SSL
 
   size_t modemGetAvailable(uint8_t mux) {
 
-      bool anySocketConnected = false;
       // Reset sock_available on all sockets
       for (int muxNo = 0; muxNo < TINY_GSM_MUX_COUNT; muxNo++) {
         GsmClientSim7000SSL* isock = sockets[muxNo];
         if (isock) {
           isock->sock_available = 0;
-          anySocketConnected |= isock->sock_connected;
         }
-      }
-
-      if (!anySocketConnected) {
-        return 0;
       }
 
       // NOTE: This gets how many characters are available on all connections that
