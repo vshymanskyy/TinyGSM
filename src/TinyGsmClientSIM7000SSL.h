@@ -497,7 +497,6 @@ class TinyGsmSim7000SSL
       }
 
       if (!anySocketConnected) {
-        log_w("No sockets connected");
         return 0;
       }
 
