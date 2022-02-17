@@ -27,7 +27,7 @@ class TinyGsmSim808 : public TinyGsmSim800, public TinyGsmGPS<TinyGsmSim808>, pu
    */
  protected:
   // enable GPS
-  bool enableGPSImpl(GpsStartMode start_mode = GPS_START_AUTO) {
+  bool enableGPSImpl(GpsStartMode startMode = GPS_START_AUTO) {
     sendAT(GF("+CGNSPWR=1"));
     if (waitResponse() != 1) { return false; }
     return true;

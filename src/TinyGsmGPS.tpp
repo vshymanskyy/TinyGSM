@@ -26,8 +26,8 @@ class TinyGsmGPS {
   /*
    * GPS/GNSS/GLONASS location functions
    */
-  bool enableGPS(GpsStartMode start_mode = GPS_START_AUTO) {
-    return thisModem().enableGPSImpl(start_mode);
+  bool enableGPS(GpsStartMode startMode = GPS_START_AUTO) {
+    return thisModem().enableGPSImpl(startMode);
   }
   bool disableGPS() {
     return thisModem().disableGPSImpl();
@@ -73,7 +73,7 @@ class TinyGsmGPS {
    * GPS/GNSS/GLONASS location functions
    */
 
-  bool enableGPSImpl(GpsStartMode start_mode = GPS_START_AUTO)
+  bool enableGPSImpl(GpsStartMode startMode = GPS_START_AUTO)
       TINY_GSM_ATTR_NOT_IMPLEMENTED;
   bool    disableGPSImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
   String  getGPSrawImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;

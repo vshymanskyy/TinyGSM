@@ -434,7 +434,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
    * I2C port, the GSM-based "Cell Locate" location will be returned instead.
    */
  protected:
-  bool enableGPSImpl(GpsStartMode start_mode = GPS_START_AUTO) {
+  bool enableGPSImpl(GpsStartMode startMode = GPS_START_AUTO) {
     // AT+UGPS=<mode>[,<aid_mode>[,<GNSS_systems>]]
     // <mode> - 0: GNSS receiver powered off, 1: on
     // <aid_mode> - 0: no aiding (default)

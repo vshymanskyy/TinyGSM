@@ -432,7 +432,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
    */
  protected:
   // enable GPS
-  bool enableGPSImpl(GpsStartMode start_mode = GPS_START_AUTO) {
+  bool enableGPSImpl(GpsStartMode startMode = GPS_START_AUTO) {
     sendAT(GF("+CGPS=1"));
     if (waitResponse() != 1) { return false; }
     return true;
