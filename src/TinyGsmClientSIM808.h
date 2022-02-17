@@ -32,11 +32,8 @@ class TinyGsmSim808 : public TinyGsmSim800, public TinyGsmGPS<TinyGsmSim808>, pu
 
     switch (startMode) {
       case GPS_START_COLD: iStartMode = 0; break;
-
       case GPS_START_HOT: iStartMode = 1; break;
-
       case GPS_START_WARM: iStartMode = 2; break;
-
       default: break;
     }
 
