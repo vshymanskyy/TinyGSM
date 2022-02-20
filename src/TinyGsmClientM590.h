@@ -330,9 +330,10 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590>,
   }
 
   bool modemGetConnected(uint8_t mux) {
-    sendAT(GF("+CIPSTATUS="), mux);
-    int8_t res = waitResponse(GF(",\"CONNECTED\""), GF(",\"CLOSED\""),
+    sendAT(GF("+IPSTATUS="), mux);
+    int8_t res = waitResponse(GF(",CONNECT,"), GF(",DISCONNECT"),
                               GF(",\"CLOSING\""), GF(",\"INITIAL\""));
+    streamSkipUntil('\n');
     waitResponse();
     return 1 == res;
   }
