@@ -32,7 +32,7 @@ class TinyGsmNTP {
     return true;
   }
 
-  byte NTPServerSync(String server = "pool.ntp.org", byte TimeZone = 3) {
+  byte NTPServerSync(String server = "pool.ntp.org", int TimeZone = 0) {
     return thisModem().NTPServerSyncImpl(server, TimeZone);
   }
   String ShowNTPError(byte error) {
@@ -54,7 +54,7 @@ class TinyGsmNTP {
    * NTP server functions
    */
  protected:
-  byte NTPServerSyncImpl(String server = "pool.ntp.org", byte TimeZone = 3) {
+  byte NTPServerSyncImpl(String server = "pool.ntp.org", int TimeZone = 0) {
     // Set GPRS bearer profile to associate with NTP sync
     // this may fail, it's not supported by all modules
     thisModem().sendAT(GF("+CNTPCID=1"));
@@ -68,6 +68,11 @@ class TinyGsmNTP {
     thisModem().sendAT(GF("+CNTP"));
     if (thisModem().waitResponse(10000L, GF("+CNTP:"))) {
       String result = thisModem().stream.readStringUntil('\n');
+      // Check for ',' in case the modules appends the time nexto to the return value.
+      int index = result.indexOf(',');
+      if(index > 0) {
+          result.remove(index);
+      }
       result.trim();
       if (TinyGsmIsValidNumber(result)) { return result.toInt(); }
     } else {
