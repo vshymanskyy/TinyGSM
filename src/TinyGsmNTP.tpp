@@ -68,7 +68,7 @@ class TinyGsmNTP {
     thisModem().sendAT(GF("+CNTP"));
     if (thisModem().waitResponse(10000L, GF("+CNTP:"))) {
       String result = thisModem().stream.readStringUntil('\n');
-      // Check for ',' in case the modules appends the time nexto to the return value.
+      // Check for ',' in case the module appends the time next to the return code. Eg: +CNTP: <code>[,<time>]
       int index = result.indexOf(',');
       if(index > 0) {
           result.remove(index);
