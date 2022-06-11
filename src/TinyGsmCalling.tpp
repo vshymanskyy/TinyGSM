@@ -31,6 +31,10 @@ class TinyGsmCalling {
   bool dtmfSend(char cmd, int duration_ms = 100) {
     return thisModem().dtmfSendImpl(cmd, duration_ms);
   }
+  
+  int8_t getCallStatus() {
+   return thisModem().getCallStatusImpl();
+  }
 
   /*
    * CRTP Helper
@@ -85,6 +89,24 @@ class TinyGsmCalling {
     thisModem().sendAT(GF("+VTS="), cmd);
     return thisModem().waitResponse(10000L) == 1;
   }
+  
+//Return 0:Ready, 2: Unknown, 3:Ringing, 4:Call in progress    
+  int8_t getCallStatusImpl() {
+    thisModem().sendAT(GF("+CPAS"));
+    if (thisModem().waitResponse(GF("+CPAS:")) != -1) { 
+	   int8_t res = thisModem().streamGetIntBefore('\n');
+
+    // Wait for final OK
+    thisModem().waitResponse();
+    return res;
+	 } else if(thisModem().waitResponse(GF("+CPAS:")) != 1){
+	   return 0;
+  } else{
+	   return 99;
+	 }
+	
+  } 
+  
 };
 
 #endif  // SRC_TINYGSMCALLING_H_
