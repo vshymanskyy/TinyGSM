@@ -54,7 +54,9 @@ jobs:
           fi
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
 
       # This should be pulled from cache, if there's not a new version
       - name: Install PlatformIO
