@@ -626,6 +626,17 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
   /*
    * Client related functions
    */
+   
+private:
+	int _ssl_profile = -1;
+	
+public:
+	// set USECMNG profile id
+	// must be called before client modemConnect
+	void setSSLProfileID(int id) {
+		_ssl_profile = id;
+	}
+	
  protected:
   bool modemConnect(const char* host, uint16_t port, uint8_t* mux,
                     bool ssl = false, int timeout_s = 120) {
@@ -640,8 +651,13 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
     waitResponse();
 
     if (ssl) {
-      sendAT(GF("+USOSEC="), *mux, ",1");
-      waitResponse();
+		if (_ssl_profile == -1) {
+			sendAT(GF("+USOSEC="), *mux, ",1");
+		}
+		else {
+			sendAT(GF("+USOSEC="), *mux, ",1,", _ssl_profile);
+		}
+		waitResponse();
     }
 
     // Enable NODELAY
