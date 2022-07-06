@@ -631,6 +631,9 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
 private:
 	int _ssl_profile = -1;
 	uint8_t _sock_id = 0;
+	const char* _dl_dc = "\r\nDISCONNECT\r\n\r\nOK\r\n\r\n+UUSOCL:";
+	uint8_t _dl_dc_seq = 0;
+	bool _dl_connected = false;
 	
 public:
 	// set USECMNG profile id
@@ -655,6 +658,8 @@ public:
 		sockets[_sock_id]->sock_available = 0;
 		sockets[_sock_id]->rx.clear();
 		sockets[_sock_id]->direct_link = true;
+		_dl_dc_seq = 0;
+		_dl_connected = true;
 		return true;
 	}
 	
@@ -669,6 +674,8 @@ public:
 		sockets[_sock_id]->sock_available = 0;
 		sockets[_sock_id]->rx.clear();
 		sockets[_sock_id]->direct_link = false;
+		_dl_dc_seq = 0;
+		_dl_connected = false;
 		return waitResponse(10000) == 1;
 	}
 	
@@ -718,7 +725,7 @@ public:
   }
 
   size_t modemSend(const void* buff, size_t len, uint8_t mux) {
-	if (sockets[_sock_id]->direct_link) {
+	if (sockets[mux]->direct_link) {
 		size_t sent = stream.write(reinterpret_cast<const uint8_t*>(buff), len);
 		stream.flush();
 		return sent;
@@ -740,12 +747,38 @@ public:
   size_t modemRead(size_t size, uint8_t mux) {
     if (!sockets[mux]) return 0;
 	
-	if (sockets[_sock_id]->direct_link) {
+	if (sockets[mux]->direct_link) {
 		size_t len = stream.available();
 		if (len > size) {
 			len = size;
 		}
-		for (int i = 0; i < len; i++) { moveCharFromStreamToFifo(mux); }
+		for (int i = 0; i < len; i++) { 
+			
+			// Handle disconnection from host in Direct Link mode.
+			// The modem will automatically put back to AT command mode if disconnected from host.
+			// Does not work on Ublox LEON-G100-03S / LEON-G200-03S and previous versions
+			// as "DISCONNECT" result code is not supported on these modems.
+			if (char(stream.peek()) == _dl_dc[_dl_dc_seq]) {
+				_dl_dc_seq++;
+			}
+			else {
+				_dl_dc_seq = 0;
+			}
+			if (_dl_dc_seq == (sizeof(_dl_dc) - 1)) {
+				while (stream.available()) {
+					stream.read();
+				}
+				sockets[mux]->sock_connected = false;
+				sockets[mux]->sock_available = 0;
+				sockets[mux]->rx.clear();
+				sockets[mux]->direct_link = false;
+				_dl_dc_seq = 0;
+				_dl_connected = false;
+				return 0;
+			}
+		
+			moveCharFromStreamToFifo(mux); 
+		}
 		sockets[mux]->sock_available = modemGetAvailable(mux);
 		return len;
 	}
@@ -767,7 +800,7 @@ public:
   size_t modemGetAvailable(uint8_t mux) {
     if (!sockets[mux]) return 0;
 	
-	if (sockets[_sock_id]->direct_link) {
+	if (sockets[mux]->direct_link) {
 		size_t  result = 0;
 		result = stream.available();
 		if (!result) {
@@ -794,10 +827,8 @@ public:
   }
 
   bool modemGetConnected(uint8_t mux) {
-    if (sockets[_sock_id]->direct_link) {
-		// AT command does not work in direct link mode, connection cannot be checked
-		// TODO: How to handle disconnection in direct link mode?
-		return true;
+    if (sockets[mux]->direct_link) {
+		return _dl_connected;
 	}
 	
     // NOTE:  Querying a closed socket gives an error "operation not allowed"
