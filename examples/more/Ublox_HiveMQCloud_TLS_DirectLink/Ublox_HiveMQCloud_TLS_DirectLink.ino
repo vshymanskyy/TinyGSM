@@ -213,7 +213,32 @@ void loop() {
 
   timer = millis();
   while (millis() - timer <= 10000) {
-    // Network check requires AT command mode, does not work in Direct Link mode
+    // Network and GPRS connection check requires AT command mode, does not work in Direct Link mode
+
+    // To check for host connection in Direct Link mode, client.read() must be called to catch the disconnection result code.
+    // Modem will put back to AT command mode automatically when disconnected from host in Direct Link mode.
+   
+    // host connection check for other applications in Direct Link mode
+    /*
+    if (client.available()) {
+      client.read();
+      if (!client.connected()) {
+        // client disconnected from host
+      }
+    }
+    */
+    
+    // host connection check for mqtt broker in Direct Link mode using pubsubclient library
+    if (!mqtt.connected()) {
+      Serial.println("=== MQTT NOT CONNECTED ===");
+      uint32_t t = millis();
+      if (t - lastReconnectAttempt > 1000L) {
+        lastReconnectAttempt = t;
+        if (mqttConnect()) { lastReconnectAttempt = 0; }
+      }
+      delay(100);
+      return;
+    }
     mqtt.loop();
   }
 
@@ -238,7 +263,8 @@ void loop() {
 
   timer = millis();
   while (millis() - timer <= 10000) {
-    // Network check requires AT command mode, does not work in Direct Link mode
+    // Network and GPRS check requires AT command mode, does not work in Direct Link mode
+    
     if (!modem.isNetworkConnected()) {
       Serial.println("Network disconnected");
       if (!modem.waitForNetwork(180000L, true)) {
@@ -266,7 +292,7 @@ void loop() {
     if (!mqtt.connected()) {
       Serial.println("=== MQTT NOT CONNECTED ===");
       uint32_t t = millis();
-      if (t - lastReconnectAttempt > 10000L) {
+      if (t - lastReconnectAttempt > 1000L) {
         lastReconnectAttempt = t;
         if (mqttConnect()) { lastReconnectAttempt = 0; }
       }
