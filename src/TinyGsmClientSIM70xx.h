@@ -303,7 +303,7 @@ class TinyGsmSim70xx : public TinyGsmModem<TinyGsmSim70xx<modemType>>,
   }
 
   // get GPS informations
-  bool getGPSImpl(float* lat, float* lon, float* speed = 0, float* alt = 0,
+  bool getGPSImpl(float* lat, float* lon, float* speed = 0, float* alt = 0, float* course = 0,
                   int* vsat = 0, int* usat = 0, float* accuracy = 0,
                   int* year = 0, int* month = 0, int* day = 0, int* hour = 0,
                   int* minute = 0, int* second = 0) {
@@ -319,6 +319,7 @@ class TinyGsmSim70xx : public TinyGsmModem<TinyGsmSim70xx<modemType>>,
       float ilon         = 0;
       float ispeed       = 0;
       float ialt         = 0;
+      float icourse      = 0;
       int   ivsat        = 0;
       int   iusat        = 0;
       float iaccuracy    = 0;
@@ -344,7 +345,7 @@ class TinyGsmSim70xx : public TinyGsmModem<TinyGsmSim70xx<modemType>>,
           ',');  // MSL Altitude. Unit is meters
       ispeed = thisModem().streamGetFloatBefore(
           ',');                          // Speed Over Ground. Unit is knots.
-      thisModem().streamSkipUntil(',');  // Course Over Ground. Degrees.
+      icourse = thisModem().streamGetFloatBefore(',');  // Course Over Ground. Degrees.
       thisModem().streamSkipUntil(',');  // Fix Mode
       thisModem().streamSkipUntil(',');  // Reserved1
       iaccuracy = thisModem().streamGetFloatBefore(
