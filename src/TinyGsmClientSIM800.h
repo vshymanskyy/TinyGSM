@@ -471,6 +471,7 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
     res.trim();
     return res.toInt();
   }
+
   bool setMicVolume(uint8_t channel, uint8_t level) {
     if (channel > 4) { return 0; }
     sendAT(GF("+CMIC="), level);
