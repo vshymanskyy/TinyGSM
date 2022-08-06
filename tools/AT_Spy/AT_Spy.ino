@@ -4,7 +4,7 @@
  * between an Arduino and the modem.
  *
  * TinyGSM Getting Started guide:
- *   http://tiny.cc/tiny-gsm-readme
+ *   https://tiny.cc/tinygsm-readme
  *
  **************************************************************/
 
@@ -32,7 +32,7 @@ void setup() {
 
   MODEM_TX.begin(BAUD_RATE);
   BOARD_TX.begin(BAUD_RATE);
-  delay(1000);
+  delay(6000);
 }
 
 void loop()
@@ -44,4 +44,3 @@ void loop()
     SPY.write(BOARD_TX.read());
   }
 }
-
