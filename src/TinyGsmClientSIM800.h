@@ -471,11 +471,27 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
     res.trim();
     return res.toInt();
   }
+  bool setMicVolume(uint8_t channel, uint8_t level) {
+    if (channel > 4) { return 0; }
+    sendAT(GF("+CMIC="), level);
+    return waitResponse() == 1;
+  }
   int newMessageInterrupt(String interrupt) {
     int Start = interrupt.indexOf(',');
     int Stop  = interrupt.indexOf('\n', Start);
     int index = interrupt.substring(Start + 1, Stop - 1).toInt();
     return index;
+  }
+
+  bool setAudioChannel(uint8_t channel) {
+    sendAT(GF("+CHFA="), channel);
+    return waitResponse() == 1;
+  }
+  bool playToolkitTone(uint8_t tone, uint32_t duration) {
+    sendAT(GF("STTONE="), 1, tone);
+    delay(duration);
+    sendAT(GF("STTONE="), 0);
+    return waitResponse();
   }
   String readSMS(int index, const bool changeStatusToRead = true) {
     sendAT(GF("+CMGF=1"));
@@ -553,17 +569,6 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
       return waitResponse() == 1;
     }
 
-    bool setAudioChannel(uint8_t channel) {
-      sendAT(GF("+CHFA="), channel);
-      return waitResponse() == 1;
-    }
-
-    bool playToolkitTone(uint8_t tone, uint32_t duration) {
-      sendAT(GF("STTONE="), 1, tone);
-      delay(duration);
-      sendAT(GF("STTONE="), 0);
-      return waitResponse();
-    }
 
     /*
      * Time functions
