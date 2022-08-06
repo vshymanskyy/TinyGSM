@@ -487,6 +487,7 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
     sendAT(GF("+CHFA="), channel);
     return waitResponse() == 1;
   }
+
   bool playToolkitTone(uint8_t tone, uint32_t duration) {
     sendAT(GF("STTONE="), 1, tone);
     delay(duration);
@@ -709,156 +710,151 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
       return 1 == res;
     }
 
-    // TODO: Optimize this!
-    uint8_t waitResponse(uint32_t    timeout, String & data,
-                         GsmConstStr r1 = GFP(GSM_OK),
-                         GsmConstStr r2 = GFP(GSM_ERROR), GsmConstStr r3 = NULL,
-                         GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
-      /*
-       * Utilities
-       */
-     public:
-      // TODO(vshymanskyy): Optimize this!
-      int8_t waitResponse(uint32_t    timeout_ms, String & data,
-                          GsmConstStr r1 = GFP(GSM_OK),
-                          GsmConstStr r2 = GFP(GSM_ERROR),
+    /*
+     * Utilities
+     */
+   public:
+    // TODO(vshymanskyy): Optimize this!
+    int8_t waitResponse(uint32_t    timeout_ms, String & data,
+                        GsmConstStr r1 = GFP(GSM_OK),
+                        GsmConstStr r2 = GFP(GSM_ERROR),
 #if defined TINY_GSM_DEBUG
-                          GsmConstStr r3 = GFP(GSM_CME_ERROR),
-                          GsmConstStr r4 = GFP(GSM_CMS_ERROR),
+                        GsmConstStr r3 = GFP(GSM_CME_ERROR),
+                        GsmConstStr r4 = GFP(GSM_CMS_ERROR),
 #else
-                          GsmConstStr r3 = NULL, GsmConstStr r4 = NULL,
+                        GsmConstStr r3 = NULL, GsmConstStr r4 = NULL,
 #endif
-                          GsmConstStr r5 = NULL) {
-        /*String r1s(r1); r1s.trim();
-        String r2s(r2); r2s.trim();
-        String r3s(r3); r3s.trim();
-        String r4s(r4); r4s.trim();
-        String r5s(r5); r5s.trim();
-        DBG("### ..:", r1s, ",", r2s, ",", r3s, ",", r4s, ",", r5s);*/
-        data.reserve(64);
-        uint8_t  index       = 0;
-        uint32_t startMillis = millis();
-        do {
+                        GsmConstStr r5 = NULL) {
+      /*String r1s(r1); r1s.trim();
+      String r2s(r2); r2s.trim();
+      String r3s(r3); r3s.trim();
+      String r4s(r4); r4s.trim();
+      String r5s(r5); r5s.trim();
+      DBG("### ..:", r1s, ",", r2s, ",", r3s, ",", r4s, ",", r5s);*/
+      data.reserve(64);
+      uint8_t  index       = 0;
+      uint32_t startMillis = millis();
+      do {
+        TINY_GSM_YIELD();
+        while (stream.available() > 0) {
           TINY_GSM_YIELD();
-          while (stream.available() > 0) {
-            TINY_GSM_YIELD();
-            int8_t a = stream.read();
-            if (a <= 0) continue;  // Skip 0x00 bytes, just in case
-            data += static_cast<char>(a);
-            if (r1 && data.endsWith(r1)) {
-              index = 1;
-              goto finish;
-            } else if (r2 && data.endsWith(r2)) {
-              index = 2;
-              goto finish;
-            } else if (r3 && data.endsWith(r3)) {
+          int8_t a = stream.read();
+          if (a <= 0) continue;  // Skip 0x00 bytes, just in case
+          data += static_cast<char>(a);
+          if (r1 && data.endsWith(r1)) {
+            index = 1;
+            goto finish;
+          } else if (r2 && data.endsWith(r2)) {
+            index = 2;
+            goto finish;
+          } else if (r3 && data.endsWith(r3)) {
 #if defined TINY_GSM_DEBUG
-              if (r3 == GFP(GSM_CME_ERROR)) {
-                streamSkipUntil('\n');  // Read out the error
-              }
+            if (r3 == GFP(GSM_CME_ERROR)) {
+              streamSkipUntil('\n');  // Read out the error
+            }
 #endif
-              index = 3;
-              goto finish;
-            } else if (r4 && data.endsWith(r4)) {
-              index = 4;
-              goto finish;
-            } else if (r5 && data.endsWith(r5)) {
-              index = 5;
-              goto finish;
-            } else if (data.endsWith(GF(GSM_NL "+CIPRXGET:"))) {
-              int8_t mode = streamGetIntBefore(',');
-              if (mode == 1) {
-                int8_t mux = streamGetIntBefore('\n');
-                if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
-                  sockets[mux]->got_data = true;
-                }
-                data = "";
-                // DBG("### Got Data:", mux);
-              } else {
-                data += mode;
-              }
-            } else if (data.endsWith(GF(GSM_NL "+RECEIVE:"))) {
-              int8_t  mux = streamGetIntBefore(',');
-              int16_t len = streamGetIntBefore('\n');
+            index = 3;
+            goto finish;
+          } else if (r4 && data.endsWith(r4)) {
+            index = 4;
+            goto finish;
+          } else if (r5 && data.endsWith(r5)) {
+            index = 5;
+            goto finish;
+          } else if (data.endsWith(GF(GSM_NL "+CIPRXGET:"))) {
+            int8_t mode = streamGetIntBefore(',');
+            if (mode == 1) {
+              int8_t mux = streamGetIntBefore('\n');
               if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
                 sockets[mux]->got_data = true;
-                if (len >= 0 && len <= 1024) {
-                  sockets[mux]->sock_available = len;
-                }
               }
               data = "";
-              // DBG("### Got Data:", len, "on", mux);
-            } else if (data.endsWith(GF("CLOSED" GSM_NL))) {
-              int8_t nl   = data.lastIndexOf(GSM_NL, data.length() - 8);
-              int8_t coma = data.indexOf(',', nl + 2);
-              int8_t mux  = data.substring(nl + 2, coma).toInt();
-              if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
-                sockets[mux]->sock_connected = false;
-              }
-              data = "";
-              DBG("### Closed: ", mux);
-            } else if (data.endsWith(GF("*PSNWID:"))) {
-              streamSkipUntil('\n');  // Refresh network name by network
-              data = "";
-              DBG("### Network name updated.");
-            } else if (data.endsWith(GF("*PSUTTZ:"))) {
-              streamSkipUntil('\n');  // Refresh time and time zone by network
-              data = "";
-              DBG("### Network time and time zone updated.");
-            } else if (data.endsWith(GF("+CTZV:"))) {
-              streamSkipUntil('\n');  // Refresh network time zone by network
-              data = "";
-              DBG("### Network time zone updated.");
-            } else if (data.endsWith(GF("DST:"))) {
-              streamSkipUntil(
-                  '\n');  // Refresh Network Daylight Saving Time by network
-              data = "";
-              DBG("### Daylight savings time state updated.");
+              // DBG("### Got Data:", mux);
+            } else {
+              data += mode;
             }
+          } else if (data.endsWith(GF(GSM_NL "+RECEIVE:"))) {
+            int8_t  mux = streamGetIntBefore(',');
+            int16_t len = streamGetIntBefore('\n');
+            if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+              sockets[mux]->got_data = true;
+              if (len >= 0 && len <= 1024) {
+                sockets[mux]->sock_available = len;
+              }
+            }
+            data = "";
+            // DBG("### Got Data:", len, "on", mux);
+          } else if (data.endsWith(GF("CLOSED" GSM_NL))) {
+            int8_t nl   = data.lastIndexOf(GSM_NL, data.length() - 8);
+            int8_t coma = data.indexOf(',', nl + 2);
+            int8_t mux  = data.substring(nl + 2, coma).toInt();
+            if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+              sockets[mux]->sock_connected = false;
+            }
+            data = "";
+            DBG("### Closed: ", mux);
+          } else if (data.endsWith(GF("*PSNWID:"))) {
+            streamSkipUntil('\n');  // Refresh network name by network
+            data = "";
+            DBG("### Network name updated.");
+          } else if (data.endsWith(GF("*PSUTTZ:"))) {
+            streamSkipUntil('\n');  // Refresh time and time zone by network
+            data = "";
+            DBG("### Network time and time zone updated.");
+          } else if (data.endsWith(GF("+CTZV:"))) {
+            streamSkipUntil('\n');  // Refresh network time zone by network
+            data = "";
+            DBG("### Network time zone updated.");
+          } else if (data.endsWith(GF("DST:"))) {
+            streamSkipUntil(
+                '\n');  // Refresh Network Daylight Saving Time by network
+            data = "";
+            DBG("### Daylight savings time state updated.");
           }
-        } while (millis() - startMillis < timeout_ms);
-      finish:
-        if (!index) {
-          data.trim();
-          if (data.length()) { DBG("### Unhandled:", data); }
-          data = "";
         }
-        // data.replace(GSM_NL, "/");
-        // DBG('<', index, '>', data);
-        return index;
+      } while (millis() - startMillis < timeout_ms);
+    finish:
+      if (!index) {
+        data.trim();
+        if (data.length()) { DBG("### Unhandled:", data); }
+        data = "";
       }
+      // data.replace(GSM_NL, "/");
+      // DBG('<', index, '>', data);
+      return index;
+    }
 
-      int8_t waitResponse(uint32_t timeout_ms, GsmConstStr r1 = GFP(GSM_OK),
-                          GsmConstStr r2 = GFP(GSM_ERROR),
+    int8_t waitResponse(uint32_t timeout_ms, GsmConstStr r1 = GFP(GSM_OK),
+                        GsmConstStr r2 = GFP(GSM_ERROR),
 #if defined TINY_GSM_DEBUG
-                          GsmConstStr r3 = GFP(GSM_CME_ERROR),
-                          GsmConstStr r4 = GFP(GSM_CMS_ERROR),
+                        GsmConstStr r3 = GFP(GSM_CME_ERROR),
+                        GsmConstStr r4 = GFP(GSM_CMS_ERROR),
 #else
-                          GsmConstStr r3 = NULL, GsmConstStr r4 = NULL,
+                        GsmConstStr r3 = NULL, GsmConstStr r4 = NULL,
 #endif
-                          GsmConstStr r5 = NULL) {
-        String data;
-        return waitResponse(timeout_ms, data, r1, r2, r3, r4, r5);
-      }
+                        GsmConstStr r5 = NULL) {
+      String data;
+      return waitResponse(timeout_ms, data, r1, r2, r3, r4, r5);
+    }
 
-      int8_t waitResponse(GsmConstStr r1 = GFP(GSM_OK),
-                          GsmConstStr r2 = GFP(GSM_ERROR),
+    int8_t waitResponse(GsmConstStr r1 = GFP(GSM_OK),
+                        GsmConstStr r2 = GFP(GSM_ERROR),
 #if defined TINY_GSM_DEBUG
-                          GsmConstStr r3 = GFP(GSM_CME_ERROR),
-                          GsmConstStr r4 = GFP(GSM_CMS_ERROR),
+                        GsmConstStr r3 = GFP(GSM_CME_ERROR),
+                        GsmConstStr r4 = GFP(GSM_CMS_ERROR),
 #else
-                          GsmConstStr r3 = NULL, GsmConstStr r4 = NULL,
+                        GsmConstStr r3 = NULL, GsmConstStr r4 = NULL,
 #endif
-                          GsmConstStr r5 = NULL) {
-        return waitResponse(1000, r1, r2, r3, r4, r5);
-      }
+                        GsmConstStr r5 = NULL) {
+      return waitResponse(1000, r1, r2, r3, r4, r5);
+    }
 
-     public:
-      Stream& stream;
+   public:
+    Stream& stream;
 
-     protected:
-      GsmClientSim800* sockets[TINY_GSM_MUX_COUNT];
-      const char*      gsmNL = GSM_NL;
-    };
+   protected:
+    GsmClientSim800* sockets[TINY_GSM_MUX_COUNT];
+    const char*      gsmNL = GSM_NL;
+  };
 
 #endif  // SRC_TINYGSMCLIENTSIM800_H_
