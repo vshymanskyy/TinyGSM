@@ -35,6 +35,18 @@ class TinyGsmCalling {
   int8_t getCallStatus() {
    return thisModem().getCallStatusImpl();
   }
+  
+  uint8_t getClccStatus() {
+    return thisModem().getClccStatusImpl();
+	}
+	
+  bool setVolume(uint8_t volume_level) {
+    return thisModem().setVolumeImpl(volume_level);
+  }
+  
+  uint8_t getVolume() {
+    return thisModem().getVolumeImpl();
+  }
 
   /*
    * CRTP Helper
@@ -106,6 +118,31 @@ class TinyGsmCalling {
 	 }
 	
   } 
+  
+  
+  uint8_t getClccStatusImpl() {
+    thisModem().sendAT(GF("+CLCC"));
+    if (thisModem().waitResponse(GF("+CLCC:")) != 1) { return 9; }
+    thisModem().streamSkipUntil(',');  // Skip battery charge status
+    thisModem().streamSkipUntil(',');  // Skip battery charge level
+    // return voltage in mV
+    uint8_t res = thisModem().streamGetIntBefore(',');
+    
+    return res;
+  }
+  
+  
+  bool setVolumeImpl(uint8_t volume_level) {
+	thisModem().sendAT(GF("+CLVL="), volume_level);
+	return thisModem().waitResponse(10000L) == 1;
+	}
+	
+  uint8_t getVolumeImpl() {
+	if (thisModem().waitResponse(GF("+CLVL:")) != 1) { return 0; }
+	uint8_t res = thisModem().streamGetIntBefore('\n');
+	thisModem().waitResponse();
+	return res;
+	} 
   
 };
 
