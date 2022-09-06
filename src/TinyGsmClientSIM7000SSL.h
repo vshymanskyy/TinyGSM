@@ -242,7 +242,7 @@ class TinyGsmSim7000SSL
     //                 2: CHAP
     //                 3: PAP or CHAP
     if (pwd && strlen(pwd) > 0 && user && strlen(user) > 0) {
-      sendAT(GF("+CNCFG=1,\""), apn, "\",\"", "\",\"", user, pwd, '"');
+      sendAT(GF("+CNCFG=1,\""), apn, "\",\"",user, "\",\"", pwd, '"');
       waitResponse();
     } else if (user && strlen(user) > 0) {
       // Set the user name only
