@@ -107,7 +107,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
 
     void stop(uint32_t maxWaitMs) {
       dumpModemBuffer(maxWaitMs);
-      at->sendAT(GF("+CIPCLOSE="), mux, GF(",1"));  // Quick close
+      at->sendAT(GF("+CIPCLOSE="), mux);  //, GF(",1"));  // Quick close
       sock_connected = false;
       at->waitResponse();
     }
@@ -126,14 +126,22 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
    * Inner Secure Client
    */
  public:
-  class GsmClientSecureSim800 : public GsmClientA7672X {
+  class GsmClientSecureA7672X : public GsmClientA7672X {
    public:
-    GsmClientSecureSim800() {}
+    GsmClientSecureA7672X() {}
 
-    explicit GsmClientSecureSim800(TinyGsmA7672X& modem, uint8_t mux = 0)
+    explicit GsmClientSecureA7672X(TinyGsmA7672X& modem, uint8_t mux = 0)
         : GsmClientA7672X(modem, mux) {}
 
    public:
+    bool setCertificate(const String& certificateName, const uint8_t len) {
+      return at->setCertificate(certificateName, len);
+    }
+
+    bool deleteCertificate(const String& certificateName) {
+      return at->deleteCertificate(certificateName);
+    }
+
     int connect(const char* host, uint16_t port, int timeout_s) override {
       stop();
       TINY_GSM_YIELD();
@@ -142,6 +150,16 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
       return sock_connected;
     }
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
+
+    void stop(uint32_t maxWaitMs) {
+      dumpModemBuffer(maxWaitMs);
+      at->sendAT(GF("+CCHCLOSE="), mux);  //, GF(",1"));  // Quick close
+      sock_connected = false;
+      at->waitResponse();
+    }
+    void stop() override {
+      stop(15000L);
+    }
   };
 
   /*
@@ -175,10 +193,14 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
 #endif
     waitResponse();
 
+    // sendAT(GF("X4"));
+    // waitResponse();
+
     DBG(GF("### Modem:"), getModemName());
 
     SimStatus ret = getSimStatus();
-    // if the sim isn't ready and a pin has been provided, try to unlock the sim
+    // if the sim isn't ready and a pin has been provided, try to unlock the
+    // sim
     if (ret != SIM_READY && pin != NULL && strlen(pin) > 0) {
       simUnlock(pin);
       return (getSimStatus() == SIM_READY);
@@ -220,18 +242,6 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
   }
 
   /*
-    bool thisHasSSL() {
-  #if defined(TINY_GSM_MODEM_SIM900)
-      return false;
-  #else
-      sendAT(GF("+CIPSSL=?"));
-      if (waitResponse(GF(GSM_NL "+CIPSSL:")) != 1) { return false; }
-      return waitResponse() == 1;
-  #endif
-    }
-    */
-
-  /*
    * Power functions
    */
  protected:
@@ -250,8 +260,8 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
     return waitResponse(10000L, GF("NORMAL POWER DOWN")) == 1;
   }
 
-  // During sleep, the SIM800 module has its serial communication disabled. In
-  // order to reestablish communication pull the DRT-pin of the SIM800 module
+  // During sleep, the A7672X module has its serial communication disabled. In
+  // order to reestablish communication pull the DRT-pin of the A7672X module
   // LOW for at least 50ms. Then use this function to disable sleep mode. The
   // DTR-pin can then be released again.
   bool sleepEnableImpl(bool enable = true) {
@@ -276,10 +286,40 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
     return (RegStatus)getRegistrationStatusXREG("CREG");
   }
 
+  String getLocalIPImpl() {
+    if (hasSSL) {
+      sendAT(GF("+CCHADDR"));
+      if (waitResponse(GF("+CCHADDR:")) != 1) { return ""; }
+    } else {
+      sendAT(GF("+CGPADDR=1"));
+      if (waitResponse(GF("+CGPADDR:")) != 1) { return ""; }
+    }
+    streamSkipUntil(',');  // Skip context id
+    String res = stream.readStringUntil('\r');
+    if (waitResponse() != 1) { return ""; }
+    return res;
+  }
+
  protected:
   bool isNetworkConnectedImpl() {
     RegStatus s = getRegistrationStatus();
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
+  }
+
+  /*
+   * Secure socket layer functions
+   */
+ protected:
+  // The name of the certificate/key/password file. The file name must
+  // havetype like ".pem" or ".der".
+  bool setCertificate(const String& certificateName, const uint8_t len) {
+    sendAT(GF("+CCERTDOWN="), certificateName, GF(","), len);
+    return waitResponse() == 1;
+  }
+
+  bool deleteCertificate(const String& certificateName) {
+    sendAT(GF("+CCERTDELE="), certificateName);
+    return waitResponse() == 1;
   }
 
   /*
@@ -441,80 +481,142 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
     int8_t   rsp;
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
 
-    sendAT(GF("+CTCPKA=1,2,5,1"));
+    sendAT(GF("+CTCPKA=1,2,5,1"));  // todo: here?
     if (waitResponse(2000L) != 1) { return false; }
 
-    // sendAT(GF("+CIPMODE=1")); //todo
-    // if (waitResponse(2000L) != 1) { return false; }
+    if (ssl) {
+      hasSSL = true;
+      // set the ssl version
+      // AT+CSSLCFG="sslversion",<ssl_ctx_index>,<sslversion>
+      // <ctxindex> PDP context identifier
+      // <sslversion> 0: QAPI_NET_SSL_PROTOCOL_UNKNOWN
+      //              1: QAPI_NET_SSL_PROTOCOL_TLS_1_0
+      //              2: QAPI_NET_SSL_PROTOCOL_TLS_1_1
+      //              3: QAPI_NET_SSL_PROTOCOL_TLS_1_2
+      //              4: QAPI_NET_SSL_PROTOCOL_DTLS_1_0
+      //              5: QAPI_NET_SSL_PROTOCOL_DTLS_1_2
+      // NOTE:  despite docs using caps, "sslversion" must be in lower case
+      sendAT(GF("+CSSLCFG=\"sslversion\",0,3"));  // TLS 1.2
+      if (waitResponse(5000L) != 1) return false;
 
-    sendAT(GF("+NETOPEN"));
-    if (waitResponse(2000L) != 1) { return false; }
 
-    sendAT(GF("+NETOPEN?"));
-    if (waitResponse(2000L, GF("+NETOPEN: 1")) != 1) { return false; }
+      if (certificates[mux] != "") {
+        /* Configure the server root CA of the specified SSL context
+        AT + CSSLCFG = "cacert", <ssl_ ctx_index>,<ca_file> */
+        sendAT(GF("+CASSLCFG=\"cacert\",0,"), certificates[mux].c_str());
+        if (waitResponse(5000L) != 1) return false;
+      }
 
-    sendAT(GF("+CIPOPEN="), 0, ',', GF("\"TCP"), GF("\",\""), host, GF("\","),
-           port);
+      // set the SSL SNI (server name indication)
+      // AT+CSSLCFG="enableSNI",<ssl_ctx_index>,<enableSNI_flag>
+      // NOTE:  despite docs using caps, "sni" must be in lower case
+      sendAT(GF("+CSSLCFG=\"enableSNI\",0,1"));
+      if (waitResponse(2000L) != 1) { return false; }
 
-    rsp = waitResponse(
-        timeout_ms, GF("+CIPOPEN: 0,0" GSM_NL), GF("+CIPOPEN: 0,1" GSM_NL),
-        GF("+CIPOPEN: 0,4" GSM_NL), GF("ERROR" GSM_NL),
-        GF("CLOSE OK" GSM_NL));  // Happens when HTTPS handshake fails
+      // Configure the report mode of sending and receiving data
+      /* +CCHSET=<report_send_result>,<recv_mode>
+       * <report_send_result> Whether to report result of CCHSEND, the default
+       *  value is 0: 0 No. 1 Yes. Module will report +CCHSEND:
+       * <session_id>,<err> to MCU when complete sending data.
+       *
+       * <recv_mode> The receiving mode, the default value is 0:
+       * 0 Output the data to MCU whenever received data.
+       * 1 Module caches the received data and notifies MCU with+CCHEVENT:
+       * <session_id>,RECV EVENT. MCU can use AT+CCHRECV to receive the cached
+       * data (only in manual receiving mode).
+       */
+      sendAT(GF("+CCHSET=1,1"));
+      if (waitResponse(2000L) != 1) { return false; }
+
+      sendAT(GF("+CCHSTART"));
+      if (waitResponse(2000L) != 1) { return false; }
+
+      sendAT(GF("+CCHSSLCFG="), mux, GF(",0"));
+      if (waitResponse(2000L) != 1) { return false; }
+
+      sendAT(GF("+CCHOPEN="), 0, GF(",\""), host, GF("\","), port, GF(",2"));
+      rsp = waitResponse(timeout_ms, GF("+CCHOPEN: 0,0" GSM_NL),
+                         GF("+CCHOPEN: 0,1" GSM_NL), GF("+CCHOPEN: 0,4" GSM_NL),
+                         GF("ERROR" GSM_NL), GF("CLOSE OK" GSM_NL));
+    } else {
+
+      sendAT(GF("+NETOPEN"));
+      if (waitResponse(2000L) != 1) { return false; }
+
+      sendAT(GF("+NETOPEN?"));
+      if (waitResponse(2000L) != 1) { return false; }
+
+      sendAT(GF("+CIPOPEN="), 0, ',', GF("\"TCP"), GF("\",\""), host, GF("\","),
+             port);
+     
+      rsp = waitResponse(
+          timeout_ms, GF("+CIPOPEN: 0,0" GSM_NL), GF("+CIPOPEN: 0,1" GSM_NL),
+          GF("+CIPOPEN: 0,4" GSM_NL), GF("ERROR" GSM_NL),
+          GF("CLOSE OK" GSM_NL));  // Happens when HTTPS handshake fails
+    }
+
     return (1 == rsp);
   }
 
   int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
-    sendAT(GF("+CIPSEND="), mux, ',', (uint16_t)len);
+    if (hasSSL)
+      sendAT(GF("+CCHSEND="), mux, ',', (uint16_t)len);
+    else
+      sendAT(GF("+CIPSEND="), mux, ',', (uint16_t)len);
     if (waitResponse(GF(">")) != 1) { return 0; }
     stream.write(reinterpret_cast<const uint8_t*>(buff), len);
     stream.flush();
-    if (waitResponse(GF(GSM_NL "DATA ACCEPT:")) != 1) { return 0; }
+
+    if (hasSSL) {
+      if (waitResponse(GF(GSM_NL "+CCHSEND:")) != 1) { return 0; }
+    } else if (waitResponse() != 1) {
+      return 0;
+    }
     streamSkipUntil(',');  // Skip mux
     return streamGetIntBefore('\n');
   }
 
   size_t modemRead(size_t size, uint8_t mux) {
+    int16_t len_requested = 0;
+    int16_t len_confirmed = 0;
     if (!sockets[mux]) return 0;
-#ifdef TINY_GSM_USE_HEX
-    sendAT(GF("+CIPRXGET=3,"), mux, ',', (uint16_t)size);
-    if (waitResponse(GF("+CIPRXGET:")) != 1) { return 0; }
-#else
-    sendAT(GF("+CIPRXGET=2,"), mux, ',', (uint16_t)size);
-    if (waitResponse(GF("+CIPRXGET:")) != 1) { return 0; }
-#endif
-    streamSkipUntil(',');  // Skip Rx mode 2/normal or 3/HEX
-    streamSkipUntil(',');  // Skip mux
-    int16_t len_requested = streamGetIntBefore(',');
-    //  ^^ Requested number of data bytes (1-1460 bytes)to be read
-    int16_t len_confirmed = streamGetIntBefore('\n');
-    // ^^ Confirmed number of data bytes to be read, which may be less than
-    // requested. 0 indicates that no data can be read.
-    // SRGD NOTE:  Contrary to above (which is copied from AT command manual)
-    // this is actually be the number of bytes that will be remaining in the
-    // buffer after the read.
+    if (hasSSL) {
+      sendAT(GF("+CCHRECV?"));
+      String res = "";
+      waitResponse(2000L, res);
+      int16_t len =
+          res.substring(res.indexOf(',') + 1, res.lastIndexOf(',')).toInt();
+      sendAT(GF("+CCHRECV="), mux, ',', (uint16_t)size);
+      if (waitResponse(GF("+CCHRECV:")) != 1) { return 0; }
+      //+CCHRECV: DATA,0,<msg>
+      streamSkipUntil(',');  // Skip DATA
+      streamSkipUntil(',');  // Skip mux
+      len_requested = streamGetIntBefore('\n');
+      len_confirmed = len;  // streamGetIntBefore(',');
+    } else {
+      sendAT(GF("+CIPRXGET=2,"), mux, ',', (uint16_t)size);
+      if (waitResponse(GF("+CIPRXGET:")) != 1) { return 0; }
+      streamSkipUntil(',');  // Skip Rx mode 2/normal or 3/HEX
+      streamSkipUntil(',');  // Skip mux
+      len_requested = streamGetIntBefore(',');
+      //  ^^ Requested number of data bytes (1-1460 bytes)to be read
+      len_confirmed = streamGetIntBefore('\n');
+      // ^^ Confirmed number of data bytes to be read, which may be less than
+      // requested. 0 indicates that no data can be read.
+      // SRGD NOTE:  Contrary to above (which is copied from AT command manual)
+      // this is actually be the number of bytes that will be remaining in the
+      // buffer after the read.
+    }
     for (int i = 0; i < len_requested; i++) {
       uint32_t startMillis = millis();
-#ifdef TINY_GSM_USE_HEX
-      while (stream.available() < 2 &&
-             (millis() - startMillis < sockets[mux]->_timeout)) {
-        TINY_GSM_YIELD();
-      }
-      char buf[4] = {
-          0,
-      };
-      buf[0] = stream.read();
-      buf[1] = stream.read();
-      char c = strtol(buf, NULL, 16);
-#else
       while (!stream.available() &&
              (millis() - startMillis < sockets[mux]->_timeout)) {
         TINY_GSM_YIELD();
       }
       char c = stream.read();
-#endif
       sockets[mux]->rx.put(c);
     }
-    // DBG("### READ:", len_requested, "from", mux);
+    DBG("### READ:", len_requested, " bytes from connection ", mux);
     // sockets[mux]->sock_available = modemGetAvailable(mux);
     sockets[mux]->sock_available = len_confirmed;
     waitResponse();
@@ -523,26 +625,40 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
 
   size_t modemGetAvailable(uint8_t mux) {
     if (!sockets[mux]) return 0;
-    sendAT(GF("+CIPRXGET=4,"), mux);
     size_t result = 0;
-    if (waitResponse(GF("+CIPRXGET:")) == 1) {
-      streamSkipUntil(',');  // Skip mode 4
-      streamSkipUntil(',');  // Skip mux
-      result = streamGetIntBefore('\n');
-      waitResponse();
+    if (hasSSL) {
+      sendAT(GF("+CCHRECV?"));
+      String res = "";
+      waitResponse(2000L, res);
+      result =
+          res.substring(res.indexOf(',') + 1, res.lastIndexOf(',')).toInt();
+    } else {
+      sendAT(GF("+CIPRXGET=4,"), mux);
+      result = 0;
+      if (waitResponse(GF("+CIPRXGET:")) == 1) {
+        streamSkipUntil(',');  // Skip mode 4
+        streamSkipUntil(',');  // Skip mux
+        result = streamGetIntBefore('\n');
+        waitResponse();
+      }
     }
-    // DBG("### Available:", result, "on", mux);
+    DBG("### Available:", result, "on", mux);
     if (!result) { sockets[mux]->sock_connected = modemGetConnected(mux); }
     return result;
   }
 
   bool modemGetConnected(uint8_t mux) {
-    sendAT(GF("+CIPSTATUS="), mux);
-    waitResponse(GF("+CIPSTATUS"));
-    int8_t res = waitResponse(GF(",\"CONNECTED\""), GF(",\"CLOSED\""),
-                              GF(",\"CLOSING\""), GF(",\"REMOTE CLOSING\""),
-                              GF(",\"INITIAL\""));
-    waitResponse();
+    int8_t res = 0;
+    if (hasSSL) {
+      return this->sockets[mux]->sock_connected;
+    } else {
+      sendAT(GF("+CIPACK="), mux);
+      waitResponse(GF("+CIPACK:"));
+      res = waitResponse(2000L);  //(GF(",\"CONNECTED\""), GF(",\"CLOSED\""),
+                                  // GF(",\"CLOSING\""), GF(",\"REMOTE
+                                  // CLOSING\""), GF(",\"INITIAL\""));
+      waitResponse();
+    }
     return 1 == res;
   }
 
@@ -605,28 +721,49 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
               sockets[mux]->got_data = true;
             }
             data = "";
-            // DBG("### Got Data:", mux);
+            DBG("### Got Data:", mux);
           } else {
             data += mode;
           }
-        } else if (data.endsWith(GF(GSM_NL "+RECEIVE:"))) {
-          int8_t  mux = streamGetIntBefore(',');
-          int16_t len = streamGetIntBefore('\n');
+        } else if (data.endsWith(GF("RECV EVENT" GSM_NL))) {
+          sendAT(GF("+CCHRECV?"));
+          String res = "";
+          waitResponse(2000L, res);
+          int8_t  mux = res.substring(res.lastIndexOf(',') + 1).toInt();
+          int16_t len =
+              res.substring(res.indexOf(',') + 1, res.lastIndexOf(',')).toInt();
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
             sockets[mux]->got_data = true;
             if (len >= 0 && len <= 1024) { sockets[mux]->sock_available = len; }
           }
           data = "";
-          // DBG("### Got Data:", len, "on", mux);
-        } else if (data.endsWith(GF("CLOSED" GSM_NL))) {
-          int8_t nl   = data.lastIndexOf(GSM_NL, data.length() - 8);
-          int8_t coma = data.indexOf(',', nl + 2);
-          int8_t mux  = data.substring(nl + 2, coma).toInt();
+          DBG("### Got Data:", len, "on", mux);
+        } else if (data.endsWith(GF("+CCHRECV: 0,0" GSM_NL))) {
+          int8_t mux = data.substring(data.lastIndexOf(',') + 1).toInt();
+          if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+            sockets[mux]->sock_connected = true;
+          }
+          data = "";
+          DBG("### ACK:", mux);
+        } else if (data.endsWith(GF("+IPCLOSE:"))) {
+          // int8_t nl   = data.lastIndexOf(GSM_NL, data.length() - 8);
+          // int8_t coma = data.indexOf(',', nl + 2);
+          // int8_t mux  = data.substring(nl + 2, coma).toInt();
+          int8_t mux = streamGetIntBefore(',');
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
             sockets[mux]->sock_connected = false;
           }
           data = "";
-          DBG("### Closed: ", mux);
+          DBG("### TCP Closed: ", mux);
+        } else if (data.endsWith(GF("+CCH_PEER_CLOSED:"))) {
+          // int8_t nl   = data.lastIndexOf(GSM_NL, data.length() - 8);
+          // int8_t coma = data.indexOf(',', nl + 2);
+          int8_t mux = streamGetIntBefore('\n');
+          if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+            sockets[mux]->sock_connected = false;
+          }
+          data = "";
+          DBG("### SSL Closed: ", mux);
         } else if (data.endsWith(GF("*PSNWID:"))) {
           streamSkipUntil('\n');  // Refresh network name by network
           data = "";
@@ -688,7 +825,9 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
 
  protected:
   GsmClientA7672X* sockets[TINY_GSM_MUX_COUNT];
-  const char*      gsmNL = GSM_NL;
+  const char*      gsmNL  = GSM_NL;
+  bool             hasSSL = false;
+  String           certificates[TINY_GSM_MUX_COUNT];
 };
 
 #endif  // SRC_TINYGSMCLIENTA7672X_H_
