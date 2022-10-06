@@ -10,7 +10,6 @@
 #define SRC_TINYGSMCLIENTA7672X_H_
 
 // #define TINY_GSM_DEBUG Serial
-// #define TINY_GSM_USE_HEX
 
 #define TINY_GSM_MUX_COUNT 10
 #define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
@@ -107,7 +106,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
 
     void stop(uint32_t maxWaitMs) {
       dumpModemBuffer(maxWaitMs);
-      at->sendAT(GF("+CIPCLOSE="), mux);  //, GF(",1"));  // Quick close
+      at->sendAT(GF("+CIPCLOSE="), mux);
       sock_connected = false;
       at->waitResponse();
     }
@@ -193,9 +192,6 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
 #endif
     waitResponse();
 
-    // sendAT(GF("X4"));
-    // waitResponse();
-
     DBG(GF("### Modem:"), getModemName());
 
     SimStatus ret = getSimStatus();
@@ -226,8 +222,8 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
     return name;
   }
 
-  bool factoryDefaultImpl() {
-    sendAT(GF("&FZE0&W"));  // Factory + Reset + Echo Off + Write
+  bool factoryDefaultImpl() {  // todo:
+    sendAT(GF("&FZE0&W"));     // Factory + Reset + Echo Off + Write
     waitResponse();
     sendAT(GF("+IPR=0"));  // Auto-baud
     waitResponse();
@@ -245,7 +241,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
    * Power functions
    */
  protected:
-  bool restartImpl(const char* pin = NULL) {
+  bool restartImpl(const char* pin = NULL) {  // todo:
     if (!testAT()) { return false; }
     sendAT(GF("&W"));
     waitResponse();
@@ -255,7 +251,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
     return init(pin);
   }
 
-  bool powerOffImpl() {
+  bool powerOffImpl() {  // todo:
     sendAT(GF("+CPOWD=1"));
     return waitResponse(10000L, GF("NORMAL POWER DOWN")) == 1;
   }
@@ -264,7 +260,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
   // order to reestablish communication pull the DRT-pin of the A7672X module
   // LOW for at least 50ms. Then use this function to disable sleep mode. The
   // DTR-pin can then be released again.
-  bool sleepEnableImpl(bool enable = true) {
+  bool sleepEnableImpl(bool enable = true) {  // todo:
     sendAT(GF("+CSCLK="), enable);
     return waitResponse() == 1;
   }
@@ -357,7 +353,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
     return true;
   }
 
-  bool gprsDisconnectImpl() {
+  bool gprsDisconnectImpl() {  // todo:
     // Shut the TCP/IP connection
     // CIPSHUT will close *all* open connections
     sendAT(GF("+NETCLOSE"));
@@ -386,27 +382,26 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
    * Phone Call functions
    */
  public:
-  bool setGsmBusy(bool busy = true) {
+  bool setGsmBusy(bool busy = true) {  // todo:
     sendAT(GF("+GSMBUSY="), busy ? 1 : 0);
     return waitResponse() == 1;
   }
 
   /*
-   * Messaging functions
+   * Messaging functions //todo:
    */
  protected:
   // Follows all messaging functions per template
 
   /*
-   * GSM Location functions
+   * GSM Location functions //todo:
    */
  protected:
   // Depending on the exacty model and firmware revision, should return a
   // GSM-based location from CLBS as per the template
-  // TODO(?):  Check number of digits in year (2 or 4)
 
   /*
-   * GPS/GNSS/GLONASS location functions
+   * GPS/GNSS/GLONASS location functions //todo:
    */
  protected:
   // No functions of this type supported
@@ -415,13 +410,13 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
    * Audio functions
    */
  public:
-  bool setVolume(uint8_t volume = 50) {
+  bool setVolume(uint8_t volume = 50) {  // todo:
     // Set speaker volume
     sendAT(GF("+CLVL="), volume);
     return waitResponse() == 1;
   }
 
-  uint8_t getVolume() {
+  uint8_t getVolume() {  // todo:
     // Get speaker volume
     sendAT(GF("+CLVL?"));
     if (waitResponse(GF(GSM_NL)) != 1) { return 0; }
@@ -432,18 +427,18 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
     return res.toInt();
   }
 
-  bool setMicVolume(uint8_t channel, uint8_t level) {
+  bool setMicVolume(uint8_t channel, uint8_t level) {  // todo:
     if (channel > 4) { return 0; }
     sendAT(GF("+CMIC="), level);
     return waitResponse() == 1;
   }
 
-  bool setAudioChannel(uint8_t channel) {
+  bool setAudioChannel(uint8_t channel) {  // todo:
     sendAT(GF("+CHFA="), channel);
     return waitResponse() == 1;
   }
 
-  bool playToolkitTone(uint8_t tone, uint32_t duration) {
+  bool playToolkitTone(uint8_t tone, uint32_t duration) {  // todo:
     sendAT(GF("STTONE="), 1, tone);
     delay(duration);
     sendAT(GF("STTONE="), 0);
@@ -451,24 +446,30 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
   }
 
   /*
-   * Time functions
+   * Time functions //todo:
    */
  protected:
   // Can follow the standard CCLK function in the template
 
   /*
-   * NTP server functions
+   * NTP server functions //todo:
    */
   // Can sync with server using CNTP as per template
 
   /*
-   * Battery functions
+   * BLE functions //todo:
+   */
+ protected:
+  // Follows all BLE functions per template
+
+  /*
+   * Battery functions //todo:
    */
  protected:
   // Follows all battery functions per template
 
   /*
-   * NTP server functions
+   * NTP server functions //todo:
    */
   // Can sync with server using CNTP as per template
 
@@ -539,7 +540,6 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
                          GF("+CCHOPEN: 0,1" GSM_NL), GF("+CCHOPEN: 0,4" GSM_NL),
                          GF("ERROR" GSM_NL), GF("CLOSE OK" GSM_NL));
     } else {
-
       sendAT(GF("+NETOPEN"));
       if (waitResponse(2000L) != 1) { return false; }
 
@@ -548,7 +548,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
 
       sendAT(GF("+CIPOPEN="), 0, ',', GF("\"TCP"), GF("\",\""), host, GF("\","),
              port);
-     
+
       rsp = waitResponse(
           timeout_ms, GF("+CIPOPEN: 0,0" GSM_NL), GF("+CIPOPEN: 0,1" GSM_NL),
           GF("+CIPOPEN: 0,4" GSM_NL), GF("ERROR" GSM_NL),
@@ -581,7 +581,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
     int16_t len_confirmed = 0;
     if (!sockets[mux]) return 0;
     if (hasSSL) {
-      sendAT(GF("+CCHRECV?"));
+      sendAT(GF("+CCHRECV?"));  // TODO(Rosso): Optimize this!
       String res = "";
       waitResponse(2000L, res);
       int16_t len =
@@ -616,7 +616,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
       char c = stream.read();
       sockets[mux]->rx.put(c);
     }
-    DBG("### READ:", len_requested, " bytes from connection ", mux);
+    // DBG("### READ:", len_requested, " bytes from connection ", mux);
     // sockets[mux]->sock_available = modemGetAvailable(mux);
     sockets[mux]->sock_available = len_confirmed;
     waitResponse();
@@ -642,7 +642,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
         waitResponse();
       }
     }
-    DBG("### Available:", result, "on", mux);
+    // DBG("### Available:", result, "on", mux);
     if (!result) { sockets[mux]->sock_connected = modemGetConnected(mux); }
     return result;
   }
@@ -754,6 +754,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
             sockets[mux]->sock_connected = false;
           }
           data = "";
+          streamSkipUntil('\n');
           DBG("### TCP Closed: ", mux);
         } else if (data.endsWith(GF("+CCH_PEER_CLOSED:"))) {
           // int8_t nl   = data.lastIndexOf(GSM_NL, data.length() - 8);
