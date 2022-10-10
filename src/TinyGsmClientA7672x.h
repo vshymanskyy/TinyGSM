@@ -24,6 +24,7 @@
 #include "TinyGsmTCP.tpp"
 #include "TinyGsmTime.tpp"
 #include "TinyGsmNTP.tpp"
+#include "TinyGsmTemperature.tpp"
 
 #define GSM_NL "\r\n"
 static const char GSM_OK[] TINY_GSM_PROGMEM    = "OK" GSM_NL;
@@ -51,7 +52,8 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
                       public TinyGsmGSMLocation<TinyGsmA7672X>,
                       public TinyGsmTime<TinyGsmA7672X>,
                       public TinyGsmNTP<TinyGsmA7672X>,
-                      public TinyGsmBattery<TinyGsmA7672X> {
+                      public TinyGsmBattery<TinyGsmA7672X>,
+                      public TinyGsmTemperature<TinyGsmA7672X> {
   friend class TinyGsmModem<TinyGsmA7672X>;
   friend class TinyGsmGPRS<TinyGsmA7672X>;
   friend class TinyGsmTCP<TinyGsmA7672X, TINY_GSM_MUX_COUNT>;
@@ -62,6 +64,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
   friend class TinyGsmTime<TinyGsmA7672X>;
   friend class TinyGsmNTP<TinyGsmA7672X>;
   friend class TinyGsmBattery<TinyGsmA7672X>;
+  friend class TinyGsmTemperature<TinyGsmA7672X>;
 
   /*
    * Inner Client
@@ -133,8 +136,13 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
         : GsmClientA7672X(modem, mux) {}
 
    public:
-    bool setCertificate(const String& certificateName, const uint8_t len) {
-      return at->setCertificate(certificateName, len);
+    bool addCertificate(const String& certificateName, const String& cert,
+                        const uint16_t len) {
+      return at->addCertificate(certificateName, cert, len);
+    }
+
+    bool setCertificate(const String& certificateName) {
+      return at->setCertificate(certificateName, mux);
     }
 
     bool deleteCertificate(const String& certificateName) {
@@ -222,16 +230,24 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
     return name;
   }
 
-  bool factoryDefaultImpl() {  // todo:
-    sendAT(GF("&FZE0&W"));     // Factory + Reset + Echo Off + Write
+  float getTemperatureImpl() {
+    String res = "";
+    sendAT(GF("+CPMUTEMP"));
+    if (waitResponse(1000L, res)) { return 0; }
+    res        = res.substring(res.indexOf(':'), res.indexOf('\r'));
+    float temp = res.toFloat();
     waitResponse();
-    sendAT(GF("+IPR=0"));  // Auto-baud
+    return temp;
+  }
+
+  bool factoryDefaultImpl() {
+    sendAT(GF("&F"));  // Factory + Reset
     waitResponse();
     sendAT(GF("+IFC=0,0"));  // No Flow Control
     waitResponse();
-    sendAT(GF("+ICF=3,3"));  // 8 data 0 parity 1 stop
+    sendAT(GF("+ICF=2,2"));  // 8 data 0 parity 1 stop
     waitResponse();
-    sendAT(GF("+CSCLK=0"));  // Disable Slow Clock
+    sendAT(GF("+CSCLK=0"));  // Control UART Sleep always work
     waitResponse();
     sendAT(GF("&W"));  // Write configuration
     return waitResponse() == 1;
@@ -241,9 +257,9 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
    * Power functions
    */
  protected:
-  bool restartImpl(const char* pin = NULL) {  // todo:
+  bool restartImpl(const char* pin = NULL) {
     if (!testAT()) { return false; }
-    sendAT(GF("&W"));
+    sendAT(GF("+CRESET"));
     waitResponse();
     if (!setPhoneFunctionality(0)) { return false; }
     if (!setPhoneFunctionality(1, true)) { return false; }
@@ -251,26 +267,33 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
     return init(pin);
   }
 
-  bool powerOffImpl() {  // todo:
-    sendAT(GF("+CPOWD=1"));
-    return waitResponse(10000L, GF("NORMAL POWER DOWN")) == 1;
+  bool powerOffImpl() {
+    sendAT(GF("+CPOF"));
+    return waitResponse(10000L) == 1;
   }
 
-  // During sleep, the A7672X module has its serial communication disabled. In
-  // order to reestablish communication pull the DRT-pin of the A7672X module
-  // LOW for at least 50ms. Then use this function to disable sleep mode. The
-  // DTR-pin can then be released again.
-  bool sleepEnableImpl(bool enable = true) {  // todo:
-    sendAT(GF("+CSCLK="), enable);
+  //  This command is used to enable UART Sleep or always work. If set to 0,
+  //  UART always work. If set to 1, ensure that DTR is pulled high and the
+  //  module can go to DTR sleep. If set to 2, the module will enter RXsleep. RX
+  //  wakeup directly sends data through the serial port (for example: AT) to
+  //  wake up
+  bool sleepEnableImpl(bool enable = true) {
+    sendAT(GF("+CSCLK="),
+           enable ? "2" : "1");  // 2: RXsleep (at wakeup) 1: DTR sleep
     return waitResponse() == 1;
   }
 
-  // <fun> 0 Minimum functionality
-  // <fun> 1 Full functionality (Default)
-  // <fun> 4 Disable phone both transmit and receive RF circuits.
-  // <rst> Reset the MT before setting it to <fun> power level.
+  // <fun> 0 minimum functionality
+  // <fun> 1 full functionality, online mode
+  // <fun> 4 disable phone both transmit and receive RF circuits
+  // <fun> 5 Factory Test Mode (The A7600's 5 and 1 have the same function)
+  // <fun> 6 Reset
+  // <fun> 7 Offline Mode
+  // <rst> 0 do not reset the ME before setting it to <fun> power level
+  // <rst> 1 reset the ME before setting it to <fun> power level. This
+  // valueonlytakes effect when <fun> equals 1
   bool setPhoneFunctionalityImpl(uint8_t fun, bool reset = false) {
-    sendAT(GF("+CFUN="), fun, reset ? ",1" : "");
+    sendAT(GF("+CFUN="), fun, reset ? ",1" : ",0");
     return waitResponse(10000L) == 1;
   }
 
@@ -308,12 +331,24 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
  protected:
   // The name of the certificate/key/password file. The file name must
   // havetype like ".pem" or ".der".
-  bool setCertificate(const String& certificateName, const uint8_t len) {
+  // The certificate like - const char ca_cert[] PROGMEM =  R"EOF(-----BEGIN...
+  // len of certificate like - sizeof(ca_cert)
+  bool addCertificate(const String& certificateName, const String& cert,
+                      const uint16_t len) {
     sendAT(GF("+CCERTDOWN="), certificateName, GF(","), len);
+    if (waitResponse(GF(">")) != 1) { return 0; }
+    stream.write(cert.c_str(), len);
+    stream.flush();
     return waitResponse() == 1;
   }
 
-  bool deleteCertificate(const String& certificateName) {
+  bool setCertificate(const String& certificateName, const uint8_t mux = 0) {
+    if (mux >= TINY_GSM_MUX_COUNT) return false;
+    certificates[mux] = certificateName;
+    return true;
+  }
+
+  bool deleteCertificate(const String& certificateName) {  // todo test
     sendAT(GF("+CCERTDELE="), certificateName);
     return waitResponse() == 1;
   }
@@ -353,9 +388,8 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
     return true;
   }
 
-  bool gprsDisconnectImpl() {  // todo:
+  bool gprsDisconnectImpl() {
     // Shut the TCP/IP connection
-    // CIPSHUT will close *all* open connections
     sendAT(GF("+NETCLOSE"));
     if (waitResponse(60000L) != 1) { return false; }
 
@@ -382,97 +416,39 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
    * Phone Call functions
    */
  public:
-  bool setGsmBusy(bool busy = true) {  // todo:
-    sendAT(GF("+GSMBUSY="), busy ? 1 : 0);
+  bool setGsmBusy(bool busy = true) {
+    sendAT(GF("+CCFC=1,"), busy ? 1 : 0);
     return waitResponse() == 1;
   }
-
-  /*
-   * Messaging functions //todo:
-   */
- protected:
-  // Follows all messaging functions per template
 
   /*
    * GSM Location functions //todo:
    */
  protected:
-  // Depending on the exacty model and firmware revision, should return a
-  // GSM-based location from CLBS as per the template
-
   /*
    * GPS/GNSS/GLONASS location functions //todo:
    */
  protected:
-  // No functions of this type supported
-
   /*
-   * Audio functions
+   * Audio functions //todo:
    */
- public:
-  bool setVolume(uint8_t volume = 50) {  // todo:
-    // Set speaker volume
-    sendAT(GF("+CLVL="), volume);
-    return waitResponse() == 1;
-  }
-
-  uint8_t getVolume() {  // todo:
-    // Get speaker volume
-    sendAT(GF("+CLVL?"));
-    if (waitResponse(GF(GSM_NL)) != 1) { return 0; }
-    String res = stream.readStringUntil('\n');
-    waitResponse();
-    res.replace("+CLVL:", "");
-    res.trim();
-    return res.toInt();
-  }
-
-  bool setMicVolume(uint8_t channel, uint8_t level) {  // todo:
-    if (channel > 4) { return 0; }
-    sendAT(GF("+CMIC="), level);
-    return waitResponse() == 1;
-  }
-
-  bool setAudioChannel(uint8_t channel) {  // todo:
-    sendAT(GF("+CHFA="), channel);
-    return waitResponse() == 1;
-  }
-
-  bool playToolkitTone(uint8_t tone, uint32_t duration) {  // todo:
-    sendAT(GF("STTONE="), 1, tone);
-    delay(duration);
-    sendAT(GF("STTONE="), 0);
-    return waitResponse();
-  }
-
+ protected:
   /*
    * Time functions //todo:
    */
  protected:
-  // Can follow the standard CCLK function in the template
-
   /*
    * NTP server functions //todo:
    */
-  // Can sync with server using CNTP as per template
-
+ protected:
   /*
    * BLE functions //todo:
    */
  protected:
-  // Follows all BLE functions per template
-
   /*
    * Battery functions //todo:
    */
  protected:
-  // Follows all battery functions per template
-
-  /*
-   * NTP server functions //todo:
-   */
-  // Can sync with server using CNTP as per template
-
   /*
    * Client related functions
    */
@@ -482,7 +458,8 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
     int8_t   rsp;
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
 
-    sendAT(GF("+CTCPKA=1,2,5,1"));  // todo: here?
+    // +CTCPKA:<keepalive>,<keepidle>,<keepcount>,<keepinterval>
+    sendAT(GF("+CTCPKA=1,2,5,1"));
     if (waitResponse(2000L) != 1) { return false; }
 
     if (ssl) {
@@ -504,7 +481,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
       if (certificates[mux] != "") {
         /* Configure the server root CA of the specified SSL context
         AT + CSSLCFG = "cacert", <ssl_ ctx_index>,<ca_file> */
-        sendAT(GF("+CASSLCFG=\"cacert\",0,"), certificates[mux].c_str());
+        sendAT(GF("+CSSLCFG=\"cacert\",0,"), certificates[mux].c_str());
         if (waitResponse(5000L) != 1) return false;
       }
 
