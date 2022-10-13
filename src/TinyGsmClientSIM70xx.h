@@ -18,7 +18,6 @@
 #include "TinyGsmModem.tpp"
 #include "TinyGsmSMS.tpp"
 #include "TinyGsmTime.tpp"
-#include "TinyGsmNTP.tpp"
 #include "TinyGsmGSMLocation.tpp"
 
 #define GSM_NL "\r\n"
@@ -45,7 +44,6 @@ class TinyGsmSim70xx : public TinyGsmModem<TinyGsmSim70xx<modemType>>,
                        public TinyGsmSMS<TinyGsmSim70xx<modemType>>,
                        public TinyGsmGPS<TinyGsmSim70xx<modemType>>,
                        public TinyGsmTime<TinyGsmSim70xx<modemType>>,
-                       public TinyGsmNTP<TinyGsmSim70xx<modemType>>,
                        public TinyGsmBattery<TinyGsmSim70xx<modemType>>,
                        public TinyGsmGSMLocation<TinyGsmSim70xx<modemType>> {
   friend class TinyGsmModem<TinyGsmSim70xx<modemType>>;
@@ -53,7 +51,6 @@ class TinyGsmSim70xx : public TinyGsmModem<TinyGsmSim70xx<modemType>>,
   friend class TinyGsmSMS<TinyGsmSim70xx<modemType>>;
   friend class TinyGsmGPS<TinyGsmSim70xx<modemType>>;
   friend class TinyGsmTime<TinyGsmSim70xx<modemType>>;
-  friend class TinyGsmNTP<TinyGsmSim70xx<modemType>>;
   friend class TinyGsmBattery<TinyGsmSim70xx<modemType>>;
   friend class TinyGsmGSMLocation<TinyGsmSim70xx<modemType>>;
 

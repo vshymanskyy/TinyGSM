@@ -18,13 +18,16 @@
 #include "TinyGsmClientSIM70xx.h"
 #include "TinyGsmTCP.tpp"
 #include "TinyGsmSSL.tpp"
+#include "TinyGsmNTP.tpp"
 
 class TinyGsmSim7000SSL
     : public TinyGsmSim70xx<TinyGsmSim7000SSL>,
       public TinyGsmTCP<TinyGsmSim7000SSL, TINY_GSM_MUX_COUNT>,
+      public TinyGsmNTP<TinyGsmSim7000SSL>,
       public TinyGsmSSL<TinyGsmSim7000SSL> {
   friend class TinyGsmSim70xx<TinyGsmSim7000SSL>;
   friend class TinyGsmTCP<TinyGsmSim7000SSL, TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmNTP<TinyGsmSim7000SSL>;
   friend class TinyGsmSSL<TinyGsmSim7000SSL>;
 
   /*
