@@ -54,8 +54,8 @@ class TinyGsmCalling {
   }
   
   
-  bool selectPhonebookImpl() {
-    return thisModem().callAnswerImpl();
+  bool selectPhonebook() {
+    return thisModem().selectPhonebookImpl();
   }
   
   /*
@@ -165,7 +165,7 @@ class TinyGsmCalling {
 	} 
 	
   bool selectPhonebookImpl() {
-    thisModem().sendAT(GF('+CPBS="ME"'));
+    thisModem().sendAT(GF("+CPBS=\"ME\""));
     return thisModem().waitResponse() == 1;
   }
   
