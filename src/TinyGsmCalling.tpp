@@ -53,6 +53,11 @@ class TinyGsmCalling {
     return thisModem().getPhonebook_NumberImpl();
   }
   
+  
+  bool selectPhonebookImpl() {
+    return thisModem().callAnswerImpl();
+  }
+  
   /*
    * CRTP Helper
    */
@@ -158,6 +163,12 @@ class TinyGsmCalling {
 	thisModem().waitResponse();
 	return res;
 	} 
+	
+  bool selectPhonebookImpl() {
+    thisModem().sendAT(GF('+CPBS="ME"'));
+    return thisModem().waitResponse() == 1;
+  }
+  
   
 };
 
