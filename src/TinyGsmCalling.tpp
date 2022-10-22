@@ -48,6 +48,16 @@ class TinyGsmCalling {
     return thisModem().getVolumeImpl();
   }
 
+
+  String Phonebook_Number() {
+    return thisModem().getPhonebook_NumberImpl();
+  }
+  
+  
+  bool selectPhonebookImpl() {
+    return thisModem().callAnswerImpl();
+  }
+  
   /*
    * CRTP Helper
    */
@@ -143,6 +153,22 @@ class TinyGsmCalling {
 	thisModem().waitResponse();
 	return res;
 	} 
+	
+  String getPhonebook_NumberImpl() {
+	thisModem().sendAT(GF("+CPBR=1"));
+	if (thisModem().waitResponse(GF("+CPBR:")) != 1) { return "0"; }
+	thisModem().streamSkipUntil(',');  // skip the phonebook location
+	thisModem().streamSkipUntil('"'); 
+	String res = thisModem().stream.readStringUntil('"'); // Read saved number here
+	thisModem().waitResponse();
+	return res;
+	} 
+	
+  bool selectPhonebookImpl() {
+    thisModem().sendAT(GF('+CPBS="ME"'));
+    return thisModem().waitResponse() == 1;
+  }
+  
   
 };
 
