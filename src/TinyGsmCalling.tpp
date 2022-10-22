@@ -48,6 +48,11 @@ class TinyGsmCalling {
     return thisModem().getVolumeImpl();
   }
 
+
+  String Phonebook_Number() {
+    return thisModem().getPhonebook_NumberImpl();
+  }
+  
   /*
    * CRTP Helper
    */
@@ -140,6 +145,16 @@ class TinyGsmCalling {
   uint8_t getVolumeImpl() {
 	if (thisModem().waitResponse(GF("+CLVL:")) != 1) { return 0; }
 	uint8_t res = thisModem().streamGetIntBefore('\n');
+	thisModem().waitResponse();
+	return res;
+	} 
+	
+  String getPhonebook_NumberImpl() {
+	thisModem().sendAT(GF("+CPBR=1"));
+	if (thisModem().waitResponse(GF("+CPBR:")) != 1) { return "0"; }
+	thisModem().streamSkipUntil(',');  // skip the phonebook location
+	thisModem().streamSkipUntil('"'); 
+	String res = thisModem().stream.readStringUntil('"'); // Read saved number here
 	thisModem().waitResponse();
 	return res;
 	} 
