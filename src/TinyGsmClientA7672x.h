@@ -544,13 +544,13 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
     stream.write(reinterpret_cast<const uint8_t*>(buff), len);
     stream.flush();
 
-    if (hasSSL) {
-      if (waitResponse(GF(GSM_NL "+CCHSEND:")) != 1) { return 0; }
-    } else if (waitResponse() != 1) {
+    if (waitResponse() != 1) { return 0; }
+    if (waitResponse(10000L, GF("+CCHSEND: 0,0" GSM_NL),
+                     GF("+CCHSEND: 0,4" GSM_NL), GF("+CCHSEND: 0,9" GSM_NL),
+                     GF("ERROR" GSM_NL), GF("CLOSE OK" GSM_NL)) != 1) {
       return 0;
     }
-    streamSkipUntil(',');  // Skip mux
-    return streamGetIntBefore('\n');
+    return len;
   }
 
   size_t modemRead(size_t size, uint8_t mux) {
@@ -604,7 +604,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
     if (!sockets[mux]) return 0;
     size_t result = 0;
     if (hasSSL) {
-      sendAT(GF("+CCHRECV?"));
+      sendAT(GF("+CCHRECV?"));  // TODO(Rosso): Optimize this!
       String res = "";
       waitResponse(2000L, res);
       result =
@@ -620,14 +620,16 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
       }
     }
     // DBG("### Available:", result, "on", mux);
-    if (!result) { sockets[mux]->sock_connected = modemGetConnected(mux); }
+    if (result == 0) { sockets[mux]->sock_connected = modemGetConnected(mux); }
     return result;
   }
 
   bool modemGetConnected(uint8_t mux) {
     int8_t res = 0;
     if (hasSSL) {
-      return this->sockets[mux]->sock_connected;
+      bool connected = this->sockets[mux]->sock_connected;
+      DBG("### Connected:", connected);
+      return connected;
     } else {
       sendAT(GF("+CIPACK="), mux);
       waitResponse(GF("+CIPACK:"));
@@ -723,9 +725,6 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
           data = "";
           DBG("### ACK:", mux);
         } else if (data.endsWith(GF("+IPCLOSE:"))) {
-          // int8_t nl   = data.lastIndexOf(GSM_NL, data.length() - 8);
-          // int8_t coma = data.indexOf(',', nl + 2);
-          // int8_t mux  = data.substring(nl + 2, coma).toInt();
           int8_t mux = streamGetIntBefore(',');
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
             sockets[mux]->sock_connected = false;
@@ -734,8 +733,6 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
           streamSkipUntil('\n');
           DBG("### TCP Closed: ", mux);
         } else if (data.endsWith(GF("+CCH_PEER_CLOSED:"))) {
-          // int8_t nl   = data.lastIndexOf(GSM_NL, data.length() - 8);
-          // int8_t coma = data.indexOf(',', nl + 2);
           int8_t mux = streamGetIntBefore('\n');
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
             sockets[mux]->sock_connected = false;
