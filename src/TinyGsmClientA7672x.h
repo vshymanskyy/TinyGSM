@@ -732,6 +732,14 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
           data = "";
           streamSkipUntil('\n');
           DBG("### TCP Closed: ", mux);
+        } else if (data.endsWith(GF("+CCHCLOSE:"))) {
+          int8_t mux = streamGetIntBefore(',');
+          if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+            sockets[mux]->sock_connected = false;
+          }
+          data = "";
+          streamSkipUntil('\n');
+          DBG("### SSL Closed: ", mux);
         } else if (data.endsWith(GF("+CCH_PEER_CLOSED:"))) {
           int8_t mux = streamGetIntBefore('\n');
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
