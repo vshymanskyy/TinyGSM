@@ -628,7 +628,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
     int8_t res = 0;
     if (hasSSL) {
       bool connected = this->sockets[mux]->sock_connected;
-      DBG("### Connected:", connected);
+      // DBG("### Connected:", connected);
       return connected;
     } else {
       sendAT(GF("+CIPACK="), mux);
