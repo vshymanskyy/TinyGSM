@@ -255,39 +255,54 @@ class TinyGsmSMS {
   }
 
   // Supported by: SIM800 other is not tested
-  String readSMSPDUImpl(const uint8_t index, const bool changeStatusToRead = true) {
+  String readSMSPDUImpl(const uint8_t index, const bool changeStatusToRead = true)
+  {
+    int res = 0;
 
     thisModem().sendAT(GF("+CMGF=0"));
     thisModem().waitResponse();
 
-    thisModem().sendAT(GF("+CMGR="), index, GF(","), static_cast<const uint8_t>(!changeStatusToRead)); // Read SMS Message
-    if (thisModem().waitResponse(5000L, GF("+CMGR: ")) != 1) {
-      String s = thisModem().stream.readString();
-      return {};
-    }
+    thisModem().sendAT(GF("+CMGR="), index, GF(","), static_cast<const uint8_t>(!changeStatusToRead));
 
-    // AT reply:
-    // <stat>,<oa>[,<alpha>],<scts>[,<tooa>,<fo>,<pid>,<dcs>,<sca>,<tosca>,<length>]<CR><LF><data>
-
-    int res = 0;
-    String args[10];
-    int argsNbr = 0;
-
-    while( (argsNbr < 10 ) && ( res == 0) )
+    for(;;)
     {
-        res = thisModem().streamGetAtValue(args[argsNbr]);
-        if ( res < 0 ) { return {}; }
-        argsNbr ++;
-        if ( res > 0 ) { break; }
+        String value;
+        res = thisModem().streamGetAtLine(value);
+        if ( res < 0 )
+        {
+            printf("readSMSPDUImpl timeout\n");
+            return "";
+        }
+
+        if ( value.length() == 0)
+        {
+            continue;
+        }
+
+        printf("readSMSPDUImpl value %s\n", value.c_str());
+        if ( value == String("OK") )
+        {
+            printf("readSMSPDUImpl no message\n");
+            return "";
+        }
+        if ( value.startsWith("+CMGR:") )
+        {
+            break;
+        }
+        if ( value == String("ERROR") )
+        {
+            printf("readSMSPDUImpl ERROR\n");
+            return "";
+        }
     }
 
-    String data;
-    if ( thisModem().streamGetAtValue(data) != 1 )
+    String PDU;
+    if ( thisModem().streamGetAtLine(PDU) != 1 )
     {
         return "";
     }
 
-    return data;
+    return PDU;
   }
   // Supported by: SIM800 other is not tested
   Sms readSMSTextImpl(const uint8_t index, const bool changeStatusToRead = true) {
