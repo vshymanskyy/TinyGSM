@@ -355,7 +355,7 @@ class TinyGsmModem {
       if ( ( c == '\r' ) or ( c == '\n' ) )
       {
         /* remove \n if present after \r */
-        if ( ( c == '\r' ) && ( streamWaitAvailable(1) == 1 ) )
+        if ( ( c == '\r' ) && ( streamWaitAvailable(1) > 1 ) )
         {
             if ( thisModem().stream.peek() == '\n' )
             {
