@@ -113,6 +113,11 @@ struct Sms {
   String message;                // <data>
 };
 
+struct SmsPDU {
+  int slot;
+  String PDU;
+};
+
 enum class MessageStorageType : uint8_t {
   SIM,                // SM
   Phone,              // ME

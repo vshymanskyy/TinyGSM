@@ -9,6 +9,8 @@
 #ifndef SRC_TINYGSMSMS_H_
 #define SRC_TINYGSMSMS_H_
 
+#include <vector>
+#include <list>
 #include "TinyGsmCommon.h"
 
 #define TINY_GSM_MODEM_HAS_SMS
@@ -43,6 +45,12 @@ class TinyGsmSMS {
 
   String readSMSPDU(const uint8_t index, const bool changeStatusToRead = true) {
     return thisModem().readSMSPDUImpl(index,changeStatusToRead);
+  }
+
+  int readAllSMSPDU(std::list<SmsPDU> &smsList,
+                    SmsStatus  smsStatus,
+                    const bool changeStatusToRead = true) {
+    return thisModem().readAllSMSPDUImpl(smsList, smsStatus, changeStatusToRead);
   }
 
   bool deleteSMS(const uint8_t index) {
@@ -304,6 +312,115 @@ class TinyGsmSMS {
 
     return PDU;
   }
+
+  void parseArgs(String &line, std::vector<String> &args)
+  {
+      int pos = line.indexOf(' ');
+      bool quoted = false;
+      String val = "";
+      if ( pos < 0 )
+      {
+          return;
+      }
+
+      pos ++;
+
+      while( pos < line.length() )
+      {
+          char c = line[pos++];
+          if ( quoted )
+          {
+              if ( c == '"' )
+              {
+                  quoted = false;
+              }
+          }
+          else if ( c == '"' )
+          {
+              quoted = true;
+          }
+          else if ( c == ',' )
+          {
+              //printf("arg %s\n",val.c_str());
+              args.push_back(val);
+              val = "";
+              continue;
+          }
+          val += c;
+      }
+      if ( val.length() > 0 )
+      {
+          //printf("arg %s\n",val.c_str());
+          args.push_back(val);
+      }
+  }
+
+  int readAllSMSPDUImpl(std::list<SmsPDU> &smsList,
+                        SmsStatus  smsStatus,
+                        const bool changeStatusToRead = true)
+  {
+      int sms_nbr = 0;
+      int res = 0;
+
+      thisModem().sendAT(GF("+CMGF=0"));
+      thisModem().waitResponse();
+
+      thisModem().sendAT(GF("+CMGL="),
+                         static_cast<const uint8_t>(smsStatus),
+                         GF(","),
+                         static_cast<const uint8_t>(!changeStatusToRead));
+
+      for(;;)
+      {
+          String value;
+          res = thisModem().streamGetAtLine(value);
+          if ( res < 0 )
+          {
+              printf("readSMSPDUImpl timeout\n");
+              return -1;
+          }
+
+          if ( value.length() == 0)
+          {
+              continue;
+          }
+
+          //printf("readSMSPDUImpl value %s\n", value.c_str());
+          if ( value == String("OK") )
+          {
+              printf("readSMSPDUImpl no message\n");
+              return -1;
+          }
+          if ( value.startsWith("+CMGL:") )
+          {
+              std::vector<String> args;
+
+              parseArgs(value, args);
+
+              SmsPDU smsPDU;
+
+              if ( args.size() >= 1 )
+              {
+                  smsPDU.slot = args[0].toInt();
+              }
+
+              if ( thisModem().streamGetAtLine(smsPDU.PDU) == 1 )
+              {
+                  printf("readSMSPDUImpl %d %s\n",smsPDU.slot, smsPDU.PDU.c_str());
+                  smsList.push_back(smsPDU);
+                  sms_nbr ++;
+              }
+          }
+          if ( value == String("ERROR") )
+          {
+              printf("readSMSPDUImpl ERROR\n");
+              return -1;
+          }
+      }
+
+      return smsList.size();
+  }
+
   // Supported by: SIM800 other is not tested
   Sms readSMSTextImpl(const uint8_t index, const bool changeStatusToRead = true) {
 
