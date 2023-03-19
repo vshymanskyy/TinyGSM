@@ -325,14 +325,14 @@ class TinyGsmModem {
                                        const uint32_t timeout_ms = 1000L) {
             int ret = 0;
             int end = millis() + timeout_ms;
-            do 
+            do
             {
                 ret = thisModem().stream.available() ;
                 if ( ret >= numChars )
                 {
                     break;
                 }
-            }while( end > millis() ); 
+            }while( end > millis() );
 
             return ret;
         }
@@ -340,7 +340,7 @@ class TinyGsmModem {
         /*
          * read and answer value, it manage quoted string and end of line.
          * return :
-         *  - (-1): timeout or unterminated quoted string. 
+         *  - (-1): timeout or unterminated quoted string.
          *  - 0 : line is not ended, last byte read is an comma.
          *  - 1 : line is ended, last byte read is an \r and/or \n.
          */
@@ -362,8 +362,8 @@ class TinyGsmModem {
                             thisModem().stream.read();
                         }
                     }
-                    if ( quoted ) 
-                    { 
+                    if ( quoted )
+                    {
                         return -1;  /* not terminated quoted string */
                     }
                     else
@@ -371,7 +371,7 @@ class TinyGsmModem {
                         return 1; /* line is ended */
                     }
                 }
-                else if ( c == '"' ) { 
+                else if ( c == '"' ) {
                     quoted = !quoted;
                 }
                 else if ( ( ! quoted ) && ( c == ',' ) )
@@ -379,7 +379,7 @@ class TinyGsmModem {
                     return 0; /* Value ended but not the line */
                 }
                 else
-                { 
+                {
                     value += c;
                 }
             }
@@ -415,7 +415,7 @@ class TinyGsmModem {
                     return 1; /* line is ended */
                 }
                 else
-                { 
+                {
                     value += c;
                 }
             }
