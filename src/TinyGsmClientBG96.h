@@ -25,6 +25,7 @@
 #include "TinyGsmTemperature.tpp"
 #include "TinyGsmTime.tpp"
 #include "TinyGsmNTP.tpp"
+#include "TinyGsmMQTT.tpp"
 
 #define GSM_NL "\r\n"
 static const char GSM_OK[] TINY_GSM_PROGMEM    = "OK" GSM_NL;
@@ -49,6 +50,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
                     public TinyGsmTCP<TinyGsmBG96, TINY_GSM_MUX_COUNT>,
                     public TinyGsmCalling<TinyGsmBG96>,
                     public TinyGsmSMS<TinyGsmBG96>,
+                    public TinyGsmMQTT<TinyGsmBG96>,
                     public TinyGsmTime<TinyGsmBG96>,
                     public TinyGsmNTP<TinyGsmBG96>,
                     public TinyGsmGPS<TinyGsmBG96>,
@@ -59,6 +61,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
   friend class TinyGsmTCP<TinyGsmBG96, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmCalling<TinyGsmBG96>;
   friend class TinyGsmSMS<TinyGsmBG96>;
+  friend class TinyGsmMQTT<TinyGsmBG96>;
   friend class TinyGsmTime<TinyGsmBG96>;
   friend class TinyGsmNTP<TinyGsmBG96>;
   friend class TinyGsmGPS<TinyGsmBG96>;
@@ -677,6 +680,24 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
             streamSkipUntil('\n');
           }
           data = "";
+        } else if (data.endsWith(GF(GSM_NL "+QMTRECV:"))) {
+
+          // +QMTRECV: <client_idx>,<msgID>,<topic>,[<payload_len>,]<payload>)
+          int clientIndex = streamGetIntBefore(',');
+          int msgIdRsp = streamGetIntBefore(',');
+          String topic = stream.readStringUntil(',');
+          String payload = stream.readStringUntil('\n');
+
+          /*
+          DBG(GF("clientIndex: "), clientIndex);
+          DBG(GF("msgId: "), msgIdRsp);
+          DBG(GF("topic: "), topic);
+          DBG(GF("payload: "), payload);
+          */
+
+          // TODO: We're dealing with payloads as strings. Might want to reconfigure MQTT stack to return lengths?
+          if(_mqttReceiveCB)
+            _mqttReceiveCB[clientIndex](clientIndex, msgIdRsp, topic.c_str(), payload.c_str(), strlen(payload.c_str()));
         }
       }
     } while (millis() - startMillis < timeout_ms);
