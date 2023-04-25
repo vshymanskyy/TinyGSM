@@ -610,6 +610,225 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
   }
 
   /*
+   * MQTT related functions
+   */
+ protected:
+
+  int mqttOpenImpl(int id, const char* hostName, int port)
+  {
+    sendAT(GF("+QMTOPEN="),id, GF(",\""), hostName, GF("\","), port);
+
+    // Wait for OK
+    if (waitResponse(300L) != 1) {
+      return -1;
+    }
+
+    // Wait for +QMTOPEN
+    if (waitResponse(15000L, GF("+QMTOPEN:")) != 1) {
+      return -1;
+    }
+
+    int clientIndex = streamGetIntBefore(',');
+    int result = streamGetIntLength(1);
+
+    /*
+    DBG(GF("clientIndex: "), clientIndex);
+    DBG(GF("result: "), result);
+    */
+
+    streamSkipUntil('\n');  // The error code of the operation. If it is not
+
+    return result;
+  }
+
+  int mqttCloseImpl(int mux)
+  {
+    mqtt_connected[mux] = 0;
+
+    sendAT(GF("+QMTCLOSE="),mux);
+
+    // Wait for OK
+    if (waitResponse(300L) != 1) {
+      return -1;
+    }
+
+    // Wait for +QMTCLOSE
+    if (waitResponse(300L, GF("+QMTCLOSE:")) != 1) {
+      return -1;
+    }
+
+    int clientIndex = streamGetIntBefore(',');
+    int state = streamGetIntLength(1);
+
+    /*
+    DBG(GF("clientIndex: "), clientIndex);
+    DBG(GF("state: "), state);
+    */
+
+    streamSkipUntil('\n');  // The error code of the operation. If it is not
+
+    return state;
+  }
+
+  int mqttConnectImpl(int mux, const char* clientId, const char* userName, const char* password)
+  {
+    sendAT(GF("+QMTCONN="),mux, ",\"", clientId, "\",\"", userName, "\",\"", password, "\"");
+    if (waitResponse(5000L, GF("+QMTCONN:")) != 1) {
+      return -1;
+    }
+
+    int clientIndex = streamGetIntBefore(',');
+    int state = streamGetIntLength(1);
+
+    /*
+    DBG(GF("clientIndex: "), clientIndex);
+    DBG(GF("state: "), state);
+    */
+
+    streamSkipUntil('\n');  // The error code of the operation. If it is not
+
+    mqtt_connected[mux] = (state == 0) ? true : false;
+
+    return state;
+  }
+
+  int mqttDisconnectImpl(int mux)
+  {
+    mqtt_connected[mux] = false;
+
+    sendAT(GF("+QMTDISC="),mux);
+
+    // Wait for OK
+    if (waitResponse(300L) != 1) {
+      return -1;
+    }
+
+    // Wait for +QMTDISCs
+    if (waitResponse(300L, GF("+QMTDISC:")) != 1) {
+      return -1;
+    }
+
+    int clientIndex = streamGetIntBefore(',');
+    int result = streamGetIntLength(1);
+
+    /*
+    DBG(GF("clientIndex: "), clientIndex);
+    DBG(GF("result: "), result);
+    */
+
+    streamSkipUntil('\n');  // The error code of the operation. If it is not
+
+    return result;
+  }
+
+  int mqttSubscribeImpl(int id, int msgId, const char* topic, int qos)
+  {
+    sendAT(GF("+QMTSUB="),id, ",", msgId, ",\"", topic, "\",", qos);
+
+    // Wait for OK
+    if (waitResponse(300L) != 1) {
+      return -1;
+    }
+
+    // Wait for +QMTSUB
+    if (waitResponse(15000L, GF("+QMTSUB:")) != 1) {
+      return -1;
+    }
+
+    int clientIndex = streamGetIntBefore(',');
+    int msgIdRsp = streamGetIntBefore(',');
+    int result = streamGetIntLength(1);
+    // Ignore optional value
+
+    /*
+    DBG(GF("clientIndex: "), clientIndex);
+    DBG(GF("msgId: "), msgIdRsp);
+    DBG(GF("result: "), result);
+    */
+
+    streamSkipUntil('\n');  // The error code of the operation. If it is not
+
+    return result;
+  }
+
+  int mqttUnsubscribeImpl(int id, int msgId, const char *topic)
+  {
+    sendAT(GF("+QMTUNS="),id, msgId, topic);
+
+    // Wait for OK
+    if (waitResponse(300L) != 1) {
+      return -1;
+    }
+
+    // Wait for +QMTUNS
+    if (waitResponse(15000L, GF("+QMTUNS:")) != 1) {
+      return -1;
+    }
+
+    int clientIndex = streamGetIntBefore(',');
+    int msgIdRsp = streamGetIntBefore(',');
+    int result = streamGetIntLength(1);
+    
+    /*
+    DBG(GF("clientIndex: "), clientIndex);
+    DBG(GF("msgId: "), msgIdRsp);
+    DBG(GF("result: "), result);
+    */
+
+    streamSkipUntil('\n');  // The error code of the operation. If it is not
+
+    return result;
+  }
+
+  int mqttPublishImpl(int mux, int msgId, int qos, bool retain,  const char* topic, const char *payload, int payloadLen)
+  {
+    sendAT(GF("+QMTPUB="),mux, ",", msgId, ",", qos, ",", retain, ",\"", topic, "\",", payloadLen);
+    if (waitResponse(GF(">")) != 1) { return -1; }
+
+    // TODO: This isn't going to work for payloads with 0's in them ?
+
+    stream.print(payload);  // Actually send the message
+    stream.write(static_cast<char>(0x1A));  // Terminate the message
+    stream.flush();
+
+    // Wait for OK
+    if (waitResponse(300L) != 1) {
+      return -1;
+    }
+
+    // Wait for +QMTPUB
+    if (waitResponse(60000L, GF("+QMTPUB:")) != 1) {
+      return -1;
+    }
+
+    int clientIndex = streamGetIntBefore(',');
+    int msgIdRsp = streamGetIntBefore(',');
+    int result = streamGetIntLength(1);
+
+    /*
+    DBG(GF("clientIndex: "), clientIndex);
+    DBG(GF("msgId: "), msgIdRsp);
+    DBG(GF("result: "), result);
+    */
+
+    streamSkipUntil('\n');  // The error code of the operation. If it is not
+
+    return result;
+  }
+
+  int mqttLoopImpl(int mux)
+  {
+    // Response is handled in modem implementation
+    sendAT(GF("+QMTRECV="), mux);
+
+    // TODO: +QMTRECV always seems to return an ERROR not OK ?
+    //       NB. Modem Info: Quectel BG600L-M3 Revision: BG600LM3LAR02A04
+    waitResponse();
+
+    return 0;  
+  }
+
+  /*
    * Utilities
    */
  public:
