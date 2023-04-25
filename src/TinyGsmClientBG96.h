@@ -828,6 +828,15 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
     return 0;  
   }
 
+  int mqttSetKeepAliveImpl(int mux, int keep_alive_secs)
+  {
+    // Response is handled in modem implementation
+    sendAT(GF("+QMTCFG=\"keepalive\","), mux, ",", keep_alive_secs);
+
+    // Wait for OK
+    return waitResponse() == 1 ? 0 : -1;
+  }
+
   /*
    * Utilities
    */

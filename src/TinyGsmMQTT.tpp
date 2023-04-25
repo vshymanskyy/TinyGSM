@@ -122,6 +122,16 @@ class TinyGsmMQTT {
     return thisModem().mqttLoopImpl(MQTT_DEFAULT_MUX);
   }
 
+  int mqttSetKeepAlive(int keep_alive_secs)
+  {
+    return thisModem().mqttSetKeepAliveImpl(MQTT_DEFAULT_MUX, keep_alive_secs);
+  }
+
+  int mqttSetKeepAlive(int mux, int keep_alive_secs)
+  {
+    return thisModem().mqttSetKeepAliveImpl(mux, keep_alive_secs);
+  }
+  
   void mqttSetReceiveCB(void (*cb)(int mux, int msgId, const char *topic, const char *payload, int len) )
   {
     _mqttReceiveCB[MQTT_DEFAULT_MUX] = cb;
