@@ -241,7 +241,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
   }
 
   bool factoryDefaultImpl() {
-    sendAT(GF("&F"));  // Factory + Reset
+    sendAT(GF("&F"));        // Factory + Reset
     waitResponse();
     sendAT(GF("+IFC=0,0"));  // No Flow Control
     waitResponse();
@@ -249,8 +249,32 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
     waitResponse();
     sendAT(GF("+CSCLK=0"));  // Control UART Sleep always work
     waitResponse();
-    sendAT(GF("&W"));  // Write configuration
+    sendAT(GF("&W"));        // Write configuration
     return waitResponse() == 1;
+  }
+
+  /*
+   * SIM card functions
+   */
+ protected:
+  SimStatus getSimStatusImpl(uint32_t timeout_ms = 10000L) {
+    for (uint32_t start = millis(); millis() - start < timeout_ms;) {
+      sendAT(GF("+CPIN?"));
+      if (waitResponse(GF("+CPIN:")) != 1) {
+        delay(1000);
+        continue;
+      }
+      int8_t status = waitResponse(GF("READY"), GF("SIM PIN"), GF("SIM PUK"),
+                                   GF("SIM not inserted"), GF("SIM REMOVED"));
+      waitResponse();
+      switch (status) {
+        case 2:
+        case 3: return SIM_LOCKED;
+        case 1: return SIM_READY;
+        default: return SIM_ERROR;
+      }
+    }
+    return SIM_ERROR;
   }
 
   /*
@@ -569,7 +593,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
       streamSkipUntil(',');  // Skip DATA
       streamSkipUntil(',');  // Skip mux
       len_requested = streamGetIntBefore('\n');
-      len_confirmed = len;  // streamGetIntBefore(',');
+      len_confirmed = len;   // streamGetIntBefore(',');
     } else {
       sendAT(GF("+CIPRXGET=2,"), mux, ',', (uint16_t)size);
       if (waitResponse(GF("+CIPRXGET:")) != 1) { return 0; }
