@@ -185,7 +185,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
     DBG(GF("### TinyGSM Compiled Module:  A7672X"));
 
-    if (!testAT()) { return false; }
+    if (!testAT(2000)) { return false; }
 
     // sendAT(GF("&FZ"));  // Factory + Reset
     // waitResponse();
