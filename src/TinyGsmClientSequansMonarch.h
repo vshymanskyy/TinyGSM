@@ -510,7 +510,7 @@ class TinyGsmSequansMonarch
     waitResponse(10000L, GF(GSM_NL "> "));
     // Translate bytes into char to be able to send them as an hex string
     char char_command[2];
-    for (int i=0; i<len; i++) {
+    for (size_t i=0; i<len; i++) {
       memset(&char_command, 0, sizeof(char_command));
       sprintf(&char_command[0], "%02X", reinterpret_cast<const uint8_t*>(buff)[i]);
       stream.write(char_command, sizeof(char_command));
