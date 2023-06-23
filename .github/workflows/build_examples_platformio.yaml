@@ -41,7 +41,7 @@ jobs:
           ]
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Set variables
         run: |
@@ -65,7 +65,7 @@ jobs:
           pip install --upgrade platformio
 
       - name: Restore or Cache Platforms and Libraries
-        uses: actions/cache@v2.1.5
+        uses: actions/cache@v3.3.1
         id: cache_pio
         with:
           path: ~/.platformio
