@@ -1546,6 +1546,12 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
       sendAT(cmd, newValue);
       // return false if we attempted to change but failed
       if (waitResponse(timeout_ms) != 1) { return false; }
+      // check if we succeeded in staging a change and retry once
+      sendAT(cmd);
+      if (readResponseInt() != newValue) {
+        sendAT(cmd, newValue);
+        if (waitResponse(timeout_ms) != 1) { return false; }
+      }
       // return true if we succeeded in staging a change
       return true;
     }
