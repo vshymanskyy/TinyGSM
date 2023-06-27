@@ -729,13 +729,21 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
   }
 
   bool isNetworkConnectedImpl() {
+    // first check for association indicator
     RegStatus s = getRegistrationStatus();
     if (s == REG_OK) {
-      IPAddress ip = localIP();
-      if (ip != IPAddress(0, 0, 0, 0)) {
-        return true;
+      if (beeType == XBEE_S6B_WIFI) {
+        // For wifi bees, if the association indicator is ok, check that a both
+        // a local IP and DNS have been allocated
+        IPAddress ip  = localIP();
+        IPAddress dns = getDNSAddress();
+        if (ip != IPAddress(0, 0, 0, 0) && dns != IPAddress(0, 0, 0, 0)) {
+          return true;
+        } else {
+          return false;
+        }
       } else {
-        return false;
+        return true;
       }
     } else {
       return false;
@@ -768,6 +776,29 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
     XBEE_COMMAND_END_DECORATOR
     IPaddr.trim();
     return IPaddr;
+  }
+
+  String getDNS() {
+    XBEE_COMMAND_START_DECORATOR(5, "")
+    switch (beeType) {
+      case XBEE_S6B_WIFI: {
+        sendAT(GF("NS"));
+      }
+      default: {
+        sendAT(GF("N1"));
+      }
+    }
+    String DNSaddr;
+    DNSaddr.reserve(16);
+    // wait for the response - this response can be very slow
+    DNSaddr = readResponseString(30000);
+    XBEE_COMMAND_END_DECORATOR
+    DNSaddr.trim();
+    return DNSaddr;
+  }
+
+  IPAddress getDNSAddress() {
+    return TinyGsmIpFromString(getDNS());
   }
 
   /*
