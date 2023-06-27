@@ -783,9 +783,11 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
     switch (beeType) {
       case XBEE_S6B_WIFI: {
         sendAT(GF("NS"));
+        break;
       }
       default: {
         sendAT(GF("N1"));
+        break;
       }
     }
     String DNSaddr;
