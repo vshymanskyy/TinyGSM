@@ -121,7 +121,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     }
 
     /*
-     * Extended API
+     * Exended API
      */
 
     String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
@@ -506,11 +506,9 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       ialt   = streamGetFloatBefore(',');  // MSL Altitude. Unit is meters
       ispeed = streamGetFloatBefore(',');  // Speed Over Ground. Unit is knots.
       streamSkipUntil(',');                // Course Over Ground. Degrees.
-      streamSkipUntil(',');  // After set, will report GPS every x seconds
       iaccuracy = streamGetFloatBefore(',');  // Position Dilution Of Precision
       streamSkipUntil(',');   // Horizontal Dilution Of Precision
-      streamSkipUntil(',');   // Vertical Dilution Of Precision
-      streamSkipUntil('\n');  // TODO(?) is one more field reported??
+      streamSkipUntil('\n');  // Vertical Dilution Of Precision
 
       // Set pointers
       if (lat != NULL)
