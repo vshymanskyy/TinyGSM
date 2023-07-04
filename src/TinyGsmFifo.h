@@ -122,6 +122,11 @@ public:
         return n - c;
     }
 
+	uint8_t peek()
+	{
+		return _b[_r];
+	}
+
 private:
     int _inc(int i, int n = 1)
     {

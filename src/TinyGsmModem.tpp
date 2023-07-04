@@ -53,8 +53,8 @@ class TinyGsmModem {
   /*
    * Power functions
    */
-  bool restart() {
-    return thisModem().restartImpl();
+  bool restart(const char* pin = NULL) {
+    return thisModem().restartImpl(pin);
   }
   bool poweroff() {
     return thisModem().powerOffImpl();
@@ -77,8 +77,8 @@ class TinyGsmModem {
     return thisModem().isNetworkConnectedImpl();
   }
   // Waits for network attachment
-  bool waitForNetwork(uint32_t timeout_ms = 60000L) {
-    return thisModem().waitForNetworkImpl(timeout_ms);
+  bool waitForNetwork(uint32_t timeout_ms = 60000L, bool check_signal = false) {
+    return thisModem().waitForNetworkImpl(timeout_ms, check_signal);
   }
   // Gets signal quality report
   int16_t getSignalQuality() {
@@ -192,13 +192,15 @@ class TinyGsmModem {
                                            GF("+CEREG:"));
     if (resp != 1 && resp != 2 && resp != 3) { return -1; }
     thisModem().streamSkipUntil(','); /* Skip format (0) */
-    int status = thisModem().streamGetIntBefore('\n');
+    int status = thisModem().stream.parseInt();
     thisModem().waitResponse();
     return status;
   }
 
-  bool waitForNetworkImpl(uint32_t timeout_ms = 60000L) {
+  bool waitForNetworkImpl(uint32_t timeout_ms   = 60000L,
+                          bool     check_signal = false) {
     for (uint32_t start = millis(); millis() - start < timeout_ms;) {
+      if (check_signal) { thisModem().getSignalQuality(); }
       if (thisModem().isNetworkConnected()) { return true; }
       delay(250);
     }

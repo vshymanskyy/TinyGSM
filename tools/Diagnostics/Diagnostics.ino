@@ -15,6 +15,8 @@
 // #define TINY_GSM_MODEM_SIM868
 // #define TINY_GSM_MODEM_SIM900
 // #define TINY_GSM_MODEM_SIM7000
+// #define TINY_GSM_MODEM_SIM7000SSL
+// #define TINY_GSM_MODEM_SIM7080
 // #define TINY_GSM_MODEM_SIM5360
 // #define TINY_GSM_MODEM_SIM7600
 // #define TINY_GSM_MODEM_UBLOX
@@ -35,11 +37,14 @@
 
 // Set serial for AT commands (to the module)
 // Use Hardware Serial on Mega, Leonardo, Micro
+#ifndef __AVR_ATmega328P__
 #define SerialAT Serial1
 
 // or Software Serial on Uno, Nano
-//#include <SoftwareSerial.h>
-//SoftwareSerial SerialAT(2, 3); // RX, TX
+#else
+#include <SoftwareSerial.h>
+SoftwareSerial SerialAT(2, 3);  // RX, TX
+#endif
 
 // Increase RX buffer to capture the entire response
 // Chips without internal buffering (A6/A7, ESP8266, M590)
@@ -56,11 +61,13 @@
 #define TINY_GSM_DEBUG SerialMon
 
 // Range to attempt to autobaud
+// NOTE:  DO NOT AUTOBAUD in production code.  Once you've established
+// communication, set a fixed baud rate using modem.setBaud(#).
 #define GSM_AUTOBAUD_MIN 9600
 #define GSM_AUTOBAUD_MAX 115200
 
-// Add a reception delay - may be needed for a fast processor at a slow baud rate
-// #define TINY_GSM_YIELD() { delay(2); }
+// Add a reception delay - may be needed for a fast processor at a slow baud
+// rate #define TINY_GSM_YIELD() { delay(2); }
 
 // Uncomment this if you want to use SSL
 // #define USE_SSL
@@ -72,16 +79,16 @@
 #define GSM_PIN ""
 
 // Your GPRS credentials, if any
-const char apn[]  = "YourAPN";
+const char apn[]      = "YourAPN";
 const char gprsUser[] = "";
 const char gprsPass[] = "";
 
 // Your WiFi connection credentials, if applicable
-const char wifiSSID[]  = "YourSSID";
+const char wifiSSID[] = "YourSSID";
 const char wifiPass[] = "YourWiFiPass";
 
 // Server details
-const char server[] = "vsh.pp.ua";
+const char server[]   = "vsh.pp.ua";
 const char resource[] = "/TinyGSM/logo.txt";
 
 #include <TinyGsmClient.h>
@@ -101,19 +108,19 @@ const char resource[] = "/TinyGSM/logo.txt";
 #endif
 
 #ifdef DUMP_AT_COMMANDS
-  #include <StreamDebugger.h>
-  StreamDebugger debugger(SerialAT, SerialMon);
-  TinyGsm modem(debugger);
+#include <StreamDebugger.h>
+StreamDebugger debugger(SerialAT, SerialMon);
+TinyGsm        modem(debugger);
 #else
-  TinyGsm modem(SerialAT);
+TinyGsm        modem(SerialAT);
 #endif
 
-#ifdef USE_SSL && defined TINY_GSM_MODEM_HAS_SSL
-  TinyGsmClientSecure client(modem);
-  const int  port = 443;
+#ifdef USE_SSL&& defined TINY_GSM_MODEM_HAS_SSL
+TinyGsmClientSecure      client(modem);
+const int                port = 443;
 #else
-  TinyGsmClient client(modem);
-const int  port = 80;
+TinyGsmClient  client(modem);
+const int      port = 80;
 #endif
 
 void setup() {
@@ -138,14 +145,14 @@ void loop() {
   // To skip it, call init() instead of restart()
   SerialMon.print("Initializing modem...");
   if (!modem.restart()) {
-  // if (!modem.init()) {
+    // if (!modem.init()) {
     SerialMon.println(F(" [fail]"));
     SerialMon.println(F("************************"));
     SerialMon.println(F(" Is your modem connected properly?"));
     SerialMon.println(F(" Is your serial speed (baud rate) correct?"));
     SerialMon.println(F(" Is your modem powered on?"));
     SerialMon.println(F(" Do you use a good, stable power source?"));
-    SerialMon.println(F(" Try useing File -> Examples -> TinyGSM -> tools -> AT_Debug to find correct configuration"));
+    SerialMon.println(F(" Try using File -> Examples -> TinyGSM -> tools -> AT_Debug to find correct configuration"));
     SerialMon.println(F("************************"));
     delay(10000);
     return;
@@ -158,9 +165,7 @@ void loop() {
 
 #if TINY_GSM_USE_GPRS
   // Unlock your SIM card with a PIN if needed
-  if ( GSM_PIN && modem.getSimStatus() != 3 ) {
-    modem.simUnlock(GSM_PIN);
-  }
+  if (GSM_PIN && modem.getSimStatus() != 3) { modem.simUnlock(GSM_PIN); }
 #endif
 
 #if TINY_GSM_USE_WIFI
@@ -180,7 +185,8 @@ void loop() {
 #endif
 
   SerialMon.print("Waiting for network...");
-  if (!modem.waitForNetwork(600000L)) {  // You may need lengthen this in poor service areas
+  if (!modem.waitForNetwork(
+          600000L)) {  // You may need lengthen this in poor service areas
     SerialMon.println(F(" [fail]"));
     SerialMon.println(F("************************"));
     SerialMon.println(F(" Is your sim card locked?"));
@@ -238,12 +244,12 @@ void loop() {
   client.find("\r\n\r\n");
 
   // Read data
-  uint32_t timeout = millis();
+  uint32_t timeout       = millis();
   uint32_t bytesReceived = 0;
   while (client.connected() && millis() - timeout < 10000L) {
     while (client.available()) {
       char c = client.read();
-      //SerialMon.print(c);
+      // SerialMon.print(c);
       bytesReceived += 1;
       timeout = millis();
     }
@@ -263,15 +269,13 @@ void loop() {
 
   SerialMon.println();
   SerialMon.println(F("************************"));
-  SerialMon.print  (F(" Received: "));
+  SerialMon.print(F(" Received: "));
   SerialMon.print(bytesReceived);
   SerialMon.println(F(" bytes"));
-  SerialMon.print  (F(" Test:     "));
+  SerialMon.print(F(" Test:     "));
   SerialMon.println((bytesReceived == 121) ? "PASSED" : "FAILED");
   SerialMon.println(F("************************"));
 
   // Do nothing forevermore
-  while (true) {
-    delay(1000);
-  }
+  while (true) { delay(1000); }
 }

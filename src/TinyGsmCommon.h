@@ -10,7 +10,7 @@
 #define SRC_TINYGSMCOMMON_H_
 
 // The current library version number
-#define TINYGSM_VERSION "0.10.9"
+#define TINYGSM_VERSION "0.11.7"
 
 #if defined(SPARK) || defined(PARTICLE)
 #include "Particle.h"
@@ -41,7 +41,7 @@
   __attribute__((error("Not available on this modem type")))
 #define TINY_GSM_ATTR_NOT_IMPLEMENTED __attribute__((error("Not implemented")))
 
-#if defined(__AVR__)
+#if defined(__AVR__) && !defined(__AVR_ATmega4809__)
 #define TINY_GSM_PROGMEM PROGMEM
 typedef const __FlashStringHelper* GsmConstStr;
 #define GFP(x) (reinterpret_cast<GsmConstStr>(x))

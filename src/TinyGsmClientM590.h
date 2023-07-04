@@ -79,7 +79,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590>,
     }
 
    public:
-    int connect(const char* host, uint16_t port, int timeout_s) {
+    virtual int connect(const char* host, uint16_t port, int timeout_s) {
       stop();
       TINY_GSM_YIELD();
       rx.clear();
@@ -171,12 +171,12 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590>,
    * Power functions
    */
  protected:
-  bool restartImpl() {
+  bool restartImpl(const char* pin = NULL) {
     if (!testAT()) { return false; }
     if (!setPhoneFunctionality(15)) { return false; }
     // MODEM:STARTUP
     waitResponse(60000L, GF(GSM_NL "+PBREADY" GSM_NL));
-    return init();
+    return init(pin);
   }
 
   bool powerOffImpl() {

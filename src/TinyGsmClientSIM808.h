@@ -12,9 +12,11 @@
 
 #include "TinyGsmClientSIM800.h"
 #include "TinyGsmGPS.tpp"
+#include "TinyGsmBluetooth.tpp"
 
-class TinyGsmSim808 : public TinyGsmSim800, public TinyGsmGPS<TinyGsmSim808> {
+class TinyGsmSim808 : public TinyGsmSim800, public TinyGsmGPS<TinyGsmSim808>, public TinyGsmBluetooth<TinyGsmSim808> {
   friend class TinyGsmGPS<TinyGsmSim808>;
+  friend class TinyGsmBluetooth<TinyGsmSim808>;
 
  public:
   explicit TinyGsmSim808(Stream& stream) : TinyGsmSim800(stream) {}
@@ -126,6 +128,40 @@ class TinyGsmSim808 : public TinyGsmSim800, public TinyGsmGPS<TinyGsmSim808> {
     streamSkipUntil('\n');  // toss the row of commas
     waitResponse();
     return false;
+  }
+  
+    /*
+   * Bluetooth functions
+   */
+   
+  bool enableBluetoothImpl() {
+    sendAT(GF("+BTPOWER=1"));
+    if (waitResponse() != 1) { return false; }
+    return true;
+  }
+
+  bool disableBluetoothImpl() {
+    sendAT(GF("+BTPOWER=0"));
+    if (waitResponse() != 1) { return false; }
+    return true;
+  }
+  
+  bool setBluetoothVisibilityImpl(bool visible) {
+    sendAT(GF("+BTVIS="), visible);
+    if (waitResponse() != 1) {
+      return false;
+    }
+    
+    return true;
+  }
+
+  bool setBluetoothHostNameImpl(const char* name) {
+    sendAT(GF("+BTHOST="), name);
+    if (waitResponse() != 1) {
+      return false;
+    }
+    
+    return true;
   }
 };
 

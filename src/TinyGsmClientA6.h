@@ -79,7 +79,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
     }
 
    public:
-    int connect(const char* host, uint16_t port, int timeout_s) {
+    virtual int connect(const char* host, uint16_t port, int timeout_s) {
       stop();
       TINY_GSM_YIELD();
       rx.clear();
@@ -176,11 +176,11 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
    * Power functions
    */
  protected:
-  bool restartImpl() {
+  bool restartImpl(const char* pin = NULL) {
     if (!testAT()) { return false; }
     sendAT(GF("+RST=1"));
     delay(3000);
-    return init();
+    return init(pin);
   }
 
   bool powerOffImpl() {

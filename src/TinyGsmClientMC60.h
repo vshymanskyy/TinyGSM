@@ -197,12 +197,12 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60>,
    * Power functions
    */
  protected:
-  bool restartImpl() {
+  bool restartImpl(const char* pin = NULL) {
     if (!testAT()) { return false; }
     if (!setPhoneFunctionality(0)) { return false; }
     if (!setPhoneFunctionality(1, true)) { return false; }
     delay(3000);
-    return init();
+    return init(pin);
   }
 
   bool powerOffImpl() {
@@ -381,7 +381,8 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60>,
     // If it is a domain name, "AT+QIDNSIP=1" should be executed.
     // "AT+QIDNSIP=0" is for dotted decimal IP address.
     IPAddress addr;
-    sendAT(GF("+QIDNSIP="), (addr.fromString(host) ? 0 : 1));
+    sendAT(GF("+QIDNSIP="),
+           (TinyGsmIpFromString(host) == IPAddress(0, 0, 0, 0) ? 0 : 1));
     if (waitResponse() != 1) { return false; }
 
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
