@@ -17,11 +17,13 @@
 
 #include "TinyGsmClientSIM70xx.h"
 #include "TinyGsmTCP.tpp"
-
+#include "TinyGsmNTP.tpp"
 
 class TinyGsmSim7000 : public TinyGsmSim70xx<TinyGsmSim7000>,
+                       public TinyGsmNTP<TinyGsmSim7000>,
                        public TinyGsmTCP<TinyGsmSim7000, TINY_GSM_MUX_COUNT> {
   friend class TinyGsmSim70xx<TinyGsmSim7000>;
+  friend class TinyGsmNTP<TinyGsmSim7000>;
   friend class TinyGsmTCP<TinyGsmSim7000, TINY_GSM_MUX_COUNT>;
 
   /*

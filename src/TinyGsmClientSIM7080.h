@@ -18,11 +18,14 @@
 #include "TinyGsmClientSIM70xx.h"
 #include "TinyGsmTCP.tpp"
 #include "TinyGsmSSL.tpp"
+#include "TinyGsmNTP.tpp"
 
 class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
+                       public TinyGsmNTP<TinyGsmSim7080>,
                        public TinyGsmTCP<TinyGsmSim7080, TINY_GSM_MUX_COUNT>,
                        public TinyGsmSSL<TinyGsmSim7080> {
   friend class TinyGsmSim70xx<TinyGsmSim7080>;
+  friend class TinyGsmNTP<TinyGsmSim7080>;
   friend class TinyGsmTCP<TinyGsmSim7080, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmSSL<TinyGsmSim7080>;
 
@@ -247,7 +250,7 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     //                  2: CHAP
     //                  3: PAP or CHAP
     if (pwd && strlen(pwd) > 0 && user && strlen(user) > 0) {
-      sendAT(GF("+CNCFG=0,1,\""), apn, "\",\"", user, "\",\"", pwd, '"');
+      sendAT(GF("+CNCFG=0,1,\""), apn, "\",\"", user, "\",\"", pwd, "\",3");
       waitResponse();
     } else if (user && strlen(user) > 0) {
       // Set the user name only
@@ -317,7 +320,45 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
   /*
    * NTP server functions
    */
-  // Can sync with server using CNTP as per template
+
+  byte NTPServerSyncImpl(String server = "pool.ntp.org", int TimeZone = 0) {
+    // Set GPRS bearer profile to associate with NTP sync
+    // this may fail, it's not supported by all modules
+    sendAT(GF("+CNTPCID=0")); // CID must be 0. With 1 (like other modules) does not work!
+    waitResponse(10000L);
+
+    // Set NTP server and timezone
+    sendAT(GF("+CNTP=\""), server, "\",", String(TimeZone));
+    if (waitResponse(10000L) != 1) { return -1; }
+
+    // Request network synchronization
+    sendAT(GF("+CNTP"));
+    if (waitResponse(10000L, GF("+CNTP:"))) {
+      String result = stream.readStringUntil('\n');
+      // Check for ',' in case the module appends the time next to the return code. Eg: +CNTP: <code>[,<time>]
+      int index = result.indexOf(',');
+      if(index > 0) {
+          result.remove(index);
+      }
+      result.trim();
+      if (TinyGsmIsValidNumber(result)) { return result.toInt(); }
+    } else {
+      return -1;
+    }
+    return -1;
+  }
+
+  String ShowNTPErrorImpl(byte error) {
+    switch (error) {
+      case 1: return "Network time synchronization is successful";
+      case 61: return "Network error";
+      case 62: return "DNS resolution error";
+      case 63: return "Connection error";
+      case 64: return "Service response error";
+      case 65: return "Service response timeout";
+      default: return "Unknown error: " + String(error);
+    }
+  }
 
   /*
    * Battery functions
