@@ -272,7 +272,7 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
   // order to reestablish communication pull the DRT-pin of the SIM800 module
   // LOW for at least 50ms. Then use this function to disable sleep mode. The
   // DTR-pin can then be released again.
-  bool sleepEnableImpl(bool enable = true) {
+  bool sleepEnableImpl(byte enable = true) {
     sendAT(GF("+CSCLK="), enable);
     return waitResponse() == 1;
   }
