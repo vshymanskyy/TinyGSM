@@ -17,7 +17,7 @@ If you like **TinyGSM** - give it a star, or fork it and contribute!
 [![GitHub forks](https://img.shields.io/github/forks/vshymanskyy/TinyGSM.svg?style=social&label=Fork)](https://github.com/vshymanskyy/TinyGSM/network)
 
 You can also join our chat:
-[![Gitter](https://img.shields.io/gitter/room/vshymanskyy/TinyGSM.svg)](https://gitter.im/tinygsm)
+[![Gitter](https://img.shields.io/gitter/room/vshymanskyy/TinyGSM.svg)](https://app.gitter.im/#/room/#tinygsm_Lobby:gitter.im)
 
 - [Supported modems](#supported-modems)
   - [Supported boards/modules](#supported-boardsmodules)
