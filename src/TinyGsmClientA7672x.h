@@ -352,7 +352,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
   /*
    * Secure socket layer functions
    */
- protected:
+ public:
   // The name of the certificate/key/password file. The file name must
   // havetype like ".pem" or ".der".
   // The certificate like - const char ca_cert[] PROGMEM =  R"EOF(-----BEGIN...
