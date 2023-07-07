@@ -326,7 +326,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
    */
  protected:
   // enable GPS
-  bool enableGPSImpl() {
+  bool enableGPSImpl(GpsStartMode startMode = GPS_START_AUTO) {
     sendAT(GF("+QGPS=1"));
     if (waitResponse() != 1) { return false; }
     return true;
