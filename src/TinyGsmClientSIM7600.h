@@ -482,15 +482,13 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       int   imin         = 0;
       float secondWithSS = 0;
 
-      streamSkipUntil(',');               // GPS satellite valid numbers
-      streamSkipUntil(',');               // GLONASS satellite valid numbers
-      streamSkipUntil(',');               // BEIDOU satellite valid numbers
-      ilat  = streamGetFloatBefore(',');  // Latitude in ddmm.mmmmmm
-      north = stream.read();              // N/S Indicator, N=north or S=south
-      streamSkipUntil(',');
-      ilon = streamGetFloatBefore(',');  // Longitude in ddmm.mmmmmm
-      east = stream.read();              // E/W Indicator, E=east or W=west
-      streamSkipUntil(',');
+      streamSkipUntil(',');                           // GPS satellite valid numbers
+      streamSkipUntil(',');                           // GLONASS satellite valid numbers
+      streamSkipUntil(',');                           // BEIDOU satellite valid numbers
+      ilat  = streamGetFloatBefore(',');              // Latitude in ddmm.mmmmmm
+      north = stream.readStringUntil(',').charAt(0);  // N/S Indicator, N=north or S=south
+      ilon  = streamGetFloatBefore(',');              // Longitude in ddmm.mmmmmm
+      east  = stream.readStringUntil(',').charAt(0);  // E/W Indicator, E=east or W=west
 
       // Date. Output format is ddmmyy
       iday   = streamGetIntLength(2);    // Two digit day
