@@ -90,6 +90,11 @@ class TinyGsmModem {
   IPAddress localIP() {
     return thisModem().TinyGsmIpFromString(thisModem().getLocalIP());
   }
+  // Gets LOC and Cell ID
+  String getCellId()
+  {
+    return thisModem().getCellIdImpl();
+  }
 
   /*
    * CRTP Helper
