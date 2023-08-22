@@ -644,15 +644,33 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
   }
 
   int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
-    sendAT(GF("+CIPSEND="), mux, ',', (uint16_t)len);
-    if (waitResponse(GF(">")) != 1) { return 0; }
-    stream.write(reinterpret_cast<const uint8_t*>(buff), len);
-    stream.flush();
-    if (waitResponse(GF(GSM_NL "+CIPSEND:")) != 1) { return 0; }
-    streamSkipUntil(',');  // Skip mux
-    streamSkipUntil(',');  // Skip requested bytes to send
-    // TODO(?):  make sure requested and confirmed bytes match
-    return streamGetIntBefore('\n');
+    std::int16_t ret = 0;
+    constexpr std::size_t max_len = 1400;
+
+    std::uint8_t cursor_buffer[max_len];
+    auto buff_convert = reinterpret_cast<const std::uint8_t *>(buff);
+
+    for (size_t cursor = 0; cursor < len; cursor += max_len)
+    {
+      const size_t to_send = std::min(max_len, len - cursor);
+
+      sendAT(GF("+CIPSEND="), mux, ',', (uint16_t)to_send);
+      if (waitResponse(GF(">")) != 1) { return 0; }
+
+      std::copy(buff_convert + cursor, buff_convert + cursor + to_send, cursor_buffer);
+
+      stream.write(cursor_buffer, to_send);
+      stream.flush();
+
+      if (waitResponse(GF(GSM_NL "+CIPSEND:")) != 1) { return 0; }
+
+      streamSkipUntil(',');  // Skip mux
+      streamSkipUntil(',');  // Skip requested bytes to send
+
+      ret = streamGetIntBefore('\n');
+    }
+
+    return ret;
   }
 
   size_t modemRead(size_t size, uint8_t mux) {
