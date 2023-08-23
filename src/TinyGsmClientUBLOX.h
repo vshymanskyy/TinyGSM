@@ -35,13 +35,18 @@ static const char GSM_CMS_ERROR[] TINY_GSM_PROGMEM = GSM_NL "+CMS ERROR:";
 #endif
 
 enum RegStatus {
-  REG_NO_RESULT    = -1,
-  REG_UNREGISTERED = 0,
-  REG_SEARCHING    = 2,
-  REG_DENIED       = 3,
-  REG_OK_HOME      = 1,
-  REG_OK_ROAMING   = 5,
-  REG_UNKNOWN      = 4,
+  REG_NO_RESULT               = -1,
+  REG_UNREGISTERED            = 0,
+  REG_SEARCHING               = 2,
+  REG_DENIED                  = 3,
+  REG_OK_HOME                 = 1,
+  REG_OK_ROAMING              = 5,
+  REG_UNKNOWN                 = 4,
+  REG_SMS_ONLY_HOME           = 6,
+  REG_SMS_ONLY_ROAMING        = 7,
+  REG_EMERGENCY_ONLY          = 8, // blox AT command manual (for SARA-R5 but should be applicable to all modules) (https://content.u-blox.com/sites/default/files/SARA-R5_ATCommands_UBX-19047455.pdf) states: attached for emergency bearer services only (see 3GPP TS 24.008 [85] and 3GPP TS 24.301 [120] that specify the condition when the MS is considered as attached for emergency bearer services)
+  REG_NO_FALLBACK_LTE_HOME    = 9, // not 100% certain, ublox AT command manual states: registered for "CSFB not preferred", home network (applicable only when <AcTStatus> indicates E-UTRAN)
+  REG_NO_FALLBACK_LTE_ROAMING = 10 // not 100% certain, ublox AT command manual states: registered for "CSFB not preferred", roaming (applicable only when <AcTStatus> indicates E-UTRAN)
 };
 
 class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
@@ -268,7 +273,8 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
    */
  public:
   RegStatus getRegistrationStatus() {
-    return (RegStatus)getRegistrationStatusXREG("CGREG");
+    //use CREG instead of the CGREG AT command as it supports 2G/3G/4G instead of just 2G/3G connections
+    return (RegStatus)getRegistrationStatusXREG("CREG");
   }
 
   bool setRadioAccessTecnology(int selected, int preferred) {
@@ -297,7 +303,9 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
  protected:
   bool isNetworkConnectedImpl() {
     RegStatus s = getRegistrationStatus();
-    if (s == REG_OK_HOME || s == REG_OK_ROAMING)
+    // check for more registration staus, as some sim cards or tarifs only support SMS
+    // not all status are being checked, maybe have to be added
+    if (s == REG_OK_HOME || s == REG_OK_ROAMING ||  s == REG_SMS_ONLY_ROAMING ||  s == REG_SMS_ONLY_HOME)
       return true;
     else if (s == REG_UNKNOWN)  // for some reason, it can hang at unknown..
       return isGprsConnected();
