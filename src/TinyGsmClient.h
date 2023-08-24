@@ -68,6 +68,12 @@ typedef TinyGsmSaraR4                    TinyGsm;
 typedef TinyGsmSaraR4::GsmClientSaraR4   TinyGsmClient;
 typedef TinyGsmSaraR4::GsmClientSecureR4 TinyGsmClientSecure;
 
+#elif defined(TINY_GSM_MODEM_SARAR5)
+#include "TinyGsmClientSaraR5.h"
+typedef TinyGsmSaraR5                    TinyGsm;
+typedef TinyGsmSaraR5::GsmClientSaraR5   TinyGsmClient;
+typedef TinyGsmSaraR5::GsmClientSecureR5 TinyGsmClientSecure;
+
 #elif defined(TINY_GSM_MODEM_M95)
 #include "TinyGsmClientM95.h"
 typedef TinyGsmM95               TinyGsm;
