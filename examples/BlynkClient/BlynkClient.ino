@@ -22,11 +22,6 @@
  * Change GPRS apm, user, pass, and Blynk auth token to run :)
  **************************************************************/
 
-/* Fill in information from Blynk Device Info here */
-#define BLYNK_TEMPLATE_ID           "TMPxxxxxx"
-#define BLYNK_TEMPLATE_NAME         "Device"
-#define BLYNK_AUTH_TOKEN            "YourAuthToken"
-
 #define BLYNK_PRINT Serial    // Comment this out to disable prints and save space
 
 // Default heartbeat interval for GSM is 60
@@ -45,6 +40,7 @@
 // #define TINY_GSM_MODEM_SIM7600
 // #define TINY_GSM_MODEM_UBLOX
 // #define TINY_GSM_MODEM_SARAR4
+// #define TINY_GSM_MODEM_SARAR5
 // #define TINY_GSM_MODEM_M95
 // #define TINY_GSM_MODEM_BG96
 // #define TINY_GSM_MODEM_A6
