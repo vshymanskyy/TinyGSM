@@ -510,9 +510,10 @@ class TinyGsmSequansMonarch
     waitResponse(10000L, GF(GSM_NL "> "));
     // Translate bytes into char to be able to send them as an hex string
     char char_command[2];
-    for (size_t i=0; i<len; i++) {
+    for (size_t i = 0; i < len; i++) {
       memset(&char_command, 0, sizeof(char_command));
-      sprintf(&char_command[0], "%02X", reinterpret_cast<const uint8_t*>(buff)[i]);
+      sprintf(&char_command[0], "%02X",
+              reinterpret_cast<const uint8_t*>(buff)[i]);
       stream.write(char_command, sizeof(char_command));
     }
     stream.flush();
@@ -727,7 +728,7 @@ class TinyGsmSequansMonarch
  protected:
   GsmClientSequansMonarch* sockets[TINY_GSM_MUX_COUNT];
   // GSM_NL (\r\n) is not accepted with SQNSSENDEXT in data mode so use \n
-  const char*              gsmNL = "\n";
+  const char* gsmNL = "\n";
 };
 
 #endif  // SRC_TINYGSMCLIENTSEQUANSMONARCH_H_
