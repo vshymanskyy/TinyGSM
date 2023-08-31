@@ -10,7 +10,7 @@
  **************************************************************/
 
 // Select your modem:
-// #define TINY_GSM_MODEM_SIM800
+#define TINY_GSM_MODEM_SIM800
 // #define TINY_GSM_MODEM_SIM808
 // #define TINY_GSM_MODEM_SIM868
 // #define TINY_GSM_MODEM_SIM900
@@ -20,7 +20,7 @@
 // #define TINY_GSM_MODEM_SIM5360
 // #define TINY_GSM_MODEM_SIM7600
 // #define TINY_GSM_MODEM_UBLOX
-#define TINY_GSM_MODEM_SARAR4
+// #define TINY_GSM_MODEM_SARAR4
 // #define TINY_GSM_MODEM_SARAR5
 // #define TINY_GSM_MODEM_M95
 // #define TINY_GSM_MODEM_BG96
@@ -78,7 +78,7 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 #define TINY_GSM_TEST_GSM_LOCATION false
 #define TINY_GSM_TEST_NTP false
 #define TINY_GSM_TEST_TIME false
-#define TINY_GSM_TEST_GPS true
+#define TINY_GSM_TEST_GPS false
 // disconnect and power down modem after tests
 #define TINY_GSM_POWERDOWN false
 
