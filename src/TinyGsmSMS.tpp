@@ -173,11 +173,11 @@ class TinyGsmSMS {
     Print&  p;
     uint8_t prv = 0;
     void    printHex(const uint16_t v) {
-      uint8_t c = v >> 8;
-      if (c < 0x10) p.print('0');
+         uint8_t c = v >> 8;
+         if (c < 0x10) p.print('0');
       p.print(c, HEX);
-      c = v & 0xFF;
-      if (c < 0x10) p.print('0');
+         c = v & 0xFF;
+         if (c < 0x10) p.print('0');
       p.print(c, HEX);
     }
   };

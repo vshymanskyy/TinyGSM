@@ -37,30 +37,40 @@ static const char GSM_CMS_ERROR[] TINY_GSM_PROGMEM = GSM_NL "+CMS ERROR:";
 #endif
 
 enum RegStatus {
-  REG_NO_RESULT               = -1,
-  REG_UNREGISTERED            = 0,
-  REG_SEARCHING               = 2,
-  REG_DENIED                  = 3,
-  REG_OK_HOME                 = 1,
-  REG_OK_ROAMING              = 5,
-  REG_UNKNOWN                 = 4,
-  REG_SMS_ONLY_HOME           = 6,
-  REG_SMS_ONLY_ROAMING        = 7,
-  REG_EMERGENCY_ONLY          = 8, // blox AT command manual states: attached for emergency bearer services only (see 3GPP TS 24.008 [85] and 3GPP TS 24.301 [120] that specify the condition when the MS is considered as attached for emergency bearer services)
-  REG_NO_FALLBACK_LTE_HOME    = 9, // not 100% certain, ublox AT command manual states: registered for "CSFB not preferred", home network (applicable only when <AcTStatus> indicates E-UTRAN)
-  REG_NO_FALLBACK_LTE_ROAMING = 10 // not 100% certain, ublox AT command manual states: registered for "CSFB not preferred", roaming (applicable only when <AcTStatus> indicates E-UTRAN)
+  REG_NO_RESULT        = -1,
+  REG_UNREGISTERED     = 0,
+  REG_SEARCHING        = 2,
+  REG_DENIED           = 3,
+  REG_OK_HOME          = 1,
+  REG_OK_ROAMING       = 5,
+  REG_UNKNOWN          = 4,
+  REG_SMS_ONLY_HOME    = 6,
+  REG_SMS_ONLY_ROAMING = 7,
+  REG_EMERGENCY_ONLY =
+      8,  // blox AT command manual states: attached for emergency bearer
+          // services only (see 3GPP TS 24.008 [85] and 3GPP TS 24.301 [120]
+          // that specify the condition when the MS is considered as attached
+          // for emergency bearer services)
+  REG_NO_FALLBACK_LTE_HOME =
+      9,  // not 100% certain, ublox AT command manual states: registered for
+          // "CSFB not preferred", home network (applicable only when
+          // <AcTStatus> indicates E-UTRAN)
+  REG_NO_FALLBACK_LTE_ROAMING =
+      10  // not 100% certain, ublox AT command manual states: registered for
+          // "CSFB not preferred", roaming (applicable only when <AcTStatus>
+          // indicates E-UTRAN)
 };
 
 class TinyGsmSaraR5 : public TinyGsmModem<TinyGsmSaraR5>,
-                     public TinyGsmGPRS<TinyGsmSaraR5>,
-                     public TinyGsmTCP<TinyGsmSaraR5, TINY_GSM_MUX_COUNT>,
-                     public TinyGsmSSL<TinyGsmSaraR5>,
-                     public TinyGsmCalling<TinyGsmSaraR5>,
-                     public TinyGsmSMS<TinyGsmSaraR5>,
-                     public TinyGsmGSMLocation<TinyGsmSaraR5>,
-                     public TinyGsmGPS<TinyGsmSaraR5>,
-                     public TinyGsmTime<TinyGsmSaraR5>,
-                     public TinyGsmBattery<TinyGsmSaraR5> {
+                      public TinyGsmGPRS<TinyGsmSaraR5>,
+                      public TinyGsmTCP<TinyGsmSaraR5, TINY_GSM_MUX_COUNT>,
+                      public TinyGsmSSL<TinyGsmSaraR5>,
+                      public TinyGsmCalling<TinyGsmSaraR5>,
+                      public TinyGsmSMS<TinyGsmSaraR5>,
+                      public TinyGsmGSMLocation<TinyGsmSaraR5>,
+                      public TinyGsmGPS<TinyGsmSaraR5>,
+                      public TinyGsmTime<TinyGsmSaraR5>,
+                      public TinyGsmBattery<TinyGsmSaraR5> {
   friend class TinyGsmModem<TinyGsmSaraR5>;
   friend class TinyGsmGPRS<TinyGsmSaraR5>;
   friend class TinyGsmTCP<TinyGsmSaraR5, TINY_GSM_MUX_COUNT>;
@@ -275,8 +285,16 @@ class TinyGsmSaraR5 : public TinyGsmModem<TinyGsmSaraR5>,
    */
  public:
   RegStatus getRegistrationStatus() {
-    //use CREG instead of the CGREG AT command as it supports 2G/3G/4G instead of just 2G/3G connections  
-    return (RegStatus)getRegistrationStatusXREG("CREG");
+    // Check first for EPS registration
+    RegStatus epsStatus = (RegStatus)getRegistrationStatusXREG("CEREG");
+
+    // If we're connected on EPS, great!
+    if (epsStatus == REG_OK_HOME || epsStatus == REG_OK_ROAMING) {
+      return epsStatus;
+    } else {
+      // Otherwise, check generic network status
+      return (RegStatus)getRegistrationStatusXREG("CREG");
+    }
   }
 
   bool setRadioAccessTechnology(int selected, int preferred) {
@@ -297,16 +315,19 @@ class TinyGsmSaraR5 : public TinyGsmModem<TinyGsmSaraR5>,
     return true;
   }
 
-  bool getCurrentRadioAccessTechnology(int&) {
-    // @TODO
-    return false;
+  bool getCurrentRadioAccessTechnology(int& set) {
+    sendAT(GF("+URAT?"));
+    String response;
+    if (waitResponse(10000L, response) != 1) { return false; }
+
+    return true;
   }
 
  protected:
   bool isNetworkConnectedImpl() {
     RegStatus s = getRegistrationStatus();
-    Serial.printf("REGISTRATION STATUS: %i\n", (int)s);
-    if (s == REG_OK_HOME || s == REG_OK_ROAMING ||  s == REG_SMS_ONLY_ROAMING ||  s == REG_SMS_ONLY_HOME)
+    if (s == REG_OK_HOME || s == REG_OK_ROAMING || s == REG_SMS_ONLY_ROAMING ||
+        s == REG_SMS_ONLY_HOME)
       return true;
     else if (s == REG_UNKNOWN)  // for some reason, it can hang at unknown..
       return isGprsConnected();
@@ -330,7 +351,6 @@ class TinyGsmSaraR5 : public TinyGsmModem<TinyGsmSaraR5>,
  protected:
   bool gprsConnectImpl(const char* apn, const char* user = NULL,
                        const char* pwd = NULL) {
-
     sendAT(GF("+CGATT=1"));  // attach to GPRS
     if (waitResponse(360000L) != 1) { return false; }
 
@@ -342,66 +362,74 @@ class TinyGsmSaraR5 : public TinyGsmModem<TinyGsmSaraR5>,
     // AT+UPSD=<profile_id>,<param_tag>,<param_val>
     // profile_id = 0 - PSD profile identifier, in range 0-6 (NOT PDP context)
     // param_tag = 1: APN
-    // param_tag = 2: username  -> not working for SARA-R5  
+    // param_tag = 2: username  -> not working for SARA-R5
     // param_tag = 3: password  -> not working for SARA-R5
     // param_tag = 7: IP address Note: IP address set as "0.0.0.0" means
     //    dynamic IP address assigned during PDP context activation
-    
+
 
     // check all available PDP context identifiers
     String response;
     response.reserve(1024);
     sendAT(GF("+CGDCONT?"));
-    //Serial.println(waitResponse(300, response, NULL));// overwrite GSM_OK as the stream most probably still has data which would cause ### Unhandled: ....
-    waitResponseUntilEndStream(1000, response);
-    Serial.println(response);
 
-    if (response.length() == 0){
-      return false;       // no apn at all found
+    waitResponseUntilEndStream(1000, response);
+
+    if (response.length() == 0) {
+      return false;  // no apn at all found
     }
-    // Serial.println("we got here 3");
     // parse string & look for apn -> modified from SparkFun u-blox SARA-R5 lib
     // Example:
     // +CGDCONT: 0,"IP","payandgo.o2.co.uk","0.0.0.0",0,0,0,0,0,0,0,0,0,0
-    // +CGDCONT: 1,"IP","payandgo.o2.co.uk.mnc010.mcc234.gprs","10.160.182.234",0,0,0,2,0,0,0,0,0,0
-    
-    //create search buffer where we can search
-    char *searchBuf = (char*)malloc(response.length()+1);
-    response.toCharArray(searchBuf, response.length()+1);
+    // +CGDCONT:
+    // 1,"IP","payandgo.o2.co.uk.mnc010.mcc234.gprs","10.160.182.234",0,0,0,2,0,0,0,0,0,0
 
-    int rcid = -1;
-    char *searchPtr = searchBuf;
+    // create search buffer where we can search
+    char* searchBuf = (char*)malloc(response.length() + 1);
+    response.toCharArray(searchBuf, response.length() + 1);
 
-    for(size_t index = 0; index<=response.length(); index++){
+    int   rcid      = -1;
+    char* searchPtr = searchBuf;
+
+    for (size_t index = 0; index <= response.length(); index++) {
       int scanned = 0;
       // Find the first/next occurrence of +CGDCONT:
       searchPtr = strstr(searchPtr, "+CGDCONT:");
-      if (searchPtr != nullptr){
+      if (searchPtr != nullptr) {
         char strPdpType[10];
         char strApn[128];
-        int ipOct[4];
+        int  ipOct[4];
 
         searchPtr += strlen("+CGDCONT:");
-        while (*searchPtr == ' ') searchPtr++; // skip spaces
-        scanned = sscanf(searchPtr, "%d,\"%[^\"]\",\"%[^\"]\",\"%d.%d.%d.%d", &rcid, strPdpType, strApn, &ipOct[0], &ipOct[1], &ipOct[2], &ipOct[3]);
-        
-        if (!strcmp(strApn, apn)){
+        while (*searchPtr == ' ') searchPtr++;  // skip spaces
+        scanned = sscanf(searchPtr, "%d,\"%[^\"]\",\"%[^\"]\",\"%d.%d.%d.%d",
+                         &rcid, strPdpType, strApn, &ipOct[0], &ipOct[1],
+                         &ipOct[2], &ipOct[3]);
+
+        if (!strcmp(strApn, apn)) {
           // found the configuration that we want to connect to
           break;
         }
       }
     }
 
-    sendAT(GF("+UPSDA=0,4")); // Deactivate the PDP context associated with profile 0
-    waitResponse(360000L);    // Can return an error if previously not activated
+    free(searchBuf);
 
-    sendAT(GF("+UPSD=0,100,")+String(rcid)); // Deactivate the PDP context associated with profile 0
+    sendAT(GF(
+        "+UPSDA=0,4"));  // Deactivate the PDP context associated with profile 0
+    waitResponse(360000L);  // Can return an error if previously not activated
+
+    sendAT(
+        GF("+UPSD=0,100,") +
+        String(rcid));  // Deactivate the PDP context associated with profile 0
     waitResponse();
 
-    sendAT(GF("+UPSDA=0,3")); // Activate the PDP context associated with profile 0
+    sendAT(GF(
+        "+UPSDA=0,3"));  // Activate the PDP context associated with profile 0
     if (waitResponse(360000L) != 1) { return false; }
 
-    sendAT(GF("+UPSD=0,0,2"));  // Set protocol type to IPv4v6 with IPv4 preferred for internal sockets
+    sendAT(GF("+UPSD=0,0,2"));  // Set protocol type to IPv4v6 with IPv4
+                                // preferred for internal sockets
     waitResponse();
 
     return true;
@@ -453,20 +481,6 @@ class TinyGsmSaraR5 : public TinyGsmModem<TinyGsmSaraR5>,
    * I2C port, the GSM-based "Cell Locate" location will be returned instead.
    */
  protected:
-  bool enableGPSImpl() {
-    // AT+UGPS=<mode>[,<aid_mode>[,<GNSS_systems>]]
-    // <mode> - 0: GNSS receiver powered off, 1: on
-    // <aid_mode> - 0: no aiding (default)
-    // <GNSS_systems> - 3: GPS + SBAS (default)
-    sendAT(GF("+UGPS=1,0,3"));
-    if (waitResponse(10000L, GF(GSM_NL "+UGPS:")) != 1) { return false; }
-    return waitResponse(10000L) == 1;
-  }
-  bool disableGPSImpl() {
-    sendAT(GF("+UGPS=0"));
-    if (waitResponse(10000L, GF(GSM_NL "+UGPS:")) != 1) { return false; }
-    return waitResponse(10000L) == 1;
-  }
   String inline getUbloxLocationRaw(int8_t sensor) {
     // AT+ULOC=<mode>,<sensor>,<response_type>,<timeout>,<accuracy>
     // <mode> - 2: single shot position
@@ -482,6 +496,7 @@ class TinyGsmSaraR5 : public TinyGsmModem<TinyGsmSaraR5>,
     // <accuracy> - Target accuracy in meters (1 - 999999)
     sendAT(GF("+ULOC=2,"), sensor, GF(",0,120,1"));
     // wait for first "OK"
+    // waitResponse(10000L) ;
     if (waitResponse(10000L) != 1) { return ""; }
     // wait for the final result - wait full timeout time
     if (waitResponse(120000L, GF(GSM_NL "+UULOC:")) != 1) { return ""; }
@@ -490,12 +505,14 @@ class TinyGsmSaraR5 : public TinyGsmModem<TinyGsmSaraR5>,
     res.trim();
     return res;
   }
+
   String getGsmLocationRawImpl() {
     return getUbloxLocationRaw(2);
   }
   String getGPSrawImpl() {
     return getUbloxLocationRaw(1);
   }
+
 
   inline bool getUbloxLocation(int8_t sensor, float* lat, float* lon,
                                float* speed = 0, float* alt = 0, int* vsat = 0,
@@ -512,10 +529,13 @@ class TinyGsmSaraR5 : public TinyGsmModem<TinyGsmSaraR5>,
     //          - 3: ?? use the combined GNSS receiver and CellLocate service
     //          information ?? - Docs show using sensor 3 and it's documented
     //          for the +UTIME command but not for +ULOC
-    // <response_type> - 0: standard (single-hypothesis) response
+    // <response_type> - 0: standard (single-hypothesis) response  -> +UULOC:
+    // <date>,<time>,<lat>,<long>,<alt>,<uncertainty>
+    //                   1: detailed (single-hypothesis) response  -> +UULOC:
+    //                   <date>,<time>,<lat>,<long>,<alt>,<uncertainty>,<speed>,<direction>,<vertical_acc>,<sensor_used>,<SV_used>,<antenna_status>,<jamming_status>
     // <timeout> - Timeout period in seconds
     // <accuracy> - Target accuracy in meters (1 - 999999)
-    sendAT(GF("+ULOC=2,"), sensor, GF(",0,120,1"));
+    sendAT(GF("+ULOC=2,"), sensor, GF(",1,120,1"));
     // wait for first "OK"
     if (waitResponse(10000L) != 1) { return false; }
     // wait for the final result - wait full timeout time
@@ -587,6 +607,8 @@ class TinyGsmSaraR5 : public TinyGsmModem<TinyGsmSaraR5>,
     waitResponse();
     return true;
   }
+
+
   bool getGsmLocationImpl(float* lat, float* lon, float* accuracy = 0,
                           int* year = 0, int* month = 0, int* day = 0,
                           int* hour = 0, int* minute = 0, int* second = 0) {
@@ -784,7 +806,7 @@ class TinyGsmSaraR5 : public TinyGsmModem<TinyGsmSaraR5>,
       while (stream.available() > 0) {
         TINY_GSM_YIELD();
         int8_t a = stream.read();
-        
+
         if (a <= 0) continue;  // Skip 0x00 bytes, just in case
         data += static_cast<char>(a);
         if (r1 && data.endsWith(r1)) {
@@ -863,10 +885,11 @@ class TinyGsmSaraR5 : public TinyGsmModem<TinyGsmSaraR5>,
     return waitResponse(1000, r1, r2, r3, r4, r5);
   }
 
-private:  // basically the same as waitResponse but without preemptive exiting (except when time runs out)
-          // this is required for +CGDCONT? as it can return multiple cid/apn configurations each terminated with OK\r\n
+ private:  // basically the same as waitResponse but without preemptive exiting
+           // (except when time runs out) this is used for +CGDCONT? as it can
+           // return multiple cid/apn configurations each terminated with OK\r\n
   int8_t waitResponseUntilEndStream(uint32_t timeout_ms, String& data) {
-    data.reserve(1024); // buffer of the same size as in the SparkFun lib
+    data.reserve(1024);  // buffer of the same size as in the SparkFun lib
     uint8_t  index       = 0;
     uint32_t startMillis = millis();
     do {
@@ -874,7 +897,7 @@ private:  // basically the same as waitResponse but without preemptive exiting (
       while (stream.available() > 0) {
         TINY_GSM_YIELD();
         int8_t a = stream.read();
-        
+
         if (a <= 0) continue;  // Skip 0x00 bytes, just in case
         data += static_cast<char>(a);
       }
@@ -887,7 +910,8 @@ private:  // basically the same as waitResponse but without preemptive exiting (
 
  protected:
   GsmClientSaraR5* sockets[TINY_GSM_MUX_COUNT];
-  const char*     gsmNL = GSM_NL;
+  const char*      gsmNL = GSM_NL;
 };
+
 
 #endif  // SRC_TINYGSMCLIENTSARAR5_H_
