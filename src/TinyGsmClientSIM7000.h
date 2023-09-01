@@ -365,11 +365,15 @@ class TinyGsmSim7000 : public TinyGsmSim70xx<TinyGsmSim7000>,
 
     sendAT(GF("+CIPRXGET=4,"), mux);
     size_t result = 0;
-    if (waitResponse(GF("+CIPRXGET:")) == 1) {
-      streamSkipUntil(',');  // Skip mode 4
+    while (waitResponse(GF("+CIPRXGET:")) == 1) {
+      int8_t mode = streamGetIntBefore(',');
+      if (mode != 4) {
+        continue;
+      }
       streamSkipUntil(',');  // Skip mux
       result = streamGetIntBefore('\n');
       waitResponse();
+      break;
     }
     // DBG("### Available:", result, "on", mux);
     if (!result) { sockets[mux]->sock_connected = modemGetConnected(mux); }
