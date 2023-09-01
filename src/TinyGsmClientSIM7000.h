@@ -306,7 +306,7 @@ class TinyGsmSim7000 : public TinyGsmSim70xx<TinyGsmSim7000>,
     stream.write(reinterpret_cast<const uint8_t*>(buff), len);
     stream.flush();
 
-    if (waitResponse(GF(GSM_NL "DATA ACCEPT:")) != 1) { return 0; }
+    if (waitResponse(GF(GSM_NL "DATA ACCEPT:"),GF("SEND FAIL")) != 1) { return 0; }
     streamSkipUntil(',');  // Skip mux
     return streamGetIntBefore('\n');
   }
