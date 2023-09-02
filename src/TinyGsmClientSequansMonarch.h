@@ -333,8 +333,8 @@ class TinyGsmSequansMonarch
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
   }
   String getLocalIPImpl() {
-    sendAT(GF("+CGPADDR=3"));
-    if (waitResponse(10000L, GF("+CGPADDR: 3,\"")) != 1) { return ""; }
+    sendAT(GF("+CGPADDR=1"));
+    if (waitResponse(10000L, GF("+CGPADDR: 1,\"")) != 1) { return ""; }
     String res = stream.readStringUntil('\"');
     waitResponse();
     return res;
@@ -348,18 +348,18 @@ class TinyGsmSequansMonarch
                        const char* pwd = NULL) {
     gprsDisconnect();
 
-    // Define the PDP context (This uses context #3!)
-    sendAT(GF("+CGDCONT=3,\"IPV4V6\",\""), apn, '"');
+    // Define the PDP context
+    sendAT(GF("+CGDCONT=1,\"IPV4V6\",\""), apn, '"');
     waitResponse();
 
     // Set authentication
     if (user && strlen(user) > 0) {
-      sendAT(GF("+CGAUTH=3,1,\""), user, GF("\",\""), pwd, GF("\""));
+      sendAT(GF("+CGAUTH=1,1,\""), user, GF("\",\""), pwd, GF("\""));
       waitResponse();
     }
 
     // Activate the PDP context
-    sendAT(GF("+CGACT=1,3"));
+    sendAT(GF("+CGACT=1,1"));
     waitResponse(60000L);
 
     // Attach to GPRS
@@ -448,7 +448,7 @@ class TinyGsmSequansMonarch
     // Socket configuration
     // AT+SQNSCFG:<connId1>, <cid1>, <pktSz1>, <maxTo1>, <connTo1>, <txTo1>
     // <connId1> = Connection ID = mux
-    // <cid1> = PDP context ID = 3 - this is number set up above in the
+    // <cid1> = PDP context ID = 1 - this is number set up above in the
     // GprsConnect function
     // <pktSz1> = Packet Size, used for online data mode only = 300 (default)
     // <maxTo1> = Max timeout in seconds = 90 (default)
@@ -456,7 +456,7 @@ class TinyGsmSequansMonarch
     //           = 600 (default)
     // <txTo1> = Data sending timeout in hundreds of milliseconds,
     // used for online data mode only = 50 (default)
-    sendAT(GF("+SQNSCFG="), mux, GF(",3,300,90,600,50"));
+    sendAT(GF("+SQNSCFG="), mux, GF(",1,300,90,600,50"));
     waitResponse(5000L);
 
     // Socket configuration extended
