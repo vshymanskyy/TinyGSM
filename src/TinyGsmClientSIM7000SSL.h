@@ -41,6 +41,11 @@ class TinyGsmSim7000SSL
       init(&modem, mux);
     }
 
+    virtual ~GsmClientSim7000SSL() {
+      stop();
+      at->sockets[mux] = nullptr;
+    }
+
     bool init(TinyGsmSim7000SSL* modem, uint8_t mux = 0) {
       this->at       = modem;
       sock_available = 0;
@@ -122,6 +127,20 @@ class TinyGsmSim7000SSL
         certificates() {
     memset(sockets, 0, sizeof(sockets));
   }
+          
+  GsmClientSim7000SSL* createClient(bool ssl = false) {
+    for (uint8_t idx = 0; idx < TINY_GSM_MUX_COUNT; idx++) {
+      if (!sockets[idx]) {
+        GsmClientSim7000SSL* client = ssl 
+          ? new GsmClientSecureSIM7000SSL() 
+          : new GsmClientSim7000SSL();
+        client->init(this, idx);
+        return client;
+      }
+    }
+    DBG(GF("ERROR: Cannot create client, TINYGSM_MUX_COUNT ["), TINY_GSM_MUX_COUNT, GF("] exceeded."));
+    return nullptr;
+  }          
 
   /*
    * Basic functions
