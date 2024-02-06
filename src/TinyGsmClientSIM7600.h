@@ -15,6 +15,7 @@
 #define TINY_GSM_MUX_COUNT 10
 #define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
 
+#include <utility>
 #include "TinyGsmBattery.tpp"
 #include "TinyGsmCalling.tpp"
 #include "TinyGsmGPRS.tpp"
@@ -44,6 +45,14 @@ enum RegStatus {
   REG_OK_HOME      = 1,
   REG_OK_ROAMING   = 5,
   REG_UNKNOWN      = 4,
+};
+enum class SSLVersion: int8_t {
+  NO_SSL = -1,
+  SSL3_0 = 0,
+  TLS1_0 = 1,
+  TLS1_1 = 2,
+  TLS1_2 = 3,
+  ALL_SSL = 4
 };
 
 class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
@@ -105,7 +114,8 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       stop();
       TINY_GSM_YIELD();
       rx.clear();
-      sock_connected = at->modemConnect(host, port, mux, false, timeout_s);
+      sock_connected = at->modemConnect(host, port, mux, SSLVersion::NO_SSL,
+                                        timeout_s);
       return sock_connected;
     }
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
@@ -183,7 +193,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     return len_requested;
   }
 
-    void stop(uint32_t maxWaitMs) {
+    virtual void stop(uint32_t maxWaitMs) {
       dumpModemBuffer(maxWaitMs);
       at->sendAT(GF("+CIPCLOSE="), mux);
       sock_connected = false;
@@ -218,33 +228,23 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     String clientcert;
     String clientkey;
     bool certValidation = true;
-    uint8_t sslVersion = 4;
+    SSLVersion sslVersion = SSLVersion::ALL_SSL;
 
    public:
-    void setCACert(const String& certificateString) {
-      cacert = certificateString;
+    void setCACert(String certificateString) {
+      cacert = std::move(certificateString);
     }
 
-    void setCertificate(const String& certificateString) {
-      clientcert = certificateString;
+    void setCertificate(String certificateString) {
+      clientcert = std::move(certificateString);
     }
 
-    void setPrivateKey(const String& certificateString) {
-      clientkey = certificateString;
-    }
-
-    void setSSLVersion(const uint8_t version) {
-      sslVersion = version;
+    void setPrivateKey(String certificateString) {
+      clientkey = std::move(certificateString);
     }
 
     void setCertValidation(bool validation = true) {
       certValidation = validation;
-    }
-
-    bool deleteCertificate(String& name) {
-      at->sendAT(GF("+CCERTDELE=\""), name, '\"');
-      if (at->waitResponse(5000L) != 1) {return false;}
-      return true;
     }
 
     int16_t modemSend(const void* buff, size_t len, uint8_t mux) override {
@@ -334,13 +334,37 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     }
 
     int connect(const char* host, uint16_t port, int timeout_s) override {
-      stop();
+      stop(15000L);
       TINY_GSM_YIELD();
       rx.clear();
-      sock_connected = at->modemConnect(host, port, mux, certValidation, true,
+      if (certValidation && cacert.isEmpty()) {return -1;}
+      sock_connected = at->modemConnect(host, port, mux, sslVersion,
                                         timeout_s, cacert, clientcert,
-                                        clientkey, sslVersion);
+                                        clientkey);
       return sock_connected;
+    }
+
+     void stop(uint32_t maxWaitMs) override {
+      at->sendAT(GF("+CCHCLOSE="), mux);
+      at->waitResponse(5000L);
+
+      if (!cacert.isEmpty()) {
+        at->sendAT(GF("+CCERTDELE=\"cacert"), static_cast<int>(mux), ".pem\"");
+        at->waitResponse();
+      }
+
+      if (!clientcert.isEmpty()) {
+        at->sendAT(GF("+CCERTDELE=\"clientcert"), static_cast<int>(mux),
+                   ".pem\"");
+        at->waitResponse();
+      }
+
+      if (!clientkey.isEmpty()) {
+        at->sendAT(GF("+CCERTDELE=\"clientkey"), static_cast<int>(mux),
+                   ".pem\"");
+        at->waitResponse();
+      }
+      GsmClientSim7600::stop(maxWaitMs);
     }
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
   };
@@ -573,7 +597,6 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     // Close all sockets and stop the socket service
     // Note: On the LTE models, this single command closes all sockets and the
     // service
-    sendAT(GF("+CCHCLOSE:0"));
     sendAT(GF("+NETCLOSE"));
     waitResponse(60000L, GF(GSM_NL "+NETCLOSE: 0"));
     // We assume this works, so we can do ssh disconnect too
@@ -827,15 +850,16 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
    */
  protected:
   bool modemConnect(const char* host, uint16_t port, uint8_t mux,
-                    bool certValidation, bool ssl = false, int timeout_s = 15,
+                    SSLVersion sslVersion, int timeout_s = 15,
                     String cacert = "", String clientcert = "",
-                    String clientkey = "", uint8_t sslVersion = 4) {
-    if (ssl) {
+                    String clientkey = "") {
+    if (sslVersion != SSLVersion::NO_SSL) {
       uint8_t authmode = 0;
       // List the certs available
       //   sendAT(GF("+CCERTLIST"));
       //   waitResponse(5000L);
-      sendAT(GF("+CSSLCFG=\"sslversion\","), mux, ',', sslVersion);
+      sendAT(GF("+CSSLCFG=\"sslversion\","), mux, ',',
+             static_cast<int>(sslVersion));
       if (waitResponse(5000L) != 1) return false;
 
       if (!cacert.isEmpty()) {
@@ -882,14 +906,12 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
         if (waitResponse(5000L) != 1) return false;
       }
 
-      if (!cacert.isEmpty() && certValidation) {
+      if (!cacert.isEmpty()) {
         authmode = 1;
-        if (!clientcert.isEmpty() && !clientkey.isEmpty() && certValidation) {
+        if (!clientcert.isEmpty() && !clientkey.isEmpty()) {
           authmode = 2;
         }
-
-      } else if (!clientcert.isEmpty() && !clientkey.isEmpty()
-                 && certValidation) {
+      } else if (!clientcert.isEmpty() && !clientkey.isEmpty()) {
         authmode = 3;
       }
 
@@ -904,8 +926,9 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
 
     // Establish a connection in multi-socket mode
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
-    if (ssl) {
-      // set the configured SSL context
+    if (sslVersion != SSLVersion::NO_SSL) {
+      // set the configured SSL context for the session
+      // AT+CCHSSLCFG=<session_id>,<ssl_ctx_index>
       sendAT(GF("+CCHSSLCFG="), mux, ',', mux);
       if (waitResponse(5000L) != 1) return false;
 
