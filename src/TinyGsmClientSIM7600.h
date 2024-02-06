@@ -121,7 +121,9 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
         at->waitResponse();
       }
       // DBG("### Available:", result, "on", mux);
-      if (!result) { at->sockets[mux]->sock_connected = at->modemGetConnected(mux); }
+      if (!result) {
+        at->sockets[mux]->sock_connected = at->modemGetConnected(mux);
+      }
       return result;
     }
 
@@ -204,21 +206,48 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
 
 
   class GsmClientSecureSim7600 : public GsmClientSim7600 {
-  public:
+   public:
     GsmClientSecureSim7600() {
     }
-    
+
     explicit GsmClientSecureSim7600(TinyGsmSim7600& modem, uint8_t mux = 0)
         : GsmClientSim7600(modem, mux) {}
-    
-  public:
-    bool setCertificate(const String& certificateName, const uint8_t mux = 0) {
-      if (mux >= TINY_GSM_MUX_COUNT) return false;
-      at->certificates[mux] = certificateName;
+
+   protected:
+    String cacert;
+    String clientcert;
+    String clientkey;
+    bool certValidation = true;
+    uint8_t sslVersion = 4;
+
+   public:
+    void setCACert(const String& certificateString) {
+      cacert = certificateString;
+    }
+
+    void setCertificate(const String& certificateString) {
+      clientcert = certificateString;
+    }
+
+    void setPrivateKey(const String& certificateString) {
+      clientkey = certificateString;
+    }
+
+    void setSSLVersion(const uint8_t version) {
+      sslVersion = version;
+    }
+
+    void setCertValidation(bool validation = true) {
+      certValidation = validation;
+    }
+
+    bool deleteCertificate(String& name) {
+      at->sendAT(GF("+CCERTDELE=\""), name, '\"');
+      if (at->waitResponse(5000L) != 1) {return false;}
       return true;
     }
 
-    virtual int16_t modemSend(const void* buff, size_t len, uint8_t mux) override {
+    int16_t modemSend(const void* buff, size_t len, uint8_t mux) override {
       at->sendAT(GF("+CCHSEND="), mux, ',', (uint16_t)len);
       if (at->waitResponse(GF(">")) != 1) { return 0; }
       at->stream.write(reinterpret_cast<const uint8_t*>(buff), len);
@@ -226,8 +255,8 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       if (at->waitResponse() != 1) { return 0; }
       return len;
     }
-    
-    virtual size_t modemRead(size_t size, uint8_t mux) override {
+
+    size_t modemRead(size_t size, uint8_t mux) override {
       if (!at->sockets[mux]) return 0;
 #ifdef TINY_GSM_USE_HEX
 // (todo) Don't know how to implement this!
@@ -274,11 +303,11 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       return len_confirmed;
     }
 
-    virtual size_t modemGetAvailable(uint8_t mux) override {
+    size_t modemGetAvailable(uint8_t mux) override {
       size_t result = 0;
       if (!at->sockets[mux]) return 0;
       at->sendAT(GF("+CCHRECV?"));
-      if (at->waitResponse(GF(GSM_NL "+CCHRECV: ")) != 1) { 
+      if (at->waitResponse(GF(GSM_NL "+CCHRECV: ")) != 1) {
         at->sendAT(GF("+CIPRXGET=4,"), mux);
         size_t result = 0;
         if (at->waitResponse(GF("+CIPRXGET:")) == 1) {
@@ -288,7 +317,9 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
           at->waitResponse();
         }
         // DBG("### Available:", result, "on", mux);
-        if (!result) { at->sockets[mux]->sock_connected = at->modemGetConnected(mux); }
+        if (!result) {
+          at->sockets[mux]->sock_connected = at->modemGetConnected(mux);
+        }
         return result;
       }
       int startMillis = millis();
@@ -302,11 +333,13 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       return result;
     }
 
-    virtual int connect(const char* host, uint16_t port, int timeout_s) override {
+    int connect(const char* host, uint16_t port, int timeout_s) override {
       stop();
       TINY_GSM_YIELD();
       rx.clear();
-      sock_connected = at->modemConnect(host, port, mux, true, timeout_s);
+      sock_connected = at->modemConnect(host, port, mux, certValidation, true,
+                                        timeout_s, cacert, clientcert,
+                                        clientkey, sslVersion);
       return sock_connected;
     }
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
@@ -524,14 +557,13 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     // URC to show it's really connected.
     sendAT(GF("+NETOPEN"));
     if (waitResponse(75000L, GF(GSM_NL "+NETOPEN: 0")) != 1) { return false; }
-    
 
-    // Start the SSL client (doesn't mean we have to use it!)
-    sendAT(GF("+CCHSET=0,1"));  // Set the module to require manual reading of  rx buffer data.
+
+    // Set the module to require manual reading of  rx buffer data.
+    sendAT(GF("+CCHSET=0,1"));
     waitResponse(5000L);
+    // Start the SSL client (doesn't mean we have to use it!)
     sendAT(GF("+CCHSTART"));  // Start the SSL client
-    if (waitResponse(5000L) != 1) return false;
-    sendAT(GF("+CSSLCFG=\"sslversion\",0,4"));  // TLS 1.2
     if (waitResponse(5000L) != 1) return false;
 
     return true;
@@ -541,9 +573,12 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     // Close all sockets and stop the socket service
     // Note: On the LTE models, this single command closes all sockets and the
     // service
+    sendAT(GF("+CCHCLOSE:0"));
     sendAT(GF("+NETCLOSE"));
-    waitResponse(60000L, GF(GSM_NL "+NETCLOSE: 0")); // We assume this works, so we can do ssh disconnect too
-    sendAT(GF("+CCHSTOP"));                          // stop the SSH client
+    waitResponse(60000L, GF(GSM_NL "+NETCLOSE: 0"));
+    // We assume this works, so we can do ssh disconnect too
+    // stop the SSH client
+    sendAT(GF("+CCHSTOP"));
     return (waitResponse(60000L, GF(GSM_NL "+CCHSTOP: 0")) != 1);
   }
 
@@ -792,24 +827,77 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
    */
  protected:
   bool modemConnect(const char* host, uint16_t port, uint8_t mux,
-                    bool ssl = false, int timeout_s = 15) {
-    if (ssl)
-    {
+                    bool certValidation, bool ssl = false, int timeout_s = 15,
+                    String cacert = "", String clientcert = "",
+                    String clientkey = "", uint8_t sslVersion = 4) {
+    if (ssl) {
+      uint8_t authmode = 0;
       // List the certs available
       //   sendAT(GF("+CCERTLIST"));
       //   waitResponse(5000L);
+      sendAT(GF("+CSSLCFG=\"sslversion\","), mux, ',', sslVersion);
+      if (waitResponse(5000L) != 1) return false;
 
-      // List the certs available
-      sendAT(GF("+CCERTDOWN=\"cacert.pem\","), certificates[mux].length());
-      if (waitResponse(GF(">"))) {
-        sendAT(GF(certificates[mux]));
-        waitResponse(5000L);
+      if (!cacert.isEmpty()) {
+        sendAT(GF("+CCERTDOWN=\"cacert"), static_cast<int>(mux), ".pem\",",
+               cacert.length());
+
+        if (waitResponse(GF(">"))) {
+          stream.write(reinterpret_cast<const uint8_t*>(cacert.c_str()),
+                       cacert.length());
+          waitResponse(5000L);
+
+        sendAT(GF("+CSSLCFG=\"cacert\","), mux, ",\"cacert",  // set the root CA
+               static_cast<int>(mux), ".pem\"");
+        if (waitResponse(5000L) != 1) return false;
+        }
       }
 
+      if (!clientcert.isEmpty()) {
+        sendAT(GF("+CCERTDOWN=\"clientcert"),
+               static_cast<int>(mux), ".pem\",", clientcert.length());
 
-      sendAT(GF("+CSSLCFG=\"cacert\","), mux, ",\"cacert.pem\"");  // TLS 1.2
+        if (waitResponse(GF(">"))) {
+          stream.write(reinterpret_cast<const uint8_t*>(clientcert.c_str()),
+                       clientcert.length());
+          waitResponse(5000L);
+        }
+
+        sendAT(GF("+CSSLCFG=\"clientcert\","), mux, ",\"clientcert",
+               static_cast<int>(mux), ".pem\"");  // set the client certificate
+        if (waitResponse(5000L) != 1) return false;
+      }
+
+      if (!clientkey.isEmpty()) {
+        sendAT(GF("+CCERTDOWN=\"clientkey"), static_cast<int>(mux), ".pem\",",
+               clientkey.length());
+
+        if (waitResponse(GF(">"))) {
+          stream.write(reinterpret_cast<const uint8_t*>(clientkey.c_str()),
+                       clientkey.length());
+          waitResponse(5000L);
+        }
+        sendAT(GF("+CSSLCFG=\"clientkey\","), mux, ",\"clientkey",
+               static_cast<int>(mux), ".pem\"");  // set the client key
+        if (waitResponse(5000L) != 1) return false;
+      }
+
+      if (!cacert.isEmpty() && certValidation) {
+        authmode = 1;
+        if (!clientcert.isEmpty() && !clientkey.isEmpty() && certValidation) {
+          authmode = 2;
+        }
+
+      } else if (!clientcert.isEmpty() && !clientkey.isEmpty()
+                 && certValidation) {
+        authmode = 3;
+      }
+
+      // set authenticationmode
+      sendAT(GF("+CSSLCFG=\"authmode\","), mux, ',', authmode);
       if (waitResponse(5000L) != 1) return false;
     }
+
     // Make sure we'll be getting data manually on this connection
     sendAT(GF("+CIPRXGET=1"));
     if (waitResponse() != 1) { return false; }
@@ -817,16 +905,25 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     // Establish a connection in multi-socket mode
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
     if (ssl) {
+      // set the configured SSL context
+      sendAT(GF("+CCHSSLCFG="), mux, ',', mux);
+      if (waitResponse(5000L) != 1) return false;
+
       sendAT(GF("+CCHOPEN="), mux, ',', GF("\""), host, GF("\","), port);
       // The reply is OK followed by +CIPOPEN: <link_num>,<err> where <link_num>
       // is the mux number and <err> should be 0 if there's no error
-      if (waitResponse(timeout_ms, GF(GSM_NL "+CCHOPEN:")) != 1) { return false; }
+      if (waitResponse(timeout_ms, GF(GSM_NL "+CCHOPEN:")) != 1) {
+        return false;
+      }
+
     } else {
-      sendAT(GF("+CIPOPEN="), mux, ',', GF("\"TCP"), GF("\",\""), host, GF("\","),
-             port);
+      sendAT(GF("+CIPOPEN="), mux, ',', GF("\"TCP"), GF("\",\""),
+             host, GF("\","), port);
       // The reply is OK followed by +CIPOPEN: <link_num>,<err> where <link_num>
       // is the mux number and <err> should be 0 if there's no error
-      if (waitResponse(timeout_ms, GF(GSM_NL "+CIPOPEN:")) != 1) { return false; }
+      if (waitResponse(timeout_ms, GF(GSM_NL "+CIPOPEN:")) != 1) {
+        return false;
+      }
     }
 
     uint8_t opened_mux    = streamGetIntBefore(',');
@@ -836,13 +933,18 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
   }
 
 
- // Secure specific overides
-  int16_t modemSend(const void* buff, size_t len, uint8_t mux) { return sockets[mux]->modemSend(buff, len, mux); }
-  size_t modemRead(size_t size, uint8_t mux) { return sockets[mux]->modemRead(size, mux); }
-  size_t modemGetAvailable(uint8_t mux) { return sockets[mux]->modemGetAvailable(mux); }
+  // Secure specific overides
+  int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
+    return sockets[mux]->modemSend(buff, len, mux);
+  }
+  size_t modemRead(size_t size, uint8_t mux) {
+    return sockets[mux]->modemRead(size, mux);
+  }
+  size_t modemGetAvailable(uint8_t mux) {
+    return sockets[mux]->modemGetAvailable(mux);
+  }
 
   bool modemGetConnected(uint8_t mux) {
-    
     // Read the status of all sockets at once
     sendAT(GF("+CIPOPEN?"));
     if (waitResponse(GF("+CIPOPEN:")) != 1) {
@@ -989,7 +1091,6 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
 
  protected:
   GsmClientSim7600* sockets[TINY_GSM_MUX_COUNT];
-  String            certificates[TINY_GSM_MUX_COUNT];
   const char*       gsmNL = GSM_NL;
 };
 
