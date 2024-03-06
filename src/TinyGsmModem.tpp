@@ -29,8 +29,8 @@ class TinyGsmModem {
     thisModem().stream.flush();
     TINY_GSM_YIELD(); /* DBG("### AT:", cmd...); */
   }
-  void setBaud(uint32_t baud) {
-    thisModem().setBaudImpl(baud);
+  bool setBaud(uint32_t baud) {
+    return thisModem().setBaudImpl(baud);
   }
   // Test response to AT commands
   bool testAT(uint32_t timeout_ms = 10000L) {
@@ -106,10 +106,10 @@ class TinyGsmModem {
    * Basic functions
    */
  protected:
-  void setBaudImpl(uint32_t baud) {
+  bool setBaudImpl(uint32_t baud) {
     thisModem().sendAT(GF("+IPR="), baud);
-    thisModem().waitResponse();
-  }
+    return thisModem().waitResponse() == 1;
+  } 
 
   bool testATImpl(uint32_t timeout_ms = 10000L) {
     for (uint32_t start = millis(); millis() - start < timeout_ms;) {
