@@ -20,6 +20,7 @@
 // XBee's have a default guard time of 1 second (1000ms, 10 extra for safety
 // here)
 #define TINY_GSM_XBEE_GUARD_TIME 1010
+#define GSM_NL "\r"  // NOTE:  define before including TinyGsmModem!
 
 #include "TinyGsmBattery.tpp"
 #include "TinyGsmGPRS.tpp"
@@ -29,10 +30,6 @@
 #include "TinyGsmTCP.tpp"
 #include "TinyGsmTemperature.tpp"
 #include "TinyGsmWifi.tpp"
-
-#define GSM_NL "\r"
-static const char GSM_OK[] TINY_GSM_PROGMEM    = "OK" GSM_NL;
-static const char GSM_ERROR[] TINY_GSM_PROGMEM = "ERROR" GSM_NL;
 
 // Use this to avoid too many entrances and exits from command mode.
 // The cellular Bee's often freeze up and won't respond when attempting
@@ -1623,7 +1620,6 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
 
  protected:
   GsmClientXBee* sockets[TINY_GSM_MUX_COUNT];
-  const char*    gsmNL = GSM_NL;
   int16_t        guardTime;
   XBeeType       beeType;
   int8_t         resetPin;

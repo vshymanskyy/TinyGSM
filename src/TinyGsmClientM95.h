@@ -15,6 +15,7 @@
 
 #define TINY_GSM_MUX_COUNT 6
 #define TINY_GSM_BUFFER_READ_NO_CHECK
+#define GSM_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
 
 #include "TinyGsmBattery.tpp"
 #include "TinyGsmCalling.tpp"
@@ -24,14 +25,6 @@
 #include "TinyGsmTCP.tpp"
 #include "TinyGsmTemperature.tpp"
 #include "TinyGsmTime.tpp"
-
-#define GSM_NL "\r\n"
-static const char GSM_OK[] TINY_GSM_PROGMEM    = "OK" GSM_NL;
-static const char GSM_ERROR[] TINY_GSM_PROGMEM = "ERROR" GSM_NL;
-#if defined       TINY_GSM_DEBUG
-static const char GSM_CME_ERROR[] TINY_GSM_PROGMEM = GSM_NL "+CME ERROR:";
-static const char GSM_CMS_ERROR[] TINY_GSM_PROGMEM = GSM_NL "+CMS ERROR:";
-#endif
 
 enum RegStatus {
   REG_NO_RESULT    = -1,
@@ -630,7 +623,6 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95>,
 
  protected:
   GsmClientM95* sockets[TINY_GSM_MUX_COUNT];
-  const char*   gsmNL = GSM_NL;
 };
 
 #endif  // SRC_TINYGSMCLIENTM95_H_

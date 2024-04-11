@@ -14,16 +14,14 @@
 
 #define TINY_GSM_MUX_COUNT 5
 #define TINY_GSM_NO_MODEM_BUFFER
+#define GSM_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
 
 #include "TinyGsmModem.tpp"
 #include "TinyGsmSSL.tpp"
 #include "TinyGsmTCP.tpp"
 #include "TinyGsmWifi.tpp"
 
-#define GSM_NL "\r\n"
-static const char GSM_OK[] TINY_GSM_PROGMEM    = "OK" GSM_NL;
-static const char GSM_ERROR[] TINY_GSM_PROGMEM = "ERROR" GSM_NL;
-static uint8_t    TINY_GSM_TCP_KEEP_ALIVE      = 120;
+static uint8_t TINY_GSM_TCP_KEEP_ALIVE = 120;
 
 // <stat> status of ESP8266 station interface
 // 2 : ESP8266 station connected to an AP and has obtained IP
@@ -479,7 +477,6 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
 
  protected:
   GsmClientESP8266* sockets[TINY_GSM_MUX_COUNT];
-  const char*       gsmNL = GSM_NL;
 };
 
 #endif  // SRC_TINYGSMCLIENTESP8266_H_
