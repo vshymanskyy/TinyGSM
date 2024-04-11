@@ -241,9 +241,9 @@ class TinyGsmTCP {
       return -1;
     }
 
-	int peek() override {
-		return (uint8_t)rx.peek();
-	}
+    int peek() override {
+      return (uint8_t)rx.peek();
+    }
 
     void flush() override {
       at->stream.flush();
@@ -345,7 +345,7 @@ class TinyGsmTCP {
 
   // Yields up to a time-out period and then reads a character from the stream
   // into the mux FIFO
-  // TODO(SRGDamia1):  Do we need to wait two _timeout periods for no
+  // TODO(SRGDamia1):  Do we really need to wait _two_ timeout periods for no
   // character return?  Will wait once in the first "while
   // !stream.available()" and then will wait again in the stream.read()
   // function.

@@ -48,6 +48,48 @@ class TinyGsmModem {
   bool testAT(uint32_t timeout_ms = 10000L) {
     return thisModem().testATImpl(timeout_ms);
   }
+  // Listen for responses to commands and handle URCs
+  int8_t waitResponse(uint32_t timeout_ms, String& data,
+                      GsmConstStr r1 = GFP(GSM_OK),
+                      GsmConstStr r2 = GFP(GSM_ERROR),
+#if defined TINY_GSM_DEBUG
+                      GsmConstStr r3 = GFP(GSM_CME_ERROR),
+                      GsmConstStr r4 = GFP(GSM_CMS_ERROR),
+#else
+                      GsmConstStr r3 = NULL, GsmConstStr r4 = NULL,
+#endif
+                      GsmConstStr r5 = NULL, GsmConstStr r6 = NULL,
+                      GsmConstStr r7 = NULL) {
+    return thisModem().waitResponseImpl(timeout_ms, data, r1, r2, r3, r4, r5,
+                                        r6, r7);
+  }
+
+  int8_t waitResponse(uint32_t timeout_ms, GsmConstStr r1 = GFP(GSM_OK),
+                      GsmConstStr r2 = GFP(GSM_ERROR),
+#if defined TINY_GSM_DEBUG
+                      GsmConstStr r3 = GFP(GSM_CME_ERROR),
+                      GsmConstStr r4 = GFP(GSM_CMS_ERROR),
+#else
+                      GsmConstStr r3 = NULL, GsmConstStr r4 = NULL,
+#endif
+                      GsmConstStr r5 = NULL, GsmConstStr r6 = NULL,
+                      GsmConstStr r7 = NULL) {
+    String data;
+    return waitResponse(timeout_ms, data, r1, r2, r3, r4, r5, r6, r7);
+  }
+
+  int8_t waitResponse(GsmConstStr r1 = GFP(GSM_OK),
+                      GsmConstStr r2 = GFP(GSM_ERROR),
+#if defined TINY_GSM_DEBUG
+                      GsmConstStr r3 = GFP(GSM_CME_ERROR),
+                      GsmConstStr r4 = GFP(GSM_CMS_ERROR),
+#else
+                      GsmConstStr r3 = NULL, GsmConstStr r4 = NULL,
+#endif
+                      GsmConstStr r5 = NULL, GsmConstStr r6 = NULL,
+                      GsmConstStr r7 = NULL) {
+    return waitResponse(1000L, r1, r2, r3, r4, r5, r6, r7);
+  }
 
   // Asks for modem information via the V.25TER standard ATI command
   // NOTE:  The actual value and style of the response is quite varied
@@ -131,6 +173,72 @@ class TinyGsmModem {
     }
     return false;
   }
+
+
+  // TODO(vshymanskyy): Optimize this!
+  int8_t waitResponseImpl(uint32_t timeout_ms, String& data,
+                          GsmConstStr r1 = GFP(GSM_OK),
+                          GsmConstStr r2 = GFP(GSM_ERROR),
+#if defined TINY_GSM_DEBUG
+                          GsmConstStr r3 = GFP(GSM_CME_ERROR),
+                          GsmConstStr r4 = GFP(GSM_CMS_ERROR),
+#else
+                          GsmConstStr r3 = NULL, GsmConstStr r4 = NULL,
+#endif
+                          GsmConstStr r5 = NULL, GsmConstStr r6 = NULL,
+                          GsmConstStr r7 = NULL) {
+    data.reserve(64);
+    uint8_t  index       = 0;
+    uint32_t startMillis = millis();
+    do {
+      TINY_GSM_YIELD();
+      while (thisModem().stream.available() > 0) {
+        TINY_GSM_YIELD();
+        int8_t a = thisModem().stream.read();
+        if (a <= 0) continue;  // Skip 0x00 bytes, just in case
+        data += static_cast<char>(a);
+        if (r1 && data.endsWith(r1)) {
+          index = 1;
+          goto finish;
+        } else if (r2 && data.endsWith(r2)) {
+          index = 2;
+          goto finish;
+        } else if (r3 && data.endsWith(r3)) {
+#if defined TINY_GSM_DEBUG
+          if (r3 == GFP(GSM_CME_ERROR)) {
+            streamSkipUntil('\n');  // Read out the error
+          }
+#endif
+          index = 3;
+          goto finish;
+        } else if (r4 && data.endsWith(r4)) {
+          index = 4;
+          goto finish;
+        } else if (r5 && data.endsWith(r5)) {
+          index = 5;
+          goto finish;
+        } else if (r6 && data.endsWith(r6)) {
+          index = 6;
+          goto finish;
+        } else if (r7 && data.endsWith(r7)) {
+          index = 7;
+          goto finish;
+        } else if (thisModem().handleURCs(data)) {
+          data = "";
+        }
+      }
+    } while (millis() - startMillis < timeout_ms);
+  finish:
+    if (!index) {
+      data.trim();
+      if (data.length()) { DBG("### Unhandled:", data); }
+      data = "";
+    }
+    // data.replace(AT_NL, "/");
+    // DBG('<', index, '>', data);
+    return index;
+  }
+
 
   String getModemInfoImpl() {
     thisModem().sendAT(GF("I"));

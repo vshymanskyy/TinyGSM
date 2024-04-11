@@ -828,7 +828,8 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
         changesMade = true;
       }
     } else {
-      changesMade |= changeSettingIfNeeded(GF("EE"), 0x0);  // Set No security
+      changesMade |= changeSettingIfNeeded(GF("EE"),
+                                           0x0);  // Set No security
     }
 
     if (changesMade) { retVal &= writeChanges(); }
@@ -878,7 +879,8 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
         changesMade = true;
       }
     }
-    changesMade |= changeSettingIfNeeded(GF("AN"), String(apn));  // Set the APN
+    changesMade |= changeSettingIfNeeded(GF("AN"),
+                                         String(apn));  // Set the APN
 
     changesMade |= changeSettingIfNeeded(GF("AM"), 0x0,
                                          5000L);  // Airplane mode off
@@ -1029,9 +1031,9 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
         0,
     };
     res.toCharArray(buf, 5);
-    int8_t intRes = (int8_t)strtol(
-        buf, 0,
-        16);  // degrees Celsius displayed in 8-bit two's complement format.
+    int8_t intRes = (int8_t)strtol(buf, 0,
+                                   16);  // degrees Celsius displayed in
+                                         // 8-bit two's complement format.
     XBEE_COMMAND_END_DECORATOR
     return static_cast<float>(intRes);
   }
@@ -1072,9 +1074,9 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
     uint32_t timeout_ms  = ((uint32_t)timeout_s) * 1000;
     bool     gotIP       = false;
     XBEE_COMMAND_START_DECORATOR(5, IPAddress(0, 0, 0, 0))
-    // XBee's require a numeric IP address for connection, but do provide the
-    // functionality to look up the IP address from a fully qualified domain
-    // name
+    // XBee's require a numeric IP address for connection, but do provide
+    // the functionality to look up the IP address from a fully qualified
+    // domain name
     // NOTE: the lookup can take a while
     while ((millis() - startMillis) < timeout_ms) {
       sendAT(GF("LA"), host);
@@ -1104,8 +1106,8 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
     bool retVal = false;
     XBEE_COMMAND_START_DECORATOR(5, false)
 
-    // If this is a new host name, replace the saved host and wipe out the saved
-    // host IP
+    // If this is a new host name, replace the saved host and wipe out the
+    // saved host IP
     if (this->savedHost != String(host)) {
       this->savedHost = String(host);
       savedHostIP     = IPAddress(0, 0, 0, 0);
@@ -1175,7 +1177,8 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
       if (changesMade) { success &= writeChanges(); }
     }
 
-    // confirm the XBee type if needed so we know if we can know if connected
+    // confirm the XBee type if needed so we know if we can know if
+    // connected
     if (beeType == XBEE_UNKNOWN) { getSeries(); }
     // we'll accept either unknown or connected
     if (beeType != XBEE_S6B_WIFI) {
@@ -1205,9 +1208,10 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
       sendAT(GF("TM"));
       String timeoutUsed = readResponseString(5000L);
 
-      // For cellular models, per documentation: If you write the TM (socket
-      // timeout) value while in Transparent Mode, the current connection is
-      // immediately closed - this works even if the TM values is unchanged
+      // For cellular models, per documentation: If you write the TM
+      // (socket timeout) value while in Transparent Mode, the current
+      // connection is immediately closed - this works even if the TM
+      // values is unchanged
       sendAT(GF("TM"), timeoutUsed);  // Re-set socket timeout
       waitResponse(maxWaitMs);        // This response can be slow
     }
@@ -1229,7 +1233,8 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
         modemGetConnected(0);
       } else if (len > 5) {
         // After sending several characters, also re-check
-        // NOTE:  I'm intentionally not checking after every single character!
+        // NOTE:  I'm intentionally not checking after every single
+        // character!
         modemGetConnected(0);
       }
     }
@@ -1237,10 +1242,11 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
     return len;
   }
 
-  // NOTE:  The CI command returns the status of the TCP connection as open only
-  // after data has been sent on the socket.  If it returns 0xFF the socket may
-  // really be open, but no data has yet been sent.  We return this unknown
-  // value as true so there's a possibility it's wrong.
+  // NOTE:  The CI command returns the status of the TCP connection as
+  // open only after data has been sent on the socket.  If it returns 0xFF
+  // the socket may really be open, but no data has yet been sent.  We
+  // return this unknown value as true so there's a possibility it's
+  // wrong.
   bool modemGetConnected(uint8_t) {
     // If the IP address is 0, it's not valid so we can't be connected
     if (savedIP == IPAddress(0, 0, 0, 0)) { return false; }
@@ -1281,11 +1287,12 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
           }
 
           // 0x28 = "Unknown."
-          // 0xFF = No known status - always returned prior to sending data
+          // 0xFF = No known status - always returned prior to sending
+          // data
           case 0x28:
           case 0xFF: {
-            // If we previously had an operating destination and we no longer
-            // do, the socket must have closed
+            // If we previously had an operating destination and we no
+            // longer do, the socket must have closed
             if (od == IPAddress(0, 0, 0, 0) &&
                 savedOperatingIP != IPAddress(0, 0, 0, 0)) {
               savedOperatingIP           = od;
@@ -1297,13 +1304,14 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
               sockets[0]->stop();
               return false;
             } else if (od != IPAddress(0, 0, 0, 0) && od == savedIP) {
-              // else if the operating destination exists and matches, we're
-              // good to go
+              // else if the operating destination exists and matches,
+              // we're good to go
               savedOperatingIP = od;
               return true;
             } else {
-              // If we never had an operating destination, then sock may be open
-              // but data never sent - this is the dreaded "we don't know"
+              // If we never had an operating destination, then sock may
+              // be open but data never sent - this is the dreaded "we
+              // don't know"
               savedOperatingIP = od;
               return true;
             }
@@ -1347,8 +1355,8 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
 
           // 0x02 = Invalid parameters (bad IP/host)
           // 0x12 = DNS query lookup failure
-          // 0x25 = Unknown server - DNS lookup failed (0x22 for UDP socket!)
-          // fall through
+          // 0x25 = Unknown server - DNS lookup failed (0x22 for UDP
+          // socket!) fall through
           case 0x02:
           case 0x12:
           case 0x25: {
@@ -1378,80 +1386,9 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
       TINY_GSM_YIELD();
     }
   }
-
-  // TODO(vshymanskyy): Optimize this!
-  // NOTE:  This function is used while INSIDE command mode, so we're only
-  // waiting for requested responses.  The XBee has no unsoliliced responses
-  // (URC's) when in command mode.
-  int8_t waitResponse(uint32_t timeout_ms, String& data,
-                      GsmConstStr r1 = GFP(GSM_OK),
-                      GsmConstStr r2 = GFP(GSM_ERROR), GsmConstStr r3 = NULL,
-                      GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
-    /*String r1s(r1); r1s.trim();
-    String r2s(r2); r2s.trim();
-    String r3s(r3); r3s.trim();
-    String r4s(r4); r4s.trim();
-    String r5s(r5); r5s.trim();
-    DBG("### ..:", r1s, ",", r2s, ",", r3s, ",", r4s, ",", r5s);*/
-    data.reserve(16);  // Should never be getting much here for the XBee
-    int8_t   index       = 0;
-    uint32_t startMillis = millis();
-    do {
-      TINY_GSM_YIELD();
-      while (stream.available() > 0) {
-        TINY_GSM_YIELD();
-        int8_t a = stream.read();
-        if (a <= 0) continue;  // Skip 0x00 bytes, just in case
-        data += static_cast<char>(a);
-        if (r1 && data.endsWith(r1)) {
-          index = 1;
-          goto finish;
-        } else if (r2 && data.endsWith(r2)) {
-          index = 2;
-          goto finish;
-        } else if (r3 && data.endsWith(r3)) {
-          index = 3;
-          goto finish;
-        } else if (r4 && data.endsWith(r4)) {
-          index = 4;
-          goto finish;
-        } else if (r5 && data.endsWith(r5)) {
-          index = 5;
-          goto finish;
-        }
-      }
-    } while (millis() - startMillis < timeout_ms);
-  finish:
-    if (!index) {
-      data.trim();
-      data.replace(GSM_NL GSM_NL, GSM_NL);
-      data.replace(GSM_NL, "\r\n    ");
-      if (data.length()) {
-        DBG("### Unhandled:", data, "\r\n");
-      } else {
-        DBG("### NO RESPONSE FROM MODEM!\r\n");
-      }
-    } else {
-      data.trim();
-      data.replace(GSM_NL GSM_NL, GSM_NL);
-      data.replace(GSM_NL, "\r\n    ");
-    }
-    // data.replace(GSM_NL, "/");
-    // DBG('<', index, '>', data);
-    return index;
-  }
-
-  int8_t waitResponse(uint32_t timeout_ms, GsmConstStr r1 = GFP(GSM_OK),
-                      GsmConstStr r2 = GFP(GSM_ERROR), GsmConstStr r3 = NULL,
-                      GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
-    String data;
-    return waitResponse(timeout_ms, data, r1, r2, r3, r4, r5);
-  }
-
-  int8_t waitResponse(GsmConstStr r1 = GFP(GSM_OK),
-                      GsmConstStr r2 = GFP(GSM_ERROR), GsmConstStr r3 = NULL,
-                      GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
-    return waitResponse(1000, r1, r2, r3, r4, r5);
+  // The XBee has no unsoliliced responses (URC's) when in command mode.
+  bool handleURCs(String& data) {
+    return true;
   }
 
   bool commandMode(uint8_t retries = 5) {
@@ -1467,8 +1404,9 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
     streamClear();  // Empty everything in the buffer before starting
 
     while (!success && triesMade < retries) {
-      // Cannot send anything for 1 "guard time" before entering command mode
-      // Default guard time is 1s, but the init fxn decreases it to 100 ms
+      // Cannot send anything for 1 "guard time" before entering command
+      // mode Default guard time is 1s, but the init fxn decreases it to
+      // 100 ms
       delay(guardTime + 10);
       streamWrite(GF("+++"));  // enter command mode
 
