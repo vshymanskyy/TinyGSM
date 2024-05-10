@@ -1356,7 +1356,8 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
           // 0x02 = Invalid parameters (bad IP/host)
           // 0x12 = DNS query lookup failure
           // 0x25 = Unknown server - DNS lookup failed (0x22 for UDP
-          // socket!) fall through
+          // socket!)
+          // fall through
           case 0x02:
           case 0x12:
           case 0x25: {
