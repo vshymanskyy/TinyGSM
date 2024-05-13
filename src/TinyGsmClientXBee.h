@@ -1392,7 +1392,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
   }
   // The XBee has no unsoliliced responses (URC's) when in command mode.
   bool handleURCs(String&) {
-    return true;
+    return false;
   }
 
   bool commandMode(uint8_t retries = 5) {
