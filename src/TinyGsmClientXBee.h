@@ -20,9 +20,9 @@
 // XBee's have a default guard time of 1 second (1000ms, 10 extra for safety
 // here)
 #define TINY_GSM_XBEE_GUARD_TIME 1010
-#ifdef GSM_NL
-#undef GSM_NL
-#define GSM_NL "\r"  // NOTE:  define before including TinyGsmModem!
+#ifdef AT_NL
+#undef AT_NL
+#define AT_NL "\r"  // NOTE:  define before including TinyGsmModem!
 #endif
 
 #include "TinyGsmBattery.tpp"
@@ -1322,7 +1322,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
             // // Ask for information about any open sockets
             // sendAT(GF("SI"));
             // String open_socks = stream.readStringUntil('\r');
-            // open_socks.replace(GSM_NL, "");
+            // open_socks.replace(AT_NL, "");
             // open_socks.trim();
             // if (open_socks != "") {
             //   // In transparent mode, only socket 0 should be possible

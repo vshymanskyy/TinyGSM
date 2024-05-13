@@ -11,9 +11,9 @@
 
 // #define TINY_GSM_DEBUG Serial
 // #define TINY_GSM_USE_HEX
-#ifdef GSM_NL
-#undef GSM_NL
-#define GSM_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
+#ifdef AT_NL
+#undef AT_NL
+#define AT_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
 #endif
 
 #include "TinyGsmBattery.tpp"
@@ -84,7 +84,7 @@ class TinyGsmSim70xx : public TinyGsmModem<TinyGsmSim70xx<modemType>>,
     thisModem().sendAT(GF("+GMM"));
     String res2;
     if (thisModem().waitResponse(5000L, res2) != 1) { return name; }
-    res2.replace(GSM_NL "OK" GSM_NL, "");
+    res2.replace(AT_NL "OK" AT_NL, "");
     res2.replace("_", " ");
     res2.trim();
 
@@ -166,7 +166,7 @@ class TinyGsmSim70xx : public TinyGsmModem<TinyGsmSim70xx<modemType>>,
   String getNetworkModes() {
     // Get the help string, not the setting value
     thisModem().sendAT(GF("+CNMP=?"));
-    if (thisModem().waitResponse(GF(GSM_NL "+CNMP:")) != 1) { return ""; }
+    if (thisModem().waitResponse(GF(AT_NL "+CNMP:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     thisModem().waitResponse();
     return res;
@@ -174,7 +174,7 @@ class TinyGsmSim70xx : public TinyGsmModem<TinyGsmSim70xx<modemType>>,
 
   int16_t getNetworkMode() {
     thisModem().sendAT(GF("+CNMP?"));
-    if (thisModem().waitResponse(GF(GSM_NL "+CNMP:")) != 1) { return false; }
+    if (thisModem().waitResponse(GF(AT_NL "+CNMP:")) != 1) { return false; }
     int16_t mode = thisModem().streamGetIntBefore('\n');
     thisModem().waitResponse();
     return mode;
@@ -192,7 +192,7 @@ class TinyGsmSim70xx : public TinyGsmModem<TinyGsmSim70xx<modemType>>,
   String getPreferredModes() {
     // Get the help string, not the setting value
     thisModem().sendAT(GF("+CMNB=?"));
-    if (thisModem().waitResponse(GF(GSM_NL "+CMNB:")) != 1) { return ""; }
+    if (thisModem().waitResponse(GF(AT_NL "+CMNB:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     thisModem().waitResponse();
     return res;
@@ -200,7 +200,7 @@ class TinyGsmSim70xx : public TinyGsmModem<TinyGsmSim70xx<modemType>>,
 
   int16_t getPreferredMode() {
     thisModem().sendAT(GF("+CMNB?"));
-    if (thisModem().waitResponse(GF(GSM_NL "+CMNB:")) != 1) { return false; }
+    if (thisModem().waitResponse(GF(AT_NL "+CMNB:")) != 1) { return false; }
     int16_t mode = thisModem().streamGetIntBefore('\n');
     thisModem().waitResponse();
     return mode;
@@ -218,7 +218,7 @@ class TinyGsmSim70xx : public TinyGsmModem<TinyGsmSim70xx<modemType>>,
     // n: whether to automatically report the system mode info
     // stat: the current service. 0 if it not connected
     thisModem().sendAT(GF("+CNSMOD?"));
-    if (thisModem().waitResponse(GF(GSM_NL "+CNSMOD:")) != 1) { return false; }
+    if (thisModem().waitResponse(GF(AT_NL "+CNSMOD:")) != 1) { return false; }
     n    = thisModem().streamGetIntBefore(',') != 0;
     stat = thisModem().streamGetIntBefore('\n');
     thisModem().waitResponse();
@@ -256,7 +256,7 @@ class TinyGsmSim70xx : public TinyGsmModem<TinyGsmSim70xx<modemType>>,
   // Doesn't return the "+CCID" before the number
   String getSimCCIDImpl() {
     thisModem().sendAT(GF("+CCID"));
-    if (thisModem().waitResponse(GF(GSM_NL)) != 1) { return ""; }
+    if (thisModem().waitResponse(GF(AT_NL)) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     thisModem().waitResponse();
     res.trim();
@@ -289,7 +289,7 @@ class TinyGsmSim70xx : public TinyGsmModem<TinyGsmSim70xx<modemType>>,
   // get the RAW GPS output
   String getGPSrawImpl() {
     thisModem().sendAT(GF("+CGNSINF"));
-    if (thisModem().waitResponse(10000L, GF(GSM_NL "+CGNSINF:")) != 1) {
+    if (thisModem().waitResponse(10000L, GF(AT_NL "+CGNSINF:")) != 1) {
       return "";
     }
     String res = stream.readStringUntil('\n');
@@ -304,7 +304,7 @@ class TinyGsmSim70xx : public TinyGsmModem<TinyGsmSim70xx<modemType>>,
                   int* year = 0, int* month = 0, int* day = 0, int* hour = 0,
                   int* minute = 0, int* second = 0) {
     thisModem().sendAT(GF("+CGNSINF"));
-    if (thisModem().waitResponse(10000L, GF(GSM_NL "+CGNSINF:")) != 1) {
+    if (thisModem().waitResponse(10000L, GF(AT_NL "+CGNSINF:")) != 1) {
       return false;
     }
 

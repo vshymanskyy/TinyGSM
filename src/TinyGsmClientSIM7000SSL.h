@@ -194,7 +194,7 @@ class TinyGsmSim7000SSL
  protected:
   String getLocalIPImpl() {
     sendAT(GF("+CNACT?"));
-    if (waitResponse(GF(GSM_NL "+CNACT:")) != 1) { return ""; }
+    if (waitResponse(GF(AT_NL "+CNACT:")) != 1) { return ""; }
     streamSkipUntil('\"');
     String res = stream.readStringUntil('\"');
     waitResponse();
@@ -265,8 +265,8 @@ class TinyGsmSim7000SSL
     int  ntries = 0;
     while (!res && ntries < 5) {
       sendAT(GF("+CNACT=1,\""), apn, GF("\""));
-      res = waitResponse(60000L, GF(GSM_NL "+APP PDP: ACTIVE"),
-                         GF(GSM_NL "+APP PDP: DEACTIVE")) == 1;
+      res = waitResponse(60000L, GF(AT_NL "+APP PDP: ACTIVE"),
+                         GF(AT_NL "+APP PDP: DEACTIVE")) == 1;
       waitResponse();
       ntries++;
     }
@@ -393,7 +393,7 @@ class TinyGsmSim7000SSL
     // <conn_type> "TCP" or "UDP"
     // NOTE:  the "TCP" can't be included
     sendAT(GF("+CAOPEN="), mux, GF(",\""), host, GF("\","), port);
-    if (waitResponse(timeout_ms, GF(GSM_NL "+CAOPEN:")) != 1) { return 0; }
+    if (waitResponse(timeout_ms, GF(AT_NL "+CAOPEN:")) != 1) { return 0; }
     // returns OK/r/n/r/n+CAOPEN: <cid>,<result>
     // <result> 0: Success
     //          1: Socket error
@@ -430,7 +430,7 @@ class TinyGsmSim7000SSL
 
     // after posting data, module responds with:
     //+CASEND: <cid>,<result>,<sendlen>
-    if (waitResponse(GF(GSM_NL "+CASEND:")) != 1) { return 0; }
+    if (waitResponse(GF(AT_NL "+CASEND:")) != 1) { return 0; }
     streamSkipUntil(',');                            // Skip mux
     if (streamGetIntBefore(',') != 0) { return 0; }  // If result != success
     return streamGetIntBefore('\n');
@@ -496,7 +496,7 @@ class TinyGsmSim7000SSL
     sendAT(GF("+CARECV?"));
     for (int muxNo = 0; muxNo < TINY_GSM_MUX_COUNT; muxNo++) {
       // after the last connection, there's an ok, so we catch it right away
-      int res = waitResponse(3000, GF("+CARECV:"), GFP(GSM_OK), GFP(GSM_ERROR));
+      int res = waitResponse(3000, GF("+CARECV:"), GFP(AT_OK), GFP(GSM_ERROR));
       // if we get the +CARECV: response, read the mux number and the number of
       // characters available
       if (res == 1) {
@@ -543,8 +543,7 @@ class TinyGsmSim7000SSL
 
     for (int muxNo = 0; muxNo < TINY_GSM_MUX_COUNT; muxNo++) {
       // after the last connection, there's an ok, so we catch it right away
-      int res = waitResponse(3000, GF("+CASTATE:"), GFP(GSM_OK),
-                             GFP(GSM_ERROR));
+      int res = waitResponse(3000, GF("+CASTATE:"), GFP(AT_OK), GFP(GSM_ERROR));
       // if we get the +CASTATE: response, read the mux number and the status
       if (res == 1) {
         int    ret_mux = streamGetIntBefore(',');
@@ -638,7 +637,7 @@ class TinyGsmSim7000SSL
       data = "";
       DBG("### Daylight savings time state updated.");
       return true;
-    } else if (data.endsWith(GF(GSM_NL "SMS Ready" GSM_NL))) {
+    } else if (data.endsWith(GF(AT_NL "SMS Ready" AT_NL))) {
       data = "";
       DBG("### Unexpected module reset!");
       init();

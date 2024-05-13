@@ -14,9 +14,9 @@
 
 #define TINY_GSM_MUX_COUNT 8
 #define TINY_GSM_NO_MODEM_BUFFER
-#ifdef GSM_NL
-#undef GSM_NL
-#define GSM_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
+#ifdef AT_NL
+#undef AT_NL
+#define AT_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
 #endif
 
 #include "TinyGsmBattery.tpp"
@@ -208,8 +208,8 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
     sendAT(GF("+CIFSR"));
     String res;
     if (waitResponse(10000L, res) != 1) { return ""; }
-    res.replace(GSM_NL "OK" GSM_NL, "");
-    res.replace(GSM_NL, "");
+    res.replace(AT_NL "OK" AT_NL, "");
+    res.replace(AT_NL, "");
     res.trim();
     return res;
   }
@@ -262,7 +262,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
     waitResponse();
 
     sendAT(GF("+COPS?"));
-    if (waitResponse(GF(GSM_NL "+COPS:")) != 1) { return ""; }
+    if (waitResponse(GF(AT_NL "+COPS:")) != 1) { return ""; }
     streamSkipUntil('"');  // Skip mode and format
     String res = stream.readStringUntil('"');
     waitResponse();
@@ -275,7 +275,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
  protected:
   String getSimCCIDImpl() {
     sendAT(GF("+CCID"));
-    if (waitResponse(GF(GSM_NL "+SCID: SIM Card ID:")) != 1) { return ""; }
+    if (waitResponse(GF(AT_NL "+SCID: SIM Card ID:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     waitResponse();
     res.trim();
@@ -296,16 +296,16 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
 
     if (waitResponse(5000L) != 1) { return false; }
 
-    if (waitResponse(60000L, GF(GSM_NL "+CIEV: \"CALL\",1"),
-                     GF(GSM_NL "+CIEV: \"CALL\",0"), GFP(GSM_ERROR)) != 1) {
+    if (waitResponse(60000L, GF(AT_NL "+CIEV: \"CALL\",1"),
+                     GF(AT_NL "+CIEV: \"CALL\",0"), GFP(GSM_ERROR)) != 1) {
       return false;
     }
 
-    int8_t rsp = waitResponse(60000L, GF(GSM_NL "+CIEV: \"SOUNDER\",0"),
-                              GF(GSM_NL "+CIEV: \"CALL\",0"));
+    int8_t rsp = waitResponse(60000L, GF(AT_NL "+CIEV: \"SOUNDER\",0"),
+                              GF(AT_NL "+CIEV: \"CALL\",0"));
 
-    int8_t rsp2 = waitResponse(300L, GF(GSM_NL "BUSY" GSM_NL),
-                               GF(GSM_NL "NO ANSWER" GSM_NL));
+    int8_t rsp2 = waitResponse(300L, GF(AT_NL "BUSY" AT_NL),
+                               GF(AT_NL "NO ANSWER" AT_NL));
 
     return rsp == 1 && rsp2 == 0;
   }
@@ -358,7 +358,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
     waitResponse();
     sendAT(GF("+CUSD=1,\""), code, GF("\",15"));
     if (waitResponse(10000L) != 1) { return ""; }
-    if (waitResponse(GF(GSM_NL "+CUSD:")) != 1) { return ""; }
+    if (waitResponse(GF(AT_NL "+CUSD:")) != 1) { return ""; }
     streamSkipUntil('"');
     String hex = stream.readStringUntil('"');
     streamSkipUntil(',');
@@ -389,7 +389,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
   // Needs a '?' after CBC, unlike most
   int8_t getBattPercentImpl() {
     sendAT(GF("+CBC?"));
-    if (waitResponse(GF(GSM_NL "+CBC:")) != 1) { return false; }
+    if (waitResponse(GF(AT_NL "+CBC:")) != 1) { return false; }
     streamSkipUntil(',');  // Skip battery charge status
     // Read battery charge level
     int8_t res = streamGetIntBefore('\n');
@@ -402,7 +402,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
   bool getBattStatsImpl(uint8_t& chargeState, int8_t& percent,
                         uint16_t& milliVolts) {
     sendAT(GF("+CBC?"));
-    if (waitResponse(GF(GSM_NL "+CBC:")) != 1) { return false; }
+    if (waitResponse(GF(AT_NL "+CBC:")) != 1) { return false; }
     chargeState = streamGetIntBefore(',');
     percent     = streamGetIntBefore('\n');
     milliVolts  = 0;
@@ -421,12 +421,12 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
     uint32_t timeout_ms  = ((uint32_t)timeout_s) * 1000;
 
     sendAT(GF("+CIPSTART="), GF("\"TCP"), GF("\",\""), host, GF("\","), port);
-    if (waitResponse(timeout_ms, GF(GSM_NL "+CIPNUM:")) != 1) { return false; }
+    if (waitResponse(timeout_ms, GF(AT_NL "+CIPNUM:")) != 1) { return false; }
     int8_t newMux = streamGetIntBefore('\n');
 
-    int8_t rsp = waitResponse(
-        (timeout_ms - (millis() - startMillis)), GF("CONNECT OK" GSM_NL),
-        GF("CONNECT FAIL" GSM_NL), GF("ALREADY CONNECT" GSM_NL));
+    int8_t rsp = waitResponse((timeout_ms - (millis() - startMillis)),
+                              GF("CONNECT OK" AT_NL), GF("CONNECT FAIL" AT_NL),
+                              GF("ALREADY CONNECT" AT_NL));
     if (waitResponse() != 1) { return false; }
     *mux = newMux;
 
@@ -435,10 +435,10 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
 
   int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
     sendAT(GF("+CIPSEND="), mux, ',', (uint16_t)len);
-    if (waitResponse(2000L, GF(GSM_NL ">")) != 1) { return 0; }
+    if (waitResponse(2000L, GF(AT_NL ">")) != 1) { return 0; }
     stream.write(reinterpret_cast<const uint8_t*>(buff), len);
     stream.flush();
-    if (waitResponse(10000L, GFP(GSM_OK), GF(GSM_NL "FAIL")) != 1) { return 0; }
+    if (waitResponse(10000L, GFP(GSM_OK), GF(AT_NL "FAIL")) != 1) { return 0; }
     return len;
   }
 

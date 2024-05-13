@@ -15,9 +15,9 @@
 
 #define TINY_GSM_MUX_COUNT 5
 #define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
-#ifdef GSM_NL
-#undef GSM_NL
-#define GSM_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
+#ifdef AT_NL
+#undef AT_NL
+#define AT_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
 #endif
 
 #include "TinyGsmBattery.tpp"
@@ -209,7 +209,7 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
     sendAT(GF("+GMM"));
     String res2;
     if (waitResponse(1000L, res2) != 1) { return name; }
-    res2.replace(GSM_NL "OK" GSM_NL, "");
+    res2.replace(AT_NL "OK" AT_NL, "");
     res2.replace("_", " ");
     res2.trim();
 
@@ -239,7 +239,7 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
       return false;
   #else
       sendAT(GF("+CIPSSL=?"));
-      if (waitResponse(GF(GSM_NL "+CIPSSL:")) != 1) { return false; }
+      if (waitResponse(GF(AT_NL "+CIPSSL:")) != 1) { return false; }
       return waitResponse() == 1;
   #endif
     }
@@ -300,8 +300,8 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
     sendAT(GF("+CIFSR;E0"));
     String res;
     if (waitResponse(10000L, res) != 1) { return ""; }
-    res.replace(GSM_NL "OK" GSM_NL, "");
-    res.replace(GSM_NL, "");
+    res.replace(AT_NL "OK" AT_NL, "");
+    res.replace(AT_NL, "");
     res.trim();
     return res;
   }
@@ -403,7 +403,7 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
   // May not return the "+CCID" before the number
   String getSimCCIDImpl() {
     sendAT(GF("+CCID"));
-    if (waitResponse(GF(GSM_NL)) != 1) { return ""; }
+    if (waitResponse(GF(AT_NL)) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     waitResponse();
     // Trim out the CCID header in case it is there
@@ -454,7 +454,7 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
   uint8_t getVolume() {
     // Get speaker volume
     sendAT(GF("+CLVL?"));
-    if (waitResponse(GF(GSM_NL)) != 1) { return 0; }
+    if (waitResponse(GF(AT_NL)) != 1) { return 0; }
     String res = stream.readStringUntil('\n');
     waitResponse();
     res.replace("+CLVL:", "");
@@ -530,9 +530,9 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
     sendAT(GF("+CIPSTART="), mux, ',', GF("\"TCP"), GF("\",\""), host,
            GF("\","), port);
     rsp = waitResponse(
-        timeout_ms, GF("CONNECT OK" GSM_NL), GF("CONNECT FAIL" GSM_NL),
-        GF("ALREADY CONNECT" GSM_NL), GF("ERROR" GSM_NL),
-        GF("CLOSE OK" GSM_NL));  // Happens when HTTPS handshake fails
+        timeout_ms, GF("CONNECT OK" AT_NL), GF("CONNECT FAIL" AT_NL),
+        GF("ALREADY CONNECT" AT_NL), GF("ERROR" AT_NL),
+        GF("CLOSE OK" AT_NL));  // Happens when HTTPS handshake fails
     return (1 == rsp);
   }
 
@@ -541,7 +541,7 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
     if (waitResponse(GF(">")) != 1) { return 0; }
     stream.write(reinterpret_cast<const uint8_t*>(buff), len);
     stream.flush();
-    if (waitResponse(GF(GSM_NL "DATA ACCEPT:")) != 1) { return 0; }
+    if (waitResponse(GF(AT_NL "DATA ACCEPT:")) != 1) { return 0; }
     streamSkipUntil(',');  // Skip mux
     return streamGetIntBefore('\n');
   }
@@ -624,7 +624,7 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
    */
  public:
   bool handleURCs(String& data) {
-    if (data.endsWith(GF(GSM_NL "+CIPRXGET:"))) {
+    if (data.endsWith(GF(AT_NL "+CIPRXGET:"))) {
       int8_t mode = streamGetIntBefore(',');
       if (mode == 1) {
         int8_t mux = streamGetIntBefore('\n');
@@ -638,7 +638,7 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
         data += mode;
         return false;
       }
-    } else if (data.endsWith(GF(GSM_NL "+RECEIVE:"))) {
+    } else if (data.endsWith(GF(AT_NL "+RECEIVE:"))) {
       int8_t  mux = streamGetIntBefore(',');
       int16_t len = streamGetIntBefore('\n');
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
@@ -648,8 +648,8 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
       data = "";
       // DBG("### Got Data:", len, "on", mux);
       return true;
-    } else if (data.endsWith(GF("CLOSED" GSM_NL))) {
-      int8_t nl   = data.lastIndexOf(GSM_NL, data.length() - 8);
+    } else if (data.endsWith(GF("CLOSED" AT_NL))) {
+      int8_t nl   = data.lastIndexOf(AT_NL, data.length() - 8);
       int8_t coma = data.indexOf(',', nl + 2);
       int8_t mux  = data.substring(nl + 2, coma).toInt();
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {

@@ -15,9 +15,9 @@
 
 #define TINY_GSM_MUX_COUNT 6
 #define TINY_GSM_BUFFER_READ_NO_CHECK
-#ifdef GSM_NL
-#undef GSM_NL
-#define GSM_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
+#ifdef AT_NL
+#undef AT_NL
+#define AT_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
 #endif
 
 #include "TinyGsmBattery.tpp"
@@ -342,7 +342,7 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95>,
  protected:
   String getSimCCIDImpl() {
     sendAT(GF("+QCCID"));
-    if (waitResponse(GF(GSM_NL "+QCCID:")) != 1) { return ""; }
+    if (waitResponse(GF(AT_NL "+QCCID:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     waitResponse();
     res.trim();
@@ -388,7 +388,7 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95>,
  protected:
   float getTemperatureImpl() {
     sendAT(GF("+QTEMP?"));
-    if (waitResponse(GF(GSM_NL "+QTEMP:")) != 1) {
+    if (waitResponse(GF(AT_NL "+QTEMP:")) != 1) {
       return static_cast<float>(-9999);
     }
     streamSkipUntil(',');  // Skip mode
@@ -411,9 +411,9 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95>,
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
     sendAT(GF("+QIOPEN="), mux, GF(",\""), GF("TCP"), GF("\",\""), host,
            GF("\","), port);
-    int8_t rsp = waitResponse(timeout_ms, GF("CONNECT OK" GSM_NL),
-                              GF("CONNECT FAIL" GSM_NL),
-                              GF("ALREADY CONNECT" GSM_NL));
+    int8_t rsp = waitResponse(timeout_ms, GF("CONNECT OK" AT_NL),
+                              GF("CONNECT FAIL" AT_NL),
+                              GF("ALREADY CONNECT" AT_NL));
     return (1 == rsp);
   }
 
@@ -422,13 +422,13 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95>,
     if (waitResponse(GF(">")) != 1) { return 0; }
     stream.write(reinterpret_cast<const uint8_t*>(buff), len);
     stream.flush();
-    if (waitResponse(GF(GSM_NL "SEND OK")) != 1) { return 0; }
+    if (waitResponse(GF(AT_NL "SEND OK")) != 1) { return 0; }
 
     // bool allAcknowledged = false;
     // // bool failed = false;
     // while ( !allAcknowledged ) {
     //   sendAT( GF("+QISACK"));
-    //   if (waitResponse(5000L, GF(GSM_NL "+QISACK:")) != 1) {
+    //   if (waitResponse(5000L, GF(AT_NL "+QISACK:")) != 1) {
     //     return -1;
     //   } else {
     //     streamSkipUntil(',');  // Skip total length sent on connection
@@ -455,7 +455,7 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95>,
     sendAT(GF("+QIRD=0,1,"), mux, ',', (uint16_t)size);
     // If it replies only OK for the write command, it means there is no
     // received data in the buffer of the connection.
-    int8_t res = waitResponse(GF("+QIRD:"), GFP(GSM_OK), GFP(GSM_ERROR));
+    int8_t res = waitResponse(GF("+QIRD:"), GFP(AT_OK), GFP(GSM_ERROR));
     if (res == 1) {
       streamSkipUntil(':');  // skip IP address
       streamSkipUntil(',');  // skip port
@@ -512,7 +512,7 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95>,
    */
  public:
   bool handleURCs(String& data) {
-    if (data.endsWith(GF(GSM_NL "+QIRDI:"))) {
+    if (data.endsWith(GF(AT_NL "+QIRDI:"))) {
       streamSkipUntil(',');  // Skip the context
       streamSkipUntil(',');  // Skip the role
       int8_t mux = streamGetIntBefore('\n');
@@ -524,8 +524,8 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95>,
       }
       data = "";
       return true;
-    } else if (data.endsWith(GF("CLOSED" GSM_NL))) {
-      int8_t nl   = data.lastIndexOf(GSM_NL, data.length() - 8);
+    } else if (data.endsWith(GF("CLOSED" AT_NL))) {
+      int8_t nl   = data.lastIndexOf(AT_NL, data.length() - 8);
       int8_t coma = data.indexOf(',', nl + 2);
       int8_t mux  = data.substring(nl + 2, coma).toInt();
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {

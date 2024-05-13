@@ -17,9 +17,9 @@
 
 #define TINY_GSM_MUX_COUNT 6
 #define TINY_GSM_BUFFER_READ_NO_CHECK
-#ifdef GSM_NL
-#undef GSM_NL
-#define GSM_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
+#ifdef AT_NL
+#undef AT_NL
+#define AT_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
 #endif
 
 #include "TinyGsmBattery.tpp"
@@ -312,7 +312,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60>,
   SimStatus getSimStatusImpl(uint32_t timeout_ms = 10000L) {
     for (uint32_t start = millis(); millis() - start < timeout_ms;) {
       sendAT(GF("+CPIN?"));
-      if (waitResponse(GF(GSM_NL "+CPIN:")) != 1) {
+      if (waitResponse(GF(AT_NL "+CPIN:")) != 1) {
         delay(1000);
         continue;
       }
@@ -384,9 +384,9 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60>,
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
     sendAT(GF("+QIOPEN="), mux, GF(",\""), GF("TCP"), GF("\",\""), host,
            GF("\","), port);
-    int8_t rsp = waitResponse(timeout_ms, GF("CONNECT OK" GSM_NL),
-                              GF("CONNECT FAIL" GSM_NL),
-                              GF("ALREADY CONNECT" GSM_NL));
+    int8_t rsp = waitResponse(timeout_ms, GF("CONNECT OK" AT_NL),
+                              GF("CONNECT FAIL" AT_NL),
+                              GF("ALREADY CONNECT" AT_NL));
     return (1 == rsp);
   }
 
@@ -395,14 +395,14 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60>,
     if (waitResponse(GF(">")) != 1) { return 0; }
     stream.write(reinterpret_cast<const uint8_t*>(buff), len);
     stream.flush();
-    if (waitResponse(GF(GSM_NL "SEND OK")) != 1) { return 0; }
+    if (waitResponse(GF(AT_NL "SEND OK")) != 1) { return 0; }
 
     bool allAcknowledged = false;
     // bool failed = false;
     while (!allAcknowledged) {
       sendAT(GF("+QISACK="), mux);  // If 'mux' is not specified, MC60 returns
                                     // 'ERRROR' (for QIMUX == 1)
-      if (waitResponse(5000L, GF(GSM_NL "+QISACK:")) != 1) {
+      if (waitResponse(5000L, GF(AT_NL "+QISACK:")) != 1) {
         return -1;
       } else {
         streamSkipUntil(','); /** Skip total */
@@ -429,7 +429,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60>,
     sendAT(GF("+QIRD=0,1,"), mux, ',', (uint16_t)size);
     // If it replies only OK for the write command, it means there is no
     // received data in the buffer of the connection.
-    int8_t res = waitResponse(GF("+QIRD:"), GFP(GSM_OK), GFP(GSM_ERROR));
+    int8_t res = waitResponse(GF("+QIRD:"), GFP(AT_OK), GFP(GSM_ERROR));
     if (res == 1) {
       streamSkipUntil(':');  // skip IP address
       streamSkipUntil(',');  // skip port
@@ -485,7 +485,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60>,
    */
  public:
   bool handleURCs(String& data) {
-    if (data.endsWith(GF(GSM_NL "+QIRDI:"))) {  // TODO(?):  QIRD? or QIRDI?
+    if (data.endsWith(GF(AT_NL "+QIRDI:"))) {  // TODO(?):  QIRD? or QIRDI?
       // +QIRDI: <id>,<sc>,<sid>,<num>,<len>,< tlen>
       streamSkipUntil(',');  // Skip the context
       streamSkipUntil(',');  // Skip the role
@@ -505,8 +505,8 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60>,
       data = "";
       // DBG("### Got Data:", len_total, "on", mux);
       return true;
-    } else if (data.endsWith(GF("CLOSED" GSM_NL))) {
-      int8_t nl   = data.lastIndexOf(GSM_NL, data.length() - 8);
+    } else if (data.endsWith(GF("CLOSED" AT_NL))) {
+      int8_t nl   = data.lastIndexOf(AT_NL, data.length() - 8);
       int8_t coma = data.indexOf(',', nl + 2);
       int8_t mux  = data.substring(nl + 2, coma).toInt();
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {

@@ -13,9 +13,9 @@
 
 #define TINY_GSM_MUX_COUNT 6
 #define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
-#ifdef GSM_NL
-#undef GSM_NL
-#define GSM_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
+#ifdef AT_NL
+#undef AT_NL
+#define AT_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
 #endif
 
 #include "TinyGsmCalling.tpp"
@@ -283,7 +283,7 @@ class TinyGsmSequansMonarch
     if (!testAT()) { return false; }
 
     sendAT(GF("+CFUN=0"));
-    int8_t res = waitResponse(20000L, GFP(GSM_OK), GFP(GSM_ERROR),
+    int8_t res = waitResponse(20000L, GFP(AT_OK), GFP(GSM_ERROR),
                               GF("+SYSSTART"));
     if (res != 1 && res != 3) { return false; }
 
@@ -382,7 +382,7 @@ class TinyGsmSequansMonarch
  protected:
   String getSimCCIDImpl() {
     sendAT(GF("+SQNCCID"));
-    if (waitResponse(GF(GSM_NL "+SQNCCID:")) != 1) { return ""; }
+    if (waitResponse(GF(AT_NL "+SQNCCID:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     waitResponse();
     res.trim();
@@ -481,8 +481,8 @@ class TinyGsmSequansMonarch
     // <acceptAnyRemote> = Applies to UDP only
     sendAT(GF("+SQNSD="), mux, ",0,", port, ',', GF("\""), host, GF("\""),
            ",0,0,1");
-    rsp = waitResponse((timeout_ms - (millis() - startMillis)), GFP(GSM_OK),
-                       GFP(GSM_ERROR), GF("NO CARRIER" GSM_NL));
+    rsp = waitResponse((timeout_ms - (millis() - startMillis)), GFP(AT_OK),
+                       GFP(GSM_ERROR), GF("NO CARRIER" AT_NL));
 
     // creation of socket failed immediately.
     if (rsp != 1) { return false; }
@@ -503,7 +503,7 @@ class TinyGsmSequansMonarch
     }
 
     sendAT(GF("+SQNSSENDEXT="), mux, ',', (uint16_t)len);
-    waitResponse(10000L, GF(GSM_NL "> "));
+    waitResponse(10000L, GF(AT_NL "> "));
     // Translate bytes into char to be able to send them as an hex string
     char char_command[2];
     for (size_t i = 0; i < len; i++) {
@@ -523,7 +523,7 @@ class TinyGsmSequansMonarch
     // bool gotPrompt = false;
     // while (nAttempts > 0 && !gotPrompt) {
     //   sendAT(GF("+SQNSSEND="), mux);
-    //   if (waitResponse(5000, GF(GSM_NL "> ")) == 1) {
+    //   if (waitResponse(5000, GF(AT_NL "> ")) == 1) {
     //     gotPrompt = true;
     //   }
     //   nAttempts--;
@@ -582,7 +582,7 @@ class TinyGsmSequansMonarch
     // six possible sockets.
     sendAT(GF("+SQNSS"));
     for (int muxNo = 1; muxNo <= TINY_GSM_MUX_COUNT; muxNo++) {
-      if (waitResponse(GFP(GSM_OK), GF(GSM_NL "+SQNSS: ")) != 2) { break; }
+      if (waitResponse(GFP(AT_OK), GF(AT_NL "+SQNSS: ")) != 2) { break; }
       uint8_t status = 0;
       // if (streamGetIntBefore(',') != muxNo) { // check the mux no
       //   DBG("### Warning: misaligned mux numbers!");
@@ -615,7 +615,7 @@ class TinyGsmSequansMonarch
    */
  public:
   bool handleURCs(String& data) {
-    if (data.endsWith(GF(GSM_NL "+SQNSRING:"))) {
+    if (data.endsWith(GF(AT_NL "+SQNSRING:"))) {
       int8_t  mux = streamGetIntBefore(',');
       int16_t len = streamGetIntBefore('\n');
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT &&
@@ -644,7 +644,7 @@ class TinyGsmSequansMonarch
 
  protected:
   GsmClientSequansMonarch* sockets[TINY_GSM_MUX_COUNT];
-  // GSM_NL (\r\n) is not accepted with SQNSSENDEXT in data mode so use \n
+  // AT_NL (\r\n) is not accepted with SQNSSENDEXT in data mode so use \n
   const char* gsmNL = "\n";
 };
 

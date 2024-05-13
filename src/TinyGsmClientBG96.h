@@ -14,9 +14,9 @@
 
 #define TINY_GSM_MUX_COUNT 12
 #define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
-#ifdef GSM_NL
-#undef GSM_NL
-#define GSM_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
+#ifdef AT_NL
+#undef AT_NL
+#define AT_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
 #endif
 
 #include "TinyGsmBattery.tpp"
@@ -289,7 +289,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
  protected:
   String getSimCCIDImpl() {
     sendAT(GF("+QCCID"));
-    if (waitResponse(GF(GSM_NL "+QCCID:")) != 1) { return ""; }
+    if (waitResponse(GF(AT_NL "+QCCID:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     waitResponse();
     res.trim();
@@ -337,7 +337,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
   // get the RAW GPS output
   String getGPSrawImpl() {
     sendAT(GF("+QGPSLOC=2"));
-    if (waitResponse(10000L, GF(GSM_NL "+QGPSLOC:")) != 1) { return ""; }
+    if (waitResponse(10000L, GF(AT_NL "+QGPSLOC:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     waitResponse();
     res.trim();
@@ -350,7 +350,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
                   int* year = 0, int* month = 0, int* day = 0, int* hour = 0,
                   int* minute = 0, int* second = 0) {
     sendAT(GF("+QGPSLOC=2"));
-    if (waitResponse(10000L, GF(GSM_NL "+QGPSLOC:")) != 1) {
+    if (waitResponse(10000L, GF(AT_NL "+QGPSLOC:")) != 1) {
       // NOTE:  Will return an error if the position isn't fixed
       return false;
     }
@@ -510,7 +510,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
   // get temperature in degree celsius
   uint16_t getTemperatureImpl() {
     sendAT(GF("+QTEMP"));
-    if (waitResponse(GF(GSM_NL "+QTEMP:")) != 1) { return 0; }
+    if (waitResponse(GF(AT_NL "+QTEMP:")) != 1) { return 0; }
     // return temperature in C
     uint16_t res =
         streamGetIntBefore(',');  // read PMIC (primary ic) temperature
@@ -538,7 +538,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
            GF("\","), port, GF(",0,0"));
     waitResponse();
 
-    if (waitResponse(timeout_ms, GF(GSM_NL "+QIOPEN:")) != 1) { return false; }
+    if (waitResponse(timeout_ms, GF(AT_NL "+QIOPEN:")) != 1) { return false; }
 
     if (streamGetIntBefore(',') != mux) { return false; }
     // Read status
@@ -550,7 +550,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
     if (waitResponse(GF(">")) != 1) { return 0; }
     stream.write(reinterpret_cast<const uint8_t*>(buff), len);
     stream.flush();
-    if (waitResponse(GF(GSM_NL "SEND OK")) != 1) { return 0; }
+    if (waitResponse(GF(AT_NL "SEND OK")) != 1) { return 0; }
     // TODO(?): Wait for ACK? AT+QISEND=id,0
     return len;
   }
@@ -607,7 +607,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
    */
  public:
   bool handleURCs(String& data) {
-    if (data.endsWith(GF(GSM_NL "+QIURC:"))) {
+    if (data.endsWith(GF(AT_NL "+QIURC:"))) {
       streamSkipUntil('\"');
       String urc = stream.readStringUntil('\"');
       streamSkipUntil(',');

@@ -14,9 +14,9 @@
 
 #define TINY_GSM_MUX_COUNT 5
 #define TINY_GSM_NO_MODEM_BUFFER
-#ifdef GSM_NL
-#undef GSM_NL
-#define GSM_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
+#ifdef AT_NL
+#undef AT_NL
+#define AT_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
 #endif
 
 #include "TinyGsmModem.tpp"
@@ -190,8 +190,8 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
     sendAT(GF("+GMR"));
     String res;
     if (waitResponse(1000L, res) != 1) { return ""; }
-    res.replace(GSM_NL "OK" GSM_NL, "");
-    res.replace(GSM_NL, " ");
+    res.replace(AT_NL "OK" AT_NL, "");
+    res.replace(AT_NL, " ");
     res.trim();
     return res;
   }
@@ -204,7 +204,7 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
     if (!testAT()) { return false; }
     sendAT(GF("+RST"));
     if (waitResponse(10000L) != 1) { return false; }
-    if (waitResponse(10000L, GF(GSM_NL "ready" GSM_NL)) != 1) { return false; }
+    if (waitResponse(10000L, GF(AT_NL "ready" AT_NL)) != 1) { return false; }
     delay(500);
     return init(pin);
   }
@@ -303,9 +303,9 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
     // attempt first without than with the 'current' flag used in some firmware
     // versions
     sendAT(GF("+CWJAP=\""), ssid, GF("\",\""), pwd, GF("\""));
-    if (waitResponse(30000L, GFP(GSM_OK), GF(GSM_NL "FAIL" GSM_NL)) != 1) {
+    if (waitResponse(30000L, GFP(AT_OK), GF(AT_NL "FAIL" AT_NL)) != 1) {
       sendAT(GF("+CWJAP_CUR=\""), ssid, GF("\",\""), pwd, GF("\""));
-      if (waitResponse(30000L, GFP(GSM_OK), GF(GSM_NL "FAIL" GSM_NL)) != 1) {
+      if (waitResponse(30000L, GFP(AT_OK), GF(AT_NL "FAIL" AT_NL)) != 1) {
         return false;
       }
     }
@@ -335,7 +335,7 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
            GF("\",\""), host, GF("\","), port, GF(","),
            TINY_GSM_TCP_KEEP_ALIVE);
     // TODO(?): Check mux
-    int8_t rsp = waitResponse(timeout_ms, GFP(GSM_OK), GFP(GSM_ERROR),
+    int8_t rsp = waitResponse(timeout_ms, GFP(AT_OK), GFP(GSM_ERROR),
                               GF("ALREADY CONNECT"));
     // if (rsp == 3) waitResponse();
     // May return "ERROR" after the "ALREADY CONNECT"
@@ -347,7 +347,7 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
     if (waitResponse(GF(">")) != 1) { return 0; }
     stream.write(reinterpret_cast<const uint8_t*>(buff), len);
     stream.flush();
-    if (waitResponse(10000L, GF(GSM_NL "SEND OK" GSM_NL)) != 1) { return 0; }
+    if (waitResponse(10000L, GF(AT_NL "SEND OK" AT_NL)) != 1) { return 0; }
     return len;
   }
 
@@ -357,7 +357,7 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
     // after "STATUS:" it should return the status number (0,1,2,3,4,5),
     // followed by an OK
     // Hopefully we'll catch the "3" here, but fall back to the OK or Error
-    int8_t status = waitResponse(GF("3"), GFP(GSM_OK), GFP(GSM_ERROR));
+    int8_t status = waitResponse(GF("3"), GFP(AT_OK), GFP(GSM_ERROR));
     // if the status is anything but 3, there are no connections open
     if (status != 1) {
       for (int muxNo = 0; muxNo < TINY_GSM_MUX_COUNT; muxNo++) {
@@ -367,7 +367,7 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
     }
     bool verified_connections[TINY_GSM_MUX_COUNT] = {0, 0, 0, 0, 0};
     for (int muxNo = 0; muxNo < TINY_GSM_MUX_COUNT; muxNo++) {
-      uint8_t has_status = waitResponse(GF("+CIPSTATUS:"), GFP(GSM_OK),
+      uint8_t has_status = waitResponse(GF("+CIPSTATUS:"), GFP(AT_OK),
                                         GFP(GSM_ERROR));
       if (has_status == 1) {
         int8_t returned_mux = streamGetIntBefore(',');
@@ -416,7 +416,7 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
       return true;
     } else if (data.endsWith(GF("CLOSED"))) {
       int8_t muxStart = TinyGsmMax(0,
-                                   data.lastIndexOf(GSM_NL, data.length() - 8));
+                                   data.lastIndexOf(AT_NL, data.length() - 8));
       int8_t coma     = data.indexOf(',', muxStart);
       int8_t mux      = data.substring(muxStart, coma).toInt();
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {

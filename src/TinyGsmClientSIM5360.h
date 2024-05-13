@@ -14,9 +14,9 @@
 
 #define TINY_GSM_MUX_COUNT 10
 #define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
-#ifdef GSM_NL
-#undef GSM_NL
-#define GSM_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
+#ifdef AT_NL
+#undef AT_NL
+#define AT_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
 #endif
 
 #include "TinyGsmBattery.tpp"
@@ -197,7 +197,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
     sendAT(GF("+CGMM"));
     String res2;
     if (waitResponse(1000L, res2) != 1) { return name; }
-    res2.replace(GSM_NL "OK" GSM_NL, "");
+    res2.replace(AT_NL "OK" AT_NL, "");
     res2.replace("_", " ");
     res2.trim();
 
@@ -221,7 +221,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
     if (waitResponse(10000L) != 1) { return false; }
     // After booting, modem sends out messages as each of its
     // internal modules loads.  The final message is "PB DONE".
-    if (waitResponse(40000L, GF(GSM_NL "PB DONE")) != 1) { return false; }
+    if (waitResponse(40000L, GF(AT_NL "PB DONE")) != 1) { return false; }
     return init(pin);
   }
 
@@ -263,7 +263,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
  public:
   String getNetworkModes() {
     sendAT(GF("+CNMP=?"));
-    if (waitResponse(GF(GSM_NL "+CNMP:")) != 1) { return ""; }
+    if (waitResponse(GF(AT_NL "+CNMP:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     waitResponse();
     return res;
@@ -271,7 +271,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
 
   int16_t getNetworkMode() {
     sendAT(GF("+CNMP?"));
-    if (waitResponse(GF(GSM_NL "+CNMP:")) != 1) { return false; }
+    if (waitResponse(GF(AT_NL "+CNMP:")) != 1) { return false; }
     int16_t mode = streamGetIntBefore('\n');
     waitResponse();
     return mode;
@@ -287,8 +287,8 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
     // sendAT(GF("+CGPADDR=1"));  // Show PDP address
     String res;
     if (waitResponse(10000L, res) != 1) { return ""; }
-    res.replace(GSM_NL "OK" GSM_NL, "");
-    res.replace(GSM_NL, "");
+    res.replace(AT_NL "OK" AT_NL, "");
+    res.replace(AT_NL, "");
     res.trim();
     return res;
   }
@@ -372,7 +372,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
     // We to ignore any immediate response and wait for the
     // URC to show it's really connected.
     sendAT(GF("+NETOPEN"));
-    if (waitResponse(75000L, GF(GSM_NL "+NETOPEN: 0")) != 1) { return false; }
+    if (waitResponse(75000L, GF(AT_NL "+NETOPEN: 0")) != 1) { return false; }
 
     return true;
   }
@@ -388,7 +388,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
     // Note: all sockets should be closed first - on 3G/4G models the sockets
     // must be closed manually
     sendAT(GF("+NETCLOSE"));
-    if (waitResponse(60000L, GF(GSM_NL "+NETCLOSE: 0")) != 1) { return false; }
+    if (waitResponse(60000L, GF(AT_NL "+NETCLOSE: 0")) != 1) { return false; }
 
     return true;
   }
@@ -396,7 +396,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
   bool isGprsConnectedImpl() {
     sendAT(GF("+NETOPEN?"));
     // May return +NETOPEN: 1, 0.  We just confirm that the first number is 1
-    if (waitResponse(GF(GSM_NL "+NETOPEN: 1")) != 1) { return false; }
+    if (waitResponse(GF(AT_NL "+NETOPEN: 1")) != 1) { return false; }
     waitResponse();
 
     sendAT(GF("+IPADDR"));  // Inquire Socket PDP address
@@ -413,7 +413,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
   // Gets the CCID of a sim card via AT+CCID
   String getSimCCIDImpl() {
     sendAT(GF("+CICCID"));
-    if (waitResponse(GF(GSM_NL "+ICCID:")) != 1) { return ""; }
+    if (waitResponse(GF(AT_NL "+ICCID:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     waitResponse();
     res.trim();
@@ -451,7 +451,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
   // SRGD Note:  Returns voltage in VOLTS instead of millivolts
   uint16_t getBattVoltageImpl() {
     sendAT(GF("+CBC"));
-    if (waitResponse(GF(GSM_NL "+CBC:")) != 1) { return 0; }
+    if (waitResponse(GF(AT_NL "+CBC:")) != 1) { return 0; }
     streamSkipUntil(',');  // Skip battery charge status
     streamSkipUntil(',');  // Skip battery charge level
     // get voltage in VOLTS
@@ -467,7 +467,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
   bool getBattStatsImpl(uint8_t& chargeState, int8_t& percent,
                         uint16_t& milliVolts) {
     sendAT(GF("+CBC"));
-    if (waitResponse(GF(GSM_NL "+CBC:")) != 1) { return false; }
+    if (waitResponse(GF(AT_NL "+CBC:")) != 1) { return false; }
     chargeState = streamGetIntBefore(',');
     percent     = streamGetIntBefore(',');
     // get voltage in VOLTS
@@ -489,7 +489,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
     if (waitResponse() != 1) { return 0; }
     // Get Temparature Value
     sendAT(GF("+CMTE?"));
-    if (waitResponse(GF(GSM_NL "+CMTE:")) != 1) { return false; }
+    if (waitResponse(GF(AT_NL "+CMTE:")) != 1) { return false; }
     float res = streamGetFloatBefore('\n');
     // Wait for final OK
     waitResponse();
@@ -512,7 +512,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
     sendAT(GF("+CIPOPEN="), mux, ',', GF("\"TCP"), GF("\",\""), host, GF("\","),
            port);
     // The reply is +CIPOPEN: ## of socket created
-    if (waitResponse(timeout_ms, GF(GSM_NL "+CIPOPEN:")) != 1) { return false; }
+    if (waitResponse(timeout_ms, GF(AT_NL "+CIPOPEN:")) != 1) { return false; }
     return true;
   }
 
@@ -521,7 +521,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
     if (waitResponse(GF(">")) != 1) { return 0; }
     stream.write(reinterpret_cast<const uint8_t*>(buff), len);
     stream.flush();
-    if (waitResponse(GF(GSM_NL "+CIPSEND:")) != 1) { return 0; }
+    if (waitResponse(GF(AT_NL "+CIPSEND:")) != 1) { return 0; }
     streamSkipUntil(',');  // Skip mux
     streamSkipUntil(',');  // Skip requested bytes to send
     // TODO(?):  make sure requested and confirmed bytes match
@@ -606,7 +606,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
    */
  public:
   bool handleURCs(String& data) {
-    if (data.endsWith(GF(GSM_NL "+CIPRXGET:"))) {
+    if (data.endsWith(GF(AT_NL "+CIPRXGET:"))) {
       int8_t mode = streamGetIntBefore(',');
       if (mode == 1) {
         int8_t mux = streamGetIntBefore('\n');
@@ -620,7 +620,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
         data += mode;
         return false;
       }
-    } else if (data.endsWith(GF(GSM_NL "+RECEIVE:"))) {
+    } else if (data.endsWith(GF(AT_NL "+RECEIVE:"))) {
       int8_t  mux = streamGetIntBefore(',');
       int16_t len = streamGetIntBefore('\n');
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {

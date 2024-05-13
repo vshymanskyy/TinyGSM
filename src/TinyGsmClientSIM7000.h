@@ -152,8 +152,8 @@ class TinyGsmSim7000 : public TinyGsmSim70xx<TinyGsmSim7000>,
     sendAT(GF("+CIFSR;E0"));
     String res;
     if (waitResponse(10000L, res) != 1) { return ""; }
-    res.replace(GSM_NL "OK" GSM_NL, "");
-    res.replace(GSM_NL, "");
+    res.replace(AT_NL "OK" AT_NL, "");
+    res.replace(AT_NL, "");
     res.trim();
     return res;
   }
@@ -293,10 +293,9 @@ class TinyGsmSim7000 : public TinyGsmSim70xx<TinyGsmSim7000>,
     sendAT(GF("+CIPSTART="), mux, ',', GF("\"TCP"), GF("\",\""), host,
            GF("\","), port);
     return (1 ==
-            waitResponse(timeout_ms, GF("CONNECT OK" GSM_NL),
-                         GF("CONNECT FAIL" GSM_NL),
-                         GF("ALREADY CONNECT" GSM_NL), GF("ERROR" GSM_NL),
-                         GF("CLOSE OK" GSM_NL)));
+            waitResponse(timeout_ms, GF("CONNECT OK" AT_NL),
+                         GF("CONNECT FAIL" AT_NL), GF("ALREADY CONNECT" AT_NL),
+                         GF("ERROR" AT_NL), GF("CLOSE OK" AT_NL)));
   }
 
   int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
@@ -306,7 +305,7 @@ class TinyGsmSim7000 : public TinyGsmSim70xx<TinyGsmSim7000>,
     stream.write(reinterpret_cast<const uint8_t*>(buff), len);
     stream.flush();
 
-    if (waitResponse(GF(GSM_NL "DATA ACCEPT:")) != 1) { return 0; }
+    if (waitResponse(GF(AT_NL "DATA ACCEPT:")) != 1) { return 0; }
     streamSkipUntil(',');  // Skip mux
     return streamGetIntBefore('\n');
   }
@@ -391,7 +390,7 @@ class TinyGsmSim7000 : public TinyGsmSim70xx<TinyGsmSim7000>,
    */
  public:
   bool handleURCs(String& data) {
-    if (data.endsWith(GF(GSM_NL "+CIPRXGET:"))) {
+    if (data.endsWith(GF(AT_NL "+CIPRXGET:"))) {
       int8_t mode = streamGetIntBefore(',');
       if (mode == 1) {
         int8_t mux = streamGetIntBefore('\n');
@@ -405,7 +404,7 @@ class TinyGsmSim7000 : public TinyGsmSim70xx<TinyGsmSim7000>,
         data += mode;
         return false;
       }
-    } else if (data.endsWith(GF(GSM_NL "+RECEIVE:"))) {
+    } else if (data.endsWith(GF(AT_NL "+RECEIVE:"))) {
       int8_t  mux = streamGetIntBefore(',');
       int16_t len = streamGetIntBefore('\n');
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
@@ -415,8 +414,8 @@ class TinyGsmSim7000 : public TinyGsmSim70xx<TinyGsmSim7000>,
       data = "";
       // DBG("### Got Data:", len, "on", mux);
       return true;
-    } else if (data.endsWith(GF("CLOSED" GSM_NL))) {
-      int8_t nl   = data.lastIndexOf(GSM_NL, data.length() - 8);
+    } else if (data.endsWith(GF("CLOSED" AT_NL))) {
+      int8_t nl   = data.lastIndexOf(AT_NL, data.length() - 8);
       int8_t coma = data.indexOf(',', nl + 2);
       int8_t mux  = data.substring(nl + 2, coma).toInt();
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
@@ -445,7 +444,7 @@ class TinyGsmSim7000 : public TinyGsmSim70xx<TinyGsmSim7000>,
       data = "";
       DBG("### Daylight savings time state updated.");
       return true;
-    } else if (data.endsWith(GF(GSM_NL "SMS Ready" GSM_NL))) {
+    } else if (data.endsWith(GF(AT_NL "SMS Ready" AT_NL))) {
       data = "";
       DBG("### Unexpected module reset!");
       init();

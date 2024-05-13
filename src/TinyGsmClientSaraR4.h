@@ -14,9 +14,9 @@
 
 #define TINY_GSM_MUX_COUNT 7
 #define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
-#ifdef GSM_NL
-#undef GSM_NL
-#define GSM_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
+#ifdef AT_NL
+#undef AT_NL
+#define AT_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
 #endif
 
 #include "TinyGsmBattery.tpp"
@@ -264,13 +264,13 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
     sendAT(GF("+CGMI"));
     String res1;
     if (waitResponse(1000L, res1) != 1) { return "u-blox Cellular Modem"; }
-    res1.replace(GSM_NL "OK" GSM_NL, "");
+    res1.replace(AT_NL "OK" AT_NL, "");
     res1.trim();
 
     sendAT(GF("+GMM"));
     String res2;
     if (waitResponse(1000L, res2) != 1) { return "u-blox Cellular Modem"; }
-    res2.replace(GSM_NL "OK" GSM_NL, "");
+    res2.replace(AT_NL "OK" AT_NL, "");
     res2.trim();
 
     String name = res1 + String(' ') + res2;
@@ -406,7 +406,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
   // This uses "CGSN" instead of "GSN"
   String getIMEIImpl() {
     sendAT(GF("+CGSN"));
-    if (waitResponse(GF(GSM_NL)) != 1) { return ""; }
+    if (waitResponse(GF(AT_NL)) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     waitResponse();
     res.trim();
@@ -436,12 +436,12 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
     // <aid_mode> - 0: no aiding (default)
     // <GNSS_systems> - 3: GPS + SBAS (default)
     sendAT(GF("+UGPS=1,0,3"));
-    if (waitResponse(10000L, GF(GSM_NL "+UGPS:")) != 1) { return false; }
+    if (waitResponse(10000L, GF(AT_NL "+UGPS:")) != 1) { return false; }
     return waitResponse(10000L) == 1;
   }
   bool disableGPSImpl() {
     sendAT(GF("+UGPS=0"));
-    if (waitResponse(10000L, GF(GSM_NL "+UGPS:")) != 1) { return false; }
+    if (waitResponse(10000L, GF(AT_NL "+UGPS:")) != 1) { return false; }
     return waitResponse(10000L) == 1;
   }
   String inline getUbloxLocationRaw(int8_t sensor) {
@@ -461,7 +461,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
     // wait for first "OK"
     if (waitResponse(10000L) != 1) { return ""; }
     // wait for the final result - wait full timeout time
-    if (waitResponse(120000L, GF(GSM_NL "+UULOC:")) != 1) { return ""; }
+    if (waitResponse(120000L, GF(AT_NL "+UULOC:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     waitResponse();
     res.trim();
@@ -496,7 +496,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
     // wait for first "OK"
     if (waitResponse(10000L) != 1) { return false; }
     // wait for the final result - wait full timeout time
-    if (waitResponse(120000L, GF(GSM_NL "+UULOC: ")) != 1) { return false; }
+    if (waitResponse(120000L, GF(AT_NL "+UULOC: ")) != 1) { return false; }
 
     // +UULOC: <date>, <time>, <lat>, <long>, <alt>, <uncertainty>, <speed>,
     // <direction>, <vertical_acc>, <sensor_used>, <SV_used>, <antenna_status>,
@@ -592,7 +592,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
 
   int8_t getBattPercentImpl() {
     sendAT(GF("+CIND?"));
-    if (waitResponse(GF(GSM_NL "+CIND:")) != 1) { return 0; }
+    if (waitResponse(GF(AT_NL "+CIND:")) != 1) { return 0; }
 
     int8_t res     = streamGetIntBefore(',');
     int8_t percent = res * 20;  // return is 0-5
@@ -620,7 +620,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
     sendAT(GF("+UTEMP=0"));  // Would use 1 for Fahrenheit
     if (waitResponse() != 1) { return static_cast<float>(-9999); }
     sendAT(GF("+UTEMP?"));
-    if (waitResponse(GF(GSM_NL "+UTEMP:")) != 1) {
+    if (waitResponse(GF(AT_NL "+UTEMP:")) != 1) {
       return static_cast<float>(-9999);
     }
     int16_t res  = streamGetIntBefore('\n');
@@ -641,7 +641,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
     // create a socket
     sendAT(GF("+USOCR=6"));
     // reply is +USOCR: ## of socket created
-    if (waitResponse(GF(GSM_NL "+USOCR:")) != 1) { return false; }
+    if (waitResponse(GF(AT_NL "+USOCR:")) != 1) { return false; }
     *mux = streamGetIntBefore('\n');
     waitResponse();
 
@@ -675,7 +675,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
           "the URC '+UUSOCO' appears.");
       sendAT(GF("+USOCO="), *mux, ",\"", host, "\",", port, ",1");
       if (waitResponse(timeout_ms - (millis() - startMillis),
-                       GF(GSM_NL "+UUSOCO:")) == 1) {
+                       GF(AT_NL "+UUSOCO:")) == 1) {
         streamGetIntBefore(',');  // skip repeated mux
         int8_t connection_status = streamGetIntBefore('\n');
         DBG("### Waited", millis() - startMillis, "ms for socket to open");
@@ -700,7 +700,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
     delay(50);
     stream.write(reinterpret_cast<const uint8_t*>(buff), len);
     stream.flush();
-    if (waitResponse(GF(GSM_NL "+USOWR:")) != 1) { return 0; }
+    if (waitResponse(GF(AT_NL "+USOWR:")) != 1) { return 0; }
     streamSkipUntil(',');  // Skip mux
     int16_t sent = streamGetIntBefore('\n');
     waitResponse();  // sends back OK after the confirmation of number sent
@@ -710,7 +710,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
   size_t modemRead(size_t size, uint8_t mux) {
     if (!sockets[mux]) return 0;
     sendAT(GF("+USORD="), mux, ',', (uint16_t)size);
-    if (waitResponse(GF(GSM_NL "+USORD:")) != 1) { return 0; }
+    if (waitResponse(GF(AT_NL "+USORD:")) != 1) { return 0; }
     streamSkipUntil(',');  // Skip mux
     int16_t len = streamGetIntBefore(',');
     streamSkipUntil('\"');
@@ -728,7 +728,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
     // NOTE:  Querying a closed socket gives an error "operation not allowed"
     sendAT(GF("+USORD="), mux, ",0");
     size_t  result = 0;
-    uint8_t res    = waitResponse(GF(GSM_NL "+USORD:"));
+    uint8_t res    = waitResponse(GF(AT_NL "+USORD:"));
     // Will give error "operation not allowed" when attempting to read a socket
     // that you have already told to close
     if (res == 1) {
@@ -745,7 +745,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
   bool modemGetConnected(uint8_t mux) {
     // NOTE:  Querying a closed socket gives an error "operation not allowed"
     sendAT(GF("+USOCTL="), mux, ",10");
-    uint8_t res = waitResponse(GF(GSM_NL "+USOCTL:"));
+    uint8_t res = waitResponse(GF(AT_NL "+USOCTL:"));
     if (res != 1) { return false; }
 
     streamSkipUntil(',');  // Skip mux

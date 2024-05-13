@@ -11,34 +11,34 @@
 
 #include "TinyGsmCommon.h"
 
-#ifndef GSM_NL
-#define GSM_NL "\r\n"
+#ifndef AT_NL
+#define AT_NL "\r\n"
 #endif
 
-#ifndef GSM_OK
-#define GSM_OK "OK"
+#ifndef AT_OK
+#define AT_OK "OK"
 #endif
 
-#ifndef GSM_ERROR
-#define GSM_ERROR "ERROR"
+#ifndef AT_ERROR
+#define AT_ERROR "ERROR"
 #endif
 
 #if defined TINY_GSM_DEBUG
-#ifndef GSM_VERBOSE
-#define GSM_VERBOSE "+CME ERROR:"
+#ifndef AT_VERBOSE
+#define AT_VERBOSE "+CME ERROR:"
 #endif
 
-#ifndef GSM_VERBOSE_2
-#define GSM_VERBOSE_2 "+CMS ERROR:"
+#ifndef AT_VERBOSE_2
+#define AT_VERBOSE_2 "+CMS ERROR:"
 #endif
 #endif
 
-static const char GSM_OK[] TINY_GSM_PROGMEM    = GSM_OK GSM_NL;
-static const char GSM_ERROR[] TINY_GSM_PROGMEM = GSM_ERROR GSM_NL;
+static const char GSM_OK[] TINY_GSM_PROGMEM    = AT_OK AT_NL;
+static const char GSM_ERROR[] TINY_GSM_PROGMEM = AT_ERROR AT_NL;
 
 #if defined       TINY_GSM_DEBUG
-static const char GSM_VERBOSE[] TINY_GSM_PROGMEM   = GSM_VERBOSE;
-static const char GSM_VERBOSE_2[] TINY_GSM_PROGMEM = GSM_VERBOSE_2;
+static const char GSM_VERBOSE[] TINY_GSM_PROGMEM   = AT_VERBOSE;
+static const char GSM_VERBOSE_2[] TINY_GSM_PROGMEM = AT_VERBOSE_2;
 #endif
 
 template <class modemType>
@@ -55,7 +55,7 @@ class TinyGsmModem {
   }
   template <typename... Args>
   inline void sendAT(Args... cmd) {
-    thisModem().streamWrite("AT", cmd..., GSM_NL);
+    thisModem().streamWrite("AT", cmd..., AT_NL);
     thisModem().stream.flush();
     TINY_GSM_YIELD(); /* DBG("### AT:", cmd...); */
   }
@@ -219,8 +219,8 @@ class TinyGsmModem {
           goto finish;
         }
 #if defined TINY_GSM_DEBUG
-        else if (data.endsWith(GFP(GSM_VERBOSE)) ||
-                 data.endsWith(GFP(GSM_VERBOSE_2))) {
+        else if (data.endsWith(GFP(AT_VERBOSE)) ||
+                 data.endsWith(GFP(AT_VERBOSE_2))) {
           // DBG(GF("Verbose details <<<"));
           // Read out the verbose message, until whichever type of new line
           // comes first
@@ -241,7 +241,7 @@ class TinyGsmModem {
       if (data.length()) { DBG("### Unhandled:", data); }
       data = "";
     }
-    // data.replace(GSM_NL, "/");
+    // data.replace(AT_NL, "/");
     // DBG('<', index, '>', data);
     return index;
   }
