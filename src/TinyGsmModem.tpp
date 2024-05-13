@@ -219,8 +219,8 @@ class TinyGsmModem {
           goto finish;
         }
 #if defined TINY_GSM_DEBUG
-        else if (data.endsWith(GFP(AT_VERBOSE)) ||
-                 data.endsWith(GFP(AT_VERBOSE_2))) {
+        else if (data.endsWith(GFP(GSM_VERBOSE)) ||
+                 data.endsWith(GFP(GSM_VERBOSE_2))) {
           // DBG(GF("Verbose details <<<"));
           // Read out the verbose message, until whichever type of new line
           // comes first
@@ -242,8 +242,9 @@ class TinyGsmModem {
       data.trim();
       if (data.length()) { DBG("### Unhandled:", data); }
       data = "";
+    } else {
+      // DBG('<', index, '>', data);
     }
-    // DBG('<', index, '>', data);
     return index;
   }
 
