@@ -12,18 +12,33 @@
 #include "TinyGsmCommon.h"
 
 #ifndef GSM_NL
-#ifdef GSM_NL
-#undef GSM_NL
 #define GSM_NL "\r\n"
 #endif
+
+#ifndef GSM_OK
+#define GSM_OK "OK"
 #endif
 
-static const char GSM_OK[] TINY_GSM_PROGMEM    = "OK" GSM_NL;
-static const char GSM_ERROR[] TINY_GSM_PROGMEM = "ERROR" GSM_NL;
+#ifndef GSM_ERROR
+#define GSM_ERROR "ERROR"
+#endif
+
+#if defined TINY_GSM_DEBUG
+#ifndef GSM_VERBOSE
+#define GSM_VERBOSE "+CME ERROR:"
+#endif
+
+#ifndef GSM_VERBOSE_2
+#define GSM_VERBOSE_2 "+CMS ERROR:"
+#endif
+#endif
+
+static const char GSM_OK[] TINY_GSM_PROGMEM    = GSM_OK GSM_NL;
+static const char GSM_ERROR[] TINY_GSM_PROGMEM = GSM_ERROR GSM_NL;
 
 #if defined       TINY_GSM_DEBUG
-static const char GSM_CME_ERROR[] TINY_GSM_PROGMEM = GSM_NL "+CME ERROR:";
-static const char GSM_CMS_ERROR[] TINY_GSM_PROGMEM = GSM_NL "+CMS ERROR:";
+static const char GSM_VERBOSE[] TINY_GSM_PROGMEM   = GSM_VERBOSE;
+static const char GSM_VERBOSE_2[] TINY_GSM_PROGMEM = GSM_VERBOSE_2;
 #endif
 
 template <class modemType>
@@ -54,43 +69,25 @@ class TinyGsmModem {
   // Listen for responses to commands and handle URCs
   int8_t waitResponse(uint32_t timeout_ms, String& data,
                       GsmConstStr r1 = GFP(GSM_OK),
-                      GsmConstStr r2 = GFP(GSM_ERROR),
-#if defined TINY_GSM_DEBUG
-                      GsmConstStr r3 = GFP(GSM_CME_ERROR),
-                      GsmConstStr r4 = GFP(GSM_CMS_ERROR),
-#else
-                      GsmConstStr r3 = NULL, GsmConstStr r4 = NULL,
-#endif
-                      GsmConstStr r5 = NULL, GsmConstStr r6 = NULL,
-                      GsmConstStr r7 = NULL) {
+                      GsmConstStr r2 = GFP(GSM_ERROR), GsmConstStr r3 = NULL,
+                      GsmConstStr r4 = NULL, GsmConstStr r5 = NULL,
+                      GsmConstStr r6 = NULL, GsmConstStr r7 = NULL) {
     return thisModem().waitResponseImpl(timeout_ms, data, r1, r2, r3, r4, r5,
                                         r6, r7);
   }
 
   int8_t waitResponse(uint32_t timeout_ms, GsmConstStr r1 = GFP(GSM_OK),
-                      GsmConstStr r2 = GFP(GSM_ERROR),
-#if defined TINY_GSM_DEBUG
-                      GsmConstStr r3 = GFP(GSM_CME_ERROR),
-                      GsmConstStr r4 = GFP(GSM_CMS_ERROR),
-#else
-                      GsmConstStr r3 = NULL, GsmConstStr r4 = NULL,
-#endif
-                      GsmConstStr r5 = NULL, GsmConstStr r6 = NULL,
-                      GsmConstStr r7 = NULL) {
+                      GsmConstStr r2 = GFP(GSM_ERROR), GsmConstStr r3 = NULL,
+                      GsmConstStr r4 = NULL, GsmConstStr r5 = NULL,
+                      GsmConstStr r6 = NULL, GsmConstStr r7 = NULL) {
     String data;
     return waitResponse(timeout_ms, data, r1, r2, r3, r4, r5, r6, r7);
   }
 
   int8_t waitResponse(GsmConstStr r1 = GFP(GSM_OK),
-                      GsmConstStr r2 = GFP(GSM_ERROR),
-#if defined TINY_GSM_DEBUG
-                      GsmConstStr r3 = GFP(GSM_CME_ERROR),
-                      GsmConstStr r4 = GFP(GSM_CMS_ERROR),
-#else
-                      GsmConstStr r3 = NULL, GsmConstStr r4 = NULL,
-#endif
-                      GsmConstStr r5 = NULL, GsmConstStr r6 = NULL,
-                      GsmConstStr r7 = NULL) {
+                      GsmConstStr r2 = GFP(GSM_ERROR), GsmConstStr r3 = NULL,
+                      GsmConstStr r4 = NULL, GsmConstStr r5 = NULL,
+                      GsmConstStr r6 = NULL, GsmConstStr r7 = NULL) {
     return waitResponse(1000L, r1, r2, r3, r4, r5, r6, r7);
   }
 
@@ -182,15 +179,14 @@ class TinyGsmModem {
   int8_t waitResponseImpl(uint32_t timeout_ms, String& data,
                           GsmConstStr r1 = GFP(GSM_OK),
                           GsmConstStr r2 = GFP(GSM_ERROR),
-#if defined TINY_GSM_DEBUG
-                          GsmConstStr r3 = GFP(GSM_CME_ERROR),
-                          GsmConstStr r4 = GFP(GSM_CMS_ERROR),
-#else
                           GsmConstStr r3 = NULL, GsmConstStr r4 = NULL,
-#endif
                           GsmConstStr r5 = NULL, GsmConstStr r6 = NULL,
                           GsmConstStr r7 = NULL) {
     data.reserve(64);
+    // DBG(GF("r1 <"), r1 ? r1 : GF("NULL"), GF("> r2 <"), r2 ? r2 : GF("NULL"),
+    //     GF("> r3 <"), r3 ? r3 : GF("NULL"), GF("> r4 <"), r4 ? r4 :
+    //     GF("NULL"), GF("> r5 <"), r5 ? r5 : GF("NULL"), GF("> r6 <"), r6 ? r6
+    //     : GF("NULL"), GF("> r7 <"), r7 ? r7 : GF("NULL"), '>');
     uint8_t  index       = 0;
     uint32_t startMillis = millis();
     do {
@@ -207,11 +203,6 @@ class TinyGsmModem {
           index = 2;
           goto finish;
         } else if (r3 && data.endsWith(r3)) {
-#if defined TINY_GSM_DEBUG
-          if (r3 == GFP(GSM_CME_ERROR)) {
-            streamSkipUntil('\n');  // Read out the error
-          }
-#endif
           index = 3;
           goto finish;
         } else if (r4 && data.endsWith(r4)) {
@@ -226,7 +217,20 @@ class TinyGsmModem {
         } else if (r7 && data.endsWith(r7)) {
           index = 7;
           goto finish;
-        } else if (thisModem().handleURCs(data)) {
+        }
+#if defined TINY_GSM_DEBUG
+        else if (data.endsWith(GFP(GSM_VERBOSE)) ||
+                 data.endsWith(GFP(GSM_VERBOSE_2))) {
+          // DBG(GF("Verbose details <<<"));
+          // Read out the verbose message, until whichever type of new line
+          // comes first
+          thisModem().stream.findUntil(const_cast<char*>("\r"),
+                                       const_cast<char*>("\n"));
+          // DBG(GF(">>>"));
+          data = "";
+        }
+#endif
+        else if (thisModem().handleURCs(data)) {
           data = "";
         }
       }
@@ -237,7 +241,7 @@ class TinyGsmModem {
       if (data.length()) { DBG("### Unhandled:", data); }
       data = "";
     }
-    // data.replace(AT_NL, "/");
+    // data.replace(GSM_NL, "/");
     // DBG('<', index, '>', data);
     return index;
   }
