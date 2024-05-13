@@ -236,12 +236,13 @@ class TinyGsmModem {
       }
     } while (millis() - startMillis < timeout_ms);
   finish:
+    // data.replace("\r", "←");
+    // data.replace("\n", "↓");
     if (!index) {
       data.trim();
       if (data.length()) { DBG("### Unhandled:", data); }
       data = "";
     }
-    // data.replace(AT_NL, "/");
     // DBG('<', index, '>', data);
     return index;
   }
