@@ -12,7 +12,10 @@
 #include "TinyGsmCommon.h"
 
 #ifndef GSM_NL
+#ifdef GSM_NL
+#undef GSM_NL
 #define GSM_NL "\r\n"
+#endif
 #endif
 
 static const char GSM_OK[] TINY_GSM_PROGMEM    = "OK" GSM_NL;

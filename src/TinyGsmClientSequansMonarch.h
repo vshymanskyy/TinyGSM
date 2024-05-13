@@ -13,7 +13,10 @@
 
 #define TINY_GSM_MUX_COUNT 6
 #define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
+#ifdef GSM_NL
+#undef GSM_NL
 #define GSM_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
+#endif
 
 #include "TinyGsmCalling.tpp"
 #include "TinyGsmGPRS.tpp"

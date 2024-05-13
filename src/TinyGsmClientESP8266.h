@@ -14,7 +14,10 @@
 
 #define TINY_GSM_MUX_COUNT 5
 #define TINY_GSM_NO_MODEM_BUFFER
+#ifdef GSM_NL
+#undef GSM_NL
 #define GSM_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
+#endif
 
 #include "TinyGsmModem.tpp"
 #include "TinyGsmSSL.tpp"
