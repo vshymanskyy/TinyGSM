@@ -20,10 +20,11 @@
 // XBee's have a default guard time of 1 second (1000ms, 10 extra for safety
 // here)
 #define TINY_GSM_XBEE_GUARD_TIME 1010
+
 #ifdef AT_NL
 #undef AT_NL
-#define AT_NL "\r"  // NOTE:  define before including TinyGsmModem!
 #endif
+#define AT_NL "\r"
 
 #include "TinyGsmBattery.tpp"
 #include "TinyGsmGPRS.tpp"

@@ -16,8 +16,8 @@
 #define TINY_GSM_NO_MODEM_BUFFER
 #ifdef AT_NL
 #undef AT_NL
-#define AT_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
 #endif
+#define AT_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
 
 #include "TinyGsmBattery.tpp"
 #include "TinyGsmCalling.tpp"
