@@ -159,7 +159,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
    * Basic functions
    */
  protected:
-  bool initImpl(const char* pin = NULL) {
+  bool initImpl(const char* pin = nullptr) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
     DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientBG96"));
 
@@ -187,7 +187,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
 
     SimStatus ret = getSimStatus();
     // if the sim isn't ready and a pin has been provided, try to unlock the sim
-    if (ret != SIM_READY && pin != NULL && strlen(pin) > 0) {
+    if (ret != SIM_READY && pin != nullptr && strlen(pin) > 0) {
       simUnlock(pin);
       return (getSimStatus() == SIM_READY);
     } else {
@@ -201,7 +201,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
    * Power functions
    */
  protected:
-  bool restartImpl(const char* pin = NULL) {
+  bool restartImpl(const char* pin = nullptr) {
     if (!testAT()) { return false; }
     if (!setPhoneFunctionality(1, true)) { return false; }
     waitResponse(10000L, GF("APP RDY"));
@@ -256,8 +256,8 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
    * GPRS functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char* user = NULL,
-                       const char* pwd = NULL) {
+  bool gprsConnectImpl(const char* apn, const char* user = nullptr,
+                       const char* pwd = nullptr) {
     gprsDisconnect();
 
     // Configure the TCPIP Context
@@ -392,20 +392,20 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
                             // 0, it is the type of error.
 
     // Set pointers
-    if (lat != NULL) *lat = ilat;
-    if (lon != NULL) *lon = ilon;
-    if (speed != NULL) *speed = ispeed;
-    if (alt != NULL) *alt = ialt;
-    if (vsat != NULL) *vsat = 0;
-    if (usat != NULL) *usat = iusat;
-    if (accuracy != NULL) *accuracy = iaccuracy;
+    if (lat != nullptr) *lat = ilat;
+    if (lon != nullptr) *lon = ilon;
+    if (speed != nullptr) *speed = ispeed;
+    if (alt != nullptr) *alt = ialt;
+    if (vsat != nullptr) *vsat = 0;
+    if (usat != nullptr) *usat = iusat;
+    if (accuracy != nullptr) *accuracy = iaccuracy;
     if (iyear < 2000) iyear += 2000;
-    if (year != NULL) *year = iyear;
-    if (month != NULL) *month = imonth;
-    if (day != NULL) *day = iday;
-    if (hour != NULL) *hour = ihour;
-    if (minute != NULL) *minute = imin;
-    if (second != NULL) *second = static_cast<int>(secondWithSS);
+    if (year != nullptr) *year = iyear;
+    if (month != nullptr) *month = imonth;
+    if (day != nullptr) *day = iday;
+    if (hour != nullptr) *hour = ihour;
+    if (minute != nullptr) *minute = imin;
+    if (second != nullptr) *second = static_cast<int>(secondWithSS);
 
     waitResponse();  // Final OK
     return true;
@@ -463,13 +463,13 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
 
     // Set pointers
     if (iyear < 2000) iyear += 2000;
-    if (year != NULL) *year = iyear;
-    if (month != NULL) *month = imonth;
-    if (day != NULL) *day = iday;
-    if (hour != NULL) *hour = ihour;
-    if (minute != NULL) *minute = imin;
-    if (second != NULL) *second = isec;
-    if (timezone != NULL) *timezone = static_cast<float>(itimezone) / 4.0;
+    if (year != nullptr) *year = iyear;
+    if (month != nullptr) *month = imonth;
+    if (day != nullptr) *day = iday;
+    if (hour != nullptr) *hour = ihour;
+    if (minute != nullptr) *minute = imin;
+    if (second != nullptr) *second = isec;
+    if (timezone != nullptr) *timezone = static_cast<float>(itimezone) / 4.0;
 
     // Final OK
     waitResponse();  // Ends with OK

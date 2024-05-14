@@ -100,7 +100,7 @@ class TinyGsmSim7000 : public TinyGsmSim70xx<TinyGsmSim7000>,
    * Basic functions
    */
  protected:
-  bool initImpl(const char* pin = NULL) {
+  bool initImpl(const char* pin = nullptr) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
     DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientSIM7000"));
 
@@ -128,7 +128,7 @@ class TinyGsmSim7000 : public TinyGsmSim70xx<TinyGsmSim7000>,
 
     SimStatus ret = getSimStatus();
     // if the sim isn't ready and a pin has been provided, try to unlock the sim
-    if (ret != SIM_READY && pin != NULL && strlen(pin) > 0) {
+    if (ret != SIM_READY && pin != nullptr && strlen(pin) > 0) {
       simUnlock(pin);
       return (getSimStatus() == SIM_READY);
     } else {
@@ -162,8 +162,8 @@ class TinyGsmSim7000 : public TinyGsmSim70xx<TinyGsmSim7000>,
    * GPRS functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char* user = NULL,
-                       const char* pwd = NULL) {
+  bool gprsConnectImpl(const char* apn, const char* user = nullptr,
+                       const char* pwd = nullptr) {
     gprsDisconnect();
 
     // Bearer settings for applications based on IP
@@ -342,7 +342,7 @@ class TinyGsmSim7000 : public TinyGsmSim70xx<TinyGsmSim7000>,
       };
       buf[0] = stream.read();
       buf[1] = stream.read();
-      char c = strtol(buf, NULL, 16);
+      char c = strtol(buf, nullptr, 16);
 #else
       while (!stream.available() &&
              (millis() - startMillis < sockets[mux]->_timeout)) {

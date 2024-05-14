@@ -102,7 +102,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
       sock_connected = at->modemConnect(host, port, &mux, false, timeout_s);
       if (mux != oldMux) {
         DBG("WARNING:  Mux number changed from", oldMux, "to", mux);
-        at->sockets[oldMux] = NULL;
+        at->sockets[oldMux] = nullptr;
       }
       at->sockets[mux] = this;
       at->maintain();
@@ -148,7 +148,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
       sock_connected = at->modemConnect(host, port, &mux, true, timeout_s);
       if (mux != oldMux) {
         DBG("WARNING:  Mux number changed from", oldMux, "to", mux);
-        at->sockets[oldMux] = NULL;
+        at->sockets[oldMux] = nullptr;
       }
       at->sockets[mux] = this;
       at->maintain();
@@ -169,7 +169,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
    * Basic functions
    */
  protected:
-  bool initImpl(const char* pin = NULL) {
+  bool initImpl(const char* pin = nullptr) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
     DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientUBLOX"));
 
@@ -195,7 +195,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
 
     SimStatus ret = getSimStatus();
     // if the sim isn't ready and a pin has been provided, try to unlock the sim
-    if (ret != SIM_READY && pin != NULL && strlen(pin) > 0) {
+    if (ret != SIM_READY && pin != nullptr && strlen(pin) > 0) {
       simUnlock(pin);
       return (getSimStatus() == SIM_READY);
     } else {
@@ -240,7 +240,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
    * Power functions
    */
  protected:
-  bool restartImpl(const char* pin = NULL) {
+  bool restartImpl(const char* pin = nullptr) {
     if (!testAT()) { return false; }
     if (!setPhoneFunctionality(16)) { return false; }
     delay(3000);  // TODO(?):  Verify delay timing here
@@ -315,8 +315,8 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
    * GPRS functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char* user = NULL,
-                       const char* pwd = NULL) {
+  bool gprsConnectImpl(const char* apn, const char* user = nullptr,
+                       const char* pwd = nullptr) {
     // gprsDisconnect();
 
     sendAT(GF("+CGATT=1"));  // attach to GPRS
@@ -545,20 +545,21 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
     }
 
     // Set pointers
-    if (lat != NULL) *lat = ilat;
-    if (lon != NULL) *lon = ilon;
-    if (speed != NULL) *speed = ispeed;
-    if (alt != NULL) *alt = ialt;
-    if (vsat != NULL) *vsat = 0;  // Number of satellites viewed not reported;
-    if (usat != NULL) *usat = iusat;
-    if (accuracy != NULL) *accuracy = iaccuracy;
+    if (lat != nullptr) *lat = ilat;
+    if (lon != nullptr) *lon = ilon;
+    if (speed != nullptr) *speed = ispeed;
+    if (alt != nullptr) *alt = ialt;
+    if (vsat != nullptr)
+      *vsat = 0;  // Number of satellites viewed not reported;
+    if (usat != nullptr) *usat = iusat;
+    if (accuracy != nullptr) *accuracy = iaccuracy;
     if (iyear < 2000) iyear += 2000;
-    if (year != NULL) *year = iyear;
-    if (month != NULL) *month = imonth;
-    if (day != NULL) *day = iday;
-    if (hour != NULL) *hour = ihour;
-    if (minute != NULL) *minute = imin;
-    if (second != NULL) *second = static_cast<int>(secondWithSS);
+    if (year != nullptr) *year = iyear;
+    if (month != nullptr) *month = imonth;
+    if (day != nullptr) *day = iday;
+    if (hour != nullptr) *hour = ihour;
+    if (minute != nullptr) *minute = imin;
+    if (second != nullptr) *second = static_cast<int>(secondWithSS);
 
     // final ok
     waitResponse();

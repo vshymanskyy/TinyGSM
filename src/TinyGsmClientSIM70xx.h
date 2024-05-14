@@ -74,7 +74,7 @@ class TinyGsmSim70xx : public TinyGsmModem<TinyGsmSim70xx<modemType>>,
    * Basic functions
    */
  protected:
-  bool initImpl(const char* pin = NULL) {
+  bool initImpl(const char* pin = nullptr) {
     return thisModem().initImpl(pin);
   }
 
@@ -111,7 +111,7 @@ class TinyGsmSim70xx : public TinyGsmModem<TinyGsmSim70xx<modemType>>,
    * Power functions
    */
  protected:
-  bool restartImpl(const char* pin = NULL) {
+  bool restartImpl(const char* pin = nullptr) {
     thisModem().sendAT(GF("E0"));  // Echo Off
     thisModem().waitResponse();
     if (!thisModem().setPhoneFunctionality(0)) { return false; }
@@ -240,8 +240,8 @@ class TinyGsmSim70xx : public TinyGsmModem<TinyGsmSim70xx<modemType>>,
    */
  protected:
   // should implement in sub-classes
-  bool gprsConnectImpl(const char* apn, const char* user = NULL,
-                       const char* pwd = NULL) {
+  bool gprsConnectImpl(const char* apn, const char* user = nullptr,
+                       const char* pwd = nullptr) {
     return thisModem().gprsConnectImpl(apn, user, pwd);
   }
 
@@ -357,20 +357,20 @@ class TinyGsmSim70xx : public TinyGsmModem<TinyGsmSim70xx<modemType>>,
       thisModem().streamSkipUntil('\n');            // VPA
 
       // Set pointers
-      if (lat != NULL) *lat = ilat;
-      if (lon != NULL) *lon = ilon;
-      if (speed != NULL) *speed = ispeed;
-      if (alt != NULL) *alt = ialt;
-      if (vsat != NULL) *vsat = ivsat;
-      if (usat != NULL) *usat = iusat;
-      if (accuracy != NULL) *accuracy = iaccuracy;
+      if (lat != nullptr) *lat = ilat;
+      if (lon != nullptr) *lon = ilon;
+      if (speed != nullptr) *speed = ispeed;
+      if (alt != nullptr) *alt = ialt;
+      if (vsat != nullptr) *vsat = ivsat;
+      if (usat != nullptr) *usat = iusat;
+      if (accuracy != nullptr) *accuracy = iaccuracy;
       if (iyear < 2000) iyear += 2000;
-      if (year != NULL) *year = iyear;
-      if (month != NULL) *month = imonth;
-      if (day != NULL) *day = iday;
-      if (hour != NULL) *hour = ihour;
-      if (minute != NULL) *minute = imin;
-      if (second != NULL) *second = static_cast<int>(secondWithSS);
+      if (year != nullptr) *year = iyear;
+      if (month != nullptr) *month = imonth;
+      if (day != nullptr) *day = iday;
+      if (hour != nullptr) *hour = ihour;
+      if (minute != nullptr) *minute = imin;
+      if (second != nullptr) *second = static_cast<int>(secondWithSS);
 
       thisModem().waitResponse();
       return true;

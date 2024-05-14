@@ -164,7 +164,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
     }
 
     size_t write(const char* str) {
-      if (str == NULL) return 0;
+      if (str == nullptr) return 0;
       return write((const uint8_t*)str, strlen(str));
     }
 
@@ -323,7 +323,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
    * Basic functions
    */
 
-  bool initImpl(const char* pin = NULL) {
+  bool initImpl(const char* pin = nullptr) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
     DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientXBee"));
 
@@ -512,7 +512,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
     }
   }
 
-  bool restartImpl(const char* pin = NULL) {
+  bool restartImpl(const char* pin = nullptr) {
     if (!commandMode()) {
       DBG("### XBee not in command mode for restart; Exit");
       return false;
@@ -649,7 +649,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
           case 0x23:  // 0x23 SSID not configured.
             stat = REG_UNREGISTERED;
             break;
-          case 0x24:  // 0x24 Encryption key invalid (either NULL or invalid
+          case 0x24:  // 0x24 Encryption key invalid (either nullptr or invalid
                       // length for WEP).
           case 0x27:  // 0x27 SSID was found, but join failed.
             stat = REG_DENIED;
@@ -813,7 +813,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
 
     XBEE_COMMAND_START_DECORATOR(5, false)
 
-    if (ssid == NULL) retVal = false;
+    if (ssid == nullptr) retVal = false;
 
     changesMade |= changeSettingIfNeeded(GF("ID"), ssid);
 
@@ -857,8 +857,8 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
    * GPRS functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char* user = NULL,
-                       const char* pwd = NULL) {
+  bool gprsConnectImpl(const char* apn, const char* user = nullptr,
+                       const char* pwd = nullptr) {
     bool success     = true;
     bool changesMade = false;
     XBEE_COMMAND_START_DECORATOR(5, false)

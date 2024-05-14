@@ -129,16 +129,16 @@ class TinyGsmGSMLocation {
     isec   = thisModem().streamGetIntBefore('\n');
 
     // Set pointers
-    if (lat != NULL) *lat = ilat;
-    if (lon != NULL) *lon = ilon;
-    if (accuracy != NULL) *accuracy = iaccuracy;
+    if (lat != nullptr) *lat = ilat;
+    if (lon != nullptr) *lon = ilon;
+    if (accuracy != nullptr) *accuracy = iaccuracy;
     if (iyear < 2000) iyear += 2000;
-    if (year != NULL) *year = iyear;
-    if (month != NULL) *month = imonth;
-    if (day != NULL) *day = iday;
-    if (hour != NULL) *hour = ihour;
-    if (minute != NULL) *minute = imin;
-    if (second != NULL) *second = isec;
+    if (year != nullptr) *year = iyear;
+    if (month != nullptr) *month = imonth;
+    if (day != nullptr) *day = iday;
+    if (hour != nullptr) *hour = ihour;
+    if (minute != nullptr) *minute = imin;
+    if (second != nullptr) *second = isec;
 
     // Final OK
     thisModem().waitResponse();

@@ -125,7 +125,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
    * Basic functions
    */
  protected:
-  bool initImpl(const char* pin = NULL) {
+  bool initImpl(const char* pin = nullptr) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
     DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientA6"));
 
@@ -151,7 +151,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
 
     SimStatus ret = getSimStatus();
     // if the sim isn't ready and a pin has been provided, try to unlock the sim
-    if (ret != SIM_READY && pin != NULL && strlen(pin) > 0) {
+    if (ret != SIM_READY && pin != nullptr && strlen(pin) > 0) {
       simUnlock(pin);
       return (getSimStatus() == SIM_READY);
     } else {
@@ -172,7 +172,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
    * Power functions
    */
  protected:
-  bool restartImpl(const char* pin = NULL) {
+  bool restartImpl(const char* pin = nullptr) {
     if (!testAT()) { return false; }
     sendAT(GF("+RST=1"));
     delay(3000);
@@ -218,8 +218,8 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
    * GPRS functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char* user = NULL,
-                       const char* pwd = NULL) {
+  bool gprsConnectImpl(const char* apn, const char* user = nullptr,
+                       const char* pwd = nullptr) {
     gprsDisconnect();
 
     sendAT(GF("+CGATT=1"));
@@ -438,7 +438,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
     if (waitResponse(2000L, GF(AT_NL ">")) != 1) { return 0; }
     stream.write(reinterpret_cast<const uint8_t*>(buff), len);
     stream.flush();
-    if (waitResponse(10000L, GFP(GSM_OK), GF(AT_NL "FAIL")) != 1) { return 0; }
+    if (waitResponse(10000L, GFP(AT_OK), GF(AT_NL "FAIL")) != 1) { return 0; }
     return len;
   }
 

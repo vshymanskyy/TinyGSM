@@ -161,7 +161,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
    * Basic functions
    */
  protected:
-  bool initImpl(const char* pin = NULL) {
+  bool initImpl(const char* pin = nullptr) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
     DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientSIM7600"));
 
@@ -189,7 +189,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
 
     SimStatus ret = getSimStatus();
     // if the sim isn't ready and a pin has been provided, try to unlock the sim
-    if (ret != SIM_READY && pin != NULL && strlen(pin) > 0) {
+    if (ret != SIM_READY && pin != nullptr && strlen(pin) > 0) {
       simUnlock(pin);
       return (getSimStatus() == SIM_READY);
     } else {
@@ -222,7 +222,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
    * Power functions
    */
  protected:
-  bool restartImpl(const char* pin = NULL) {
+  bool restartImpl(const char* pin = nullptr) {
     if (!testAT()) { return false; }
     sendAT(GF("+CRESET"));
     if (waitResponse(10000L) != 1) { return false; }
@@ -302,8 +302,8 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
    * GPRS functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char* user = NULL,
-                       const char* pwd = NULL) {
+  bool gprsConnectImpl(const char* apn, const char* user = nullptr,
+                       const char* pwd = nullptr) {
     gprsDisconnect();  // Make sure we're not connected first
 
     // Define the PDP context
@@ -509,24 +509,24 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       streamSkipUntil('\n');  // TODO(?) is one more field reported??
 
       // Set pointers
-      if (lat != NULL)
+      if (lat != nullptr)
         *lat = (floor(ilat / 100) + fmod(ilat, 100.) / 60) *
             (north == 'N' ? 1 : -1);
-      if (lon != NULL)
+      if (lon != nullptr)
         *lon = (floor(ilon / 100) + fmod(ilon, 100.) / 60) *
             (east == 'E' ? 1 : -1);
-      if (speed != NULL) *speed = ispeed;
-      if (alt != NULL) *alt = ialt;
-      if (vsat != NULL) *vsat = ivsat;
-      if (usat != NULL) *usat = iusat;
-      if (accuracy != NULL) *accuracy = iaccuracy;
+      if (speed != nullptr) *speed = ispeed;
+      if (alt != nullptr) *alt = ialt;
+      if (vsat != nullptr) *vsat = ivsat;
+      if (usat != nullptr) *usat = iusat;
+      if (accuracy != nullptr) *accuracy = iaccuracy;
       if (iyear < 2000) iyear += 2000;
-      if (year != NULL) *year = iyear;
-      if (month != NULL) *month = imonth;
-      if (day != NULL) *day = iday;
-      if (hour != NULL) *hour = ihour;
-      if (minute != NULL) *minute = imin;
-      if (second != NULL) *second = static_cast<int>(secondWithSS);
+      if (year != nullptr) *year = iyear;
+      if (month != nullptr) *month = imonth;
+      if (day != nullptr) *day = iday;
+      if (hour != nullptr) *hour = ihour;
+      if (minute != nullptr) *minute = imin;
+      if (second != nullptr) *second = static_cast<int>(secondWithSS);
 
       waitResponse();
       return true;
@@ -678,7 +678,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       };
       buf[0] = stream.read();
       buf[1] = stream.read();
-      char c = strtol(buf, NULL, 16);
+      char c = strtol(buf, nullptr, 16);
 #else
       while (!stream.available() &&
              (millis() - startMillis < sockets[mux]->_timeout)) {

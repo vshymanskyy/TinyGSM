@@ -187,7 +187,7 @@ class TinyGsmSequansMonarch
    * Basic functions
    */
  protected:
-  bool initImpl(const char* pin = NULL) {
+  bool initImpl(const char* pin = nullptr) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
     DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientSequansMonarch"));
 
@@ -223,7 +223,7 @@ class TinyGsmSequansMonarch
 
     SimStatus ret = getSimStatus();
     // if the sim isn't ready and a pin has been provided, try to unlock the sim
-    if (ret != SIM_READY && pin != NULL && strlen(pin) > 0) {
+    if (ret != SIM_READY && pin != nullptr && strlen(pin) > 0) {
       simUnlock(pin);
       return (getSimStatus() == SIM_READY);
     } else {
@@ -272,14 +272,14 @@ class TinyGsmSequansMonarch
         modemGetConnected();
       }
     }
-    while (stream.available()) { waitResponse(15, NULL, NULL); }
+    while (stream.available()) { waitResponse(15, nullptr, nullptr); }
   }
 
   /*
    * Power functions
    */
  protected:
-  bool restartImpl(const char* pin = NULL) {
+  bool restartImpl(const char* pin = nullptr) {
     if (!testAT()) { return false; }
 
     sendAT(GF("+CFUN=0"));
@@ -340,8 +340,8 @@ class TinyGsmSequansMonarch
    * GPRS functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char* user = NULL,
-                       const char* pwd = NULL) {
+  bool gprsConnectImpl(const char* apn, const char* user = nullptr,
+                       const char* pwd = nullptr) {
     gprsDisconnect();
 
     // Define the PDP context (This uses context #3!)

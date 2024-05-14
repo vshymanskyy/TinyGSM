@@ -47,10 +47,10 @@ class TinyGsmModem {
   /*
    * Basic functions
    */
-  bool begin(const char* pin = NULL) {
+  bool begin(const char* pin = nullptr) {
     return thisModem().initImpl(pin);
   }
-  bool init(const char* pin = NULL) {
+  bool init(const char* pin = nullptr) {
     return thisModem().initImpl(pin);
   }
   template <typename... Args>
@@ -69,25 +69,25 @@ class TinyGsmModem {
   // Listen for responses to commands and handle URCs
   int8_t waitResponse(uint32_t timeout_ms, String& data,
                       GsmConstStr r1 = GFP(GSM_OK),
-                      GsmConstStr r2 = GFP(GSM_ERROR), GsmConstStr r3 = NULL,
-                      GsmConstStr r4 = NULL, GsmConstStr r5 = NULL,
-                      GsmConstStr r6 = NULL, GsmConstStr r7 = NULL) {
+                      GsmConstStr r2 = GFP(GSM_ERROR), GsmConstStr r3 = nullptr,
+                      GsmConstStr r4 = nullptr, GsmConstStr r5 = nullptr,
+                      GsmConstStr r6 = nullptr, GsmConstStr r7 = nullptr) {
     return thisModem().waitResponseImpl(timeout_ms, data, r1, r2, r3, r4, r5,
                                         r6, r7);
   }
 
   int8_t waitResponse(uint32_t timeout_ms, GsmConstStr r1 = GFP(GSM_OK),
-                      GsmConstStr r2 = GFP(GSM_ERROR), GsmConstStr r3 = NULL,
-                      GsmConstStr r4 = NULL, GsmConstStr r5 = NULL,
-                      GsmConstStr r6 = NULL, GsmConstStr r7 = NULL) {
+                      GsmConstStr r2 = GFP(GSM_ERROR), GsmConstStr r3 = nullptr,
+                      GsmConstStr r4 = nullptr, GsmConstStr r5 = nullptr,
+                      GsmConstStr r6 = nullptr, GsmConstStr r7 = nullptr) {
     String data;
     return waitResponse(timeout_ms, data, r1, r2, r3, r4, r5, r6, r7);
   }
 
   int8_t waitResponse(GsmConstStr r1 = GFP(GSM_OK),
-                      GsmConstStr r2 = GFP(GSM_ERROR), GsmConstStr r3 = NULL,
-                      GsmConstStr r4 = NULL, GsmConstStr r5 = NULL,
-                      GsmConstStr r6 = NULL, GsmConstStr r7 = NULL) {
+                      GsmConstStr r2 = GFP(GSM_ERROR), GsmConstStr r3 = nullptr,
+                      GsmConstStr r4 = nullptr, GsmConstStr r5 = nullptr,
+                      GsmConstStr r6 = nullptr, GsmConstStr r7 = nullptr) {
     return waitResponse(1000L, r1, r2, r3, r4, r5, r6, r7);
   }
 
@@ -107,7 +107,7 @@ class TinyGsmModem {
   /*
    * Power functions
    */
-  bool restart(const char* pin = NULL) {
+  bool restart(const char* pin = nullptr) {
     return thisModem().restartImpl(pin);
   }
   bool poweroff() {
@@ -179,9 +179,9 @@ class TinyGsmModem {
   int8_t waitResponseImpl(uint32_t timeout_ms, String& data,
                           GsmConstStr r1 = GFP(GSM_OK),
                           GsmConstStr r2 = GFP(GSM_ERROR),
-                          GsmConstStr r3 = NULL, GsmConstStr r4 = NULL,
-                          GsmConstStr r5 = NULL, GsmConstStr r6 = NULL,
-                          GsmConstStr r7 = NULL) {
+                          GsmConstStr r3 = nullptr, GsmConstStr r4 = nullptr,
+                          GsmConstStr r5 = nullptr, GsmConstStr r6 = nullptr,
+                          GsmConstStr r7 = nullptr) {
     data.reserve(64);
     // DBG(GF("r1 <"), r1 ? r1 : GF("NULL"), GF("> r2 <"), r2 ? r2 : GF("NULL"),
     //     GF("> r3 <"), r3 ? r3 : GF("NULL"), GF("> r4 <"), r4 ? r4 :
@@ -393,7 +393,7 @@ class TinyGsmModem {
 
   inline void streamClear() {
     while (thisModem().stream.available()) {
-      thisModem().waitResponse(50, NULL, NULL);
+      thisModem().waitResponse(50, nullptr, nullptr);
     }
   }
 

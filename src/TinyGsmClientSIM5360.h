@@ -153,7 +153,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
    * Basic functions
    */
  protected:
-  bool initImpl(const char* pin = NULL) {
+  bool initImpl(const char* pin = nullptr) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
     DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientSIM5360"));
 
@@ -181,7 +181,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
 
     SimStatus ret = getSimStatus();
     // if the sim isn't ready and a pin has been provided, try to unlock the sim
-    if (ret != SIM_READY && pin != NULL && strlen(pin) > 0) {
+    if (ret != SIM_READY && pin != nullptr && strlen(pin) > 0) {
       simUnlock(pin);
       return (getSimStatus() == SIM_READY);
     } else {
@@ -214,7 +214,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
    * Power functions
    */
  protected:
-  bool restartImpl(const char* pin = NULL) {
+  bool restartImpl(const char* pin = nullptr) {
     if (!testAT()) { return false; }
     sendAT(GF("+REBOOT"));
     // Should return an 'OK' after reboot command is sent
@@ -297,8 +297,8 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
    * GPRS functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char* user = NULL,
-                       const char* pwd = NULL) {
+  bool gprsConnectImpl(const char* apn, const char* user = nullptr,
+                       const char* pwd = nullptr) {
     gprsDisconnect();  // Make sure we're not connected first
 
     // Define the PDP context
@@ -555,7 +555,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
       };
       buf[0] = stream.read();
       buf[1] = stream.read();
-      char c = strtol(buf, NULL, 16);
+      char c = strtol(buf, nullptr, 16);
 #else
       while (!stream.available() &&
              (millis() - startMillis < sockets[mux]->_timeout)) {

@@ -114,7 +114,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590>,
    * Basic functions
    */
  protected:
-  bool initImpl(const char* pin = NULL) {
+  bool initImpl(const char* pin = nullptr) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
     DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientM590"));
 
@@ -134,7 +134,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590>,
 
     SimStatus ret = getSimStatus();
     // if the sim isn't ready and a pin has been provided, try to unlock the sim
-    if (ret != SIM_READY && pin != NULL && strlen(pin) > 0) {
+    if (ret != SIM_READY && pin != nullptr && strlen(pin) > 0) {
       simUnlock(pin);
       return (getSimStatus() == SIM_READY);
     } else {
@@ -167,7 +167,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590>,
    * Power functions
    */
  protected:
-  bool restartImpl(const char* pin = NULL) {
+  bool restartImpl(const char* pin = nullptr) {
     if (!testAT()) { return false; }
     if (!setPhoneFunctionality(15)) { return false; }
     // MODEM:STARTUP
@@ -218,8 +218,8 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590>,
    * GPRS functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char* user = NULL,
-                       const char* pwd = NULL) {
+  bool gprsConnectImpl(const char* apn, const char* user = nullptr,
+                       const char* pwd = nullptr) {
     gprsDisconnect();
 
     sendAT(GF("+XISP=0"));

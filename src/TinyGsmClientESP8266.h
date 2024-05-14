@@ -142,7 +142,7 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
    * Basic functions
    */
  protected:
-  bool initImpl(const char* pin = NULL) {
+  bool initImpl(const char* pin = nullptr) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
     DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientESP8266"));
 
@@ -200,7 +200,7 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
    * Power functions
    */
  protected:
-  bool restartImpl(const char* pin = NULL) {
+  bool restartImpl(const char* pin = nullptr) {
     if (!testAT()) { return false; }
     sendAT(GF("+RST"));
     if (waitResponse(10000L) != 1) { return false; }

@@ -89,13 +89,13 @@ class TinyGsmTime {
 
     // Set pointers
     if (iyear < 2000) iyear += 2000;
-    if (year != NULL) *year = iyear;
-    if (month != NULL) *month = imonth;
-    if (day != NULL) *day = iday;
-    if (hour != NULL) *hour = ihour;
-    if (minute != NULL) *minute = imin;
-    if (second != NULL) *second = isec;
-    if (timezone != NULL) *timezone = static_cast<float>(itimezone) / 4.0;
+    if (year != nullptr) *year = iyear;
+    if (month != nullptr) *month = imonth;
+    if (day != nullptr) *day = iday;
+    if (hour != nullptr) *hour = ihour;
+    if (minute != nullptr) *minute = imin;
+    if (second != nullptr) *second = isec;
+    if (timezone != nullptr) *timezone = static_cast<float>(itimezone) / 4.0;
 
     // Final OK
     thisModem().waitResponse();

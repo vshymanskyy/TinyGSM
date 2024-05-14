@@ -118,7 +118,7 @@ class TinyGsmTCP {
     }
 
     size_t write(const char* str) {
-      if (str == NULL) return 0;
+      if (str == nullptr) return 0;
       return write((const uint8_t*)str, strlen(str));
     }
 
@@ -331,12 +331,12 @@ class TinyGsmTCP {
       }
     }
     while (thisModem().stream.available()) {
-      thisModem().waitResponse(15, NULL, NULL);
+      thisModem().waitResponse(15, nullptr, nullptr);
     }
 
 #elif defined TINY_GSM_NO_MODEM_BUFFER || defined TINY_GSM_BUFFER_READ_NO_CHECK
     // Just listen for any URC's
-    thisModem().waitResponse(100, NULL, NULL);
+    thisModem().waitResponse(100, nullptr, nullptr);
 
 #else
 #error Modem client has been incorrectly created
