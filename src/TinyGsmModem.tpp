@@ -183,10 +183,13 @@ class TinyGsmModem {
                           GsmConstStr r5 = nullptr, GsmConstStr r6 = nullptr,
                           GsmConstStr r7 = nullptr) {
     data.reserve(64);
-    // DBG(GF("r1 <"), r1 ? r1 : GF("NULL"), GF("> r2 <"), r2 ? r2 : GF("NULL"),
-    //     GF("> r3 <"), r3 ? r3 : GF("NULL"), GF("> r4 <"), r4 ? r4 :
-    //     GF("NULL"), GF("> r5 <"), r5 ? r5 : GF("NULL"), GF("> r6 <"), r6 ? r6
-    //     : GF("NULL"), GF("> r7 <"), r7 ? r7 : GF("NULL"), '>');
+
+#ifdef TINY_GSM_DEBUG_DEEP
+    DBG(GF("r1 <"), r1 ? r1 : GF("NULL"), GF("> r2 <"), r2 ? r2 : GF("NULL"),
+        GF("> r3 <"), r3 ? r3 : GF("NULL"), GF("> r4 <"), r4 ? r4 : GF("NULL"),
+        GF("> r5 <"), r5 ? r5 : GF("NULL"), GF("> r6 <"), r6 ? r6 : GF("NULL"),
+        GF("> r7 <"), r7 ? r7 : GF("NULL"), '>');
+#endif
     uint8_t  index       = 0;
     uint32_t startMillis = millis();
     do {
@@ -221,12 +224,16 @@ class TinyGsmModem {
 #if defined TINY_GSM_DEBUG
         else if (data.endsWith(GFP(GSM_VERBOSE)) ||
                  data.endsWith(GFP(GSM_VERBOSE_2))) {
-          // DBG(GF("Verbose details <<<"));
+#ifdef TINY_GSM_DEBUG_DEEP
+          DBG(GF("Verbose details <<<"));
+#endif
           // Read out the verbose message, until whichever type of new line
           // comes first
           thisModem().stream.findUntil(const_cast<char*>("\r"),
                                        const_cast<char*>("\n"));
-          // DBG(GF(">>>"));
+#ifdef TINY_GSM_DEBUG_DEEP
+          DBG(GF(">>>"));
+#endif
           data = "";
         }
 #endif
@@ -236,14 +243,18 @@ class TinyGsmModem {
       }
     } while (millis() - startMillis < timeout_ms);
   finish:
-    // data.replace("\r", "←");
-    // data.replace("\n", "↓");
+#ifdef TINY_GSM_DEBUG_DEEP
+    data.replace("\r", "←");
+    data.replace("\n", "↓");
+#endif
     if (!index) {
       data.trim();
       if (data.length()) { DBG("### Unhandled:", data); }
       data = "";
     } else {
-      // DBG('<', index, '>', data);
+#ifdef TINY_GSM_DEBUG_DEEP
+      DBG('<', index, '>', data);
+#endif
     }
     return index;
   }

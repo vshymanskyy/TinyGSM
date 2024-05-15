@@ -422,6 +422,7 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
       if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
         sockets[mux]->sock_connected = false;
       }
+      streamSkipUntil('\n');  // throw away the new line
       data = "";
       DBG("### Closed: ", mux);
       return true;
