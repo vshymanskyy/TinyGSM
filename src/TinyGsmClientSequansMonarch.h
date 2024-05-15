@@ -283,7 +283,7 @@ class TinyGsmSequansMonarch
     if (!testAT()) { return false; }
 
     sendAT(GF("+CFUN=0"));
-    int8_t res = waitResponse(20000L, GFP(AT_OK), GFP(GSM_ERROR),
+    int8_t res = waitResponse(20000L, GFP(GSM_OK), GFP(GSM_ERROR),
                               GF("+SYSSTART"));
     if (res != 1 && res != 3) { return false; }
 
@@ -481,7 +481,7 @@ class TinyGsmSequansMonarch
     // <acceptAnyRemote> = Applies to UDP only
     sendAT(GF("+SQNSD="), mux, ",0,", port, ',', GF("\""), host, GF("\""),
            ",0,0,1");
-    rsp = waitResponse((timeout_ms - (millis() - startMillis)), GFP(AT_OK),
+    rsp = waitResponse((timeout_ms - (millis() - startMillis)), GFP(GSM_OK),
                        GFP(GSM_ERROR), GF("NO CARRIER" AT_NL));
 
     // creation of socket failed immediately.
@@ -582,7 +582,7 @@ class TinyGsmSequansMonarch
     // six possible sockets.
     sendAT(GF("+SQNSS"));
     for (int muxNo = 1; muxNo <= TINY_GSM_MUX_COUNT; muxNo++) {
-      if (waitResponse(GFP(AT_OK), GF(AT_NL "+SQNSS: ")) != 2) { break; }
+      if (waitResponse(GFP(GSM_OK), GF(AT_NL "+SQNSS: ")) != 2) { break; }
       uint8_t status = 0;
       // if (streamGetIntBefore(',') != muxNo) { // check the mux no
       //   DBG("### Warning: misaligned mux numbers!");

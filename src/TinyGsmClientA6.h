@@ -438,7 +438,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
     if (waitResponse(2000L, GF(AT_NL ">")) != 1) { return 0; }
     stream.write(reinterpret_cast<const uint8_t*>(buff), len);
     stream.flush();
-    if (waitResponse(10000L, GFP(AT_OK), GF(AT_NL "FAIL")) != 1) { return 0; }
+    if (waitResponse(10000L, GFP(GSM_OK), GF(AT_NL "FAIL")) != 1) { return 0; }
     return len;
   }
 
