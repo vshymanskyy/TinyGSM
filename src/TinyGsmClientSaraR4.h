@@ -30,7 +30,7 @@
 #include "TinyGsmTemperature.tpp"
 #include "TinyGsmTime.tpp"
 
-enum RegStatus {
+enum SaraR4RegStatus {
   REG_NO_RESULT    = -1,
   REG_UNREGISTERED = 0,
   REG_SEARCHING    = 2,
@@ -316,22 +316,23 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
    * Generic network functions
    */
  public:
-  RegStatus getRegistrationStatus() {
+  SaraR4RegStatus getRegistrationStatus() {
     // Check first for EPS registration
-    RegStatus epsStatus = (RegStatus)getRegistrationStatusXREG("CEREG");
+    SaraR4RegStatus epsStatus =
+        (SaraR4RegStatus)getRegistrationStatusXREG("CEREG");
 
     // If we're connected on EPS, great!
     if (epsStatus == REG_OK_HOME || epsStatus == REG_OK_ROAMING) {
       return epsStatus;
     } else {
       // Otherwise, check generic network status
-      return (RegStatus)getRegistrationStatusXREG("CREG");
+      return (SaraR4RegStatus)getRegistrationStatusXREG("CREG");
     }
   }
 
  protected:
   bool isNetworkConnectedImpl() {
-    RegStatus s = getRegistrationStatus();
+    SaraR4RegStatus s = getRegistrationStatus();
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
   }
 

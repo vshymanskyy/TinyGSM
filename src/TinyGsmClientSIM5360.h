@@ -29,7 +29,7 @@
 #include "TinyGsmTime.tpp"
 #include "TinyGsmNTP.tpp"
 
-enum RegStatus {
+enum SIM5360RegStatus {
   REG_NO_RESULT    = -1,
   REG_UNREGISTERED = 0,
   REG_SEARCHING    = 2,
@@ -250,13 +250,13 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
    * Generic network functions
    */
  public:
-  RegStatus getRegistrationStatus() {
-    return (RegStatus)getRegistrationStatusXREG("CGREG");
+  SIM5360RegStatus getRegistrationStatus() {
+    return (SIM5360RegStatus)getRegistrationStatusXREG("CGREG");
   }
 
  protected:
   bool isNetworkConnectedImpl() {
-    RegStatus s = getRegistrationStatus();
+    SIM5360RegStatus s = getRegistrationStatus();
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
   }
 

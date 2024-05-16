@@ -32,7 +32,7 @@
 #include "TinyGsmNTP.tpp"
 
 
-enum RegStatus {
+enum SIM7600RegStatus {
   REG_NO_RESULT    = -1,
   REG_UNREGISTERED = 0,
   REG_SEARCHING    = 2,
@@ -255,13 +255,13 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
    * Generic network functions
    */
  public:
-  RegStatus getRegistrationStatus() {
-    return (RegStatus)getRegistrationStatusXREG("CGREG");
+  SIM7600RegStatus getRegistrationStatus() {
+    return (SIM7600RegStatus)getRegistrationStatusXREG("CGREG");
   }
 
  protected:
   bool isNetworkConnectedImpl() {
-    RegStatus s = getRegistrationStatus();
+    SIM7600RegStatus s = getRegistrationStatus();
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
   }
 

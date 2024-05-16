@@ -25,7 +25,7 @@
 #include "TinyGsmNTP.tpp"
 #include "TinyGsmGSMLocation.tpp"
 
-enum RegStatus {
+enum SIM70xxRegStatus {
   REG_NO_RESULT    = -1,
   REG_UNREGISTERED = 0,
   REG_SEARCHING    = 2,
@@ -143,22 +143,22 @@ class TinyGsmSim70xx : public TinyGsmModem<TinyGsmSim70xx<modemType>>,
    * Generic network functions
    */
  public:
-  RegStatus getRegistrationStatus() {
-    RegStatus epsStatus =
-        (RegStatus)thisModem().getRegistrationStatusXREG("CEREG");
+  SIM70xxRegStatus getRegistrationStatus() {
+    SIM70xxRegStatus epsStatus =
+        (SIM70xxRegStatus)thisModem().getRegistrationStatusXREG("CEREG");
     // If we're connected on EPS, great!
     if (epsStatus == REG_OK_HOME || epsStatus == REG_OK_ROAMING) {
       return epsStatus;
     } else {
       // Otherwise, check GPRS network status
       // We could be using GPRS fall-back or the board could be being moody
-      return (RegStatus)thisModem().getRegistrationStatusXREG("CGREG");
+      return (SIM70xxRegStatus)thisModem().getRegistrationStatusXREG("CGREG");
     }
   }
 
  protected:
   bool isNetworkConnectedImpl() {
-    RegStatus s = getRegistrationStatus();
+    SIM70xxRegStatus s = getRegistrationStatus();
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
   }
 

@@ -49,7 +49,7 @@
     exitCommand();                                                       \
   }
 
-enum RegStatus {
+enum XBeeRegStatus {
   REG_OK           = 0,
   REG_UNREGISTERED = 1,
   REG_SEARCHING    = 2,
@@ -611,7 +611,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
    * Generic network functions
    */
  public:
-  RegStatus getRegistrationStatus() {
+  XBeeRegStatus getRegistrationStatus() {
     XBEE_COMMAND_START_DECORATOR(5, REG_UNKNOWN)
 
     if (!inCommandMode) return REG_UNKNOWN;  // Return immediately
@@ -620,8 +620,8 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
       getSeries();  // Need to know the bee type to interpret response
 
     sendAT(GF("AI"));
-    int16_t   intRes = readResponseInt(10000L);
-    RegStatus stat   = REG_UNKNOWN;
+    int16_t       intRes = readResponseInt(10000L);
+    XBeeRegStatus stat   = REG_UNKNOWN;
 
     switch (beeType) {
       case XBEE_S6B_WIFI: {
@@ -731,7 +731,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
 
   bool isNetworkConnectedImpl() {
     // first check for association indicator
-    RegStatus s = getRegistrationStatus();
+    XBeeRegStatus s = getRegistrationStatus();
     if (s == REG_OK) {
       if (beeType == XBEE_S6B_WIFI) {
         // For wifi bees, if the association indicator is ok, check that a both
@@ -1263,7 +1263,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
     switch (beeType) {
       // The wifi be can only say if it's connected to the netowrk
       case XBEE_S6B_WIFI: {
-        RegStatus s = getRegistrationStatus();
+        XBeeRegStatus s = getRegistrationStatus();
         XBEE_COMMAND_END_DECORATOR
         if (s != REG_OK) {
           sockets[0]->sock_connected = false;  // no multiplex

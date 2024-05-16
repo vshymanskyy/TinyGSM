@@ -29,7 +29,7 @@
 #include "TinyGsmTemperature.tpp"
 #include "TinyGsmTime.tpp"
 
-enum RegStatus {
+enum M95RegStatus {
   REG_NO_RESULT    = -1,
   REG_UNREGISTERED = 0,
   REG_SEARCHING    = 2,
@@ -230,13 +230,13 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95>,
    * Generic network functions
    */
  public:
-  RegStatus getRegistrationStatus() {
-    return (RegStatus)getRegistrationStatusXREG("CREG");
+  M95RegStatus getRegistrationStatus() {
+    return (M95RegStatus)getRegistrationStatusXREG("CREG");
   }
 
  protected:
   bool isNetworkConnectedImpl() {
-    RegStatus s = getRegistrationStatus();
+    M95RegStatus s = getRegistrationStatus();
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
   }
 

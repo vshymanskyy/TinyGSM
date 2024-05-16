@@ -33,7 +33,7 @@ static uint8_t TINY_GSM_TCP_KEEP_ALIVE = 120;
 // 3 : ESP8266 station created a TCP or UDP transmission
 // 4 : the TCP or UDP transmission of ESP8266 station disconnected
 // 5 : ESP8266 station did NOT connect to an AP
-enum RegStatus {
+enum ESP8266RegStatus {
   REG_UNINITIALIZED = 0,
   REG_UNREGISTERED  = 1,
   REG_OK_IP         = 2,
@@ -225,7 +225,7 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
    * Generic network functions
    */
  public:
-  RegStatus getRegistrationStatus() {
+  ESP8266RegStatus getRegistrationStatus() {
     sendAT(GF("+CIPSTATUS"));
     if (waitResponse(3000, GF("STATUS:")) != 1) return REG_UNKNOWN;
     // after "STATUS:" it should return the status number (0,1,2,3,4,5),
@@ -236,7 +236,7 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
     if (waitResponse(3000L, res) != 1) { return REG_UNKNOWN; }
     res.trim();
     int8_t status = res.toInt();
-    return (RegStatus)status;
+    return (ESP8266RegStatus)status;
   }
 
  protected:
@@ -262,7 +262,7 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
   }
 
   bool isNetworkConnectedImpl() {
-    RegStatus s = getRegistrationStatus();
+    ESP8266RegStatus s = getRegistrationStatus();
     if (s == REG_OK_IP || s == REG_OK_TCP) {
       // with these, we're definitely connected
       return true;

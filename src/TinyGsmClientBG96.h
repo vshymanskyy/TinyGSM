@@ -30,7 +30,7 @@
 #include "TinyGsmTime.tpp"
 #include "TinyGsmNTP.tpp"
 
-enum RegStatus {
+enum BG96RegStatus {
   REG_NO_RESULT    = -1,
   REG_UNREGISTERED = 0,
   REG_SEARCHING    = 2,
@@ -233,22 +233,22 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
    * Generic network functions
    */
  public:
-  RegStatus getRegistrationStatus() {
+  BG96RegStatus getRegistrationStatus() {
     // Check first for EPS registration
-    RegStatus epsStatus = (RegStatus)getRegistrationStatusXREG("CEREG");
+    BG96RegStatus epsStatus = (BG96RegStatus)getRegistrationStatusXREG("CEREG");
 
     // If we're connected on EPS, great!
     if (epsStatus == REG_OK_HOME || epsStatus == REG_OK_ROAMING) {
       return epsStatus;
     } else {
       // Otherwise, check generic network status
-      return (RegStatus)getRegistrationStatusXREG("CREG");
+      return (BG96RegStatus)getRegistrationStatusXREG("CREG");
     }
   }
 
  protected:
   bool isNetworkConnectedImpl() {
-    RegStatus s = getRegistrationStatus();
+    BG96RegStatus s = getRegistrationStatus();
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
   }
 

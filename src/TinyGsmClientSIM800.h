@@ -31,7 +31,7 @@
 #include "TinyGsmTime.tpp"
 #include "TinyGsmNTP.tpp"
 
-enum RegStatus {
+enum SIM800RegStatus {
   REG_NO_RESULT    = -1,
   REG_UNREGISTERED = 0,
   REG_SEARCHING    = 2,
@@ -286,13 +286,13 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
    * Generic network functions
    */
  public:
-  RegStatus getRegistrationStatus() {
-    return (RegStatus)getRegistrationStatusXREG("CREG");
+  SIM800RegStatus getRegistrationStatus() {
+    return (SIM800RegStatus)getRegistrationStatusXREG("CREG");
   }
 
  protected:
   bool isNetworkConnectedImpl() {
-    RegStatus s = getRegistrationStatus();
+    SIM800RegStatus s = getRegistrationStatus();
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
   }
 

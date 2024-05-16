@@ -27,7 +27,7 @@
 #include "TinyGsmTCP.tpp"
 #include "TinyGsmTime.tpp"
 
-enum RegStatus {
+enum A6RegStatus {
   REG_NO_RESULT    = -1,
   REG_UNREGISTERED = 0,
   REG_SEARCHING    = 2,
@@ -194,13 +194,13 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
    * Generic network functions
    */
  public:
-  RegStatus getRegistrationStatus() {
-    return (RegStatus)getRegistrationStatusXREG("CREG");
+  A6RegStatus getRegistrationStatus() {
+    return (A6RegStatus)getRegistrationStatusXREG("CREG");
   }
 
  protected:
   bool isNetworkConnectedImpl() {
-    RegStatus s = getRegistrationStatus();
+    A6RegStatus s = getRegistrationStatus();
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
   }
 

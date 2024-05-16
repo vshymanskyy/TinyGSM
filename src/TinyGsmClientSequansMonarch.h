@@ -27,7 +27,7 @@
 #include "TinyGsmTemperature.tpp"
 #include "TinyGsmTime.tpp"
 
-enum RegStatus {
+enum MonarchRegStatus {
   REG_NO_RESULT    = -1,
   REG_UNREGISTERED = 0,
   REG_SEARCHING    = 2,
@@ -319,13 +319,13 @@ class TinyGsmSequansMonarch
    * Generic network functions
    */
  public:
-  RegStatus getRegistrationStatus() {
-    return (RegStatus)getRegistrationStatusXREG("CEREG");
+  MonarchRegStatus getRegistrationStatus() {
+    return (MonarchRegStatus)getRegistrationStatusXREG("CEREG");
   }
 
  protected:
   bool isNetworkConnectedImpl() {
-    RegStatus s = getRegistrationStatus();
+    MonarchRegStatus s = getRegistrationStatus();
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
   }
   String getLocalIPImpl() {

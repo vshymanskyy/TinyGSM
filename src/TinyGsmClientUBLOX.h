@@ -30,7 +30,7 @@
 #include "TinyGsmTCP.tpp"
 #include "TinyGsmTime.tpp"
 
-enum RegStatus {
+enum UBLOXRegStatus {
   REG_NO_RESULT    = -1,
   REG_UNREGISTERED = 0,
   REG_SEARCHING    = 2,
@@ -263,8 +263,8 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
    * Generic network functions
    */
  public:
-  RegStatus getRegistrationStatus() {
-    return (RegStatus)getRegistrationStatusXREG("CGREG");
+  UBLOXRegStatus getRegistrationStatus() {
+    return (UBLOXRegStatus)getRegistrationStatusXREG("CGREG");
   }
 
   bool setRadioAccessTecnology(int selected, int preferred) {
@@ -292,7 +292,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
 
  protected:
   bool isNetworkConnectedImpl() {
-    RegStatus s = getRegistrationStatus();
+    UBLOXRegStatus s = getRegistrationStatus();
     if (s == REG_OK_HOME || s == REG_OK_ROAMING)
       return true;
     else if (s == REG_UNKNOWN)  // for some reason, it can hang at unknown..
