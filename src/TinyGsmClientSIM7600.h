@@ -291,7 +291,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     // n: whether to automatically report the system mode info
     // stat: the current service. 0 if it not connected
     sendAT(GF("+CNSMOD?"));
-    if (waitResponse(GF(GSM_NL "+CNSMOD:")) != 1) { return false; }
+    if (waitResponse(GF(AT_NL "+CNSMOD:")) != 1) { return false; }
     n    = streamGetIntBefore(',') != 0;
     stat = streamGetIntBefore('\n');
     waitResponse();

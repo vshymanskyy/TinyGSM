@@ -3,6 +3,10 @@ name: Build Examples with PlatformIO
 # Triggers the workflow on push or pull request events
 on: [push, pull_request]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
