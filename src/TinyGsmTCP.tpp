@@ -313,13 +313,27 @@ class TinyGsmTCP {
     bool       sock_connected;
     bool       got_data;
     RxFifo     rx;
+	bool       direct_link;
   };
 
   /*
    * Basic functions
    */
  protected:
+ 
+  bool _direct_link = false;
+  
   void maintainImpl() {
+  _direct_link = false;
+#if defined TINY_GSM_MODEM_UBLOX
+	for (int mux = 0; mux < muxCount; mux++) {
+      GsmClient* sock = thisModem().sockets[mux];
+      if (sock && sock->direct_link) {
+        _direct_link = true;
+		break;
+      }
+    }
+#endif
 #if defined TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
     // Keep listening for modem URC's and proactively iterate through
     // sockets asking if any data is avaiable
@@ -330,13 +344,17 @@ class TinyGsmTCP {
         sock->sock_available = thisModem().modemGetAvailable(mux);
       }
     }
-    while (thisModem().stream.available()) {
-      thisModem().waitResponse(15, NULL, NULL);
-    }
+	if (!_direct_link) {
+		while (thisModem().stream.available()) {
+			thisModem().waitResponse(15, NULL, NULL);
+		}
+	}
 
 #elif defined TINY_GSM_NO_MODEM_BUFFER || defined TINY_GSM_BUFFER_READ_NO_CHECK
     // Just listen for any URC's
-    thisModem().waitResponse(100, NULL, NULL);
+	if (!_direct_link) {
+		thisModem().waitResponse(100, NULL, NULL);
+	}
 
 #else
 #error Modem client has been incorrectly created

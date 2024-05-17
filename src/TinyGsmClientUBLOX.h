@@ -85,6 +85,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
       prev_check     = 0;
       sock_connected = false;
       got_data       = false;
+	  direct_link    = false;
 
       if (mux < TINY_GSM_MUX_COUNT) {
         this->mux = mux;
@@ -626,6 +627,58 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
   /*
    * Client related functions
    */
+   
+private:
+	int _ssl_profile = -1;
+	uint8_t _sock_id = 0;
+	const char* _dl_dc = "\r\nDISCONNECT\r\n\r\nOK\r\n\r\n+UUSOCL:";
+	uint8_t _dl_dc_seq = 0;
+	bool _dl_connected = false;
+	
+public:
+	// set USECMNG profile id
+	// must be called BEFORE client modemConnect to host
+	void setSSLProfileID(int id) {
+		_ssl_profile = id;
+	}
+	
+	// enable direct link mode
+	// must be called AFTER client modemConnect to host
+	bool enableDL() {
+		if (sockets[_sock_id]->direct_link) {
+			return false;
+		}
+		sendAT(GF("+USODL="), _sock_id);
+		if (waitResponse(GF("CONNECT")) != 1) {
+			return false;
+		}
+		while (stream.available()) {
+			stream.read();
+		}
+		sockets[_sock_id]->sock_available = 0;
+		sockets[_sock_id]->rx.clear();
+		sockets[_sock_id]->direct_link = true;
+		_dl_dc_seq = 0;
+		_dl_connected = true;
+		return true;
+	}
+	
+	// disable direct link mode
+	bool disableDL() {
+		if (!sockets[_sock_id]->direct_link) {
+			return false;
+		}
+		delay(2500); // must wait at least 2 sec after transmission to socket before ending DL
+		stream.print("+++");
+		stream.flush();
+		sockets[_sock_id]->sock_available = 0;
+		sockets[_sock_id]->rx.clear();
+		sockets[_sock_id]->direct_link = false;
+		_dl_dc_seq = 0;
+		_dl_connected = false;
+		return waitResponse(10000) == 1;
+	}
+	
  protected:
   bool modemConnect(const char* host, uint16_t port, uint8_t* mux,
                     bool ssl = false, int timeout_s = 120) {
@@ -638,10 +691,19 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
     if (waitResponse(GF(GSM_NL "+USOCR:")) != 1) { return false; }
     *mux = streamGetIntBefore('\n');
     waitResponse();
+	
+	_sock_id = *mux;
+	sockets[_sock_id]->sock_available = 0;
+	sockets[_sock_id]->direct_link = false;
 
     if (ssl) {
-      sendAT(GF("+USOSEC="), *mux, ",1");
-      waitResponse();
+		if (_ssl_profile == -1) {
+			sendAT(GF("+USOSEC="), *mux, ",1");
+		}
+		else {
+			sendAT(GF("+USOSEC="), *mux, ",1,", _ssl_profile);
+		}
+		waitResponse();
     }
 
     // Enable NODELAY
@@ -662,7 +724,13 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
     return (1 == rsp);
   }
 
-  int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
+  size_t modemSend(const void* buff, size_t len, uint8_t mux) {
+	if (sockets[mux]->direct_link) {
+		size_t sent = stream.write(reinterpret_cast<const uint8_t*>(buff), len);
+		stream.flush();
+		return sent;
+	}
+	  
     sendAT(GF("+USOWR="), mux, ',', (uint16_t)len);
     if (waitResponse(GF("@")) != 1) { return 0; }
     // 50ms delay, see AT manual section 25.10.4
@@ -678,6 +746,43 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
 
   size_t modemRead(size_t size, uint8_t mux) {
     if (!sockets[mux]) return 0;
+	
+	if (sockets[mux]->direct_link) {
+		size_t len = stream.available();
+		if (len > size) {
+			len = size;
+		}
+		for (int i = 0; i < len; i++) { 
+			
+			// Handle disconnection from host in Direct Link mode.
+			// The modem will automatically put back to AT command mode if disconnected from host.
+			// Does not work on Ublox LEON-G100-03S / LEON-G200-03S and previous versions
+			// as "DISCONNECT" result code is not supported on these modems.
+			if (char(stream.peek()) == _dl_dc[_dl_dc_seq]) {
+				_dl_dc_seq++;
+			}
+			else {
+				_dl_dc_seq = 0;
+			}
+			if (_dl_dc_seq == (sizeof(_dl_dc) - 1)) {
+				while (stream.available()) {
+					stream.read();
+				}
+				sockets[mux]->sock_connected = false;
+				sockets[mux]->sock_available = 0;
+				sockets[mux]->rx.clear();
+				sockets[mux]->direct_link = false;
+				_dl_dc_seq = 0;
+				_dl_connected = false;
+				return 0;
+			}
+		
+			moveCharFromStreamToFifo(mux); 
+		}
+		sockets[mux]->sock_available = modemGetAvailable(mux);
+		return len;
+	}
+	
     sendAT(GF("+USORD="), mux, ',', (uint16_t)size);
     if (waitResponse(GF(GSM_NL "+USORD:")) != 1) { return 0; }
     streamSkipUntil(',');  // Skip mux
@@ -694,6 +799,16 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
 
   size_t modemGetAvailable(uint8_t mux) {
     if (!sockets[mux]) return 0;
+	
+	if (sockets[mux]->direct_link) {
+		size_t  result = 0;
+		result = stream.available();
+		if (!result) {
+			sockets[mux]->sock_connected = modemGetConnected(mux);
+		}
+		return result;
+	}
+	
     // NOTE:  Querying a closed socket gives an error "operation not allowed"
     sendAT(GF("+USORD="), mux, ",0");
     size_t  result = 0;
@@ -712,6 +827,10 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
   }
 
   bool modemGetConnected(uint8_t mux) {
+    if (sockets[mux]->direct_link) {
+		return _dl_connected;
+	}
+	
     // NOTE:  Querying a closed socket gives an error "operation not allowed"
     sendAT(GF("+USOCTL="), mux, ",10");
     uint8_t res = waitResponse(GF(GSM_NL "+USOCTL:"));
