@@ -75,7 +75,7 @@ TinyGSM also pulls data gently from the modem (whenever possible), so it can ope
 - Digi XBee WiFi and Cellular (using XBee command mode)
 - Neoway M590
 - u-blox 2G, 3G, 4G, and LTE Cat1 Cellular Modems (many modules including LEON-G100, LISA-U2xx, SARA-G3xx, SARA-U2xx, TOBY-L2xx, LARA-R2xx, MPCI-L2xx)
-- u-blox LTE-M/NB-IoT Modems (SARA-R4xx, SARA-N4xx, _but NOT SARA-N2xx_)
+- u-blox LTE-M/NB-IoT Modems (SARA-R4xx, SARA-N4xx, SARA-R5xx, _but NOT SARA-N2xx_)
 - Sequans Monarch LTE Cat M1/NB1 (VZM20Q)
 - Quectel BG96
 - Quectel BG95
@@ -153,7 +153,7 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
 - Not yet supported on:
     - SIM7000, SIM5360/5320/7100, SIM7500/7800, VZM20Q (Monarch)
 - Not possible on:
-    -  XBee (any type), u-blox SARA R4/N4, Neoway M590, ESP8266 (obviously)
+    -  XBee (any type), u-blox SARA R4/R5/N4, Neoway M590, ESP8266 (obviously)
 - Functions:
     - Dial, hangup
     - DTMF sending
