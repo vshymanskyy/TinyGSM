@@ -21,6 +21,7 @@
 
 #include "TinyGsmBattery.tpp"
 #include "TinyGsmGPRS.tpp"
+#include "TinyGsmGPS.tpp"
 #include "TinyGsmGSMLocation.tpp"
 #include "TinyGsmModem.tpp"
 #include "TinyGsmSMS.tpp"
@@ -46,6 +47,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
                        public TinyGsmTime<TinyGsmSim5360>,
                        public TinyGsmNTP<TinyGsmSim5360>,
                        public TinyGsmGSMLocation<TinyGsmSim5360>,
+                       public TinyGsmGPS<TinyGsmSim5360>,
                        public TinyGsmBattery<TinyGsmSim5360>,
                        public TinyGsmTemperature<TinyGsmSim5360> {
   friend class TinyGsmModem<TinyGsmSim5360>;
@@ -55,6 +57,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
   friend class TinyGsmTime<TinyGsmSim5360>;
   friend class TinyGsmNTP<TinyGsmSim5360>;
   friend class TinyGsmGSMLocation<TinyGsmSim5360>;
+  friend class TinyGsmGPS<TinyGsmSim5360>;
   friend class TinyGsmBattery<TinyGsmSim5360>;
   friend class TinyGsmTemperature<TinyGsmSim5360>;
 
@@ -404,6 +407,104 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
     if (waitResponse() != 1) { return false; }
 
     return true;
+  }
+
+  /*
+   * GPS location functions
+   */
+ protected:
+  // enable GPS
+  bool enableGPSImpl() {
+    sendAT(GF("+CGPS=1"));
+    if (waitResponse() != 1) { return false; }
+    return true;
+  }
+
+  bool disableGPSImpl() {
+    sendAT(GF("+CGPS=0"));
+    if (waitResponse() != 1) { return false; }
+    return true;
+  }
+
+  // get the RAW GPS output
+  String getGPSrawImpl() {
+    sendAT(GF("+CGPSINFO"));
+    if (waitResponse(GF(AT_NL "+CGPSINFO:")) != 1) { return ""; }
+    String res = stream.readStringUntil('\n');
+    waitResponse();
+    res.trim();
+    return res;
+  }
+
+  // get GPS informations
+  bool getGPSImpl(float* lat, float* lon, float* speed = 0, float* alt = 0,
+                  int* vsat = 0, int* usat = 0, float* accuracy = 0,
+                  int* year = 0, int* month = 0, int* day = 0, int* hour = 0,
+                  int* minute = 0, int* second = 0) {
+    sendAT(GF("+CGPSINFO"));
+    if (waitResponse(GF(AT_NL "+CGPSINFO:")) != 1) { return false; }
+    delay(30);
+
+    float ilat = 0;
+    char  north;
+    float ilon = 0;
+    char  east;
+    float ispeed       = 0;
+    float ialt         = 0;
+    int   ivsat        = 0;
+    int   iusat        = 0;
+    int   iyear        = 0;
+    int   imonth       = 0;
+    int   iday         = 0;
+    int   ihour        = 0;
+    int   imin         = 0;
+    float secondWithSS = 0;
+
+    ilat  = streamGetFloatBefore(',');  // Latitude in ddmm.mmmmmm
+    north = stream.read();              // N/S Indicator, N=north or S=south
+    streamSkipUntil(',');               // BEIDOU satellite valid numbers
+    ilon = streamGetFloatBefore(',');   // Longitude in dddmm.mmmmmm
+    east = stream.read();               // E/W Indicator, E=east or W=west
+    streamSkipUntil(',');               // BEIDOU satellite valid numbers
+
+    // Date. Output format is ddmmyy
+    iday   = streamGetIntLength(2);    // Two digit day
+    imonth = streamGetIntLength(2);    // Two digit month
+    iyear  = streamGetIntBefore(',');  // Two digit year
+
+    // UTC Time. Output format is hhmmss.s
+    ihour        = streamGetIntLength(2);      // Two digit hour
+    imin         = streamGetIntLength(2);      // Two digit minute
+    secondWithSS = streamGetFloatBefore(',');  // 4 digit second with subseconds
+
+    ialt   = streamGetFloatBefore(',');  // MSL Altitude. Unit is meters
+    ispeed = streamGetFloatBefore(',');  // Speed Over Ground. Unit is knots.
+
+    if (ilat != -9999.0F) {
+      if (lat != nullptr)
+        *lat = (floor(ilat / 100) + fmod(ilat, 100.) / 60) *
+            (north == 'N' ? 1 : -1);
+      if (lon != nullptr)
+        *lon = (floor(ilon / 100) + fmod(ilon, 100.) / 60) *
+            (east == 'E' ? 1 : -1);
+      if (speed != nullptr) *speed = ispeed;
+      if (alt != nullptr) *alt = ialt;
+      if (vsat != nullptr) *vsat = ivsat;
+      if (usat != nullptr) *usat = iusat;
+      if (iyear < 2000) iyear += 2000;
+      if (year != nullptr) *year = iyear;
+      if (month != nullptr) *month = imonth;
+      if (day != nullptr) *day = iday;
+      if (hour != nullptr) *hour = ihour;
+      if (minute != nullptr) *minute = imin;
+      if (second != nullptr) *second = static_cast<int>(secondWithSS);
+
+      waitResponse();
+      return true;
+    }
+
+    waitResponse();
+    return false;
   }
 
   /*
