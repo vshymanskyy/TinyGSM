@@ -402,7 +402,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
   }
 
   bool setBaudImpl(uint32_t baud) {
-    XBEE_COMMAND_START_DECORATOR(5, )
+    XBEE_COMMAND_START_DECORATOR(5, false)
     bool changesMade = false;
     switch (baud) {
       case 2400: changesMade |= changeSettingIfNeeded(GF("BD"), 0x1); break;
