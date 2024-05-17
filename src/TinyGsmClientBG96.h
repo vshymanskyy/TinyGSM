@@ -436,6 +436,49 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
   // The BG96 returns UTC time instead of local time as other modules do in
   // response to CCLK, so we're using QLTS where we can specifically request
   // local time.
+  bool getNetworkUTCTimeImpl(int* year, int* month, int* day, int* hour,
+                             int* minute, int* second, float* timezone) {
+    sendAT(GF("+QLTS=1"));
+    if (waitResponse(2000L, GF("+QLTS: \"")) != 1) { return false; }
+
+    int iyear     = 0;
+    int imonth    = 0;
+    int iday      = 0;
+    int ihour     = 0;
+    int imin      = 0;
+    int isec      = 0;
+    int itimezone = 0;
+
+    // Date & Time
+    iyear       = streamGetIntBefore('/');
+    imonth      = streamGetIntBefore('/');
+    iday        = streamGetIntBefore(',');
+    ihour       = streamGetIntBefore(':');
+    imin        = streamGetIntBefore(':');
+    isec        = streamGetIntLength(2);
+    char tzSign = stream.read();
+    itimezone   = streamGetIntBefore(',');
+    if (tzSign == '-') { itimezone = itimezone * -1; }
+    streamSkipUntil('\n');  // DST flag
+
+    // Set pointers
+    if (iyear < 2000) iyear += 2000;
+    if (year != nullptr) *year = iyear;
+    if (month != nullptr) *month = imonth;
+    if (day != nullptr) *day = iday;
+    if (hour != nullptr) *hour = ihour;
+    if (minute != nullptr) *minute = imin;
+    if (second != nullptr) *second = isec;
+    if (timezone != nullptr) *timezone = static_cast<float>(itimezone) / 4.0;
+
+    // Final OK
+    waitResponse();  // Ends with OK
+    return true;
+  }
+
+  // The BG96 returns UTC time instead of local time as other modules do in
+  // response to CCLK, so we're using QLTS where we can specifically request
+  // local time.
   bool getNetworkTimeImpl(int* year, int* month, int* day, int* hour,
                           int* minute, int* second, float* timezone) {
     sendAT(GF("+QLTS=2"));

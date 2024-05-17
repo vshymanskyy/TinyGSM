@@ -14,6 +14,10 @@
 
 #define TINY_GSM_MUX_COUNT 12
 #define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
+#ifdef AT_NL
+#undef AT_NL
+#endif
+#define AT_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
 
 #include "TinyGsmBattery.tpp"
 #include "TinyGsmCalling.tpp"
@@ -26,15 +30,7 @@
 #include "TinyGsmTime.tpp"
 #include "TinyGsmNTP.tpp"
 
-#define GSM_NL "\r\n"
-static const char GSM_OK[] TINY_GSM_PROGMEM    = "OK" GSM_NL;
-static const char GSM_ERROR[] TINY_GSM_PROGMEM = "ERROR" GSM_NL;
-#if defined       TINY_GSM_DEBUG
-static const char GSM_CME_ERROR[] TINY_GSM_PROGMEM = GSM_NL "+CME ERROR:";
-static const char GSM_CMS_ERROR[] TINY_GSM_PROGMEM = GSM_NL "+CMS ERROR:";
-#endif
-
-enum RegStatus {
+enum BG95RegStatus {
   REG_NO_RESULT    = -1,
   REG_UNREGISTERED = 0,
   REG_SEARCHING    = 2,
@@ -128,17 +124,15 @@ class TinyGsmBG95 : public TinyGsmModem<TinyGsmBG95>,
    * Inner Secure Client
    */
 
-  class GsmClientSecureBG95 : public GsmClientBG95
-  {
-  public:
+  class GsmClientSecureBG95 : public GsmClientBG95 {
+   public:
     GsmClientSecureBG95() {}
 
     GsmClientSecureBG95(TinyGsmBG95& modem, uint8_t mux = 0)
-     : GsmClientBG95(modem, mux)
-    {}
+        : GsmClientBG95(modem, mux) {}
 
 
-  public:
+   public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
       stop();
       TINY_GSM_YIELD();
@@ -161,7 +155,7 @@ class TinyGsmBG95 : public TinyGsmModem<TinyGsmBG95>,
    * Basic functions
    */
  protected:
-  bool initImpl(const char* pin = NULL) {
+  bool initImpl(const char* pin = nullptr) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
     DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientBG95"));
 
@@ -186,24 +180,13 @@ class TinyGsmBG95 : public TinyGsmModem<TinyGsmBG95>,
     // Enable automatic time zone update
     sendAT(GF("+CTZU=1"));
     if (waitResponse(10000L) != 1) { return false; }
-#if 1
-    SimStatus ret = getSimStatus();
-    // if the sim isn't ready and a pin has been provided, try to unlock the sim
-    if (ret != SIM_READY && pin != NULL && strlen(pin) > 0) {
-      simUnlock(pin);
-      return (getSimStatus() == SIM_READY);
-    } else {
-      // if the sim is ready, or it's locked but no pin has been provided,
-      // return true
-      return (ret == SIM_READY || ret == SIM_LOCKED);
-    }
-#endif
   }
+
   /*
    * Power functions
    */
  protected:
-  bool restartImpl(const char* pin = NULL) {
+  bool restartImpl(const char* pin = nullptr) {
     if (!testAT()) { return false; }
     if (!setPhoneFunctionality(1, true)) { return false; }
     waitResponse(10000L, GF("APP RDY"));
@@ -226,7 +209,8 @@ class TinyGsmBG95 : public TinyGsmModem<TinyGsmBG95>,
     return waitResponse() == 1;
   }
 
-  bool setPhoneFunctionalityImpl(uint8_t fun, bool reset = false, uint32_t timeout_ms = 15500L) {
+  bool setPhoneFunctionalityImpl(uint8_t fun, bool reset = false,
+                                 uint32_t timeout_ms = 15500L) {
     sendAT(GF("+CFUN="), fun, reset ? ",1" : "");
     return waitResponse(timeout_ms, GF("OK")) == 1;
   }
@@ -235,24 +219,24 @@ class TinyGsmBG95 : public TinyGsmModem<TinyGsmBG95>,
    * Generic network functions
    */
  public:
-  RegStatus getRegistrationStatus() {
+  BG95RegStatus getRegistrationStatus() {
     // Check first for EPS registration
-    RegStatus epsStatus = (RegStatus)getRegistrationStatusXREG("CEREG");
+    BG95RegStatus epsStatus = (BG95RegStatus)getRegistrationStatusXREG("CEREG");
 
-    //if REG_UNKNOWN
+    // if REG_UNKNOWN
 
     // If we're connected on EPS, great!
     if (epsStatus == REG_OK_HOME || epsStatus == REG_OK_ROAMING) {
       return epsStatus;
     } else {
       // Otherwise, check generic network status
-      return (RegStatus)getRegistrationStatusXREG("CREG");
+      return (BG95RegStatus)getRegistrationStatusXREG("CREG");
     }
   }
 
  protected:
   bool isNetworkConnectedImpl() {
-    RegStatus s = getRegistrationStatus();
+    BG95RegStatus s = getRegistrationStatus();
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
   }
 
@@ -260,8 +244,8 @@ class TinyGsmBG95 : public TinyGsmModem<TinyGsmBG95>,
    * GPRS functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char* user = NULL,
-                       const char* pwd = NULL) {
+  bool gprsConnectImpl(const char* apn, const char* user = nullptr,
+                       const char* pwd = nullptr) {
     gprsDisconnect();
 
     // Configure the TCPIP Context
@@ -293,7 +277,7 @@ class TinyGsmBG95 : public TinyGsmModem<TinyGsmBG95>,
  protected:
   String getSimCCIDImpl() {
     sendAT(GF("+QCCID"));
-    if (waitResponse(GF(GSM_NL "+QCCID:")) != 1) { return ""; }
+    if (waitResponse(GF(AT_NL "+QCCID:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     waitResponse();
     res.trim();
@@ -322,85 +306,71 @@ class TinyGsmBG95 : public TinyGsmModem<TinyGsmBG95>,
   // to, I am not implementing it here.
 
 
-
   /*
    * Testing functions
    */
 
  public:
-  String getModemManufacturerIdentification(){
+  String getModemManufacturer() {
     sendAT(GF("+GMI"));
     String res;
     if (waitResponse(1000L, res) != 1) { return ""; }
-    res.replace(GSM_NL "OK" GSM_NL, "");
-    res.replace(GSM_NL, " ");
+    res.replace(AT_NL "OK" AT_NL, "");
+    res.replace(AT_NL, " ");
     res.trim();
     return res;
   }
-  String getModemModelIdentification(){
-    sendAT(GF("+GMM"));
-    String res;
-    if (waitResponse(1000L, res) != 1) { return ""; }
-    res.replace(GSM_NL "OK" GSM_NL, "");
-    res.replace(GSM_NL, " ");
-    res.trim();
-    return res;
-  }
-  String getModemFirmwareVersionIdentification(){
-    sendAT(GF("+GMR"));
-    String res;
-    if (waitResponse(1000L, res) != 1) { return ""; }
-    res.replace(GSM_NL "OK" GSM_NL, "");
-    res.replace(GSM_NL, " ");
-    res.trim();
-    return res;
-  }
-  String getModemFirmwareFullVersionIdentification(){
+  String getModemFirmwareFullVersion() {
     sendAT(GF("+QGMR"));
     String res;
     if (waitResponse(1000L, res) != 1) { return ""; }
-    res.replace(GSM_NL "OK" GSM_NL, "");
-    res.replace(GSM_NL, " ");
+    res.replace(AT_NL "OK" AT_NL, "");
+    res.replace(AT_NL, " ");
     res.trim();
     return res;
   }
-  String getModemFirmwareApplicationVersionIdentification(){
+  String getModemFirmwareApplicationVersionn() {
     sendAT(GF("+QAPPVER"));
     String res;
     if (waitResponse(1000L, res) != 1) { return ""; }
-    res.replace(GSM_NL "OK" GSM_NL, "");
-    res.replace(GSM_NL, " ");
-    res.replace("+QAPPVER: ","");
+    res.replace(AT_NL "OK" AT_NL, "");
+    res.replace(AT_NL, " ");
+    res.replace("+QAPPVER: ", "");
     res.trim();
     return res;
   }
   bool configureGPS(void) {
-    sendAT(GF("+QGPSCFG=\"gnssconfig\",5"));//Based on Mobile Country Code (europe : galileo)
+    sendAT(GF("+QGPSCFG=\"gnssconfig\",5"));  // Based on Mobile Country Code
+                                              // (europe : galileo)
     if (waitResponse() != 1) { return false; }
     return true;
   }
   bool configureGPSPriority(void) {
-    sendAT(GF("+QGPSCFG=\"priority\""));//Priority GNSS instead of WWAN
+    sendAT(GF("+QGPSCFG=\"priority\""));  // Priority GNSS instead of WWAN
     if (waitResponse() != 1) { return false; }
     return true;
   }
   bool test(void) {
-    sendAT(GF("+QGPSCFG=\"gnssconfig\",5"));//Based on Mobile Country Code (europe : galileo)
+    sendAT(GF("+QGPSCFG=\"gnssconfig\",5"));  // Based on Mobile Country Code
+                                              // (europe : galileo)
     waitResponse();
-    sendAT(GF("+QGPSCFG=\"priority\",0,0"));//Priority GNSS, not saved
+    sendAT(GF("+QGPSCFG=\"priority\",0,0"));  // Priority GNSS, not saved
     waitResponse();
-    sendAT(GF("+QGPS=1,1,0,1"));//Low Accuracy, Continuous positionning, Rate : 1 sec
+    sendAT(GF("+QGPS=1,1,0,1"));  // Low Accuracy, Continuous positionning, Rate
+                                  // : 1 sec
     waitResponse();
-    sendAT(GF("+QGPSCFG=\"gnssconfig\",5"));//Based on Mobile Country Code (europe : galileo)
+    sendAT(GF("+QGPSCFG=\"gnssconfig\",5"));  // Based on Mobile Country Code
+                                              // (europe : galileo)
     waitResponse();
-    sendAT(GF("+QGPSCFG=\"priority\",0,0"));//Priority GNSS, not saved
+    sendAT(GF("+QGPSCFG=\"priority\",0,0"));  // Priority GNSS, not saved
     waitResponse();
     return true;
   }
   bool test_ask(void) {
-    sendAT(GF("+QGPSCFG=\"gnssconfig\""));//Based on Mobile Country Code (europe : galileo)
+    sendAT(GF("+QGPSCFG=\"gnssconfig\""));  // Based on Mobile Country Code
+                                            // (europe : galileo)
     waitResponse();
-    //if (waitResponse() != 1) { return false; }
+    // if (waitResponse() != 1) { return false; }
     sendAT(GF("+QGPSCFG=?"));
     waitResponse();
     sendAT(GF("+QGPSEND=?"));
@@ -409,11 +379,11 @@ class TinyGsmBG95 : public TinyGsmModem<TinyGsmBG95>,
     waitResponse();
     return true;
   }
-#define MODEM_RAT_SEARCHED_AUTOMATIC    (0)
-#define MODEM_RAT_SEARCHED_GSM_ONLY     (1)
-#define MODEM_RAT_SEARCHED_LTE_ONLY     (3)
-#define MODEM_RAT_SEARCHED_ERROR        (255)
-  uint8_t query_modem_rat_searched(void){
+#define MODEM_RAT_SEARCHED_AUTOMATIC (0)
+#define MODEM_RAT_SEARCHED_GSM_ONLY (1)
+#define MODEM_RAT_SEARCHED_LTE_ONLY (3)
+#define MODEM_RAT_SEARCHED_ERROR (255)
+  uint8_t query_modem_rat_searched(void) {
     uint8_t returned;
     sendAT(GF("+QCFG=\"nwscanmode\""));
     if (waitResponse(GF("+QCFG:")) != 1) { return MODEM_RAT_SEARCHED_ERROR; }
@@ -429,14 +399,16 @@ class TinyGsmBG95 : public TinyGsmModem<TinyGsmBG95>,
      3 : LTE only
      */
   }
-#define MODEM_NETWORK_CATEGORY_SEARCHED_EMTC     (0)
-#define MODEM_NETWORK_CATEGORY_SEARCHED_NBIOT    (1)
-#define MODEM_NETWORK_CATEGORY_SEARCHED_ALL      (2)
-#define MODEM_NETWORK_CATEGORY_SEARCHED_ERROR    (255)
-  uint8_t query_modem_network_category_searched(void){
+#define MODEM_NETWORK_CATEGORY_SEARCHED_EMTC (0)
+#define MODEM_NETWORK_CATEGORY_SEARCHED_NBIOT (1)
+#define MODEM_NETWORK_CATEGORY_SEARCHED_ALL (2)
+#define MODEM_NETWORK_CATEGORY_SEARCHED_ERROR (255)
+  uint8_t query_modem_network_category_searched(void) {
     uint8_t returned;
     sendAT(GF("+QCFG=\"iotopmode\""));
-    if (waitResponse(GF("+QCFG:")) != 1) { return MODEM_NETWORK_CATEGORY_SEARCHED_ERROR; }
+    if (waitResponse(GF("+QCFG:")) != 1) {
+      return MODEM_NETWORK_CATEGORY_SEARCHED_ERROR;
+    }
     streamSkipUntil('"');
     streamSkipUntil('"');
     streamSkipUntil(',');
@@ -449,7 +421,7 @@ class TinyGsmBG95 : public TinyGsmModem<TinyGsmBG95>,
      2 : eMTC and NB-IoT
      */
   }
-  void query_modem_register_settings(void){
+  void query_modem_register_settings(void) {
     sendAT(GF("+QCFG=\"band\""));
     waitResponse(500);
     sendAT(GF("+QCFG=\"nwscanmode\""));
@@ -471,7 +443,7 @@ class TinyGsmBG95 : public TinyGsmModem<TinyGsmBG95>,
 
     */
   }
-  void configure_europe_band(void){
+  void configure_europe_band(void) {
     /*
      * =>Speed-up auto detection
      * Based on Quectel Series Network Searching Scheme Introduction 2.0-1.pdf
@@ -487,15 +459,15 @@ class TinyGsmBG95 : public TinyGsmModem<TinyGsmBG95>,
      * B20 : 0x80000
      * =>80084
      */
-    //sendAT(GF("+QCFG=\"band\",F,80084,80084,1"));
+    // sendAT(GF("+QCFG=\"band\",F,80084,80084,1"));
     sendAT(GF("+QCFG=\"band\",3,80084,80084,1"));
     waitResponse(500);
   }
   bool automatic_register(bool restart_modem = false) {
     //// NB-IOT Band Configuration
     //// 1NCE: 80 for Band 8
-    //sendAT(GF("+QCFG=\"band\",0,0,80,1"));
-    //waitResponse(500);
+    // sendAT(GF("+QCFG=\"band\",0,0,80,1"));
+    // waitResponse(500);
 
     // Configure RAT(s) to be Searched
     // 0 Automatic(GSM and LTE), 1 Take effect immediately(default)
@@ -506,31 +478,31 @@ class TinyGsmBG95 : public TinyGsmModem<TinyGsmBG95>,
 
     // Configure RAT Searching Sequence
     //// (LTE Cat NB1 -> LTE Cat M1 -> GSM)
-    //sendAT(GF("+QCFG=\"nwscanseq\",030201,1"));
-    // 00 : (LTE Cat M1 -> LTE Cat NB1 -> GSM)(default)
+    // sendAT(GF("+QCFG=\"nwscanseq\",030201,1"));
+    //  00 : (LTE Cat M1 -> LTE Cat NB1 -> GSM)(default)
     sendAT(GF("+QCFG=\"nwscanseq\",00,1"));
     waitResponse(500);
 
-    // Configure Network Category to be Searched under 
+    // Configure Network Category to be Searched under
     // 0 : LTE Cat M1
     // 1 : LTE Cat NB1
     // 2 : LTE Cat M1 and Cat NB1(default)
-    //sendAT(GF("+QCFG=\"iotopmode\",1,1"));
+    // sendAT(GF("+QCFG=\"iotopmode\",1,1"));
     sendAT(GF("+QCFG=\"iotopmode\",2,1"));
     waitResponse(500);
 
     //// Configure Service Domain
     //// 1 : use PS domain service for data-service
     //// 2 : CS & PS (default)
-    //sendAT(GF("+QCFG=\"servicedomain\",2,1"));
-    //waitResponse(500);
+    // sendAT(GF("+QCFG=\"servicedomain\",2,1"));
+    // waitResponse(500);
 
     //// Configure Get the EMM cause value
     //// 0 : Numeric value (default)
     //// 1 : Verbose value
-    //sendAT(GF("+QCFG=\"emmcause\",0"));
-    //waitResponse(500);
-    if(restart_modem){
+    // sendAT(GF("+QCFG=\"emmcause\",0"));
+    // waitResponse(500);
+    if (restart_modem) {
       setPhoneFunctionalityImpl(0);
       setPhoneFunctionalityImpl(1);
     }
@@ -538,12 +510,12 @@ class TinyGsmBG95 : public TinyGsmModem<TinyGsmBG95>,
     return true;
   }
   bool force_ltem_register(bool restart_modem = false) {
-    /* Purpose speed up searching time since much longer searching time for NB-IoT than eMTC
-     * Based on Quectel Series Network Searching Scheme Introduction 2.0-1.pdf
-     * 6.2. Solutions to Speed up Network Searching : 
+    /* Purpose speed up searching time since much longer searching time for
+     * NB-IoT than eMTC Based on Quectel Series Network Searching Scheme
+     * Introduction 2.0-1.pdf 6.2. Solutions to Speed up Network Searching :
      * 6.2.1 Disable NB-IoT and Enable Required RAT(s)
      */
-    // Configure Network Category to be Searched under 
+    // Configure Network Category to be Searched under
     // 0 : LTE Cat M1
     // 1 : LTE Cat NB1
     // 2 : LTE Cat M1 and Cat NB1(default)
@@ -555,19 +527,19 @@ class TinyGsmBG95 : public TinyGsmModem<TinyGsmBG95>,
     // 3 LTE only
     sendAT(GF("+QCFG=\"nwscanmode\",3,1"));
     waitResponse(500);
-    if(restart_modem){
+    if (restart_modem) {
       setPhoneFunctionalityImpl(0);
       setPhoneFunctionalityImpl(1);
     }
     return true;
   }
   bool force_nbiot_register(bool restart_modem = false) {
-    /* Purpose speed up searching time since much longer searching time for NB-IoT than eMTC
-     * Based on Quectel Series Network Searching Scheme Introduction 2.0-1.pdf
-     * 6.2. Solutions to Speed up Network Searching : 
+    /* Purpose speed up searching time since much longer searching time for
+     * NB-IoT than eMTC Based on Quectel Series Network Searching Scheme
+     * Introduction 2.0-1.pdf 6.2. Solutions to Speed up Network Searching :
      * 6.2.2. Enable NB-IoT Bands Supported by Current Operator Only
      */
-    // Configure Network Category to be Searched under 
+    // Configure Network Category to be Searched under
     // 0 : LTE Cat M1
     // 1 : LTE Cat NB1
     // 2 : LTE Cat M1 and Cat NB1(default)
@@ -575,8 +547,8 @@ class TinyGsmBG95 : public TinyGsmModem<TinyGsmBG95>,
     waitResponse(500);
     // Configure RAT Searching Sequence
     //// (LTE Cat NB1 -> LTE Cat M1 -> GSM)
-    //sendAT(GF("+QCFG=\"nwscanseq\",030201,1"));
-    // 00 : (LTE Cat M1 -> LTE Cat NB1 -> GSM)(default)
+    // sendAT(GF("+QCFG=\"nwscanseq\",030201,1"));
+    //  00 : (LTE Cat M1 -> LTE Cat NB1 -> GSM)(default)
     sendAT(GF("+QCFG=\"nwscanseq\",020301,1"));
     waitResponse(500);
     // Configure RAT(s) to be Searched
@@ -585,16 +557,16 @@ class TinyGsmBG95 : public TinyGsmModem<TinyGsmBG95>,
     // 3 LTE only
     sendAT(GF("+QCFG=\"nwscanmode\",3,1"));
     waitResponse(500);
-    if(restart_modem){
+    if (restart_modem) {
       setPhoneFunctionalityImpl(0);
       setPhoneFunctionalityImpl(1);
     }
     return true;
   }
   bool force_gsm_register(bool restart_modem = false) {
-    /* Purpose speed up searching time since much longer searching time for NB-IoT than eMTC
-     * Based on Quectel Series Network Searching Scheme Introduction 2.0-1.pdf
-     * 6.2. Solutions to Speed up Network Searching : 
+    /* Purpose speed up searching time since much longer searching time for
+     * NB-IoT than eMTC Based on Quectel Series Network Searching Scheme
+     * Introduction 2.0-1.pdf 6.2. Solutions to Speed up Network Searching :
      * 6.2.1 Disable NB-IoT and Enable Required RAT(s)
      */
     // Configure RAT(s) to be Searched
@@ -603,19 +575,20 @@ class TinyGsmBG95 : public TinyGsmModem<TinyGsmBG95>,
     // 3 LTE only
     sendAT(GF("+QCFG=\"nwscanmode\",1,1"));
     waitResponse(500);
-    if(restart_modem){
+    if (restart_modem) {
       setPhoneFunctionalityImpl(0);
       setPhoneFunctionalityImpl(1);
     }
     return true;
   }
-  bool lte_and_falling_gsm_register(bool restore_band = false, bool restart_modem = false) {
-    if(restore_band){
+  bool lte_and_falling_gsm_register(bool restore_band  = false,
+                                    bool restart_modem = false) {
+    if (restore_band) {
       // Restore default Banc Configuration
       sendAT(GF("+QCFG=\"bandrestore\""));
       waitResponse(500);
     }
-    // Configure Network Category to be Searched under 
+    // Configure Network Category to be Searched under
     // 0 : LTE Cat M1
     // 1 : LTE Cat NB1
     // 2 : LTE Cat M1 and Cat NB1(default)
@@ -629,14 +602,14 @@ class TinyGsmBG95 : public TinyGsmModem<TinyGsmBG95>,
     waitResponse(500);
     // Configure RAT Searching Sequence
     //// (LTE Cat NB1 -> LTE Cat M1 -> GSM)
-    //sendAT(GF("+QCFG=\"nwscanseq\",030201,1"));
-    // 00 : (LTE Cat M1 -> LTE Cat NB1 -> GSM)(default)
-    // 01 : GSM
-    // 02 : LTE-M(eMTC)
-    // 03 : NB-IOT
+    // sendAT(GF("+QCFG=\"nwscanseq\",030201,1"));
+    //  00 : (LTE Cat M1 -> LTE Cat NB1 -> GSM)(default)
+    //  01 : GSM
+    //  02 : LTE-M(eMTC)
+    //  03 : NB-IOT
     sendAT(GF("+QCFG=\"nwscanseq\",020301,1"));
     waitResponse(500);
-    if(restart_modem){
+    if (restart_modem) {
       setPhoneFunctionalityImpl(0);
       setPhoneFunctionalityImpl(1);
     }
@@ -650,9 +623,9 @@ class TinyGsmBG95 : public TinyGsmModem<TinyGsmBG95>,
    * 8 : eMTC/LTE-M
    * 9 : NB-IoT
    */
-#define MODEM_COP_GSM     (0)
-#define MODEM_COP_EMTC    (8)
-#define MODEM_COP_NBIOT   (9)
+#define MODEM_COP_GSM (0)
+#define MODEM_COP_EMTC (8)
+#define MODEM_COP_NBIOT (9)
   uint8_t get_access_technology(void) {
     uint8_t act_value;
     sendAT(GF("+COPS?"));
@@ -695,7 +668,7 @@ class TinyGsmBG95 : public TinyGsmModem<TinyGsmBG95>,
   // get the RAW GPS output
   String getGPSrawImpl() {
     sendAT(GF("+QGPSLOC=2"));
-    if (waitResponse(10000L, GF(GSM_NL "+QGPSLOC:")) != 1) { return ""; }
+    if (waitResponse(10000L, GF(AT_NL "+QGPSLOC:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     waitResponse();
     res.trim();
@@ -708,7 +681,7 @@ class TinyGsmBG95 : public TinyGsmModem<TinyGsmBG95>,
                   int* year = 0, int* month = 0, int* day = 0, int* hour = 0,
                   int* minute = 0, int* second = 0) {
     sendAT(GF("+QGPSLOC=2"));
-    if (waitResponse(10000L, GF(GSM_NL "+QGPSLOC: ")) != 1) {
+    if (waitResponse(10000L, GF(AT_NL "+QGPSLOC:")) != 1) {
       // NOTE:  Will return an error if the position isn't fixed
       return false;
     }
@@ -750,20 +723,20 @@ class TinyGsmBG95 : public TinyGsmModem<TinyGsmBG95>,
                             // 0, it is the type of error.
 
     // Set pointers
-    if (lat != NULL) *lat = ilat;
-    if (lon != NULL) *lon = ilon;
-    if (speed != NULL) *speed = ispeed;
-    if (alt != NULL) *alt = ialt;
-    if (vsat != NULL) *vsat = 0;
-    if (usat != NULL) *usat = iusat;
-    if (accuracy != NULL) *accuracy = iaccuracy;
+    if (lat != nullptr) *lat = ilat;
+    if (lon != nullptr) *lon = ilon;
+    if (speed != nullptr) *speed = ispeed;
+    if (alt != nullptr) *alt = ialt;
+    if (vsat != nullptr) *vsat = 0;
+    if (usat != nullptr) *usat = iusat;
+    if (accuracy != nullptr) *accuracy = iaccuracy;
     if (iyear < 2000) iyear += 2000;
-    if (year != NULL) *year = iyear;
-    if (month != NULL) *month = imonth;
-    if (day != NULL) *day = iday;
-    if (hour != NULL) *hour = ihour;
-    if (minute != NULL) *minute = imin;
-    if (second != NULL) *second = static_cast<int>(secondWithSS);
+    if (year != nullptr) *year = iyear;
+    if (month != nullptr) *month = imonth;
+    if (day != nullptr) *day = iday;
+    if (hour != nullptr) *hour = ihour;
+    if (minute != nullptr) *minute = imin;
+    if (second != nullptr) *second = static_cast<int>(secondWithSS);
 
     waitResponse();  // Final OK
     return true;
@@ -795,7 +768,7 @@ class TinyGsmBG95 : public TinyGsmModem<TinyGsmBG95>,
   // response to CCLK, so we're using QLTS where we can specifically request
   // local time.
   bool getNetworkUTCTimeImpl(int* year, int* month, int* day, int* hour,
-                          int* minute, int* second, float* timezone) {
+                             int* minute, int* second, float* timezone) {
     sendAT(GF("+QLTS=1"));
     if (waitResponse(2000L, GF("+QLTS: \"")) != 1) { return false; }
 
@@ -821,13 +794,13 @@ class TinyGsmBG95 : public TinyGsmModem<TinyGsmBG95>,
 
     // Set pointers
     if (iyear < 2000) iyear += 2000;
-    if (year != NULL) *year = iyear;
-    if (month != NULL) *month = imonth;
-    if (day != NULL) *day = iday;
-    if (hour != NULL) *hour = ihour;
-    if (minute != NULL) *minute = imin;
-    if (second != NULL) *second = isec;
-    if (timezone != NULL) *timezone = static_cast<float>(itimezone) / 4.0;
+    if (year != nullptr) *year = iyear;
+    if (month != nullptr) *month = imonth;
+    if (day != nullptr) *day = iday;
+    if (hour != nullptr) *hour = ihour;
+    if (minute != nullptr) *minute = imin;
+    if (second != nullptr) *second = isec;
+    if (timezone != nullptr) *timezone = static_cast<float>(itimezone) / 4.0;
 
     // Final OK
     waitResponse();  // Ends with OK
@@ -864,13 +837,13 @@ class TinyGsmBG95 : public TinyGsmModem<TinyGsmBG95>,
 
     // Set pointers
     if (iyear < 2000) iyear += 2000;
-    if (year != NULL) *year = iyear;
-    if (month != NULL) *month = imonth;
-    if (day != NULL) *day = iday;
-    if (hour != NULL) *hour = ihour;
-    if (minute != NULL) *minute = imin;
-    if (second != NULL) *second = isec;
-    if (timezone != NULL) *timezone = static_cast<float>(itimezone) / 4.0;
+    if (year != nullptr) *year = iyear;
+    if (month != nullptr) *month = imonth;
+    if (day != nullptr) *day = iday;
+    if (hour != nullptr) *hour = ihour;
+    if (minute != nullptr) *minute = imin;
+    if (second != nullptr) *second = isec;
+    if (timezone != nullptr) *timezone = static_cast<float>(itimezone) / 4.0;
 
     // Final OK
     waitResponse();  // Ends with OK
@@ -911,7 +884,7 @@ class TinyGsmBG95 : public TinyGsmModem<TinyGsmBG95>,
   // get temperature in degree celsius
   uint16_t getTemperatureImpl() {
     sendAT(GF("+QTEMP"));
-    if (waitResponse(GF(GSM_NL "+QTEMP:")) != 1) { return 0; }
+    if (waitResponse(GF(AT_NL "+QTEMP:")) != 1) { return 0; }
     // return temperature in C
     uint16_t res =
         streamGetIntBefore(',');  // read PMIC (primary ic) temperature
@@ -928,67 +901,67 @@ class TinyGsmBG95 : public TinyGsmModem<TinyGsmBG95>,
  protected:
   bool modemConnect(const char* host, uint16_t port, uint8_t mux,
                     bool ssl = false, int timeout_s = 150) {
-
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
 
-      // set the ssl version
-      // AT+QSSLCFG="sslversion",<ctxindex>,<sslversion>
+    // set the ssl version
+    // AT+QSSLCFG="sslversion",<ctxindex>,<sslversion>
+    // <ctxindex> PDP context identifier
+    // <sslversion> 0: QAPI_NET_SSL_3.0
+    //              1: QAPI_NET_SSL_PROTOCOL_TLS_1_0
+    //              2: QAPI_NET_SSL_PROTOCOL_TLS_1_1
+    //              3: QAPI_NET_SSL_PROTOCOL_TLS_1_2
+    //              4: ALL
+    // NOTE:  despite docs using caps, "sslversion" must be in lower case
+    sendAT(GF("+QSSLCFG=\"sslversion\",0,3"));  // TLS 1.2
+    if (waitResponse(5000L) != 1) return false;
+    // set the ssl cipher_suite
+    // AT+QSSLCFG="ciphersuite",<ctxindex>,<cipher_suite>
+    // <ctxindex> PDP context identifier
+    // <cipher_suite> 0: TODO
+    //              1: TODO
+    //              0X0035: TLS_RSA_WITH_AES_256_CBC_SHA
+    //              0XFFFF: ALL
+    // NOTE:  despite docs using caps, "sslversion" must be in lower case
+    sendAT(GF(
+        "+QSSLCFG=\"ciphersuite\",0,0X0035"));  // TLS_RSA_WITH_AES_256_CBC_SHA
+    if (waitResponse(5000L) != 1) return false;
+    // set the ssl sec level
+    // AT+QSSLCFG="seclevel",<ctxindex>,<sec_level>
+    // <ctxindex> PDP context identifier
+    // <sec_level> 0: TODO
+    //              1: TODO
+    //              0X0035: TLS_RSA_WITH_AES_256_CBC_SHA
+    //              0XFFFF: ALL
+    // NOTE:  despite docs using caps, "sslversion" must be in lower case
+    sendAT(GF("+QSSLCFG=\"seclevel\",0,1"));
+    if (waitResponse(5000L) != 1) return false;
+
+
+    if (certificates[mux] != "") {
+      // apply the correct certificate to the connection
+      // AT+QSSLCFG="cacert",<ctxindex>,<caname>
       // <ctxindex> PDP context identifier
-      // <sslversion> 0: QAPI_NET_SSL_3.0
-      //              1: QAPI_NET_SSL_PROTOCOL_TLS_1_0
-      //              2: QAPI_NET_SSL_PROTOCOL_TLS_1_1
-      //              3: QAPI_NET_SSL_PROTOCOL_TLS_1_2
-      //              4: ALL
-      // NOTE:  despite docs using caps, "sslversion" must be in lower case
-      sendAT(GF("+QSSLCFG=\"sslversion\",0,3"));  // TLS 1.2
+      // <certname> certificate name
+
+      // sendAT(GF("+CASSLCFG="), mux, ",CACERT,\"", certificates[mux].c_str(),
+      //        "\"");
+      sendAT(GF("+QSSLCFG=\"cacert\",0,\""), certificates[mux].c_str(),
+             GF("\""));
       if (waitResponse(5000L) != 1) return false;
-      // set the ssl cipher_suite
-      // AT+QSSLCFG="ciphersuite",<ctxindex>,<cipher_suite>
-      // <ctxindex> PDP context identifier
-      // <cipher_suite> 0: TODO
-      //              1: TODO
-      //              0X0035: TLS_RSA_WITH_AES_256_CBC_SHA
-      //              0XFFFF: ALL
-      // NOTE:  despite docs using caps, "sslversion" must be in lower case
-      sendAT(GF("+QSSLCFG=\"ciphersuite\",0,0X0035"));  // TLS_RSA_WITH_AES_256_CBC_SHA
-      if (waitResponse(5000L) != 1) return false;
-      // set the ssl sec level
-      // AT+QSSLCFG="seclevel",<ctxindex>,<sec_level>
-      // <ctxindex> PDP context identifier
-      // <sec_level> 0: TODO
-      //              1: TODO
-      //              0X0035: TLS_RSA_WITH_AES_256_CBC_SHA
-      //              0XFFFF: ALL
-      // NOTE:  despite docs using caps, "sslversion" must be in lower case
-      sendAT(GF("+QSSLCFG=\"seclevel\",0,1"));
-      if (waitResponse(5000L) != 1) return false;
-
-
-      if (certificates[mux] != "") {
-        // apply the correct certificate to the connection
-        // AT+QSSLCFG="cacert",<ctxindex>,<caname>
-        // <ctxindex> PDP context identifier
-        // <certname> certificate name
-
-        //sendAT(GF("+CASSLCFG="), mux, ",CACERT,\"", certificates[mux].c_str(),
-        //       "\"");
-        sendAT(GF("+QSSLCFG=\"cacert\",0,\""), certificates[mux].c_str(), GF("\""));
-        if (waitResponse(5000L) != 1) return false;
-
-      }
+    }
 
     // <PDPcontextID>(1-16), <connectID>(0-11),
     // "TCP/UDP/TCP LISTENER/UDPSERVICE", "<IP_address>/<domain_name>",
     // <remote_port>,<local_port>,<access_mode>(0-2; 0=buffer)
-    //may need previous AT+QSSLCFG
-    sendAT(GF("+QSSLOPEN=1,1,"), mux, GF(",\""), host,
-          GF("\","), port, GF(",0"));
+    // may need previous AT+QSSLCFG
+    sendAT(GF("+QSSLOPEN=1,1,"), mux, GF(",\""), host, GF("\","), port,
+           GF(",0"));
     waitResponse();
 
-    if (waitResponse(timeout_ms, GF(GSM_NL "+QSSLOPEN:")) != 1) { return false; }
-    //20230629 -> +QSSLOPEN: <clientID>,<err>
-    //clientID is mux
-    //err must be 0
+    if (waitResponse(timeout_ms, GF(AT_NL "+QSSLOPEN:")) != 1) { return false; }
+    // 20230629 -> +QSSLOPEN: <clientID>,<err>
+    // clientID is mux
+    // err must be 0
     if (streamGetIntBefore(',') != mux) { return false; }
     // Read status
     return (0 == streamGetIntBefore('\n'));
@@ -999,7 +972,7 @@ class TinyGsmBG95 : public TinyGsmModem<TinyGsmBG95>,
     if (waitResponse(GF(">")) != 1) { return 0; }
     stream.write(reinterpret_cast<const uint8_t*>(buff), len);
     stream.flush();
-    if (waitResponse(GF(GSM_NL "SEND OK")) != 1) { return 0; }
+    if (waitResponse(GF(AT_NL "SEND OK")) != 1) { return 0; }
     // TODO(?): Wait for ACK? AT+QSSLSEND=id,0
     return len;
   }
@@ -1013,9 +986,7 @@ class TinyGsmBG95 : public TinyGsmModem<TinyGsmBG95>,
     }
     int16_t len = streamGetIntBefore('\n');
 
-    for (int i = 0; i < len; i++) {
-      moveCharFromStreamToFifo(mux);
-      }
+    for (int i = 0; i < len; i++) { moveCharFromStreamToFifo(mux); }
     waitResponse();
     sockets[mux]->sock_available = modemGetAvailable(mux);
     return len;
@@ -1032,7 +1003,7 @@ class TinyGsmBG95 : public TinyGsmModem<TinyGsmBG95>,
       if (result) { DBG("### DATA AVAILABLE:", result, "on", mux); }
       waitResponse();
     }
-    //if (!result) { sockets[mux]->sock_connected = modemGetConnected(mux); }
+    // if (!result) { sockets[mux]->sock_connected = modemGetConnected(mux); }
     return result;
   }
 
@@ -1059,110 +1030,30 @@ class TinyGsmBG95 : public TinyGsmModem<TinyGsmBG95>,
    * Utilities
    */
  public:
-  // TODO(vshymanskyy): Optimize this!
-  int8_t waitResponse(uint32_t timeout_ms, String& data,
-                      GsmConstStr r1 = GFP(GSM_OK),
-                      GsmConstStr r2 = GFP(GSM_ERROR),
-#if defined TINY_GSM_DEBUG
-                      GsmConstStr r3 = GFP(GSM_CME_ERROR),
-                      GsmConstStr r4 = GFP(GSM_CMS_ERROR),
-#else
-                      GsmConstStr r3 = NULL, GsmConstStr r4 = NULL,
-#endif
-                      GsmConstStr r5 = NULL) {
-    /*String r1s(r1); r1s.trim();
-    String r2s(r2); r2s.trim();
-    String r3s(r3); r3s.trim();
-    String r4s(r4); r4s.trim();
-    String r5s(r5); r5s.trim();
-    DBG("### ..:", r1s, ",", r2s, ",", r3s, ",", r4s, ",", r5s);*/
-    data.reserve(64);
-    uint8_t  index       = 0;
-    uint32_t startMillis = millis();
-    do {
-      TINY_GSM_YIELD();
-      while (stream.available() > 0) {
-        TINY_GSM_YIELD();
-        int8_t a = stream.read();
-        if (a <= 0) continue;  // Skip 0x00 bytes, just in case
-        data += static_cast<char>(a);
-        if (r1 && data.endsWith(r1)) {
-          index = 1;
-          goto finish;
-        } else if (r2 && data.endsWith(r2)) {
-          index = 2;
-          goto finish;
-        } else if (r3 && data.endsWith(r3)) {
-#if defined TINY_GSM_DEBUG
-          if (r3 == GFP(GSM_CME_ERROR)) {
-            streamSkipUntil('\n');  // Read out the error
-          }
-#endif
-          index = 3;
-          goto finish;
-        } else if (r4 && data.endsWith(r4)) {
-          index = 4;
-          goto finish;
-        } else if (r5 && data.endsWith(r5)) {
-          index = 5;
-          goto finish;
-        } else if (data.endsWith(GF(GSM_NL "+QIURC:"))) {
-          streamSkipUntil('\"');
-          String urc = stream.readStringUntil('\"');
-          streamSkipUntil(',');
-          if (urc == "recv") {
-            int8_t mux = streamGetIntBefore('\n');
-            DBG("### URC RECV:", mux);
-            if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
-              sockets[mux]->got_data = true;
-            }
-          } else if (urc == "closed") {
-            int8_t mux = streamGetIntBefore('\n');
-            DBG("### URC CLOSE:", mux);
-            if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
-              sockets[mux]->sock_connected = false;
-            }
-          } else {
-            streamSkipUntil('\n');
-          }
-          data = "";
+  bool handleURCs(String& data) {
+    if (data.endsWith(GF(AT_NL "+QIURC:"))) {
+      streamSkipUntil('\"');
+      String urc = stream.readStringUntil('\"');
+      streamSkipUntil(',');
+      if (urc == "recv") {
+        int8_t mux = streamGetIntBefore('\n');
+        DBG("### URC RECV:", mux);
+        if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+          sockets[mux]->got_data = true;
         }
+      } else if (urc == "closed") {
+        int8_t mux = streamGetIntBefore('\n');
+        DBG("### URC CLOSE:", mux);
+        if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+          sockets[mux]->sock_connected = false;
+        }
+      } else {
+        streamSkipUntil('\n');
       }
-    } while (millis() - startMillis < timeout_ms);
-  finish:
-    if (!index) {
-      data.trim();
-      if (data.length() && data!="RDY") { DBG("### Unhandled:", data); }
       data = "";
+      return true;
     }
-    // data.replace(GSM_NL, "/");
-    // DBG('<', index, '>', data);
-    return index;
-  }
-
-  int8_t waitResponse(uint32_t timeout_ms, GsmConstStr r1 = GFP(GSM_OK),
-                      GsmConstStr r2 = GFP(GSM_ERROR),
-#if defined TINY_GSM_DEBUG
-                      GsmConstStr r3 = GFP(GSM_CME_ERROR),
-                      GsmConstStr r4 = GFP(GSM_CMS_ERROR),
-#else
-                      GsmConstStr r3 = NULL, GsmConstStr r4 = NULL,
-#endif
-                      GsmConstStr r5 = NULL) {
-    String data;
-    return waitResponse(timeout_ms, data, r1, r2, r3, r4, r5);
-  }
-
-  int8_t waitResponse(GsmConstStr r1 = GFP(GSM_OK),
-                      GsmConstStr r2 = GFP(GSM_ERROR),
-#if defined TINY_GSM_DEBUG
-                      GsmConstStr r3 = GFP(GSM_CME_ERROR),
-                      GsmConstStr r4 = GFP(GSM_CMS_ERROR),
-#else
-                      GsmConstStr r3 = NULL, GsmConstStr r4 = NULL,
-#endif
-                      GsmConstStr r5 = NULL) {
-    return waitResponse(1000, r1, r2, r3, r4, r5);
+    return false;
   }
 
  public:
@@ -1170,7 +1061,6 @@ class TinyGsmBG95 : public TinyGsmModem<TinyGsmBG95>,
 
  protected:
   GsmClientBG95* sockets[TINY_GSM_MUX_COUNT];
-  const char*    gsmNL = GSM_NL;
   String         certificates[TINY_GSM_MUX_COUNT];
 };
 
