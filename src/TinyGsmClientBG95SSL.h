@@ -155,7 +155,7 @@ class TinyGsmBG95 : public TinyGsmModem<TinyGsmBG95>,
    * Basic functions
    */
  protected:
-  bool initImpl(const char* pin = nullptr) {
+  bool initImpl(const char*) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
     DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientBG95"));
 
