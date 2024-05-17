@@ -226,7 +226,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     if (!testAT()) { return false; }
     sendAT(GF("+CRESET"));
     if (waitResponse(10000L) != 1) { return false; }
-    delay(5000L);  // TODO(?):  Test this delay!
+    delay(24000L);
     return init(pin);
   }
 
@@ -513,11 +513,9 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       ialt   = streamGetFloatBefore(',');  // MSL Altitude. Unit is meters
       ispeed = streamGetFloatBefore(',');  // Speed Over Ground. Unit is knots.
       streamSkipUntil(',');                // Course Over Ground. Degrees.
-      streamSkipUntil(',');  // After set, will report GPS every x seconds
       iaccuracy = streamGetFloatBefore(',');  // Position Dilution Of Precision
       streamSkipUntil(',');   // Horizontal Dilution Of Precision
-      streamSkipUntil(',');   // Vertical Dilution Of Precision
-      streamSkipUntil('\n');  // TODO(?) is one more field reported??
+      streamSkipUntil('\n');  // Vertical Dilution Of Precision
 
       // Set pointers
       if (lat != nullptr)
