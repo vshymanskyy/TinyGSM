@@ -78,6 +78,7 @@ TinyGSM also pulls data gently from the modem (whenever possible), so it can ope
 - u-blox LTE-M/NB-IoT Modems (SARA-R4xx, SARA-N4xx, _but NOT SARA-N2xx_)
 - Sequans Monarch LTE Cat M1/NB1 (VZM20Q)
 - Quectel BG96
+- Quectel BG95
 - Quectel M95
 - Quectel MC60 ***(alpha)***
 
@@ -110,6 +111,7 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
         - ESP8266 - 5
         - Neoway M590 - 2
         - Quectel BG96 - 12
+        - Quectel BG95 - 12
         - Quectel M95 - 6
         - Quectel MC60/MC60E - 6
         - Sequans Monarch - 6
@@ -125,10 +127,10 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
     - Not yet supported on any module, though it may be some day
 - SSL/TLS (HTTPS)
     - Supported on:
-        - SIM800, SIM7000, u-Blox, XBee _cellular_, ESP8266, and Sequans Monarch
+        - SIM800, SIM7000, u-Blox, XBee _cellular_, ESP8266, Sequans Monarch and Quectel BG95
         - Note:  **only some device models or firmware revisions have this feature** (SIM8xx R14.18, A7, etc.)
     - Not yet supported on:
-        - Quectel modems, SIM 5360/5320/7100, SIM 7500/7600/7800
+        - Quectel BG96, SIM 5360/5320/7100, SIM 7500/7600/7800
     - Not possible on:
         - SIM900, A6/A7, Neoway M590, XBee _WiFi_
     - Like TCP, most modules support simultaneous connections
@@ -158,7 +160,7 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
 
 **Location**
 - GPS/GNSS
-    - SIM808, SIM7000, SIM7500/7600/7800, BG96, u-blox
+    - SIM808, SIM7000, SIM7500/7600/7800, BG96, BG95, u-blox
     - NOTE:  u-blox chips do _NOT_ have embedded GPS - this functionality only works if a secondary GPS is connected to primary cellular chip over I2C
 - GSM location service
     - SIM800, SIM7000, Quectel, u-blox
