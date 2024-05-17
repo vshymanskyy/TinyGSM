@@ -100,6 +100,18 @@ class TinyGsmModem {
   String getModemName() {
     return thisModem().getModemNameImpl();
   }
+  // Gets the modem serial number
+  String getModemSerialNumber() {
+    return thisModem().getModemSerialNumberImpl();
+  }
+  // Gets the modem hardware version
+  String getModemHardwareVersion() {
+    return thisModem().getModemHardwareVersionImpl();
+  }
+  // Gets the modem firmware version
+  String getModemFirmwareVersion() {
+    return thisModem().getModemFirmwareVersionImpl();
+  }
   bool factoryDefault() {
     return thisModem().factoryDefaultImpl();
   }
@@ -291,6 +303,48 @@ class TinyGsmModem {
     String name = res1 + String(' ') + res2;
     DBG("### Modem:", name);
     return name;
+  }
+
+  // Gets the modem serial number
+  String getModemSerialNumberImpl() {
+    thisModem().sendAT(GF("CGSN"));
+    String res;
+    if (thisModem().waitResponse(1000L, res) != 1) { return ""; }
+    // Do the replaces twice so we cover both \r and \r\n type endings
+    res.replace("\r\nOK\r\n", "");
+    res.replace("\rOK\r", "");
+    res.replace("\r\n", " ");
+    res.replace("\r", " ");
+    res.trim();
+    return res;
+  }
+
+  // Gets the modem hardware version
+  String getModemHardwareVersionImpl() {
+    thisModem().sendAT(GF("CGMM"));
+    String res;
+    if (thisModem().waitResponse(1000L, res) != 1) { return ""; }
+    // Do the replaces twice so we cover both \r and \r\n type endings
+    res.replace("\r\nOK\r\n", "");
+    res.replace("\rOK\r", "");
+    res.replace("\r\n", " ");
+    res.replace("\r", " ");
+    res.trim();
+    return res;
+  }
+
+  // Gets the modem firmware version
+  String getModemFirmwareVersionImpl() {
+    thisModem().sendAT(GF("CGMR"));
+    String res;
+    if (thisModem().waitResponse(1000L, res) != 1) { return ""; }
+    // Do the replaces twice so we cover both \r and \r\n type endings
+    res.replace("\r\nOK\r\n", "");
+    res.replace("\rOK\r", "");
+    res.replace("\r\n", " ");
+    res.replace("\r", " ");
+    res.trim();
+    return res;
   }
 
   bool factoryDefaultImpl() {

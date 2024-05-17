@@ -168,6 +168,25 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
     return "ESP8266";
   }
 
+  // Gets the modem serial number
+  String getModemSerialNumberImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
+  // Gets the modem hardware version
+  String getModemHardwareVersionImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
+
+  // Gets the modem firmware version
+  String getModemFirmwareVersionImpl() {
+    sendAT(GF("GMR"));  // GMR instead of CGMR
+    String res;
+    if (waitResponse(1000L, res) != 1) { return ""; }
+    // Do the replaces twice so we cover both \r and \r\n type endings
+    res.replace("\r\nOK\r\n", "");
+    res.replace("\rOK\r", "");
+    res.replace("\r\n", " ");
+    res.replace("\r", " ");
+    res.trim();
+    return res;
+  }
+
   void setBaudImpl(uint32_t baud) {
     sendAT(GF("+UART_CUR="), baud, "8,1,0,0");
     if (waitResponse() != 1) {

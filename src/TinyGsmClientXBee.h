@@ -382,6 +382,25 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
     return getBeeName();
   }
 
+  // Gets the modem serial number
+  String getModemSerialNumberImpl() {
+    String xbeeSnLow =
+        sendATGetString(GF("SL"));  // Request Module MAC/Serial Number Low
+    String xbeeSnHigh =
+        sendATGetString(GF("SH"));  // Request Module MAC/Serial Number High
+    return xbeeSnLow + String(" ") + xbeeSnHigh;
+  }
+
+  // Gets the modem hardware version
+  String getModemHardwareVersionImpl() {
+    return sendATGetString(GF("HV"));
+  }
+
+  // Gets the modem firmware version
+  String getModemFirmwareVersionImpl() {
+    return sendATGetString(GF("VR"));
+  }
+
   void setBaudImpl(uint32_t baud) {
     XBEE_COMMAND_START_DECORATOR(5, )
     bool changesMade = false;

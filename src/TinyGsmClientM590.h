@@ -144,9 +144,28 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590>,
     }
   }
 
-  // Doesn't support CGMI
+  // This is extracted from the modem info
   String getModemNameImpl() {
-    return "Neoway M590";
+    sendAT(GF("I"));
+    String factory = stream.readStringUntil('\n');  // read the factory
+    factory.trim();
+    String model = stream.readStringUntil('\n');  // read the model
+    model.trim();
+    streamSkipUntil('\n');  // skip the revision
+    waitResponse();         // wait for the OK
+    return factory + String(" ") + model;
+  }
+
+  // Gets the modem firmware version
+  // This is extracted from the modem info
+  String getModemFirmwareVersionImpl() {
+    sendAT(GF("I"));
+    streamSkipUntil('\n');                      // skip the factory
+    streamSkipUntil('\n');                      // skip the model
+    String res = stream.readStringUntil('\n');  // read the revision
+    res.trim();
+    waitResponse();  // wait for the OK
+    return res;
   }
 
   // Extra stuff here - pwr save, internal stack

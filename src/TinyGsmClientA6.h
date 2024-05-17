@@ -161,6 +161,20 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
     }
   }
 
+  // Gets the modem serial number
+  String getModemSerialNumberImpl() {
+    sendAT(GF("GSN"));  // Not CGSN
+    String res;
+    if (waitResponse(1000L, res) != 1) { return ""; }
+    // Do the replaces twice so we cover both \r and \r\n type endings
+    res.replace("\r\nOK\r\n", "");
+    res.replace("\rOK\r", "");
+    res.replace("\r\n", " ");
+    res.replace("\r", " ");
+    res.trim();
+    return res;
+  }
+
   bool factoryDefaultImpl() {
     sendAT(GF("&FZE0&W"));  // Factory + Reset + Echo Off + Write
     waitResponse();
