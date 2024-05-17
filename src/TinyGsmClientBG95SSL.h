@@ -26,6 +26,7 @@
 #include "TinyGsmModem.tpp"
 #include "TinyGsmSMS.tpp"
 #include "TinyGsmTCP.tpp"
+#include "TinyGsmSSL.tpp"
 #include "TinyGsmTemperature.tpp"
 #include "TinyGsmTime.tpp"
 #include "TinyGsmNTP.tpp"

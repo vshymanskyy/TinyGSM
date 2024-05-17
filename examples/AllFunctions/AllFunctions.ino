@@ -225,7 +225,8 @@ void loop() {
   DBG("Phone number (USSD):", ussd_phone_num);
 #endif
 
-#if TINY_GSM_TEST_TCP && defined TINY_GSM_MODEM_HAS_TCP
+#if TINY_GSM_TEST_TCP && defined TINY_GSM_MODEM_HAS_TCP && \
+    not defined(TINY_GSM_MODEM_BG95SSL)
   TinyGsmClient client(modem, 0);
   const int     port = 80;
   DBG("Connecting to", server);

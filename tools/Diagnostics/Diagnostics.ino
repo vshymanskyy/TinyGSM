@@ -115,9 +115,13 @@ TinyGsm        modem(debugger);
 TinyGsm        modem(SerialAT);
 #endif
 
-#ifdef USE_SSL&& defined TINY_GSM_MODEM_HAS_SSL
-TinyGsmClientSecure      client(modem);
-const int                port = 443;
+#if defined(TINY_GSM_MODEM_HAS_SSL)
+#define USE_SSL
+#endif
+
+#ifdef USE_SSL
+TinyGsmClientSecure client(modem);
+const int           port = 443;
 #else
 TinyGsmClient  client(modem);
 const int      port = 80;

@@ -63,6 +63,7 @@ void loop() {
   modem.networkDisconnect();
 #endif
 
+#if not defined(TINY_GSM_MODEM_BG95SSL)  // no insecure client
   // Test TCP functions
   modem.maintain();
   TinyGsmClient client;
@@ -90,6 +91,7 @@ void loop() {
   }
 
   client.stop();
+#endif
 
 #if defined(TINY_GSM_MODEM_HAS_SSL)
   // modem.addCertificate();  // not yet impemented
