@@ -21,6 +21,7 @@
 // #define TINY_GSM_MODEM_SIM7600
 // #define TINY_GSM_MODEM_UBLOX
 // #define TINY_GSM_MODEM_SARAR4
+// #define TINY_GSM_MODEM_SARAR5
 // #define TINY_GSM_MODEM_M95
 // #define TINY_GSM_MODEM_BG96
 // #define TINY_GSM_MODEM_A6
@@ -375,7 +376,9 @@ void loop() {
 
 #if TINY_GSM_TEST_GPS && defined TINY_GSM_MODEM_HAS_GPS
   DBG("Enabling GPS/GNSS/GLONASS and waiting 15s for warm-up");
+  #if !defined(TINY_GSM_MODEM_SARAR5)
   modem.enableGPS();
+  #endif
   delay(15000L);
   float lat2      = 0;
   float lon2      = 0;

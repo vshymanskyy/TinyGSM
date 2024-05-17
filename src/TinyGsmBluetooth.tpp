@@ -29,9 +29,9 @@ class TinyGsmBluetooth {
     return thisModem().setBluetoothVisibilityImpl(visible);
   }
   bool setBluetoothHostName(const char* name) {
-	return thisModem().setBluetoothHostNameImpl(name);
+    return thisModem().setBluetoothHostNameImpl(name);
   }
-  
+
   /*
    * CRTP Helper
    */
@@ -47,10 +47,10 @@ class TinyGsmBluetooth {
    * Bluetooth functions
    */
 
-  bool    enableBluetoothImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
-  bool    disableBluetoothImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
-  bool    setBluetoothVisibilityImpl(bool visible) TINY_GSM_ATTR_NOT_IMPLEMENTED;
-  bool    setBluetoothHostNameImpl(const char* name) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool enableBluetoothImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool disableBluetoothImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool setBluetoothVisibilityImpl(bool visible) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool setBluetoothHostNameImpl(const char* name) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 };
 
 
