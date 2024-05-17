@@ -505,7 +505,7 @@ class TinyGsmSequansMonarch
     sendAT(GF("+SQNSSENDEXT="), mux, ',', (uint16_t)len);
     waitResponse(10000L, GF(AT_NL "> "));
     // Translate bytes into char to be able to send them as an hex string
-    char char_command[2];
+    char char_command[3];
     for (size_t i = 0; i < len; i++) {
       memset(&char_command, 0, sizeof(char_command));
       sprintf(&char_command[0], "%02X",
