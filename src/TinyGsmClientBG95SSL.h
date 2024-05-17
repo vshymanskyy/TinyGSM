@@ -180,6 +180,8 @@ class TinyGsmBG95 : public TinyGsmModem<TinyGsmBG95>,
     // Enable automatic time zone update
     sendAT(GF("+CTZU=1"));
     if (waitResponse(10000L) != 1) { return false; }
+
+    return true;
   }
 
   /*

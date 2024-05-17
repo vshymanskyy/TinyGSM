@@ -75,13 +75,13 @@ typedef TinyGsmM95::GsmClientM95 TinyGsmClient;
 
 #elif defined(TINY_GSM_MODEM_BG96)
 #include "TinyGsmClientBG96.h"
-typedef TinyGsmBG96                TinyGsm;
-typedef TinyGsmBG96::GsmClientBG96 TinyGsmClient;
+typedef TinyGsmBG96                      TinyGsm;
+typedef TinyGsmBG96::GsmClientBG96       TinyGsmClient;
 typedef TinyGsmBG96::GsmClientSecureBG96 TinyGsmClientSecure;
 
-#elif defined(TINY_GSM_MODEM_SECURE_BG95)
-#include "TinyGsmClientSecureBG95.h"
-typedef TinyGsmBG95                TinyGsm;
+#elif defined(TINY_GSM_MODEM_BG95SSL)
+#include "TinyGsmClientBG95SSL.h"
+typedef TinyGsmBG95                      TinyGsm;
 typedef TinyGsmBG95::GsmClientSecureBG95 TinyGsmClientSecure;
 
 #elif defined(TINY_GSM_MODEM_A6) || defined(TINY_GSM_MODEM_A7)
