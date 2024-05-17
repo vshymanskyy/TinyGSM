@@ -187,7 +187,7 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
     return res;
   }
 
-  void setBaudImpl(uint32_t baud) {
+  bool setBaudImpl(uint32_t baud) {
     sendAT(GF("+UART_CUR="), baud, "8,1,0,0");
     if (waitResponse() != 1) {
       sendAT(GF("+UART="), baud,
@@ -195,9 +195,10 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
       // if (waitResponse() != 1) {
       //   sendAT(GF("+IPR="), baud);  // First release firmwares might need
       //   this
-      waitResponse();
+      return waitResponse() == 1;
       // }
     }
+    return false;
   }
 
   bool factoryDefaultImpl() {
