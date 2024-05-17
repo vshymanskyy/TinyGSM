@@ -401,7 +401,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
     return sendATGetString(GF("VR"));
   }
 
-  void setBaudImpl(uint32_t baud) {
+  bool setBaudImpl(uint32_t baud) {
     XBEE_COMMAND_START_DECORATOR(5, )
     bool changesMade = false;
     switch (baud) {
@@ -424,6 +424,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
     }
     if (changesMade) { writeChanges(); }
     XBEE_COMMAND_END_DECORATOR
+    return true;
   }
 
   bool testATImpl(uint32_t timeout_ms = 10000L) {
