@@ -63,6 +63,9 @@ void loop() {
   modem.networkDisconnect();
 #endif
 
+  char server[]   = "somewhere";
+  char resource[] = "something";
+
 #if not defined(TINY_GSM_MODEM_BG95SSL)  // no insecure client
   // Test TCP functions
   modem.maintain();
@@ -71,9 +74,6 @@ void loop() {
   TinyGsmClient client3(modem, 1);
   client.init(&modem);
   client.init(&modem, 1);
-
-  char server[]   = "somewhere";
-  char resource[] = "something";
 
   client.connect(server, 80);
 
