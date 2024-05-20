@@ -1,9 +1,9 @@
 /**
  * @file       TinyGsmClientBG96.h
- * @author     Volodymyr Shymanskyy
+ * @author     Volodymyr Shymanskyy and Aurelien BOUIN (SSL)
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
- * @date       Apr 2018
+ * @date       Apr 2018, Aug 2023 (SSL)
  */
 
 #ifndef SRC_TINYGSMCLIENTBG96_H_
@@ -26,6 +26,7 @@
 #include "TinyGsmModem.tpp"
 #include "TinyGsmSMS.tpp"
 #include "TinyGsmTCP.tpp"
+#include "TinyGsmSSL.tpp"
 #include "TinyGsmTemperature.tpp"
 #include "TinyGsmTime.tpp"
 #include "TinyGsmNTP.tpp"
@@ -72,6 +73,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
     GsmClientBG96() {}
 
     explicit GsmClientBG96(TinyGsmBG96& modem, uint8_t mux = 0) {
+      ssl_sock = false;
       init(&modem, mux);
     }
 
@@ -92,32 +94,16 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
       return true;
     }
 
-    int8_t uploadFile(const char* fileName, const char* content) {
-      // AT+QFDEL="file_name.pem"
-      at->sendAT(GF("+QFDEL="), GF("\""), fileName, GF("\""));
-      at->waitResponse();
-
-      at->sendAT(GF("+QFUPL="), GF("\""), fileName, GF("\","), strlen(content),
-                 GF(","), 100);
-      if (at->waitResponse(GF("CONNECT")) != 1) return 0;
-      at->stream.write(content, strlen(content));
-      at->stream.flush();
-      if (at->waitResponse() != 1) return 0;
-      if (at->waitResponse(5000, GF(AT_NL "+QFUPL:")) != 1) return 0;
-      at->stream.readStringUntil('\n');
-      return at->waitResponse();
-    }
-
     virtual int connect(const char* host, uint16_t port, int timeout_s) {
       stop();
       TINY_GSM_YIELD();
       rx.clear();
-      sock_connected = at->modemConnect(host, port, mux, false, timeout_s);
+      sock_connected = at->modemConnect(host, port, mux, timeout_s);
       return sock_connected;
     }
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
-    void stop(uint32_t maxWaitMs) {
+    virtual void stop(uint32_t maxWaitMs) {
       uint32_t startMillis = millis();
       dumpModemBuffer(maxWaitMs);
       at->sendAT(GF("+QICLOSE="), mux);
@@ -128,16 +114,14 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
       stop(15000L);
     }
 
-    // we need to be able to access the inner secure client function definitions
-    // from inside TinyGsmTCP eg modemSend, modemRead, modemGetConnected and
-    // modemGetAvailable, how?
-
-
     /*
      * Extended API
      */
 
     String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
+   protected:
+    bool ssl_sock;
   };
 
   /*
@@ -149,124 +133,20 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
     GsmClientSecureBG96() {}
 
     explicit GsmClientSecureBG96(TinyGsmBG96& modem, uint8_t mux = 0)
-        : GsmClientBG96(modem, mux) {}
-
-   public:
-    int connect(const char* host, uint16_t port, int timeout_s) override {
-      stop();
-      TINY_GSM_YIELD();
-      rx.clear();
-      sock_connected = at->modemConnect(host, port, mux, true, timeout_s);
-      return sock_connected;
+        : GsmClientBG96(modem, mux) {
+      ssl_sock = true;
     }
-    TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
-    void stop(uint32_t maxWaitMs) {
+    bool setCertificate(const String& certificateName) {
+      return at->setCertificate(certificateName, mux);
+    }
+
+    void stop(uint32_t maxWaitMs) override {
       uint32_t startMillis = millis();
       dumpModemBuffer(maxWaitMs);
-      at->sendAT(GF("+QSSLCLOSE=0"));
+      at->sendAT(GF("+QSSLCLOSE="), mux);
       sock_connected = false;
       at->waitResponse((maxWaitMs - (millis() - startMillis)));
-    }
-    void stop() {
-      stop(15000L);
-    }
-
-    int8_t sslSetcacert(uint8_t context, const char* fileName) {
-      at->sendAT(GF("+QSSLCFG="), GF("\""), GF("cacert"), GF("\","), context,
-                 GF(",\""), fileName, GF("\""));
-      at->waitResponse();
-
-      at->sendAT(GF("+QSSLCFG="), GF("\""), GF("negotiatetime"), GF("\","),
-                 context, GF(",300"));
-      at->waitResponse();
-      at->sendAT(GF("+QSSLCFG="), GF("\""), GF("ignorelocaltime"), GF("\","),
-                 context, GF(",0"));
-      return at->waitResponse();
-    }
-
-   protected:
-    int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
-      at->sendAT(GF("+QSSLSEND=0,"), (uint16_t)len);
-      if (at->waitResponse(GF(">")) != 1) { return 0; }
-      at->stream.write(reinterpret_cast<const uint8_t*>(buff), len);
-      at->stream.flush();
-      if (at->waitResponse(GF(AT_NL "SEND OK")) != 1) { return 0; }
-      return len;
-    }
-
-    size_t modemRead(size_t size, uint8_t mux) {
-      if (!at->sockets[mux]) return 0;
-      at->sendAT(GF("+QSSLRECV=0,"), (uint16_t)size);
-      if (at->waitResponse(GF("+QSSLRECV:")) != 1) { return 0; }
-      int16_t len = at->streamGetIntBefore('\n');
-
-      for (int i = 0; i < len; i++) { at->moveCharFromStreamToFifo(mux); }
-      at->waitResponse();
-      // DBG("### READ:", len, "from", mux);
-      // sockets[mux]->sock_available = modemGetAvailable(mux);
-      return len;
-    }
-
-    size_t modemGetAvailable(uint8_t mux) {
-      if (!at->sockets[mux]) return 0;
-      at->sendAT(GF("+QSSLRECV=0,1500"));
-      size_t result = 0;
-      if (at->waitResponse(GF("+QSSLRECV:")) == 1) {
-        result = at->streamGetIntBefore('\n');
-        if (result) { DBG("### DATA AVAILABLE:", result, "on", mux); }
-        at->waitResponse();
-      }
-      if (!result) {
-        at->sockets[mux]->sock_connected = modemGetConnected(mux);
-      }
-      return result;
-    }
-
-    bool modemGetConnected(uint8_t mux) {
-      at->sendAT(GF("+QSSLSTATE=0"));
-      // +QSSLSTATE:
-      // 4,"SSLClient","220.180.239.201",8010,65344,2,1,4,0,"usbmodem",1
-
-      if (at->waitResponse(GF("+QSSLSTATE:")) != 1) { return false; }
-
-      at->streamSkipUntil(',');                  // Skip clientID
-      at->streamSkipUntil(',');                  // Skip "SSLClient"
-      at->streamSkipUntil(',');                  // Skip remote ip
-      at->streamSkipUntil(',');                  // Skip remote port
-      at->streamSkipUntil(',');                  // Skip local port
-      int8_t res = at->streamGetIntBefore(',');  // socket state
-
-      at->waitResponse();
-
-      // 0 Initial, 1 Opening, 2 Connected, 3 Listening, 4 Closing
-      return 2 == res;
-    }
-
-    bool gprsConnectImpl(const char* apn, const char* user = NULL,
-                         const char* pwd = NULL) {
-      at->gprsDisconnect();
-
-      // Configure the TCPIP Context
-      at->sendAT(GF("+QICSGP=1,1,\""), apn, GF("\",\""), user, GF("\",\""), pwd,
-                 GF("\""));
-      if (at->waitResponse() != 1) { return false; }
-
-      // Activate GPRS/CSD Context
-      at->sendAT(GF("+QIACT=1"));
-      if (at->waitResponse(150000L) != 1) { return false; }
-
-      at->sendAT(GF("+QSSLCFG="), GF("\"sslversion"), GF("\","), 0, GF(",4"));
-      if (!at->waitResponse()) return false;
-
-      at->sendAT(GF("+QSSLCFG="), GF("\"ciphersuite"), GF("\","), 0,
-                 GF(",0xffff"));
-      if (!at->waitResponse()) return false;
-
-      at->sendAT(GF("+QSSLCFG="), GF("\"seclevel"), GF("\","), 0, GF(",1"));
-      if (!at->waitResponse()) return false;
-
-      return true;
     }
   };
 
@@ -347,9 +227,10 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
     return waitResponse() == 1;
   }
 
-  bool setPhoneFunctionalityImpl(uint8_t fun, bool reset = false) {
+  bool setPhoneFunctionalityImpl(uint8_t fun, bool reset = false,
+                                 uint32_t timeout_ms = 15500L) {
     sendAT(GF("+CFUN="), fun, reset ? ",1" : "");
-    return waitResponse(10000L, GF("OK")) == 1;
+    return waitResponse(timeout_ms, GF("OK")) == 1;
   }
 
   /*
@@ -373,6 +254,16 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
   bool isNetworkConnectedImpl() {
     BG96RegStatus s = getRegistrationStatus();
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
+  }
+
+  /*
+   * Secure socket layer functions
+   */
+ protected:
+  bool setCertificate(const String& certificateName, const uint8_t mux = 0) {
+    if (mux >= TINY_GSM_MUX_COUNT) return false;
+    certificates[mux] = certificateName;
+    return true;
   }
 
   /*
@@ -692,23 +583,76 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
    */
  protected:
   bool modemConnect(const char* host, uint16_t port, uint8_t mux,
-                    bool ssl = false, int timeout_s = 150) {
+                    int timeout_s = 150) {
     uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
+    bool     ssl        = sockets[mux]->ssl_sock;
 
     if (ssl) {
-      // AT+QSSLOPEN=1,0,0,"220.180.239.201",8010,0
-      sendAT(GF("+QSSLOPEN=1,"), mux, GF(",0,\""), host, GF("\","), port,
+      // set the ssl version
+      // AT+QSSLCFG="sslversion",<ctxindex>,<sslversion>
+      // <ctxindex> PDP context identifier
+      // <sslversion> 0: QAPI_NET_SSL_3.0
+      //              1: QAPI_NET_SSL_PROTOCOL_TLS_1_0
+      //              2: QAPI_NET_SSL_PROTOCOL_TLS_1_1
+      //              3: QAPI_NET_SSL_PROTOCOL_TLS_1_2
+      //              4: ALL
+      // NOTE:  despite docs using caps, "sslversion" must be in lower case
+      sendAT(GF("+QSSLCFG=\"sslversion\",0,3"));  // TLS 1.2
+      if (waitResponse(5000L) != 1) return false;
+      // set the ssl cipher_suite
+      // AT+QSSLCFG="ciphersuite",<ctxindex>,<cipher_suite>
+      // <ctxindex> PDP context identifier
+      // <cipher_suite> 0: TODO
+      //              1: TODO
+      //              0X0035: TLS_RSA_WITH_AES_256_CBC_SHA
+      //              0XFFFF: ALL
+      // NOTE:  despite docs using caps, "sslversion" must be in lower case
+      sendAT(GF(
+          "+QSSLCFG=\"ciphersuite\",0,0X0035"));  // TLS_RSA_WITH_AES_256_CBC_SHA
+      if (waitResponse(5000L) != 1) return false;
+      // set the ssl sec level
+      // AT+QSSLCFG="seclevel",<ctxindex>,<sec_level>
+      // <ctxindex> PDP context identifier
+      // <sec_level> 0: TODO
+      //              1: TODO
+      //              0X0035: TLS_RSA_WITH_AES_256_CBC_SHA
+      //              0XFFFF: ALL
+      // NOTE:  despite docs using caps, "sslversion" must be in lower case
+      sendAT(GF("+QSSLCFG=\"seclevel\",0,1"));
+      if (waitResponse(5000L) != 1) return false;
+
+
+      if (certificates[mux] != "") {
+        // apply the correct certificate to the connection
+        // AT+QSSLCFG="cacert",<ctxindex>,<caname>
+        // <ctxindex> PDP context identifier
+        // <certname> certificate name
+
+        // sendAT(GF("+CASSLCFG="), mux, ",CACERT,\"",
+        // certificates[mux].c_str(),
+        //        "\"");
+        sendAT(GF("+QSSLCFG=\"cacert\",0,\""), certificates[mux].c_str(),
+               GF("\""));
+        if (waitResponse(5000L) != 1) return false;
+      }
+
+      // <PDPcontextID>(1-16), <connectID>(0-11),
+      // "TCP/UDP/TCP LISTENER/UDPSERVICE", "<IP_address>/<domain_name>",
+      // <remote_port>,<local_port>,<access_mode>(0-2; 0=buffer)
+      // may need previous AT+QSSLCFG
+      sendAT(GF("+QSSLOPEN=1,1,"), mux, GF(",\""), host, GF("\","), port,
              GF(",0"));
       waitResponse();
 
       if (waitResponse(timeout_ms, GF(AT_NL "+QSSLOPEN:")) != 1) {
         return false;
       }
-
-      if (streamGetIntBefore(',') != 0) {
-        return false;
-      }  // make sure client_id is 0
-
+      // 20230629 -> +QSSLOPEN: <clientID>,<err>
+      // clientID is mux
+      // err must be 0
+      if (streamGetIntBefore(',') != mux) { return false; }
+      // Read status
+      return (0 == streamGetIntBefore('\n'));
     } else {
       // AT+QIOPEN=1,0,"TCP","220.180.239.212",8009,0,0
       // <PDPcontextID>(1-16), <connectID>(0-11),
@@ -727,19 +671,33 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
   }
 
   int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
-    sendAT(GF("+QISEND="), mux, ',', (uint16_t)len);
+    bool ssl = sockets[mux]->ssl_sock;
+    if (ssl) {
+      sendAT(GF("+QSSLSEND="), mux, ',', (uint16_t)len);
+    } else {
+      sendAT(GF("+QISEND="), mux, ',', (uint16_t)len);
+    }
     if (waitResponse(GF(">")) != 1) { return 0; }
     stream.write(reinterpret_cast<const uint8_t*>(buff), len);
     stream.flush();
     if (waitResponse(GF(AT_NL "SEND OK")) != 1) { return 0; }
-    // TODO(?): Wait for ACK? AT+QISEND=id,0
+    // TODO(?): Wait for ACK? (AT+QISEND=id,0 or AT+QSSLSEND=id,0)
     return len;
   }
 
   size_t modemRead(size_t size, uint8_t mux) {
     if (!sockets[mux]) return 0;
-    sendAT(GF("+QIRD="), mux, ',', (uint16_t)size);
-    if (waitResponse(GF("+QIRD:")) != 1) { return 0; }
+    bool ssl = sockets[mux]->ssl_sock;
+    if (ssl) {
+      sendAT(GF("+QSSLRECV="), mux, ',', (uint16_t)size);
+      if (waitResponse(GF("+QSSLRECV:")) != 1) {
+        DBG("### READ: For unknown reason close");
+        return 0;
+      }
+    } else {
+      sendAT(GF("+QIRD="), mux, ',', (uint16_t)size);
+      if (waitResponse(GF("+QIRD:")) != 1) { return 0; }
+    }
     int16_t len = streamGetIntBefore('\n');
 
     for (int i = 0; i < len; i++) { moveCharFromStreamToFifo(mux); }
@@ -751,36 +709,68 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
 
   size_t modemGetAvailable(uint8_t mux) {
     if (!sockets[mux]) return 0;
-    sendAT(GF("+QIRD="), mux, GF(",0"));
+    bool   ssl    = sockets[mux]->ssl_sock;
     size_t result = 0;
-    if (waitResponse(GF("+QIRD:")) == 1) {
-      streamSkipUntil(',');  // Skip total received
-      streamSkipUntil(',');  // Skip have read
-      result = streamGetIntBefore('\n');
-      if (result) { DBG("### DATA AVAILABLE:", result, "on", mux); }
-      waitResponse();
+    if (ssl) {
+      sendAT(GF("+QSSLRECV="), mux, GF(",0"));
+      if (waitResponse(GF("+QSSLRECV:")) == 1) {
+        streamSkipUntil(',');  // Skip total received
+        streamSkipUntil(',');  // Skip have read
+        result = streamGetIntBefore('\n');
+        if (result) { DBG("### DATA AVAILABLE:", result, "on", mux); }
+        waitResponse();
+      }
+    } else {
+      sendAT(GF("+QIRD="), mux, GF(",0"));
+      if (waitResponse(GF("+QIRD:")) == 1) {
+        streamSkipUntil(',');  // Skip total received
+        streamSkipUntil(',');  // Skip have read
+        result = streamGetIntBefore('\n');
+        if (result) { DBG("### DATA AVAILABLE:", result, "on", mux); }
+        waitResponse();
+      }
     }
     if (!result) { sockets[mux]->sock_connected = modemGetConnected(mux); }
     return result;
   }
 
   bool modemGetConnected(uint8_t mux) {
-    sendAT(GF("+QISTATE=1,"), mux);
-    // +QISTATE: 0,"TCP","151.139.237.11",80,5087,4,1,0,0,"uart1"
+    bool ssl = sockets[mux]->ssl_sock;
+    if (ssl) {
+      sendAT(GF("+QSSLSTATE=1,"), mux);
+      // +QSSLSTATE: 0,"TCP","151.139.237.11",80,5087,4,1,0,0,"uart1"
 
-    if (waitResponse(GF("+QISTATE:")) != 1) { return false; }
+      if (waitResponse(GF("+QSSLSTATE:")) != 1) { return false; }
 
-    streamSkipUntil(',');                  // Skip mux
-    streamSkipUntil(',');                  // Skip socket type
-    streamSkipUntil(',');                  // Skip remote ip
-    streamSkipUntil(',');                  // Skip remote port
-    streamSkipUntil(',');                  // Skip local port
-    int8_t res = streamGetIntBefore(',');  // socket state
+      streamSkipUntil(',');                  // Skip clientID
+      streamSkipUntil(',');                  // Skip "SSLClient"
+      streamSkipUntil(',');                  // Skip remote ip
+      streamSkipUntil(',');                  // Skip remote port
+      streamSkipUntil(',');                  // Skip local port
+      int8_t res = streamGetIntBefore(',');  // socket state
 
-    waitResponse();
+      waitResponse();
 
-    // 0 Initial, 1 Opening, 2 Connected, 3 Listening, 4 Closing
-    return 2 == res;
+      // 0 Initial, 1 Opening, 2 Connected, 3 Listening, 4 Closing
+      return 2 == res;
+    } else {
+      sendAT(GF("+QISTATE=1,"), mux);
+      // +QISTATE: 0,"TCP","151.139.237.11",80,5087,4,1,0,0,"uart1"
+
+      if (waitResponse(GF("+QISTATE:")) != 1) { return false; }
+
+      streamSkipUntil(',');                  // Skip mux
+      streamSkipUntil(',');                  // Skip socket type
+      streamSkipUntil(',');                  // Skip remote ip
+      streamSkipUntil(',');                  // Skip remote port
+      streamSkipUntil(',');                  // Skip local port
+      int8_t res = streamGetIntBefore(',');  // socket state
+
+      waitResponse();
+
+      // 0 Initial, 1 Opening, 2 Connected, 3 Listening, 4 Closing
+      return 2 == res;
+    }
   }
 
   /*
@@ -818,6 +808,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
 
  protected:
   GsmClientBG96* sockets[TINY_GSM_MUX_COUNT];
+  String         certificates[TINY_GSM_MUX_COUNT];
 };
 
 #endif  // SRC_TINYGSMCLIENTBG96_H_
