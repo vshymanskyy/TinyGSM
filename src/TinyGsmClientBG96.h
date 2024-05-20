@@ -354,7 +354,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
   // get the RAW GPS output
   String getGPSrawImpl() {
     sendAT(GF("+QGPSLOC=2"));
-    if (waitResponse(10000L, GF(AT_NL "+QGPSLOC:")) != 1) { return ""; }
+    if (waitResponse(10000L, GF(AT_NL "+QGPSLOC: ")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     waitResponse();
     res.trim();
@@ -367,7 +367,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
                   int* year = 0, int* month = 0, int* day = 0, int* hour = 0,
                   int* minute = 0, int* second = 0) {
     sendAT(GF("+QGPSLOC=2"));
-    if (waitResponse(10000L, GF(AT_NL "+QGPSLOC:")) != 1) {
+    if (waitResponse(10000L, GF(AT_NL "+QGPSLOC: ")) != 1) {
       // NOTE:  Will return an error if the position isn't fixed
       return false;
     }
