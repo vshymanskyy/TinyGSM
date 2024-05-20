@@ -79,7 +79,8 @@ typedef TinyGsmSaraR5::GsmClientSecureR5 TinyGsmClientSecure;
 typedef TinyGsmM95               TinyGsm;
 typedef TinyGsmM95::GsmClientM95 TinyGsmClient;
 
-#elif defined(TINY_GSM_MODEM_BG96) || defined(TINY_GSM_MODEM_BG95SSL)
+#elif defined(TINY_GSM_MODEM_BG96) || defined(TINY_GSM_MODEM_BG95) || \
+    defined(TINY_GSM_MODEM_BG95SSL)
 #include "TinyGsmClientBG96.h"
 typedef TinyGsmBG96                      TinyGsm;
 typedef TinyGsmBG96::GsmClientBG96       TinyGsmClient;

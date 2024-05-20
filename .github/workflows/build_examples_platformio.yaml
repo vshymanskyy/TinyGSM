@@ -27,7 +27,7 @@ jobs:
           [
             TINY_GSM_MODEM_A6,
             TINY_GSM_MODEM_BG96,
-            TINY_GSM_MODEM_BG95SSL,
+            TINY_GSM_MODEM_A7672X,
             TINY_GSM_MODEM_ESP8266,
             TINY_GSM_MODEM_M95,
             TINY_GSM_MODEM_M590,
@@ -44,13 +44,6 @@ jobs:
             TINY_GSM_MODEM_XBEE,
             TINY_GSM_MODEM_SEQUANS_MONARCH,
           ]
-        exclude:
-          - modem: TINY_GSM_MODEM_BG95SSL
-            example: examples/BlynkClient
-          - modem: TINY_GSM_MODEM_BG95SSL
-            example: examples/FileDownload
-          - modem: TINY_GSM_MODEM_BG95SSL
-            example: examples/MqttClient
 
     steps:
       - uses: actions/checkout@v4

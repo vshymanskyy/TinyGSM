@@ -29,7 +29,7 @@ You can also join our chat:
 - [How does it work?](#how-does-it-work)
 - [API Reference](#api-reference)
 - [Troubleshooting](#troubleshooting)
-  - [Ensure stable data & power connection](#ensure-stable-data--power-connection)
+  - [Ensure stable data \& power connection](#ensure-stable-data--power-connection)
   - [Baud rates](#baud-rates)
   - [Broken initial configuration](#broken-initial-configuration)
   - [Failed connection or no data received](#failed-connection-or-no-data-received)
@@ -70,6 +70,7 @@ TinyGSM also pulls data gently from the modem (whenever possible), so it can ope
 - SIMCom LTE Modules (SIM7100E, SIM7500E, SIM7500A, SIM7600C, SIM7600E)
 - SIMCom SIM7000E/A/G CAT-M1/NB-IoT Module
 - SIMCom SIM7070/SIM7080/SIM7090 CAT-M1/NB-IoT Module
+- SIMCom A7672X CAT-M1 Module
 - AI-Thinker A6, A6C, A7, A20
 - ESP8266/ESP32 (AT commands interface, similar to GSM modems)
 - Digi XBee WiFi and Cellular (using XBee command mode)
@@ -92,13 +93,6 @@ TinyGSM also pulls data gently from the modem (whenever possible), so it can ope
 - RAK WisLTE ***(alpha)***
 - ... other modules, based on supported modems. Some boards require [**special configuration**](https://github.com/vshymanskyy/TinyGSM/wiki/Board-configuration).
 
-More modems may be supported later:
-- [ ] Quectel M10, UG95
-- [ ] SIMCom SIM7020
-- [ ] Telit GL865
-- [ ] ZTE MG2639
-- [ ] Hi-Link HLK-RM04
-
 Watch this repo for new updates! And of course, contributions are welcome ;)
 
 ## Features
@@ -120,6 +114,7 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
         - SIM7000 - 8 possible without SSL, only 2 with
         - SIM 7070/7080/7090 - 12
         - SIM 7500/7600/7800 - 10
+        - SIM A7672X - 10
         - u-blox 2G/3G - 7
         - u-blox SARA R4/N4 - 7
         - Digi XBee - _only 1 connection supported!_
@@ -127,10 +122,10 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
     - Not yet supported on any module, though it may be some day
 - SSL/TLS (HTTPS)
     - Supported on:
-        - SIM800, SIM7000, u-Blox, XBee _cellular_, ESP8266, Sequans Monarch and Quectel BG95
+        - SIM800, SIM7000, A7672X, u-Blox, XBee _cellular_, ESP8266, Sequans Monarch and Quectel BG95 and BG96
         - Note:  **only some device models or firmware revisions have this feature** (SIM8xx R14.18, A7, etc.)
     - Not yet supported on:
-        - Quectel BG96, SIM 5360/5320/7100, SIM 7500/7600/7800
+        - SIM 5360/5320/7100, SIM 7500/7600/7800
     - Not possible on:
         - SIM900, A6/A7, Neoway M590, XBee _WiFi_
     - Like TCP, most modules support simultaneous connections
