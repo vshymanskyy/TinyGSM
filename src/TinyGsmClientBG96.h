@@ -148,6 +148,9 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
       sock_connected = false;
       at->waitResponse((maxWaitMs - (millis() - startMillis)));
     }
+    void stop() override {
+      stop(15000L);
+    }
   };
 
   /*
