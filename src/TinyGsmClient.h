@@ -123,7 +123,7 @@ typedef TinyGsmSequansMonarch::GsmClientSecureSequansMonarch
     TinyGsmClientSecure;
 
 #elif defined(TINY_GSM_MODEM_A7672X)
-#include "TinyGsmClientA7672X.h"
+#include "TinyGsmClientA7672x.h"
 typedef TinyGsmA7672X                        TinyGsm;
 typedef TinyGsmA7672X::GsmClientA7672X       TinyGsmClient;
 typedef TinyGsmA7672X::GsmClientSecureA7672X TinyGsmClientSecure;
