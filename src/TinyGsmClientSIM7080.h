@@ -183,11 +183,33 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     while (stream.available()) { waitResponse(15, nullptr, nullptr); }
   }
 
+  bool factoryDefaultImpl() {
+    sendAT(GF("&FZE0"));  // Factory + Reset + Echo Off + Write
+    waitResponse();
+    sendAT(GF("+IPR=0"));  // Auto-baud
+    waitResponse();
+    sendAT(GF("+IFC=0,0"));  // No Flow Control
+    waitResponse();
+    sendAT(GF("+ICF=3,3"));  // 8 data 0 parity 1 stop
+    waitResponse();
+    sendAT(GF("+CSCLK=0"));  // Disable Slow Clock
+    return waitResponse() == 1;
+  }
+
   /*
    * Power functions
    */
  protected:
-  // Follows the SIM70xx template
+  bool restartImpl(const char* pin = nullptr) {
+    bool success = true;
+    sendAT(GF("E0"));  // Echo Off
+    waitResponse();
+    sendAT(GF("+CREBOOT"));  // Reboot
+    success &= waitResponse() == 1;
+    waitResponse(30000L, GF("SMS Ready"));
+    success &= initImpl(pin);
+    return success;
+  }
 
   /*
    * Generic network functions
@@ -324,7 +346,8 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
   byte NTPServerSyncImpl(String server = "pool.ntp.org", int TimeZone = 0) {
     // Set GPRS bearer profile to associate with NTP sync
     // this may fail, it's not supported by all modules
-    sendAT(GF("+CNTPCID=0")); // CID must be 0. With 1 (like other modules) does not work!
+    sendAT(GF("+CNTPCID=0"));  // CID must be 0. With 1 (like other modules)
+                               // does not work!
     waitResponse(10000L);
 
     // Set NTP server and timezone
@@ -335,11 +358,10 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     sendAT(GF("+CNTP"));
     if (waitResponse(10000L, GF("+CNTP:"))) {
       String result = stream.readStringUntil('\n');
-      // Check for ',' in case the module appends the time next to the return code. Eg: +CNTP: <code>[,<time>]
+      // Check for ',' in case the module appends the time next to the return
+      // code. Eg: +CNTP: <code>[,<time>]
       int index = result.indexOf(',');
-      if(index > 0) {
-          result.remove(index);
-      }
+      if (index > 0) { result.remove(index); }
       result.trim();
       if (TinyGsmIsValidNumber(result)) { return result.toInt(); }
     } else {
