@@ -15,6 +15,11 @@
 
 template <class modemType>
 class TinyGsmNTP {
+  /* =========================================== */
+  /* =========================================== */
+  /*
+   * Define the interface
+   */
  public:
   /*
    * NTP server functions
@@ -49,6 +54,12 @@ class TinyGsmNTP {
   inline modemType& thisModem() {
     return static_cast<modemType&>(*this);
   }
+
+  /* =========================================== */
+  /* =========================================== */
+  /*
+   * Define the default function implementations
+   */
 
   /*
    * NTP server functions

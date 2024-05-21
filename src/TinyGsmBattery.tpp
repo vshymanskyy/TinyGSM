@@ -15,6 +15,11 @@
 
 template <class modemType>
 class TinyGsmBattery {
+  /* =========================================== */
+  /* =========================================== */
+  /*
+   * Define the interface
+   */
  public:
   /*
    * Battery functions
@@ -43,6 +48,13 @@ class TinyGsmBattery {
   inline modemType& thisModem() {
     return static_cast<modemType&>(*this);
   }
+
+
+  /* =========================================== */
+  /* =========================================== */
+  /*
+   * Define the default function implementations
+   */
 
   /*
    * Battery functions

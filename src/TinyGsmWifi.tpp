@@ -15,6 +15,11 @@
 
 template <class modemType>
 class TinyGsmWifi {
+  /* =========================================== */
+  /* =========================================== */
+  /*
+   * Define the interface
+   */
  public:
   /*
    * WiFi functions
@@ -36,6 +41,12 @@ class TinyGsmWifi {
   inline modemType& thisModem() {
     return static_cast<modemType&>(*this);
   }
+
+  /* =========================================== */
+  /* =========================================== */
+  /*
+   * Define the default function implementations
+   */
 
   /*
    * WiFi functions

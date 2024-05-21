@@ -15,6 +15,11 @@
 
 template <class modemType>
 class TinyGsmSMS {
+  /* =========================================== */
+  /* =========================================== */
+  /*
+   * Define the interface
+   */
  public:
   /*
    * Messaging functions
@@ -41,7 +46,7 @@ class TinyGsmSMS {
   }
 
   /*
-   * Messaging functions
+   * Utilities
    */
  protected:
   static inline String TinyGsmDecodeHex7bit(String& instr) {
@@ -110,6 +115,12 @@ class TinyGsmSMS {
     }
     return result;
   }
+
+  /* =========================================== */
+  /* =========================================== */
+  /*
+   * Define the default function implementations
+   */
 
   String sendUSSDImpl(const String& code) {
     // Set preferred message format to text mode

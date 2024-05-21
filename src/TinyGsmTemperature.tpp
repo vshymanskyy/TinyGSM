@@ -15,6 +15,11 @@
 
 template <class modemType>
 class TinyGsmTemperature {
+  /* =========================================== */
+  /* =========================================== */
+  /*
+   * Define the interface
+   */
  public:
   /*
    * Temperature functions
@@ -33,6 +38,12 @@ class TinyGsmTemperature {
   inline modemType& thisModem() {
     return static_cast<modemType&>(*this);
   }
+
+  /* =========================================== */
+  /* =========================================== */
+  /*
+   * Define the default function implementations
+   */
 
   float getTemperatureImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 };

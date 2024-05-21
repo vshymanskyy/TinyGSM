@@ -15,6 +15,11 @@
 
 template <class modemType>
 class TinyGsmBluetooth {
+  /* =========================================== */
+  /* =========================================== */
+  /*
+   * Define the interface
+   */
  public:
   /*
    * Bluetooth functions
@@ -42,6 +47,12 @@ class TinyGsmBluetooth {
   inline modemType& thisModem() {
     return static_cast<modemType&>(*this);
   }
+
+  /* =========================================== */
+  /* =========================================== */
+  /*
+   * Define the default function implementations
+   */
 
   /*
    * Bluetooth functions

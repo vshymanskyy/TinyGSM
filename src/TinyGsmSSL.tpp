@@ -16,6 +16,11 @@
 
 template <class modemType>
 class TinyGsmSSL {
+  /* =========================================== */
+  /* =========================================== */
+  /*
+   * Define the interface
+   */
  public:
   /*
    * SSL functions
@@ -38,27 +43,11 @@ class TinyGsmSSL {
     return static_cast<modemType&>(*this);
   }
 
+  /* =========================================== */
+  /* =========================================== */
   /*
-   * Inner Secure Client
+   * Define the default function implementations
    */
-  /*
- public:
-  class GsmClientSecure : public GsmClient {
-   public:
-    GsmClientSecureSim800() {}
-
-    explicit GsmClientSecureSim800(TinyGsmSim800& modem, uint8_t mux = 0)
-        : GsmClientSim800(modem, mux) {}
-
-   public:
-    int connect(const char* host, uint16_t port, int timeout_s) overide {
-      stop();
-      TINY_GSM_YIELD();
-      rx.clear();
-      sock_connected = at->modemConnect(host, port, mux, true, timeout_s);
-      return sock_connected;
-    }
-  };*/
 
   /*
    * SSL functions

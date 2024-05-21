@@ -22,6 +22,11 @@ enum SimStatus {
 
 template <class modemType>
 class TinyGsmGPRS {
+  /* =========================================== */
+  /* =========================================== */
+  /*
+   * Define the interface
+   */
  public:
   /*
    * SIM card functions
@@ -80,6 +85,12 @@ class TinyGsmGPRS {
   inline modemType& thisModem() {
     return static_cast<modemType&>(*this);
   }
+
+  /* =========================================== */
+  /* =========================================== */
+  /*
+   * Define the default function implementations
+   */
 
   /*
    * SIM card functions

@@ -17,6 +17,11 @@ enum TinyGSMDateTimeFormat { DATE_FULL = 0, DATE_TIME = 1, DATE_DATE = 2 };
 
 template <class modemType>
 class TinyGsmTime {
+  /* =========================================== */
+  /* =========================================== */
+  /*
+   * Define the interface
+   */
  public:
   /*
    * Time functions
@@ -46,6 +51,11 @@ class TinyGsmTime {
     return static_cast<modemType&>(*this);
   }
 
+  /* =========================================== */
+  /* =========================================== */
+  /*
+   * Define the default function implementations
+   */
   /*
    * Time functions
    */

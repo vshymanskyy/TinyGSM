@@ -43,6 +43,11 @@ static const char GSM_VERBOSE_2[] TINY_GSM_PROGMEM = AT_VERBOSE_2;
 
 template <class modemType>
 class TinyGsmModem {
+  /* =========================================== */
+  /* =========================================== */
+  /*
+   * Define the interface
+   */
  public:
   /*
    * Basic functions
@@ -168,6 +173,12 @@ class TinyGsmModem {
     return static_cast<modemType&>(*this);
   }
 
+  /* =========================================== */
+  /* =========================================== */
+  /*
+   * Define the default function implementations
+   */
+
   /*
    * Basic functions
    */
@@ -175,7 +186,7 @@ class TinyGsmModem {
   bool setBaudImpl(uint32_t baud) {
     thisModem().sendAT(GF("+IPR="), baud);
     return thisModem().waitResponse() == 1;
-  } 
+  }
 
   bool testATImpl(uint32_t timeout_ms = 10000L) {
     for (uint32_t start = millis(); millis() - start < timeout_ms;) {

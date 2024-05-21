@@ -43,6 +43,11 @@
 
 template <class modemType, uint8_t muxCount>
 class TinyGsmTCP {
+  /* =========================================== */
+  /* =========================================== */
+  /*
+   * Define the interface
+   */
  public:
   /*
    * Basic functions
@@ -314,6 +319,12 @@ class TinyGsmTCP {
     bool       got_data;
     RxFifo     rx;
   };
+
+  /* =========================================== */
+  /* =========================================== */
+  /*
+   * Define the default function implementations
+   */
 
   /*
    * Basic functions

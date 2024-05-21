@@ -15,6 +15,11 @@
 
 template <class modemType>
 class TinyGsmCalling {
+  /* =========================================== */
+  /* =========================================== */
+  /*
+   * Define the interface
+   */
  public:
   /*
    * Phone Call functions
@@ -42,6 +47,12 @@ class TinyGsmCalling {
   inline modemType& thisModem() {
     return static_cast<modemType&>(*this);
   }
+
+  /* =========================================== */
+  /* =========================================== */
+  /*
+   * Define the default function implementations
+   */
 
   /*
    * Phone Call functions

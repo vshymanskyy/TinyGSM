@@ -15,6 +15,11 @@
 
 template <class modemType>
 class TinyGsmGSMLocation {
+  /* =========================================== */
+  /* =========================================== */
+  /*
+   * Define the interface
+   */
  public:
   /*
    * GSM Location functions
@@ -53,6 +58,12 @@ class TinyGsmGSMLocation {
   inline modemType& thisModem() {
     return static_cast<modemType&>(*this);
   }
+
+  /* =========================================== */
+  /* =========================================== */
+  /*
+   * Define the default function implementations
+   */
 
   /*
    * GSM Location functions
