@@ -123,6 +123,10 @@ class TinyGsmSMS {
    * Define the default function implementations
    */
 
+  /*
+   * Messaging functions
+   */
+
   String sendUSSDImpl(const String& code) {
     // Set preferred message format to text mode
     thisModem().sendAT(GF("+CMGF=1"));

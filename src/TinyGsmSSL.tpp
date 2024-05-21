@@ -13,7 +13,6 @@
 
 #define TINY_GSM_MODEM_HAS_SSL
 
-
 template <class modemType>
 class TinyGsmSSL {
   /* =========================================== */

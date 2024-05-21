@@ -34,10 +34,10 @@ class TinyGsmTime {
     return thisModem().getNetworkTimeImpl(year, month, day, hour, minute,
                                           second, timezone);
   }
-  bool getNetworkUTCTime(int* year, int* month, int* day, int* hour, int* minute,
-                      int* second, float* timezone) {
+  bool getNetworkUTCTime(int* year, int* month, int* day, int* hour,
+                         int* minute, int* second, float* timezone) {
     return thisModem().getNetworkUTCTimeImpl(year, month, day, hour, minute,
-                                          second, timezone);
+                                             second, timezone);
   }
 
   /*

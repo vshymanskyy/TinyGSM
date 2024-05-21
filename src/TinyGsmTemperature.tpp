@@ -46,6 +46,10 @@ class TinyGsmTemperature {
    * Define the default function implementations
    */
 
+  /*
+   * Temperature functions
+   */
+
   float getTemperatureImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 };
 

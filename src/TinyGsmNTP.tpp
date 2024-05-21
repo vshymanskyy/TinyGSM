@@ -83,11 +83,10 @@ class TinyGsmNTP {
     thisModem().sendAT(GF("+CNTP"));
     if (thisModem().waitResponse(10000L, GF("+CNTP:"))) {
       String result = thisModem().stream.readStringUntil('\n');
-      // Check for ',' in case the module appends the time next to the return code. Eg: +CNTP: <code>[,<time>]
+      // Check for ',' in case the module appends the time next to the return
+      // code. Eg: +CNTP: <code>[,<time>]
       int index = result.indexOf(',');
-      if(index > 0) {
-          result.remove(index);
-      }
+      if (index > 0) { result.remove(index); }
       result.trim();
       if (TinyGsmIsValidNumber(result)) { return result.toInt(); }
     } else {
