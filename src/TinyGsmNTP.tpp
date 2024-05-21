@@ -26,6 +26,16 @@ class TinyGsmNTP {
    */
 
  public:
+  byte NTPServerSync(String server = "pool.ntp.org", int TimeZone = 0) {
+    return thisModem().NTPServerSyncImpl(server, TimeZone);
+  }
+  String ShowNTPError(byte error) {
+    return thisModem().ShowNTPErrorImpl(error);
+  }
+
+  /*
+   * Utilities
+   */
   bool TinyGsmIsValidNumber(String str) {
     if (!(str.charAt(0) == '+' || str.charAt(0) == '-' ||
           isDigit(str.charAt(0))))
@@ -35,13 +45,6 @@ class TinyGsmNTP {
       if (!(isDigit(str.charAt(i)) || str.charAt(i) == '.')) { return false; }
     }
     return true;
-  }
-
-  byte NTPServerSync(String server = "pool.ntp.org", int TimeZone = 0) {
-    return thisModem().NTPServerSyncImpl(server, TimeZone);
-  }
-  String ShowNTPError(byte error) {
-    return thisModem().ShowNTPErrorImpl(error);
   }
 
   /*

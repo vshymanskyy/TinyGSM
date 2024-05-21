@@ -173,6 +173,132 @@ class TinyGsmModem {
     return static_cast<modemType&>(*this);
   }
 
+  /*
+   Utilities
+   */
+ public:
+  // Utility templates for writing/skipping characters on a stream
+  template <typename T>
+  inline void streamWrite(T last) {
+    thisModem().stream.print(last);
+  }
+
+  template <typename T, typename... Args>
+  inline void streamWrite(T head, Args... tail) {
+    thisModem().stream.print(head);
+    thisModem().streamWrite(tail...);
+  }
+
+  inline void streamClear() {
+    while (thisModem().stream.available()) {
+      thisModem().waitResponse(50, nullptr, nullptr);
+    }
+  }
+
+ protected:
+  inline bool streamGetLength(char* buf, int8_t numChars,
+                              const uint32_t timeout_ms = 1000L) {
+    if (!buf) { return false; }
+
+    int8_t   numCharsReady = -1;
+    uint32_t startMillis   = millis();
+    while (millis() - startMillis < timeout_ms &&
+           (numCharsReady = thisModem().stream.available()) < numChars) {
+      TINY_GSM_YIELD();
+    }
+
+    if (numCharsReady >= numChars) {
+      thisModem().stream.readBytes(buf, numChars);
+      return true;
+    }
+
+    return false;
+  }
+
+  inline int16_t streamGetIntLength(int8_t         numChars,
+                                    const uint32_t timeout_ms = 1000L) {
+    char buf[numChars + 1];
+    if (streamGetLength(buf, numChars, timeout_ms)) {
+      buf[numChars] = '\0';
+      return atoi(buf);
+    }
+
+    return -9999;
+  }
+
+  inline int16_t streamGetIntBefore(char lastChar) {
+    char   buf[7];
+    size_t bytesRead = thisModem().stream.readBytesUntil(
+        lastChar, buf, static_cast<size_t>(7));
+    // if we read 7 or more bytes, it's an overflow
+    if (bytesRead && bytesRead < 7) {
+      buf[bytesRead] = '\0';
+      int16_t res    = atoi(buf);
+      return res;
+    }
+
+    return -9999;
+  }
+
+  inline float streamGetFloatLength(int8_t         numChars,
+                                    const uint32_t timeout_ms = 1000L) {
+    char buf[numChars + 1];
+    if (streamGetLength(buf, numChars, timeout_ms)) {
+      buf[numChars] = '\0';
+      return atof(buf);
+    }
+
+    return -9999.0F;
+  }
+
+  inline float streamGetFloatBefore(char lastChar) {
+    char   buf[16];
+    size_t bytesRead = thisModem().stream.readBytesUntil(
+        lastChar, buf, static_cast<size_t>(16));
+    // if we read 16 or more bytes, it's an overflow
+    if (bytesRead && bytesRead < 16) {
+      buf[bytesRead] = '\0';
+      float res      = atof(buf);
+      return res;
+    }
+
+    return -9999.0F;
+  }
+
+  inline bool streamSkipUntil(const char c, const uint32_t timeout_ms = 1000L) {
+    uint32_t startMillis = millis();
+    while (millis() - startMillis < timeout_ms) {
+      while (millis() - startMillis < timeout_ms &&
+             !thisModem().stream.available()) {
+        TINY_GSM_YIELD();
+      }
+      if (thisModem().stream.read() == c) { return true; }
+    }
+    return false;
+  }
+
+ protected:
+  static inline IPAddress TinyGsmIpFromString(const String& strIP) {
+    int Parts[4] = {
+        0,
+    };
+    int Part = 0;
+    for (uint8_t i = 0; i < strIP.length(); i++) {
+      char c = strIP[i];
+      if (c == '.') {
+        Part++;
+        if (Part > 3) { return IPAddress(0, 0, 0, 0); }
+        continue;
+      } else if (c >= '0' && c <= '9') {
+        Parts[Part] *= 10;
+        Parts[Part] += c - '0';
+      } else {
+        if (Part == 3) break;
+      }
+    }
+    return IPAddress(Parts[0], Parts[1], Parts[2], Parts[3]);
+  }
+
   /* =========================================== */
   /* =========================================== */
   /*
@@ -428,131 +554,6 @@ class TinyGsmModem {
     String res = thisModem().stream.readStringUntil('\r');
     if (thisModem().waitResponse() != 1) { return ""; }
     return res;
-  }
-
-  static inline IPAddress TinyGsmIpFromString(const String& strIP) {
-    int Parts[4] = {
-        0,
-    };
-    int Part = 0;
-    for (uint8_t i = 0; i < strIP.length(); i++) {
-      char c = strIP[i];
-      if (c == '.') {
-        Part++;
-        if (Part > 3) { return IPAddress(0, 0, 0, 0); }
-        continue;
-      } else if (c >= '0' && c <= '9') {
-        Parts[Part] *= 10;
-        Parts[Part] += c - '0';
-      } else {
-        if (Part == 3) break;
-      }
-    }
-    return IPAddress(Parts[0], Parts[1], Parts[2], Parts[3]);
-  }
-
-  /*
-   Utilities
-   */
- public:
-  // Utility templates for writing/skipping characters on a stream
-  template <typename T>
-  inline void streamWrite(T last) {
-    thisModem().stream.print(last);
-  }
-
-  template <typename T, typename... Args>
-  inline void streamWrite(T head, Args... tail) {
-    thisModem().stream.print(head);
-    thisModem().streamWrite(tail...);
-  }
-
-  inline void streamClear() {
-    while (thisModem().stream.available()) {
-      thisModem().waitResponse(50, nullptr, nullptr);
-    }
-  }
-
- protected:
-  inline bool streamGetLength(char* buf, int8_t numChars,
-                              const uint32_t timeout_ms = 1000L) {
-    if (!buf) { return false; }
-
-    int8_t   numCharsReady = -1;
-    uint32_t startMillis   = millis();
-    while (millis() - startMillis < timeout_ms &&
-           (numCharsReady = thisModem().stream.available()) < numChars) {
-      TINY_GSM_YIELD();
-    }
-
-    if (numCharsReady >= numChars) {
-      thisModem().stream.readBytes(buf, numChars);
-      return true;
-    }
-
-    return false;
-  }
-
-  inline int16_t streamGetIntLength(int8_t         numChars,
-                                    const uint32_t timeout_ms = 1000L) {
-    char buf[numChars + 1];
-    if (streamGetLength(buf, numChars, timeout_ms)) {
-      buf[numChars] = '\0';
-      return atoi(buf);
-    }
-
-    return -9999;
-  }
-
-  inline int16_t streamGetIntBefore(char lastChar) {
-    char   buf[7];
-    size_t bytesRead = thisModem().stream.readBytesUntil(
-        lastChar, buf, static_cast<size_t>(7));
-    // if we read 7 or more bytes, it's an overflow
-    if (bytesRead && bytesRead < 7) {
-      buf[bytesRead] = '\0';
-      int16_t res    = atoi(buf);
-      return res;
-    }
-
-    return -9999;
-  }
-
-  inline float streamGetFloatLength(int8_t         numChars,
-                                    const uint32_t timeout_ms = 1000L) {
-    char buf[numChars + 1];
-    if (streamGetLength(buf, numChars, timeout_ms)) {
-      buf[numChars] = '\0';
-      return atof(buf);
-    }
-
-    return -9999.0F;
-  }
-
-  inline float streamGetFloatBefore(char lastChar) {
-    char   buf[16];
-    size_t bytesRead = thisModem().stream.readBytesUntil(
-        lastChar, buf, static_cast<size_t>(16));
-    // if we read 16 or more bytes, it's an overflow
-    if (bytesRead && bytesRead < 16) {
-      buf[bytesRead] = '\0';
-      float res      = atof(buf);
-      return res;
-    }
-
-    return -9999.0F;
-  }
-
-  inline bool streamSkipUntil(const char c, const uint32_t timeout_ms = 1000L) {
-    uint32_t startMillis = millis();
-    while (millis() - startMillis < timeout_ms) {
-      while (millis() - startMillis < timeout_ms &&
-             !thisModem().stream.available()) {
-        TINY_GSM_YIELD();
-      }
-      if (thisModem().stream.read() == c) { return true; }
-    }
-    return false;
   }
 };
 
