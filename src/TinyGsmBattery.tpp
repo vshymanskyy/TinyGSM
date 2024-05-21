@@ -48,7 +48,7 @@ class TinyGsmBattery {
   inline modemType& thisModem() {
     return static_cast<modemType&>(*this);
   }
-
+  ~TinyGsmBattery() {}
 
   /* =========================================== */
   /* =========================================== */

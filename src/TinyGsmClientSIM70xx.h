@@ -60,6 +60,7 @@ class TinyGsmSim70xx : public TinyGsmModem<TinyGsmSim70xx<modemType>>,
   inline modemType& thisModem() {
     return static_cast<modemType&>(*this);
   }
+  ~TinyGsmSim70xx() {}
 
   /*
    * Constructor
@@ -86,6 +87,7 @@ class TinyGsmSim70xx : public TinyGsmModem<TinyGsmSim70xx<modemType>>,
     res2.trim();
 
     name = res2;
+    DBG("### Modem:", name);
     return name;
   }
 
@@ -381,7 +383,7 @@ class TinyGsmSim70xx : public TinyGsmModem<TinyGsmSim70xx<modemType>>,
   /*
    * Time functions
    */
-  // Can follow CCLK as per template
+  // Can follow the standard CCLK function in the template
 
   /*
    * NTP server functions

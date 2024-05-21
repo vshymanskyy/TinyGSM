@@ -47,6 +47,7 @@ class TinyGsmBluetooth {
   inline modemType& thisModem() {
     return static_cast<modemType&>(*this);
   }
+  ~TinyGsmBluetooth() {}
 
   /* =========================================== */
   /* =========================================== */

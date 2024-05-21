@@ -267,6 +267,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
 
  public:
   String getNetworkModes() {
+    // Get the help string, not the setting value
     sendAT(GF("+CNMP=?"));
     if (waitResponse(GF(AT_NL "+CNMP:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
@@ -489,13 +490,15 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       int   imin         = 0;
       float secondWithSS = 0;
 
-      streamSkipUntil(',');                           // GPS satellite valid numbers
-      streamSkipUntil(',');                           // GLONASS satellite valid numbers
-      streamSkipUntil(',');                           // BEIDOU satellite valid numbers
-      ilat  = streamGetFloatBefore(',');              // Latitude in ddmm.mmmmmm
-      north = stream.readStringUntil(',').charAt(0);  // N/S Indicator, N=north or S=south
-      ilon  = streamGetFloatBefore(',');              // Longitude in ddmm.mmmmmm
-      east  = stream.readStringUntil(',').charAt(0);  // E/W Indicator, E=east or W=west
+      streamSkipUntil(',');               // GPS satellite valid numbers
+      streamSkipUntil(',');               // GLONASS satellite valid numbers
+      streamSkipUntil(',');               // BEIDOU satellite valid numbers
+      ilat  = streamGetFloatBefore(',');  // Latitude in ddmm.mmmmmm
+      north = stream.readStringUntil(',').charAt(
+          0);                            // N/S Indicator, N=north or S=south
+      ilon = streamGetFloatBefore(',');  // Longitude in ddmm.mmmmmm
+      east = stream.readStringUntil(',').charAt(
+          0);  // E/W Indicator, E=east or W=west
 
       // Date. Output format is ddmmyy
       iday   = streamGetIntLength(2);    // Two digit day

@@ -66,6 +66,7 @@ class TinyGsmTCP {
   inline modemType& thisModem() {
     return static_cast<modemType&>(*this);
   }
+  ~TinyGsmTCP() {}
 
   /*
    * Inner Client

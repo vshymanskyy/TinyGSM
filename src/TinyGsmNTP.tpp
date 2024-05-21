@@ -57,6 +57,7 @@ class TinyGsmNTP {
   inline modemType& thisModem() {
     return static_cast<modemType&>(*this);
   }
+  ~TinyGsmNTP() {}
 
   /* =========================================== */
   /* =========================================== */

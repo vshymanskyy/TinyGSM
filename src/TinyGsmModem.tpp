@@ -172,6 +172,7 @@ class TinyGsmModem {
   inline modemType& thisModem() {
     return static_cast<modemType&>(*this);
   }
+  ~TinyGsmModem() {}
 
   /*
    Utilities

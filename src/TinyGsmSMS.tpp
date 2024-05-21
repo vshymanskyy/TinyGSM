@@ -44,6 +44,7 @@ class TinyGsmSMS {
   inline modemType& thisModem() {
     return static_cast<modemType&>(*this);
   }
+  ~TinyGsmSMS() {}
 
   /*
    * Utilities
