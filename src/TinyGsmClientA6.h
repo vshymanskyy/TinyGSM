@@ -19,13 +19,13 @@
 #endif
 #define AT_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
 
-#include "TinyGsmBattery.tpp"
-#include "TinyGsmCalling.tpp"
-#include "TinyGsmGPRS.tpp"
 #include "TinyGsmModem.tpp"
-#include "TinyGsmSMS.tpp"
 #include "TinyGsmTCP.tpp"
+#include "TinyGsmGPRS.tpp"
+#include "TinyGsmCalling.tpp"
+#include "TinyGsmSMS.tpp"
 #include "TinyGsmTime.tpp"
+#include "TinyGsmBattery.tpp"
 
 enum A6RegStatus {
   REG_NO_RESULT    = -1,
@@ -229,6 +229,17 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
   }
 
   /*
+   * Secure socket layer (SSL) functions
+   */
+ protected:
+  // No functions of this type supported
+
+  /*
+   * WiFi functions
+   */
+  // No functions of this type supported
+
+  /*
    * GPRS functions
    */
  protected:
@@ -362,7 +373,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
   }
 
   /*
-   * Messaging functions
+   * Text messaging (SMS) functions
    */
  protected:
   String sendUSSDImpl(const String& code) {
@@ -388,11 +399,30 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
   }
 
   /*
+   * GSM Location functions
+   */
+  // No functions of this type supported
+
+  /*
+   * GPS/GNSS/GLONASS location functions
+   */
+  // No functions of this type supported
+
+  /*
    * Time functions
    */
- protected:
   // Follows all clock functions as inherited from TinyGsmTime.tpp
   // Note - the clock probably has to be set manaually first
+
+  /*
+   * NTP server functions
+   */
+  // No functions of this type supported
+
+  /*
+   * BLE functions
+   */
+  // No functions of this type supported
 
   /*
    * Battery functions
@@ -424,6 +454,11 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
     waitResponse();
     return true;
   }
+
+  /*
+   * Temperature functions
+   */
+  // No functions of this type supported
 
   /*
    * Client related functions

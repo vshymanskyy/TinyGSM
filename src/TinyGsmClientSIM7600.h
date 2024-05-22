@@ -19,17 +19,17 @@
 #endif
 #define AT_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
 
-#include "TinyGsmBattery.tpp"
-#include "TinyGsmCalling.tpp"
-#include "TinyGsmGPRS.tpp"
-#include "TinyGsmGPS.tpp"
-#include "TinyGsmGSMLocation.tpp"
 #include "TinyGsmModem.tpp"
-#include "TinyGsmSMS.tpp"
 #include "TinyGsmTCP.tpp"
-#include "TinyGsmTemperature.tpp"
+#include "TinyGsmGPRS.tpp"
+#include "TinyGsmCalling.tpp"
+#include "TinyGsmSMS.tpp"
+#include "TinyGsmGSMLocation.tpp"
+#include "TinyGsmGPS.tpp"
 #include "TinyGsmTime.tpp"
 #include "TinyGsmNTP.tpp"
+#include "TinyGsmBattery.tpp"
+#include "TinyGsmTemperature.tpp"
 
 
 enum SIM7600RegStatus {
@@ -126,28 +126,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
   /*
    * Inner Secure Client
    */
-
-  /*TODO(?))
-  class GsmClientSecureSIM7600 : public GsmClientSim7600
-  {
-  public:
-    GsmClientSecure() {}
-
-    GsmClientSecure(TinyGsmSim7600& modem, uint8_t mux = 0)
-     : public GsmClient(modem, mux)
-    {}
-
-  public:
-    int connect(const char* host, uint16_t port, int timeout_s) override {
-      stop();
-      TINY_GSM_YIELD();
-      rx.clear();
-      sock_connected = at->modemConnect(host, port, mux, true, timeout_s);
-      return sock_connected;
-    }
-    TINY_GSM_CLIENT_CONNECT_OVERRIDES
-  };
-  */
+  // NOT SUPPORTED
 
   /*
    * Constructor
@@ -311,6 +290,16 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
   }
 
   /*
+   * Secure socket layer (SSL) functions
+   */
+  // No functions of this type supported
+
+  /*
+   * WiFi functions
+   */
+  // No functions of this type supported
+
+  /*
    * GPRS functions
    */
  protected:
@@ -424,15 +413,18 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
   }
 
   /*
-   * Messaging functions
+   * Audio functions
    */
- protected:
-  // Follows all messaging functions as inherited from TinyGsmSMS.tpp
+  //  No functions of this type supported
+
+  /*
+   * Text messaging (SMS) functions
+   */
+  // Follows all text messaging (SMS) functions as inherited from TinyGsmSMS.tpp
 
   /*
    * GSM Location functions
    */
- protected:
   // Follows all GSM-based location functions as inherited from
   // TinyGsmGSMLocation.tpp
 
@@ -547,7 +539,6 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     return false;
   }
 
-
   /**
    *  CGNSSMODE: <gnss_mode>,<dpo_mode>
    *  This command is used to configure GPS, GLONASS, BEIDOU and QZSS support
@@ -573,13 +564,17 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
   /*
    * Time functions
    */
- protected:
   // Follows all clock functions as inherited from TinyGsmTime.tpp
 
   /*
    * NTP server functions
    */
   // Follows all NTP server functions as inherited from TinyGsmNTP.tpp
+
+  /*
+   * BLE functions
+   */
+  // No functions of this type supported
 
   /*
    * Battery functions

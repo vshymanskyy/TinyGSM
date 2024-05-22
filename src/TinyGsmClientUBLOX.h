@@ -19,16 +19,16 @@
 #endif
 #define AT_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
 
-#include "TinyGsmBattery.tpp"
-#include "TinyGsmCalling.tpp"
-#include "TinyGsmGPRS.tpp"
-#include "TinyGsmGPS.tpp"
-#include "TinyGsmGSMLocation.tpp"
 #include "TinyGsmModem.tpp"
-#include "TinyGsmSMS.tpp"
-#include "TinyGsmSSL.tpp"
 #include "TinyGsmTCP.tpp"
+#include "TinyGsmSSL.tpp"
+#include "TinyGsmGPRS.tpp"
+#include "TinyGsmCalling.tpp"
+#include "TinyGsmSMS.tpp"
+#include "TinyGsmGSMLocation.tpp"
+#include "TinyGsmGPS.tpp"
 #include "TinyGsmTime.tpp"
+#include "TinyGsmBattery.tpp"
 
 enum UBLOXRegStatus {
   REG_NO_RESULT    = -1,
@@ -139,7 +139,6 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
     explicit GsmClientSecureUBLOX(TinyGsmUBLOX& modem, uint8_t mux = 0)
         : GsmClientUBLOX(modem, mux) {}
 
-   public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
       // stop();  // DON'T stop!
       TINY_GSM_YIELD();
@@ -312,6 +311,16 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
   }
 
   /*
+   * Secure socket layer (SSL) functions
+   */
+  // Follows functions as inherited from TinyGsmSSL.tpp
+
+  /*
+   * WiFi functions
+   */
+  // No functions of this type supported
+
+  /*
    * GPRS functions
    */
  protected:
@@ -412,14 +421,17 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
   /*
    * Phone Call functions
    */
- protected:
   // Follows all phone call functions as inherited from TinyGsmCalling.tpp
 
   /*
-   * Messaging functions
+   * Audio functions
    */
- protected:
-  // Follows all messaging functions as inherited from TinyGsmSMS.tpp
+  // No functions of this type supported
+
+  /*
+   * Text messaging (SMS) functions
+   */
+  // Follows all text messaging (SMS) functions as inherited from TinyGsmSMS.tpp
 
   /*
    * GSM/GPS/GNSS/GLONASS Location functions
@@ -582,8 +594,17 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
   /*
    * Time functions
    */
- protected:
   // Follows all clock functions as inherited from TinyGsmTime.tpp
+
+  /*
+   * NTP server functions
+   */
+  // No functions of this type supported
+
+  /*
+   * BLE functions
+   */
+  // No functions of this type supported
 
   /*
    * Battery functions
@@ -615,7 +636,6 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
   /*
    * Temperature functions
    */
-
   // This would only available for a small number of modules in this group
   // (TOBY-L)
   float getTemperatureImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;

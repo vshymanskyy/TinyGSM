@@ -158,7 +158,6 @@ class TinyGsmSim7000 : public TinyGsmSim70xx<TinyGsmSim7000>,
   /*
    * Power functions
    */
- protected:
   // Follows functions as inherited from TinyGsmClientSIM70xx.h
 
   /*
@@ -174,6 +173,16 @@ class TinyGsmSim7000 : public TinyGsmSim70xx<TinyGsmSim7000>,
     res.trim();
     return res;
   }
+
+  /*
+   * Secure socket layer (SSL) functions
+   */
+  // NOTE:  Use modem TinyGsmSim7000SSL for a secure client!
+
+  /*
+   * WiFi functions
+   */
+  // No functions of this type supported
 
   /*
    * GPRS functions
@@ -266,19 +275,32 @@ class TinyGsmSim7000 : public TinyGsmSim70xx<TinyGsmSim7000>,
   /*
    * SIM card functions
    */
- protected:
   // Follows functions as inherited from TinyGsmClientSIM70xx.h
 
   /*
-   * Messaging functions
+   * Phone Call functions
    */
- protected:
-  // Follows all messaging functions as inherited from TinyGsmSMS.tpp
+  // No functions of this type supported
+
+  /*
+   * Audio functions
+   */
+  // No functions of this type supported
+
+  /*
+   * Text messaging (SMS) functions
+   */
+  // Follows all text messaging (SMS) functions as inherited from TinyGsmSMS.tpp
+
+  /*
+   * GSM Location functions
+   */
+  // Follows all GSM-based location functions as inherited from
+  // TinyGsmGSMLocation.tpp
 
   /*
    * GPS/GNSS/GLONASS location functions
    */
- protected:
   // Follows functions as inherited from TinyGsmClientSIM70xx.h
 
   /*
@@ -292,10 +314,19 @@ class TinyGsmSim7000 : public TinyGsmSim70xx<TinyGsmSim7000>,
   // Follows all NTP server functions as inherited from TinyGsmNTP.tpp
 
   /*
+   * BLE functions
+   */
+  // No functions of this type supported
+
+  /*
    * Battery functions
    */
- protected:
   // Follows all battery functions as inherited from TinyGsmBattery.tpp
+
+  /*
+   * Temperature functions
+   */
+  // No functions of this type supported
 
   /*
    * Client related functions

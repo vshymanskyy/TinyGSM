@@ -20,8 +20,8 @@
 #define AT_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
 
 #include "TinyGsmModem.tpp"
-#include "TinyGsmSSL.tpp"
 #include "TinyGsmTCP.tpp"
+#include "TinyGsmSSL.tpp"
 #include "TinyGsmWifi.tpp"
 
 static uint8_t TINY_GSM_TCP_KEEP_ALIVE = 120;
@@ -44,13 +44,13 @@ enum ESP8266RegStatus {
 };
 
 class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
-                       public TinyGsmWifi<TinyGsmESP8266>,
                        public TinyGsmTCP<TinyGsmESP8266, TINY_GSM_MUX_COUNT>,
-                       public TinyGsmSSL<TinyGsmESP8266, TINY_GSM_MUX_COUNT> {
+                       public TinyGsmSSL<TinyGsmESP8266, TINY_GSM_MUX_COUNT>,
+                       public TinyGsmWifi<TinyGsmESP8266> {
   friend class TinyGsmModem<TinyGsmESP8266>;
-  friend class TinyGsmWifi<TinyGsmESP8266>;
   friend class TinyGsmTCP<TinyGsmESP8266, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmSSL<TinyGsmESP8266, TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmWifi<TinyGsmESP8266>;
 
   /*
    * Inner Client
@@ -316,6 +316,12 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
   }
 
   /*
+   * Secure socket layer (SSL) functions
+   */
+  // Follows functions as inherited from TinyGsmSSL.tpp
+
+
+  /*
    * WiFi functions
    */
  protected:
@@ -339,6 +345,62 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
     waitResponse(GF("WIFI DISCONNECT"));
     return retVal;
   }
+
+
+  /*
+   * GPRS functions
+   */
+  // No functions of this type supported
+
+  /*
+   * SIM card functions
+   */
+  // No functions of this type supported
+
+  /*
+   * Audio functions
+   */
+  // No functions of this type supported
+
+  /*
+   * Text messaging (SMS) functions
+   */
+  // No functions of this type supported
+
+  /*
+   * GSM Location functions
+   */
+  // No functions of this type supported
+
+  /*
+   * GPS/GNSS/GLONASS location functions
+   */
+  // No functions of this type supported
+
+  /*
+   * Time functions
+   */
+  // No functions of this type supported
+
+  /*
+   * NTP server functions
+   */
+  // No functions of this type supported
+
+  /*
+   * BLE functions
+   */
+  // No functions of this type supported
+
+  /*
+   * Battery functions
+   */
+  // No functions of this type supported
+
+  /*
+   * Temperature functions
+   */
+  // No functions of this type supported
 
   /*
    * Client related functions

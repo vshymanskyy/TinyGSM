@@ -18,16 +18,16 @@
 #endif
 #define AT_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
 
-#include "TinyGsmBattery.tpp"
-#include "TinyGsmCalling.tpp"
-#include "TinyGsmGPRS.tpp"
-#include "TinyGsmGSMLocation.tpp"
 #include "TinyGsmModem.tpp"
-#include "TinyGsmSMS.tpp"
-#include "TinyGsmSSL.tpp"
 #include "TinyGsmTCP.tpp"
+#include "TinyGsmSSL.tpp"
+#include "TinyGsmGPRS.tpp"
+#include "TinyGsmCalling.tpp"
+#include "TinyGsmSMS.tpp"
+#include "TinyGsmGSMLocation.tpp"
 #include "TinyGsmTime.tpp"
 #include "TinyGsmNTP.tpp"
+#include "TinyGsmBattery.tpp"
 #include "TinyGsmTemperature.tpp"
 
 enum A7672xRegStatus {
@@ -239,30 +239,6 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
   }
 
   /*
-   * SIM card functions
-   */
- protected:
-  SimStatus getSimStatusImpl(uint32_t timeout_ms = 10000L) {
-    for (uint32_t start = millis(); millis() - start < timeout_ms;) {
-      sendAT(GF("+CPIN?"));
-      if (waitResponse(GF("+CPIN:")) != 1) {
-        delay(1000);
-        continue;
-      }
-      int8_t status = waitResponse(GF("READY"), GF("SIM PIN"), GF("SIM PUK"),
-                                   GF("SIM not inserted"), GF("SIM REMOVED"));
-      waitResponse();
-      switch (status) {
-        case 2:
-        case 3: return SIM_LOCKED;
-        case 1: return SIM_READY;
-        default: return SIM_ERROR;
-      }
-    }
-    return SIM_ERROR;
-  }
-
-  /*
    * Power functions
    */
  protected:
@@ -357,6 +333,11 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
   }
 
   /*
+   * WiFi functions
+   */
+  // No functions of this type supported
+
+  /*
    * GPRS functions
    */
  protected:
@@ -406,6 +387,26 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
    * SIM card functions
    */
  protected:
+  SimStatus getSimStatusImpl(uint32_t timeout_ms = 10000L) {
+    for (uint32_t start = millis(); millis() - start < timeout_ms;) {
+      sendAT(GF("+CPIN?"));
+      if (waitResponse(GF("+CPIN:")) != 1) {
+        delay(1000);
+        continue;
+      }
+      int8_t status = waitResponse(GF("READY"), GF("SIM PIN"), GF("SIM PUK"),
+                                   GF("SIM not inserted"), GF("SIM REMOVED"));
+      waitResponse();
+      switch (status) {
+        case 2:
+        case 3: return SIM_LOCKED;
+        case 1: return SIM_READY;
+        default: return SIM_ERROR;
+      }
+    }
+    return SIM_ERROR;
+  }
+
   String getSimCCIDImpl() {
     sendAT(GF("+CICCID"));
     if (waitResponse(GF(AT_NL "+ICCID:")) != 1) { return ""; }
@@ -425,33 +426,43 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
   }
 
   /*
-   * GSM Location functions //todo:
+   * Audio functions
    */
- protected:
+  // No functions of this type supported
+
   /*
-   * GPS/GNSS/GLONASS location functions //todo:
+   * Text messaging (SMS) functions
    */
- protected:
+  // Follows all text messaging (SMS) functions as inherited from TinyGsmSMS.tpp
+
   /*
-   * Audio functions //todo:
+   * GSM Location functions
    */
- protected:
+  // No functions of this type supported
   /*
-   * Time functions //todo:
+   * GPS/GNSS/GLONASS location functions
    */
- protected:
+  // No functions of this type supported
+
   /*
-   * NTP server functions //todo:
+   * Time functions
    */
- protected:
+  // No functions of this type supported
   /*
-   * BLE functions //todo:
+   * NTP server functions
    */
- protected:
+  // No functions of this type supported
+
   /*
-   * Battery functions //todo:
+   * BLE functions
    */
- protected:
+  // No functions of this type supported
+
+  /*
+   * Battery functions
+   */
+  // No functions of this type supported
+
   /*
    * Temperature functions
    */

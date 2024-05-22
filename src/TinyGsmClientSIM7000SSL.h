@@ -106,7 +106,7 @@ class TinyGsmSim7000SSL
   /*
    * Inner Secure Client
    */
-
+ public:
   class GsmClientSecureSIM7000SSL : public GsmClientSim7000SSL {
    public:
     GsmClientSecureSIM7000SSL() {}
@@ -115,7 +115,6 @@ class TinyGsmSim7000SSL
                                        uint8_t            mux = 0)
         : GsmClientSim7000SSL(modem, mux) {}
 
-   public:
     bool setCertificate(const String& certificateName) {
       return at->setCertificate(certificateName, mux);
     }
@@ -202,7 +201,6 @@ class TinyGsmSim7000SSL
   /*
    * Power functions
    */
- protected:
   // Follows functions as inherited from TinyGsmClientSIM70xx.h
 
   /*
@@ -221,8 +219,12 @@ class TinyGsmSim7000SSL
   /*
    * Secure socket layer (SSL) functions
    */
- protected:
   // Follows functions as inherited from TinyGsmSSL.tpp
+
+  /*
+   * WiFi functions
+   */
+  // No functions of this type supported
 
   /*
    * GPRS functions
@@ -302,19 +304,31 @@ class TinyGsmSim7000SSL
   /*
    * SIM card functions
    */
- protected:
   // Follows functions as inherited from TinyGsmClientSIM70xx.h
 
   /*
-   * Messaging functions
+   * Phone Call functions
    */
- protected:
-  // Follows all messaging functions as inherited from TinyGsmSMS.tpp
+  // No functions of this type supported
+
+  /*
+   * Audio functions
+   */
+  // No functions of this type supported
+
+  /*
+   * Text messaging (SMS) functions
+   */
+  // Follows all text messaging (SMS) functions as inherited from TinyGsmSMS.tpp
+  /*
+   * GSM Location functions
+   */
+  // Follows all GSM-based location functions as inherited from
+  // TinyGsmGSMLocation.tpp
 
   /*
    * GPS/GNSS/GLONASS location functions
    */
- protected:
   // Follows functions as inherited from TinyGsmClientSIM70xx.h
 
   /*
@@ -328,10 +342,19 @@ class TinyGsmSim7000SSL
   // Follows all NTP server functions as inherited from TinyGsmNTP.tpp
 
   /*
+   * BLE functions
+   */
+  // No functions of this type supported
+
+  /*
    * Battery functions
    */
- protected:
   // Follows all battery functions as inherited from TinyGsmBattery.tpp
+
+  /*
+   * Temperature functions
+   */
+  // No functions of this type supported
 
   /*
    * Client related functions

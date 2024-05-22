@@ -19,16 +19,16 @@
 #endif
 #define AT_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
 
-#include "TinyGsmBattery.tpp"
-#include "TinyGsmGPRS.tpp"
-#include "TinyGsmGPS.tpp"
-#include "TinyGsmGSMLocation.tpp"
 #include "TinyGsmModem.tpp"
-#include "TinyGsmSMS.tpp"
-#include "TinyGsmSSL.tpp"
 #include "TinyGsmTCP.tpp"
-#include "TinyGsmTemperature.tpp"
+#include "TinyGsmSSL.tpp"
+#include "TinyGsmGPRS.tpp"
+#include "TinyGsmSMS.tpp"
+#include "TinyGsmGSMLocation.tpp"
+#include "TinyGsmGPS.tpp"
 #include "TinyGsmTime.tpp"
+#include "TinyGsmBattery.tpp"
+#include "TinyGsmTemperature.tpp"
 
 enum SaraR4RegStatus {
   REG_NO_RESULT    = -1,
@@ -44,22 +44,22 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
                       public TinyGsmGPRS<TinyGsmSaraR4>,
                       public TinyGsmTCP<TinyGsmSaraR4, TINY_GSM_MUX_COUNT>,
                       public TinyGsmSSL<TinyGsmSaraR4, TINY_GSM_MUX_COUNT>,
-                      public TinyGsmBattery<TinyGsmSaraR4>,
+                      public TinyGsmSMS<TinyGsmSaraR4>,
                       public TinyGsmGSMLocation<TinyGsmSaraR4>,
                       public TinyGsmGPS<TinyGsmSaraR4>,
-                      public TinyGsmSMS<TinyGsmSaraR4>,
-                      public TinyGsmTemperature<TinyGsmSaraR4>,
-                      public TinyGsmTime<TinyGsmSaraR4> {
+                      public TinyGsmTime<TinyGsmSaraR4>,
+                      public TinyGsmBattery<TinyGsmSaraR4>,
+                      public TinyGsmTemperature<TinyGsmSaraR4> {
   friend class TinyGsmModem<TinyGsmSaraR4>;
   friend class TinyGsmGPRS<TinyGsmSaraR4>;
   friend class TinyGsmTCP<TinyGsmSaraR4, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmSSL<TinyGsmSaraR4, TINY_GSM_MUX_COUNT>;
-  friend class TinyGsmBattery<TinyGsmSaraR4>;
+  friend class TinyGsmSMS<TinyGsmSaraR4>;
   friend class TinyGsmGSMLocation<TinyGsmSaraR4>;
   friend class TinyGsmGPS<TinyGsmSaraR4>;
-  friend class TinyGsmSMS<TinyGsmSaraR4>;
-  friend class TinyGsmTemperature<TinyGsmSaraR4>;
   friend class TinyGsmTime<TinyGsmSaraR4>;
+  friend class TinyGsmTemperature<TinyGsmSaraR4>;
+  friend class TinyGsmBattery<TinyGsmSaraR4>;
 
   /*
    * Inner Client
@@ -350,6 +350,16 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
   }
 
   /*
+   * Secure socket layer (SSL) functions
+   */
+  // Follows functions as inherited from TinyGsmSSL.tpp
+
+  /*
+   * WiFi functions
+   */
+  // No functions of this type supported
+
+  /*
    * GPRS functions
    */
  protected:
@@ -415,7 +425,17 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
   }
 
   /*
-   * Messaging functions
+   * Phone Call functions
+   */
+  // No functions of this type supported
+
+  /*
+   * Audio functions
+   */
+  // No functions of this type supported
+
+  /*
+   * Text messaging (SMS) functions
    */
  protected:
   String sendUSSDImpl(const String& code) TINY_GSM_ATTR_NOT_IMPLEMENTED;
@@ -583,8 +603,27 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
   /*
    * Time functions
    */
- protected:
   // Follows all clock functions as inherited from TinyGsmTime.tpp
+
+  /*
+   * NTP server functions
+   */
+  // No functions of this type supported
+
+  /*
+   * BLE functions
+   */
+  // No functions of this type supported
+
+  /*
+   * NTP server functions
+   */
+  // No functions of this type supported
+
+  /*
+   * BLE functions
+   */
+  // No functions of this type supported
 
   /*
    * Battery functions

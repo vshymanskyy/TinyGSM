@@ -19,10 +19,10 @@
 #endif
 #define AT_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
 
-#include "TinyGsmGPRS.tpp"
 #include "TinyGsmModem.tpp"
-#include "TinyGsmSMS.tpp"
 #include "TinyGsmTCP.tpp"
+#include "TinyGsmGPRS.tpp"
+#include "TinyGsmSMS.tpp"
 #include "TinyGsmTime.tpp"
 
 enum M590RegStatus {
@@ -101,6 +101,11 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590>,
 
     String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
   };
+
+  /*
+   * Inner Secure Client
+   */
+  // NOT SUPPORTED
 
   /*
    * Constructor
@@ -234,6 +239,16 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590>,
   }
 
   /*
+   * Secure socket layer (SSL) functions
+   */
+  // No functions of this type supported
+
+  /*
+   * WiFi functions
+   */
+  // No functions of this type supported
+
+  /*
    * GPRS functions
    */
  protected:
@@ -295,18 +310,67 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590>,
  protected:
   // Able to follow all SIM card functions as inherited from TinyGsmGPRS.tpp
 
+
   /*
-   * Messaging functions
+   * Phone Call functions
+   */
+  // No functions of this type supported
+
+  /*
+   * Audio functions
+   */
+  // No functions of this type supported
+
+  /*
+   * Text messaging (SMS) functions
    */
  protected:
   bool sendSMS_UTF16Impl(const String& number, const void* text,
                          size_t len) TINY_GSM_ATTR_NOT_AVAILABLE;
 
   /*
+   * GSM Location functions
+   */
+  // No functions of this type supported
+
+  /*
+   * GPS/GNSS/GLONASS location functions
+   */
+  // No functions of this type supported
+
+  /*
    * Time functions
    */
- protected:
   // Follows all clock functions as inherited from TinyGsmTime.tpp
+  /*
+   * NTP server functions
+   */
+  // Follows all NTP server functions as inherited from TinyGsmNTP.tpp
+
+  /*
+   * BLE functions
+   */
+  // No functions of this type supported
+
+  /*
+   * NTP server functions
+   */
+  // No functions of this type supported
+
+  /*
+   * BLE functions
+   */
+  // No functions of this type supported
+
+  /*
+   * Battery functions
+   */
+  // No functions of this type supported
+
+  /*
+   * Temperature functions
+   */
+  // No functions of this type supported
 
   /*
    * Client related functions

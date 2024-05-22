@@ -19,17 +19,17 @@
 #endif
 #define AT_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
 
-#include "TinyGsmBattery.tpp"
-#include "TinyGsmCalling.tpp"
-#include "TinyGsmGPRS.tpp"
-#include "TinyGsmGPS.tpp"
 #include "TinyGsmModem.tpp"
-#include "TinyGsmSMS.tpp"
 #include "TinyGsmTCP.tpp"
 #include "TinyGsmSSL.tpp"
-#include "TinyGsmTemperature.tpp"
+#include "TinyGsmGPRS.tpp"
+#include "TinyGsmCalling.tpp"
+#include "TinyGsmSMS.tpp"
+#include "TinyGsmGPS.tpp"
 #include "TinyGsmTime.tpp"
 #include "TinyGsmNTP.tpp"
+#include "TinyGsmBattery.tpp"
+#include "TinyGsmTemperature.tpp"
 
 enum BG96RegStatus {
   REG_NO_RESULT    = -1,
@@ -47,9 +47,9 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
                     public TinyGsmSSL<TinyGsmBG96, TINY_GSM_MUX_COUNT>,
                     public TinyGsmCalling<TinyGsmBG96>,
                     public TinyGsmSMS<TinyGsmBG96>,
+                    public TinyGsmGPS<TinyGsmBG96>,
                     public TinyGsmTime<TinyGsmBG96>,
                     public TinyGsmNTP<TinyGsmBG96>,
-                    public TinyGsmGPS<TinyGsmBG96>,
                     public TinyGsmBattery<TinyGsmBG96>,
                     public TinyGsmTemperature<TinyGsmBG96> {
   friend class TinyGsmModem<TinyGsmBG96>;
@@ -58,9 +58,9 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
   friend class TinyGsmSSL<TinyGsmBG96, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmCalling<TinyGsmBG96>;
   friend class TinyGsmSMS<TinyGsmBG96>;
+  friend class TinyGsmGPS<TinyGsmBG96>;
   friend class TinyGsmTime<TinyGsmBG96>;
   friend class TinyGsmNTP<TinyGsmBG96>;
-  friend class TinyGsmGPS<TinyGsmBG96>;
   friend class TinyGsmBattery<TinyGsmBG96>;
   friend class TinyGsmTemperature<TinyGsmBG96>;
 
@@ -264,8 +264,12 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
   /*
    * Secure socket layer (SSL) functions
    */
- protected:
   // Follows functions as inherited from TinyGsmSSL.tpp
+
+  /*
+   * WiFi functions
+   */
+  // No functions of this type supported
 
   /*
    * GPRS functions
@@ -314,14 +318,17 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
   /*
    * Phone Call functions
    */
- protected:
   // Follows all phone call functions as inherited from TinyGsmCalling.tpp
 
   /*
-   * Messaging functions
+   * Audio functions
    */
- protected:
-  // Follows all messaging functions as inherited from TinyGsmSMS.tpp
+  // No functions of this type supported
+
+  /*
+   * Text messaging (SMS) functions
+   */
+  // Follows all text messaging (SMS) functions as inherited from TinyGsmSMS.tpp
 
   /*
    * GSM Location functions
@@ -556,9 +563,13 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
   String ShowNTPErrorImpl(byte error) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
   /*
+   * BLE functions
+   */
+  // No functions of this type supported
+
+  /*
    * Battery functions
    */
- protected:
   // Follows all battery functions as inherited from TinyGsmBattery.tpp
 
   /*

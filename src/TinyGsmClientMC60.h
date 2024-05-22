@@ -22,13 +22,13 @@
 #endif
 #define AT_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
 
-#include "TinyGsmBattery.tpp"
-#include "TinyGsmCalling.tpp"
-#include "TinyGsmGPRS.tpp"
 #include "TinyGsmModem.tpp"
-#include "TinyGsmSMS.tpp"
 #include "TinyGsmTCP.tpp"
+#include "TinyGsmGPRS.tpp"
+#include "TinyGsmCalling.tpp"
+#include "TinyGsmSMS.tpp"
 #include "TinyGsmTime.tpp"
+#include "TinyGsmBattery.tpp"
 
 enum MC60RegStatus {
   REG_NO_RESULT    = -1,
@@ -116,29 +116,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60>,
   /*
    * Inner Secure Client
    */
-
-  /*
-    class GsmClientSecureMC60 : public GsmClientMC60
-    {
-    public:
-      GsmClientSecure() {}
-
-      GsmClientSecure(TinyGsmMC60& modem, uint8_t mux = 0)
-       : GsmClient(modem, mux)
-      {}
-
-
-    public:
-      int connect(const char* host, uint16_t port, int timeout_s) override {
-        stop();
-        TINY_GSM_YIELD();
-        rx.clear();
-        sock_connected = at->modemConnect(host, port, mux, true, timeout_s);
-        return sock_connected;
-      }
-      TINY_GSM_CLIENT_CONNECT_OVERRIDES
-    };
- */
+  // NOT SUPPORTED
 
   /*
    * Constructor
@@ -244,6 +222,16 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60>,
   }
 
   /*
+   * Secure socket layer (SSL) functions
+   */
+  // No functions of this type supported
+
+  /*
+   * WiFi functions
+   */
+  // No functions of this type supported
+
+  /*
    * GPRS functions
    */
  protected:
@@ -335,14 +323,17 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60>,
   /*
    * Phone Call functions
    */
- protected:
   // Follows all phone call functions as inherited from TinyGsmCalling.tpp
 
   /*
-   * Messaging functions
+   * Audio functions
    */
- protected:
-  // Follows all messaging functions as inherited from TinyGsmSMS.tpp
+  // No functions of this type supported
+
+  /*
+   * Text messaging (SMS) functions
+   */
+  // Follows all text messaging (SMS) functions as inherited from TinyGsmSMS.tpp
 
  public:
   /** Delete all SMS */
@@ -355,15 +346,49 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60>,
   }
 
   /*
+   * GSM Location functions
+   */
+  // No functions of this type supported
+
+  /*
+   * GPS/GNSS/GLONASS location functions
+   */
+  // No functions of this type supported
+
+  /*
    * Time functions
    */
- protected:
   // Follows all clock functions as inherited from TinyGsmTime.tpp
+
+  /*
+   * NTP server functions
+   */
+  // No functions of this type supported
+
+  /*
+   * BLE functions
+   */
+  // No functions of this type supported
+
+  /*
+   * NTP server functions
+   */
+  // No functions of this type supported
+
+  /*
+   * BLE functions
+   */
+  // No functions of this type supported
 
   /*
    * Battery functions
    */
   // Follows all battery functions as inherited from TinyGsmBattery.tpp
+
+  /*
+   * Temperature functions
+   */
+  // No functions of this type supported
 
   /*
    * Client related functions

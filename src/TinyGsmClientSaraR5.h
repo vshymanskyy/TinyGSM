@@ -19,16 +19,16 @@
 #endif
 #define AT_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
 
-#include "TinyGsmBattery.tpp"
-#include "TinyGsmCalling.tpp"
-#include "TinyGsmGPRS.tpp"
-#include "TinyGsmGPS.tpp"
-#include "TinyGsmGSMLocation.tpp"
 #include "TinyGsmModem.tpp"
-#include "TinyGsmSMS.tpp"
-#include "TinyGsmSSL.tpp"
 #include "TinyGsmTCP.tpp"
+#include "TinyGsmSSL.tpp"
+#include "TinyGsmGPRS.tpp"
+#include "TinyGsmCalling.tpp"
+#include "TinyGsmSMS.tpp"
+#include "TinyGsmGSMLocation.tpp"
+#include "TinyGsmGPS.tpp"
 #include "TinyGsmTime.tpp"
+#include "TinyGsmBattery.tpp"
 
 #include <string.h>
 
@@ -460,14 +460,12 @@ class TinyGsmSaraR5 : public TinyGsmModem<TinyGsmSaraR5>,
   /*
    * Phone Call functions
    */
- protected:
   // Follows all phone call functions as inherited from TinyGsmCalling.tpp
 
   /*
-   * Messaging functions
+   * Text messaging (SMS) functions
    */
- protected:
-  // Follows all messaging functions as inherited from TinyGsmSMS.tpp
+  // Follows all text messaging (SMS) functions as inherited from TinyGsmSMS.tpp
 
   /*
    * GSM/GPS/GNSS/GLONASS Location functions
@@ -621,7 +619,6 @@ class TinyGsmSaraR5 : public TinyGsmModem<TinyGsmSaraR5>,
   /*
    * Time functions
    */
- protected:
   // Follows all clock functions as inherited from TinyGsmTime.tpp
 
   /*

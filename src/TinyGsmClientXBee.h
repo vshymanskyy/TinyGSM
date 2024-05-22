@@ -26,14 +26,14 @@
 #endif
 #define AT_NL "\r"
 
-#include "TinyGsmBattery.tpp"
-#include "TinyGsmGPRS.tpp"
 #include "TinyGsmModem.tpp"
-#include "TinyGsmSMS.tpp"
-#include "TinyGsmSSL.tpp"
-#include "TinyGsmTCP.tpp"
-#include "TinyGsmTemperature.tpp"
 #include "TinyGsmWifi.tpp"
+#include "TinyGsmGPRS.tpp"
+#include "TinyGsmTCP.tpp"
+#include "TinyGsmSSL.tpp"
+#include "TinyGsmSMS.tpp"
+#include "TinyGsmTemperature.tpp"
+#include "TinyGsmBattery.tpp"
 
 // Use this to avoid too many entrances and exits from command mode.
 // The cellular Bee's often freeze up and won't respond when attempting
@@ -320,10 +320,11 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
     // Start with the default guard time of 1 second
     memset(sockets, 0, sizeof(sockets));
   }
+
   /*
    * Basic functions
    */
-
+ protected:
   bool initImpl(const char* pin = nullptr) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
     DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientXBee"));
@@ -825,6 +826,11 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
   }
 
   /*
+   * Secure socket layer (SSL) functions
+   */
+  // Follows functions as inherited from TinyGsmSSL.tpp
+
+  /*
    * WiFi functions
    */
  protected:
@@ -962,7 +968,17 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
   }
 
   /*
-   * Messaging functions
+   * Phone Call functions
+   */
+  // No functions of this type supported
+
+  /*
+   * Audio functions
+   */
+  // No functions of this type supported
+
+  /*
+   * Text messaging (SMS) functions
    */
  protected:
   String sendUSSDImpl(const String& code) TINY_GSM_ATTR_NOT_AVAILABLE;
@@ -1016,6 +1032,31 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
   }
 
   /*
+   * GSM Location functions
+   */
+  // No functions of this type supported
+
+  /*
+   * GPS/GNSS/GLONASS location functions
+   */
+  // No functions of this type supported
+
+  /*
+   * Time functions
+   */
+  // No functions of this type supported
+
+  /*
+   * NTP server functions
+   */
+  // No functions of this type supported
+
+  /*
+   * BLE functions
+   */
+  // No functions of this type supported
+
+  /*
    * Battery functions
    */
  protected:
@@ -1046,7 +1087,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
   /*
    * Temperature functions
    */
-
+ protected:
   float getTemperatureImpl() {
     XBEE_COMMAND_START_DECORATOR(5, static_cast<float>(-9999))
     String res = sendATGetString(GF("TP"));

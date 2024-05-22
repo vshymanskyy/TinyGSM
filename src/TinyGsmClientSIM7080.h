@@ -105,7 +105,7 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
   /*
    * Inner Secure Client
    */
-
+ public:
   class GsmClientSecureSIM7080 : public GsmClientSim7080 {
    public:
     GsmClientSecureSIM7080() {}
@@ -113,13 +113,11 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     explicit GsmClientSecureSIM7080(TinyGsmSim7080& modem, uint8_t mux = 0)
         : GsmClientSim7080(modem, mux) {}
 
-   public:
     bool setCertificate(const String& certificateName) {
       return at->setCertificate(certificateName, mux);
     }
 
-    virtual int connect(const char* host, uint16_t port,
-                        int timeout_s) override {
+    int connect(const char* host, uint16_t port, int timeout_s) override {
       stop();
       TINY_GSM_YIELD();
       rx.clear();
@@ -134,8 +132,7 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
    */
  public:
   explicit TinyGsmSim7080(Stream& stream)
-      : TinyGsmSim70xx<TinyGsmSim7080>(stream),
-        certificates() {
+      : TinyGsmSim70xx<TinyGsmSim7080>(stream) {
     memset(sockets, 0, sizeof(sockets));
   }
 
@@ -242,8 +239,12 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
   /*
    * Secure socket layer (SSL) functions
    */
- protected:
   // Follows functions as inherited from TinyGsmSSL.tpp
+
+  /*
+   * WiFi functions
+   */
+  // No functions of this type supported
 
   /*
    * GPRS functions
@@ -330,19 +331,32 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
   /*
    * SIM card functions
    */
- protected:
   // Follows functions as inherited from TinyGsmClientSIM70xx.h
 
   /*
-   * Messaging functions
+   * Phone Call functions
    */
- protected:
-  // Follows all messaging functions as inherited from TinyGsmSMS.tpp
+  // No functions of this type supported
+
+  /*
+   * Audio functions
+   */
+  // No functions of this type supported
+
+  /*
+   * Text messaging (SMS) functions
+   */
+  // Follows all text messaging (SMS) functions as inherited from TinyGsmSMS.tpp
+
+  /*
+   * GSM Location functions
+   */
+  // Follows all GSM-based location functions as inherited from
+  // TinyGsmGSMLocation.tpp
 
   /*
    * GPS/GNSS/GLONASS location functions
    */
- protected:
   // Follows functions as inherited from TinyGsmClientSIM70xx.h
 
   /*
@@ -353,7 +367,7 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
   /*
    * NTP server functions
    */
-
+ protected:
   byte NTPServerSyncImpl(String server = "pool.ntp.org", int TimeZone = 0) {
     // Set GPRS bearer profile to associate with NTP sync
     // this may fail, it's not supported by all modules
@@ -394,10 +408,19 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
   }
 
   /*
+   * BLE functions
+   */
+  // No functions of this type supported
+
+  /*
    * Battery functions
    */
- protected:
   // Follows all battery functions as inherited from TinyGsmBattery.tpp
+
+  /*
+   * Temperature functions
+   */
+  // No functions of this type supported
 
   /*
    * Client related functions

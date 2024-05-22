@@ -16,10 +16,9 @@
 #endif
 #define AT_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
 
-#include "TinyGsmBattery.tpp"
+#include "TinyGsmModem.tpp"
 #include "TinyGsmGPRS.tpp"
 #include "TinyGsmGPS.tpp"
-#include "TinyGsmModem.tpp"
 
 enum SIM70xxRegStatus {
   REG_NO_RESULT    = -1,
@@ -236,12 +235,6 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType>,
   }
 
   /*
-   * Messaging functions
-   */
- protected:
-  // Follows all messaging functions as inherited from TinyGsmSMS.tpp
-
-  /*
    * GPS/GNSS/GLONASS location functions
    */
  protected:
@@ -352,27 +345,6 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType>,
     thisModem().waitResponse();
     return false;
   }
-
-  /*
-   * Time functions
-   */
-  // Follows all clock functions as inherited from TinyGsmTime.tpp
-
-  /*
-   * NTP server functions
-   */
-  // Follows all NTP server functions as inherited from TinyGsmNTP.tpp
-
-  /*
-   * Battery functions
-   */
- protected:
-  // Follows all battery functions as inherited from TinyGsmBattery.tpp
-
-  /*
-   * Client related functions
-   */
-  // should implement in sub-classes
   bool handleURCs(String& data) {
     return thisModem().handleURCs(data);
   }

@@ -20,16 +20,16 @@
 #endif
 #define AT_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
 
-#include "TinyGsmBattery.tpp"
-#include "TinyGsmCalling.tpp"
-#include "TinyGsmGPRS.tpp"
-#include "TinyGsmGSMLocation.tpp"
 #include "TinyGsmModem.tpp"
-#include "TinyGsmSMS.tpp"
-#include "TinyGsmSSL.tpp"
 #include "TinyGsmTCP.tpp"
+#include "TinyGsmSSL.tpp"
+#include "TinyGsmGPRS.tpp"
+#include "TinyGsmCalling.tpp"
+#include "TinyGsmSMS.tpp"
+#include "TinyGsmGSMLocation.tpp"
 #include "TinyGsmTime.tpp"
 #include "TinyGsmNTP.tpp"
+#include "TinyGsmBattery.tpp"
 
 enum SIM800RegStatus {
   REG_NO_RESULT    = -1,
@@ -130,7 +130,6 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
     explicit GsmClientSecureSim800(TinyGsmSim800& modem, uint8_t mux = 0)
         : GsmClientSim800(modem, mux) {}
 
-   public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
       stop();
       TINY_GSM_YIELD();
@@ -307,6 +306,16 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
   }
 
   /*
+   * Secure socket layer (SSL) functions
+   */
+  // Follows functions as inherited from TinyGsmSSL.tpp
+
+  /*
+   * WiFi functions
+   */
+  // No functions of this type supported
+
+  /*
    * GPRS functions
    */
  protected:
@@ -422,26 +431,6 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
   }
 
   /*
-   * Messaging functions
-   */
- protected:
-  // Follows all messaging functions as inherited from TinyGsmSMS.tpp
-
-  /*
-   * GSM Location functions
-   */
- protected:
-  // Depending on the exacty model and firmware revision, should return a
-  // GSM-based location from CLBS as as inherited from TinyGsmGSMLocation.tpp
-  // TODO(?):  Check number of digits in year (2 or 4)
-
-  /*
-   * GPS/GNSS/GLONASS location functions
-   */
- protected:
-  // No functions of this type supported
-
-  /*
    * Audio functions
    */
  public:
@@ -481,9 +470,25 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
   }
 
   /*
+   * Text messaging (SMS) functions
+   */
+  // Follows all text messaging (SMS) functions as inherited from TinyGsmSMS.tpp
+
+  /*
+   * GSM Location functions
+   */
+  // Depending on the exacty model and firmware revision, should return a
+  // GSM-based location from CLBS as as inherited from TinyGsmGSMLocation.tpp
+  // TODO(?):  Check number of digits in year (2 or 4)
+
+  /*
+   * GPS/GNSS/GLONASS location functions
+   */
+  // No functions of this type supported
+
+  /*
    * Time functions
    */
- protected:
   // Follows all clock functions as inherited from TinyGsmTime.tpp
 
   /*
@@ -492,15 +497,19 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
   // Follows all NTP server functions as inherited from TinyGsmNTP.tpp
 
   /*
+   * BLE functions
+   */
+  // No functions of this type supported
+
+  /*
    * Battery functions
    */
- protected:
   // Follows all battery functions as inherited from TinyGsmBattery.tpp
 
   /*
-   * NTP server functions
+   * Temperature functions
    */
-  // Follows all NTP server functions as inherited from TinyGsmNTP.tpp
+  // No functions of this type supported
 
   /*
    * Client related functions

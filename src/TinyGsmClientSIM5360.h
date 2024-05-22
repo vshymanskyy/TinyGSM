@@ -19,16 +19,16 @@
 #endif
 #define AT_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
 
-#include "TinyGsmBattery.tpp"
-#include "TinyGsmGPRS.tpp"
-#include "TinyGsmGPS.tpp"
-#include "TinyGsmGSMLocation.tpp"
 #include "TinyGsmModem.tpp"
-#include "TinyGsmSMS.tpp"
 #include "TinyGsmTCP.tpp"
-#include "TinyGsmTemperature.tpp"
+#include "TinyGsmGPRS.tpp"
+#include "TinyGsmSMS.tpp"
+#include "TinyGsmGSMLocation.tpp"
+#include "TinyGsmGPS.tpp"
 #include "TinyGsmTime.tpp"
 #include "TinyGsmNTP.tpp"
+#include "TinyGsmBattery.tpp"
+#include "TinyGsmTemperature.tpp"
 
 enum SIM5360RegStatus {
   REG_NO_RESULT    = -1,
@@ -44,20 +44,20 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
                        public TinyGsmGPRS<TinyGsmSim5360>,
                        public TinyGsmTCP<TinyGsmSim5360, TINY_GSM_MUX_COUNT>,
                        public TinyGsmSMS<TinyGsmSim5360>,
-                       public TinyGsmTime<TinyGsmSim5360>,
-                       public TinyGsmNTP<TinyGsmSim5360>,
                        public TinyGsmGSMLocation<TinyGsmSim5360>,
                        public TinyGsmGPS<TinyGsmSim5360>,
+                       public TinyGsmTime<TinyGsmSim5360>,
+                       public TinyGsmNTP<TinyGsmSim5360>,
                        public TinyGsmBattery<TinyGsmSim5360>,
                        public TinyGsmTemperature<TinyGsmSim5360> {
   friend class TinyGsmModem<TinyGsmSim5360>;
   friend class TinyGsmGPRS<TinyGsmSim5360>;
   friend class TinyGsmTCP<TinyGsmSim5360, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmSMS<TinyGsmSim5360>;
-  friend class TinyGsmTime<TinyGsmSim5360>;
-  friend class TinyGsmNTP<TinyGsmSim5360>;
   friend class TinyGsmGSMLocation<TinyGsmSim5360>;
   friend class TinyGsmGPS<TinyGsmSim5360>;
+  friend class TinyGsmTime<TinyGsmSim5360>;
+  friend class TinyGsmNTP<TinyGsmSim5360>;
   friend class TinyGsmBattery<TinyGsmSim5360>;
   friend class TinyGsmTemperature<TinyGsmSim5360>;
 
@@ -122,27 +122,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
   /*
    * Inner Secure Client
    */
-
-  // TODO(?): Add SSL support
-  /*
-  class GsmClientSecureSim5360 : public GsmClientSim5360 {
-   public:
-    GsmClientSecureSim5360() {}
-
-    explicit GsmClientSecureSim5360(TinyGsmSim5360& modem, uint8_t mux = 0)
-      : GsmClientSim5360(modem, mux) {}
-
-   public:
-    int connect(const char* host, uint16_t port, int timeout_s) override {
-      stop();
-      TINY_GSM_YIELD();
-      rx.clear();
-      sock_connected = at->modemConnect(host, port, mux, true, timeout_s);
-      return sock_connected;
-    }
-    TINY_GSM_CLIENT_CONNECT_OVERRIDES
-  };
-  */
+  // NOT SUPPORTED
 
   /*
    * Constructor
@@ -297,6 +277,16 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
   }
 
   /*
+   * Secure socket layer (SSL) functions
+   */
+  // No functions of this type supported
+
+  /*
+   * WiFi functions
+   */
+  // No functions of this type supported
+
+  /*
    * GPRS functions
    */
  protected:
@@ -410,7 +400,42 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
   }
 
   /*
-   * GPS location functions
+   * SIM card functions
+   */
+ protected:
+  // Gets the CCID of a sim card via AT+CCID
+  String getSimCCIDImpl() {
+    sendAT(GF("+CICCID"));
+    if (waitResponse(GF(AT_NL "+ICCID:")) != 1) { return ""; }
+    String res = stream.readStringUntil('\n');
+    waitResponse();
+    res.trim();
+    return res;
+  }
+
+  /*
+   * Phone Call functions
+   */
+  // No functions of this type supported
+
+  /*
+   * Audio functions
+   */
+  // No functions of this type supported
+
+  /*
+   * Text messaging (SMS) functions
+   */
+  // Follows all text messaging (SMS) functions as inherited from TinyGsmSMS.tpp
+
+  /*
+   * GSM Location functions
+   */
+  // SIM5360 and SIM7100 can return a GSM-based location from CLBS as per the
+  // template; SIM5320 doesn't not appear to be able to
+
+  /*
+   * GPS/GNSS/GLONASS location functions
    */
  protected:
   // enable GPS
@@ -508,42 +533,19 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
   }
 
   /*
-   * SIM card functions
-   */
- protected:
-  // Gets the CCID of a sim card via AT+CCID
-  String getSimCCIDImpl() {
-    sendAT(GF("+CICCID"));
-    if (waitResponse(GF(AT_NL "+ICCID:")) != 1) { return ""; }
-    String res = stream.readStringUntil('\n');
-    waitResponse();
-    res.trim();
-    return res;
-  }
-
-  /*
-   * Messaging functions
-   */
- protected:
-  // Follows all messaging functions as inherited from TinyGsmSMS.tpp
-
-  /*
-   * GSM Location functions
-   */
- protected:
-  // SIM5360 and SIM7100 can return a GSM-based location from CLBS as per the
-  // template; SIM5320 doesn't not appear to be able to
-
-  /*
    * Time functions
    */
- protected:
   // Follows all clock functions as inherited from TinyGsmTime.tpp
 
   /*
    * NTP server functions
    */
   // Follows all NTP server functions as inherited from TinyGsmNTP.tpp
+
+  /*
+   * BLE functions
+   */
+  // No functions of this type supported
 
   /*
    * Battery functions

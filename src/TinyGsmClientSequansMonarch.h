@@ -18,14 +18,14 @@
 #endif
 #define AT_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
 
-#include "TinyGsmCalling.tpp"
-#include "TinyGsmGPRS.tpp"
 #include "TinyGsmModem.tpp"
-#include "TinyGsmSMS.tpp"
-#include "TinyGsmSSL.tpp"
 #include "TinyGsmTCP.tpp"
-#include "TinyGsmTemperature.tpp"
+#include "TinyGsmSSL.tpp"
+#include "TinyGsmGPRS.tpp"
+#include "TinyGsmCalling.tpp"
+#include "TinyGsmSMS.tpp"
 #include "TinyGsmTime.tpp"
+#include "TinyGsmTemperature.tpp"
 
 enum MonarchRegStatus {
   REG_NO_RESULT    = -1,
@@ -337,6 +337,16 @@ class TinyGsmSequansMonarch
   }
 
   /*
+   * Secure socket layer (SSL) functions
+   */
+  // Follows functions as inherited from TinyGsmSSL.tpp
+
+  /*
+   * WiFi functions
+   */
+  // No functions of this type supported
+
+  /*
    * GPRS functions
    */
  protected:
@@ -397,17 +407,55 @@ class TinyGsmSequansMonarch
   bool dtmfSendImpl(char cmd,
                     int  duration_ms = 100) TINY_GSM_ATTR_NOT_AVAILABLE;
 
+
   /*
-   * Messaging functions
+   * Audio functions
    */
- protected:
-  // Follows all messaging functions as inherited from TinyGsmSMS.tpp
+  // No functions of this type supported
+  /*
+   * Text messaging (SMS) functions
+   */
+  // Follows all text messaging (SMS) functions as inherited from TinyGsmSMS.tpp
+
+  /*
+   * GSM Location functions
+   */
+  // No functions of this type supported
+
+  /*
+   * GPS/GNSS/GLONASS location functions
+   */
+  // No functions of this type supported
 
   /*
    * Time functions
    */
- protected:
   // Follows all clock functions as inherited from TinyGsmTime.tpp
+
+  /*
+   * NTP server functions
+   */
+  // No functions of this type supported
+
+  /*
+   * BLE functions
+   */
+  // No functions of this type supported
+
+  /*
+   * NTP server functions
+   */
+  // No functions of this type supported
+
+  /*
+   * BLE functions
+   */
+  // No functions of this type supported
+
+  /*
+   * Battery functions
+   */
+  // No functions of this type supportedp
 
   /*
    * Temperature functions
@@ -424,6 +472,9 @@ class TinyGsmSequansMonarch
     return res.toFloat();
   }
 
+  /*
+   * Client related functions
+   */
  protected:
   bool modemConnect(const char* host, uint16_t port, uint8_t mux,
                     bool ssl = false, int timeout_s = 75) {

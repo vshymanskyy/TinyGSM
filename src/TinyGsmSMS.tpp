@@ -22,7 +22,7 @@ class TinyGsmSMS {
    */
  public:
   /*
-   * Messaging functions
+   * Text messaging (SMS) functions
    */
   String sendUSSD(const String& code) {
     return thisModem().sendUSSDImpl(code);
@@ -124,7 +124,7 @@ class TinyGsmSMS {
    */
 
   /*
-   * Messaging functions
+   * Text messaging (SMS) functions
    */
 
   String sendUSSDImpl(const String& code) {
