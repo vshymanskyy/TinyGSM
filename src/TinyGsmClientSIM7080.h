@@ -18,16 +18,31 @@
 #include "TinyGsmClientSIM70xx.h"
 #include "TinyGsmTCP.tpp"
 #include "TinyGsmSSL.tpp"
+#include "TinyGsmSMS.tpp"
+#include "TinyGsmGSMLocation.tpp"
+#include "TinyGsmTime.tpp"
 #include "TinyGsmNTP.tpp"
+#include "TinyGsmBattery.tpp"
 
 class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
-                       public TinyGsmNTP<TinyGsmSim7080>,
                        public TinyGsmTCP<TinyGsmSim7080, TINY_GSM_MUX_COUNT>,
-                       public TinyGsmSSL<TinyGsmSim7080> {
+                       public TinyGsmSSL<TinyGsmSim7080, TINY_GSM_MUX_COUNT>,
+                       public TinyGsmSMS<TinyGsmSim7080>,
+                       public TinyGsmGSMLocation<TinyGsmSim7080>,
+                       public TinyGsmTime<TinyGsmSim7080>,
+                       public TinyGsmNTP<TinyGsmSim7080>,
+                       public TinyGsmBattery<TinyGsmSim7080> {
   friend class TinyGsmSim70xx<TinyGsmSim7080>;
-  friend class TinyGsmNTP<TinyGsmSim7080>;
+  friend class TinyGsmModem<TinyGsmSim7080>;
+  friend class TinyGsmGPRS<TinyGsmSim7080>;
   friend class TinyGsmTCP<TinyGsmSim7080, TINY_GSM_MUX_COUNT>;
-  friend class TinyGsmSSL<TinyGsmSim7080>;
+  friend class TinyGsmSSL<TinyGsmSim7080, TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmSMS<TinyGsmSim7080>;
+  friend class TinyGsmGSMLocation<TinyGsmSim7080>;
+  friend class TinyGsmGPS<TinyGsmSim7080>;
+  friend class TinyGsmTime<TinyGsmSim7080>;
+  friend class TinyGsmNTP<TinyGsmSim7080>;
+  friend class TinyGsmBattery<TinyGsmSim7080>;
 
   /*
    * Inner Client

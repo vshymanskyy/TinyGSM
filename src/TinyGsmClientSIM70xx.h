@@ -20,9 +20,6 @@
 #include "TinyGsmGPRS.tpp"
 #include "TinyGsmGPS.tpp"
 #include "TinyGsmModem.tpp"
-#include "TinyGsmSMS.tpp"
-#include "TinyGsmTime.tpp"
-#include "TinyGsmGSMLocation.tpp"
 
 enum SIM70xxRegStatus {
   REG_NO_RESULT    = -1,
@@ -34,31 +31,23 @@ enum SIM70xxRegStatus {
   REG_UNKNOWN      = 4,
 };
 
-template <class modemType>
-class TinyGsmSim70xx : public TinyGsmModem<TinyGsmSim70xx<modemType>>,
-                       public TinyGsmGPRS<TinyGsmSim70xx<modemType>>,
-                       public TinyGsmSMS<TinyGsmSim70xx<modemType>>,
-                       public TinyGsmGPS<TinyGsmSim70xx<modemType>>,
-                       public TinyGsmTime<TinyGsmSim70xx<modemType>>,
-                       public TinyGsmBattery<TinyGsmSim70xx<modemType>>,
-                       public TinyGsmGSMLocation<TinyGsmSim70xx<modemType>> {
-  friend class TinyGsmModem<TinyGsmSim70xx<modemType>>;
-  friend class TinyGsmGPRS<TinyGsmSim70xx<modemType>>;
-  friend class TinyGsmSMS<TinyGsmSim70xx<modemType>>;
-  friend class TinyGsmGPS<TinyGsmSim70xx<modemType>>;
-  friend class TinyGsmTime<TinyGsmSim70xx<modemType>>;
-  friend class TinyGsmBattery<TinyGsmSim70xx<modemType>>;
-  friend class TinyGsmGSMLocation<TinyGsmSim70xx<modemType>>;
+template <class SIM70xxType>
+class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType>,
+                       public TinyGsmGPRS<SIM70xxType>,
+                       public TinyGsmGPS<SIM70xxType> {
+  friend class TinyGsmModem<SIM70xxType>;
+  friend class TinyGsmGPRS<SIM70xxType>;
+  friend class TinyGsmGPS<SIM70xxType>;
 
   /*
    * CRTP Helper
    */
  protected:
-  inline const modemType& thisModem() const {
-    return static_cast<const modemType&>(*this);
+  inline const SIM70xxType& thisModem() const {
+    return static_cast<const SIM70xxType&>(*this);
   }
-  inline modemType& thisModem() {
-    return static_cast<modemType&>(*this);
+  inline SIM70xxType& thisModem() {
+    return static_cast<SIM70xxType&>(*this);
   }
   ~TinyGsmSim70xx() {}
 
@@ -72,10 +61,6 @@ class TinyGsmSim70xx : public TinyGsmModem<TinyGsmSim70xx<modemType>>,
    * Basic functions
    */
  protected:
-  bool initImpl(const char* pin = nullptr) {
-    return thisModem().initImpl(pin);
-  }
-
   String getModemNameImpl() {
     String name = "SIMCom SIM7000";
 
@@ -230,23 +215,11 @@ class TinyGsmSim70xx : public TinyGsmModem<TinyGsmSim70xx<modemType>>,
     return thisModem().waitResponse() == 1;
   }
 
-  String getLocalIPImpl() {
-    return thisModem().getLocalIPImpl();
-  }
-
   /*
    * GPRS functions
    */
  protected:
   // should implement in sub-classes
-  bool gprsConnectImpl(const char* apn, const char* user = nullptr,
-                       const char* pwd = nullptr) {
-    return thisModem().gprsConnectImpl(apn, user, pwd);
-  }
-
-  bool gprsDisconnectImpl() {
-    return thisModem().gprsDisconnectImpl();
-  }
 
   /*
    * SIM card functions

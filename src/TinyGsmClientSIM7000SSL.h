@@ -18,31 +18,32 @@
 #include "TinyGsmClientSIM70xx.h"
 #include "TinyGsmTCP.tpp"
 #include "TinyGsmSSL.tpp"
-#include "TinyGsmNTP.tpp"
 #include "TinyGsmSMS.tpp"
-#include "TinyGsmTime.tpp"
 #include "TinyGsmGSMLocation.tpp"
+#include "TinyGsmTime.tpp"
+#include "TinyGsmNTP.tpp"
+#include "TinyGsmBattery.tpp"
 
 class TinyGsmSim7000SSL
     : public TinyGsmSim70xx<TinyGsmSim7000SSL>,
       public TinyGsmTCP<TinyGsmSim7000SSL, TINY_GSM_MUX_COUNT>,
       public TinyGsmSSL<TinyGsmSim7000SSL, TINY_GSM_MUX_COUNT>,
       public TinyGsmSMS<TinyGsmSim7000SSL>,
+      public TinyGsmGSMLocation<TinyGsmSim7000SSL>,
       public TinyGsmTime<TinyGsmSim7000SSL>,
       public TinyGsmNTP<TinyGsmSim7000SSL>,
-      public TinyGsmBattery<TinyGsmSim7000SSL>,
-      public TinyGsmGSMLocation<TinyGsmSim7000SSL> {
+      public TinyGsmBattery<TinyGsmSim7000SSL> {
   friend class TinyGsmSim70xx<TinyGsmSim7000SSL>;
   friend class TinyGsmTCP<TinyGsmSim7000SSL, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmSSL<TinyGsmSim7000SSL, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmModem<TinyGsmSim7000SSL>;
   friend class TinyGsmGPRS<TinyGsmSim7000SSL>;
   friend class TinyGsmSMS<TinyGsmSim7000SSL>;
+  friend class TinyGsmGSMLocation<TinyGsmSim7000SSL>;
+  friend class TinyGsmGPS<TinyGsmSim7000SSL>;
   friend class TinyGsmNTP<TinyGsmSim7000SSL>;
   friend class TinyGsmTime<TinyGsmSim7000SSL>;
   friend class TinyGsmBattery<TinyGsmSim7000SSL>;
-  friend class TinyGsmGSMLocation<TinyGsmSim7000SSL>;
-  friend class TinyGsmGPS<TinyGsmSim7000SSL>;
 
   /*
    * Inner Client
@@ -135,8 +136,7 @@ class TinyGsmSim7000SSL
    */
  public:
   explicit TinyGsmSim7000SSL(Stream& stream)
-      : TinyGsmSim70xx<TinyGsmSim7000SSL>(stream),
-        certificates() {
+      : TinyGsmSim70xx<TinyGsmSim7000SSL>(stream) {
     memset(sockets, 0, sizeof(sockets));
   }
 
@@ -662,7 +662,6 @@ class TinyGsmSim7000SSL
 
  protected:
   GsmClientSim7000SSL* sockets[TINY_GSM_MUX_COUNT];
-  String               certificates[TINY_GSM_MUX_COUNT];
 };
 
 #endif  // SRC_TINYGSMCLIENTSIM7000SSL_H_
