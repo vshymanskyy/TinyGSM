@@ -16,7 +16,17 @@
 #ifdef AT_NL
 #undef AT_NL
 #endif
-#define AT_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
+#define AT_NL "\r\n"
+
+#ifdef MODEM_MANUFACTURER
+#undef MODEM_MANUFACTURER
+#endif
+#define MODEM_MANUFACTURER "Sequans"
+
+#ifdef MODEM_MODEL
+#undef MODEM_MODEL
+#endif
+#define MODEM_MODEL "Monarch"
 
 #include "TinyGsmModem.tpp"
 #include "TinyGsmTCP.tpp"
@@ -231,26 +241,6 @@ class TinyGsmSequansMonarch
       // return true
       return (ret == SIM_READY || ret == SIM_LOCKED);
     }
-  }
-
-  String getModemNameImpl() {
-    sendAT(GF("+CGMI"));
-    String res1;
-    if (waitResponse(1000L, res1) != 1) { return "unknown"; }
-    res1.replace("\r\nOK\r\n", "");
-    res1.replace("\rOK\r", "");
-    res1.trim();
-
-    sendAT(GF("+CGMM"));
-    String res2;
-    if (waitResponse(1000L, res2) != 1) { return "unknown"; }
-    res2.replace("\r\nOK\r\n", "");
-    res2.replace("\rOK\r", "");
-    res2.trim();
-
-    String name = res1 + String(' ') + res2;
-    DBG("### Modem:", name);
-    return name;
   }
 
   bool factoryDefaultImpl() {

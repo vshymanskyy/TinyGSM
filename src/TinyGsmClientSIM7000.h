@@ -168,9 +168,7 @@ class TinyGsmSim7000 : public TinyGsmSim70xx<TinyGsmSim7000>,
     sendAT(GF("+CIFSR;E0"));
     String res;
     if (waitResponse(10000L, res) != 1) { return ""; }
-    res.replace(AT_NL "OK" AT_NL, "");
-    res.replace(AT_NL, "");
-    res.trim();
+    cleanResponseString(res);
     return res;
   }
 

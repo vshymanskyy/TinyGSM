@@ -18,7 +18,17 @@
 #ifdef AT_NL
 #undef AT_NL
 #endif
-#define AT_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
+#define AT_NL "\r\n"
+
+#ifdef MODEM_MANUFACTURER
+#undef MODEM_MANUFACTURER
+#endif
+#define MODEM_MANUFACTURER "Quectel"
+
+#ifdef MODEM_MODEL
+#undef MODEM_MODEL
+#endif
+#define MODEM_MODEL "M95"
 
 #include "TinyGsmModem.tpp"
 #include "TinyGsmTCP.tpp"

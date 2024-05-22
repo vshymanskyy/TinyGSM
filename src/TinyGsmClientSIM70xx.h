@@ -14,7 +14,27 @@
 #ifdef AT_NL
 #undef AT_NL
 #endif
-#define AT_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
+#define AT_NL "\r\n"
+
+#ifdef MODEM_MANUFACTURER
+#undef MODEM_MANUFACTURER
+#endif
+#define MODEM_MANUFACTURER "SIMCom"
+
+#ifdef MODEM_MODEL
+#undef MODEM_MODEL
+#endif
+#if defined(TINY_GSM_MODEM_SIM7070)
+#define MODEM_MODEL "SIM7070";
+#elif defined(TINY_GSM_MODEM_SIM7080)
+#define MODEM_MODEL "SIM7080";
+#elif defined(TINY_GSM_MODEM_SIM7090)
+#define MODEM_MODEL "SIM7090";
+#elif defined(TINY_GSM_MODEM_SIM7000) || defined(TINY_GSM_MODEM_SIM7000SSL)
+#define MODEM_MODEL "SIM7000";
+#else
+#define MODEM_MODEL "SIM70xx";
+#endif
 
 #include "TinyGsmModem.tpp"
 #include "TinyGsmGPRS.tpp"
@@ -60,34 +80,8 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType>,
    * Basic functions
    */
  protected:
-  String getModemNameImpl() {
-    String name = "SIMCom SIM7000";
-
-    thisModem().sendAT(GF("+GMM"));
-    String res2;
-    if (thisModem().waitResponse(5000L, res2) != 1) { return name; }
-    res2.replace(AT_NL "OK" AT_NL, "");
-    res2.replace("_", " ");
-    res2.trim();
-
-    name = res2;
-    DBG("### Modem:", name);
-    return name;
-  }
-
-  bool factoryDefaultImpl() {           // these commands aren't supported
-    thisModem().sendAT(GF("&FZE0&W"));  // Factory + Reset + Echo Off + Write
-    thisModem().waitResponse();
-    thisModem().sendAT(GF("+IPR=0"));  // Auto-baud
-    thisModem().waitResponse();
-    thisModem().sendAT(GF("+IFC=0,0"));  // No Flow Control
-    thisModem().waitResponse();
-    thisModem().sendAT(GF("+ICF=3,3"));  // 8 data 0 parity 1 stop
-    thisModem().waitResponse();
-    thisModem().sendAT(GF("+CSCLK=0"));  // Disable Slow Clock
-    thisModem().waitResponse();
-    thisModem().sendAT(GF("&W"));  // Write configuration
-    return thisModem().waitResponse() == 1;
+  bool factoryDefaultImpl() {
+    return false
   }
 
   /*

@@ -195,19 +195,6 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     while (stream.available()) { waitResponse(15, nullptr, nullptr); }
   }
 
-  bool factoryDefaultImpl() {
-    sendAT(GF("&FZE0"));  // Factory + Reset + Echo Off + Write
-    waitResponse();
-    sendAT(GF("+IPR=0"));  // Auto-baud
-    waitResponse();
-    sendAT(GF("+IFC=0,0"));  // No Flow Control
-    waitResponse();
-    sendAT(GF("+ICF=3,3"));  // 8 data 0 parity 1 stop
-    waitResponse();
-    sendAT(GF("+CSCLK=0"));  // Disable Slow Clock
-    return waitResponse() == 1;
-  }
-
   /*
    * Power functions
    */

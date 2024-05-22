@@ -26,6 +26,16 @@
 #endif
 #define AT_NL "\r"
 
+#ifdef MODEM_MANUFACTURER
+#undef MODEM_MANUFACTURER
+#endif
+#define MODEM_MANUFACTURER "Digi"
+
+#ifdef MODEM_MODEL
+#undef MODEM_MODEL
+#endif
+#define MODEM_MODEL "XBee"
+
 #include "TinyGsmModem.tpp"
 #include "TinyGsmWifi.tpp"
 #include "TinyGsmGPRS.tpp"
@@ -383,6 +393,16 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
     return getBeeName();
   }
 
+  String getModemModelImpl() {
+    switch (beeType) {
+      case XBEE_S6B_WIFI: return "XBee Wi-Fi";
+      case XBEE_LTE1_VZN: return "XBee Cellular LTE Cat 1";
+      case XBEE_3G: return "XBee Cellular 3G";
+      case XBEE3_LTE1_ATT: return "XBee3 Cellular LTE CAT 1";
+      case XBEE3_LTEM_ATT: return "XBee3 Cellular LTE-M";
+      default: return "XBee Unknown";
+    }
+  }
   // Gets the modem serial number
   String getModemSerialNumberImpl() {
     String xbeeSnLow =
@@ -393,12 +413,12 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
   }
 
   // Gets the modem hardware version
-  String getModemHardwareVersionImpl() {
+  String getModemModelImpl() {
     return sendATGetString(GF("HV"));
   }
 
   // Gets the modem firmware version
-  String getModemFirmwareVersionImpl() {
+  String getModemRevisionImpl() {
     return sendATGetString(GF("VR"));
   }
 

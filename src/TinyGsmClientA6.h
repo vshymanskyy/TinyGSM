@@ -17,7 +17,21 @@
 #ifdef AT_NL
 #undef AT_NL
 #endif
-#define AT_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
+#define AT_NL "\r\n"
+
+#ifdef MODEM_MANUFACTURER
+#undef MODEM_MANUFACTURER
+#endif
+#define MODEM_MANUFACTURER "Ai-Thinker"
+
+#ifdef MODEM_MODEL
+#undef MODEM_MODEL
+#endif
+#if defined(TINY_GSM_MODEM_A7)
+#define MODEM_MODEL "A7"
+#else
+#define MODEM_MODEL "A6"
+#endif
 
 #include "TinyGsmModem.tpp"
 #include "TinyGsmTCP.tpp"
@@ -166,12 +180,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
     sendAT(GF("GSN"));  // Not CGSN
     String res;
     if (waitResponse(1000L, res) != 1) { return ""; }
-    // Do the replaces twice so we cover both \r and \r\n type endings
-    res.replace("\r\nOK\r\n", "");
-    res.replace("\rOK\r", "");
-    res.replace("\r\n", " ");
-    res.replace("\r", " ");
-    res.trim();
+    cleanResponseString(res);
     return res;
   }
 
@@ -222,9 +231,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
     sendAT(GF("+CIFSR"));
     String res;
     if (waitResponse(10000L, res) != 1) { return ""; }
-    res.replace(AT_NL "OK" AT_NL, "");
-    res.replace(AT_NL, "");
-    res.trim();
+    cleanResponseString(res);
     return res;
   }
 

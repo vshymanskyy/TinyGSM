@@ -17,7 +17,21 @@
 #ifdef AT_NL
 #undef AT_NL
 #endif
-#define AT_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
+#define AT_NL "\r\n"
+
+#ifdef MODEM_MANUFACTURER
+#undef MODEM_MANUFACTURER
+#endif
+#define MODEM_MANUFACTURER "Espressif"
+
+#ifdef MODEM_MODEL
+#undef MODEM_MODEL
+#endif
+#if defined(TINY_GSM_MODEM_ESP8266)
+#define MODEM_MODEL "ESP8266"
+#else
+#define MODEM_MODEL "ESP32"
+#endif
 
 #include "TinyGsmModem.tpp"
 #include "TinyGsmTCP.tpp"
@@ -164,29 +178,6 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
     return true;
   }
 
-  String getModemNameImpl() {
-    return "ESP8266";
-  }
-
-  // Gets the modem serial number
-  String getModemSerialNumberImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
-  // Gets the modem hardware version
-  String getModemHardwareVersionImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
-
-  // Gets the modem firmware version
-  String getModemFirmwareVersionImpl() {
-    sendAT(GF("GMR"));  // GMR instead of CGMR
-    String res;
-    if (waitResponse(1000L, res) != 1) { return ""; }
-    // Do the replaces twice so we cover both \r and \r\n type endings
-    res.replace("\r\nOK\r\n", "");
-    res.replace("\rOK\r", "");
-    res.replace("\r\n", " ");
-    res.replace("\r", " ");
-    res.trim();
-    return res;
-  }
-
   bool setBaudImpl(uint32_t baud) {
     sendAT(GF("+UART_CUR="), baud, "8,1,0,0");
     if (waitResponse() != 1) {
@@ -201,19 +192,52 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
     return false;
   }
 
-  bool factoryDefaultImpl() {
-    sendAT(GF("+RESTORE"));
-    return waitResponse() == 1;
-  }
-
   String getModemInfoImpl() {
     sendAT(GF("+GMR"));
     String res;
     if (waitResponse(1000L, res) != 1) { return ""; }
-    res.replace(AT_NL "OK" AT_NL, "");
-    res.replace(AT_NL, " ");
-    res.trim();
+    cleanResponseString(res);
     return res;
+  }
+
+  // Gets the modem hardware version
+  String getModemManufacturerImpl() {
+    return MODEM_MANUFACTURER;
+  }
+
+  // Gets the modem hardware version
+  String getModemModelImpl() {
+    String model = MODEM_MODEL;
+    sendAT(GF("+GMR"));
+    streamSkipUntil('\n');  // skip the AT version
+    streamSkipUntil('\n');  // skip the SDK version
+    streamSkipUntil('\n');  // skip the compile time
+    // read the hardware from the Bin version
+    streamSkipUntil('(');  // skip the text "Bin version"
+    String wroom = stream.readStringUntil(
+        ')');                        // read the WRoom version in the parethesis
+    streamSkipUntil('(');            // skip the bin version itself
+    if (waitResponse(1000L) == 1) {  // wait for the ending OK
+      return wroom;
+    }
+    return model;
+  }
+
+  // Gets the modem firmware version
+  String getModemRevisionImpl() {
+    sendAT(GF("GMR"));  // GMR instead of CGMR
+    String res;
+    if (waitResponse(1000L, res) != 1) { return ""; }
+    cleanResponseString(res);
+    return res;
+  }
+
+  // Gets the modem serial number
+  String getModemSerialNumberImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
+
+  bool factoryDefaultImpl() {
+    sendAT(GF("+RESTORE"));
+    return waitResponse() == 1;
   }
 
   /*

@@ -33,6 +33,14 @@
 #endif
 #endif
 
+#ifndef MODEM_MANUFACTURER
+#define MODEM_MANUFACTURER "unknown"
+#endif
+
+#ifndef MODEM_MODEL
+#define MODEM_MODEL "unknown"
+#endif
+
 static const char GSM_OK[] TINY_GSM_PROGMEM    = AT_OK AT_NL;
 static const char GSM_ERROR[] TINY_GSM_PROGMEM = AT_ERROR AT_NL;
 
@@ -96,7 +104,7 @@ class TinyGsmModem {
     return waitResponse(1000L, r1, r2, r3, r4, r5, r6, r7);
   }
 
-  // Asks for modem information via the V.25TER standard ATI command
+  // Asks for modem information via the 3GPP TS 27.007 standard ATI command
   // NOTE:  The actual value and style of the response is quite varied
   String getModemInfo() {
     return thisModem().getModemInfoImpl();
@@ -105,17 +113,21 @@ class TinyGsmModem {
   String getModemName() {
     return thisModem().getModemNameImpl();
   }
+  // Gets the modem manufacturer
+  String getModemManufacturer() {
+    return thisModem().getModemManufacturerImpl();
+  }
+  // Gets the modem hardware version
+  String getModemModel() {
+    return thisModem().getModemModelImpl();
+  }
+  // Gets the modem firmware version
+  String getModemRevision() {
+    return thisModem().getModemRevisionImpl();
+  }
   // Gets the modem serial number
   String getModemSerialNumber() {
     return thisModem().getModemSerialNumberImpl();
-  }
-  // Gets the modem hardware version
-  String getModemHardwareVersion() {
-    return thisModem().getModemHardwareVersionImpl();
-  }
-  // Gets the modem firmware version
-  String getModemFirmwareVersion() {
-    return thisModem().getModemFirmwareVersionImpl();
   }
   bool factoryDefault() {
     return thisModem().factoryDefaultImpl();
@@ -278,7 +290,15 @@ class TinyGsmModem {
     return false;
   }
 
- protected:
+  inline void cleanResponseString(String& res) {
+    // Do the replaces twice so we cover both \r and \r\n type endings
+    res.replace("\r\nOK\r\n", "");
+    res.replace("\rOK\r", "");
+    res.replace("\r\n", " ");
+    res.replace("\r", " ");
+    res.trim();
+  }
+
   static inline IPAddress TinyGsmIpFromString(const String& strIP) {
     int Parts[4] = {
         0,
@@ -411,77 +431,56 @@ class TinyGsmModem {
 
 
   String getModemInfoImpl() {
-    thisModem().sendAT(GF("I"));
+    thisModem().sendAT(GF("I"));  // 3GPP TS 27.007
     String res;
     if (thisModem().waitResponse(1000L, res) != 1) { return ""; }
-    // Do the replaces twice so we cover both \r and \r\n type endings
-    res.replace("\r\nOK\r\n", "");
-    res.replace("\rOK\r", "");
-    res.replace("\r\n", " ");
-    res.replace("\r", " ");
-    res.trim();
+    thisModem().cleanResponseString(res);
     return res;
   }
 
   String getModemNameImpl() {
-    thisModem().sendAT(GF("+CGMI"));
-    String res1;
-    if (thisModem().waitResponse(1000L, res1) != 1) { return "unknown"; }
-    res1.replace("\r\nOK\r\n", "");
-    res1.replace("\rOK\r", "");
-    res1.trim();
-
-    thisModem().sendAT(GF("+GMM"));
-    String res2;
-    if (thisModem().waitResponse(1000L, res2) != 1) { return "unknown"; }
-    res2.replace("\r\nOK\r\n", "");
-    res2.replace("\rOK\r", "");
-    res2.trim();
-
-    String name = res1 + String(' ') + res2;
+    String manufacturer = getModemManufacturer();
+    String model        = getModemModel();
+    String name         = manufacturer + String(" ") + model;
     DBG("### Modem:", name);
     return name;
   }
 
-  // Gets the modem serial number
-  String getModemSerialNumberImpl() {
-    thisModem().sendAT(GF("CGSN"));
+  // Gets the modem manufacturer
+  String getModemManufacturerImpl() {
+    String manufacturer = MODEM_MANUFACTURER;
+    thisModem().sendAT(GF("+CGMI"));  // 3GPP TS 27.007 standard
     String res;
-    if (thisModem().waitResponse(1000L, res) != 1) { return ""; }
-    // Do the replaces twice so we cover both \r and \r\n type endings
-    res.replace("\r\nOK\r\n", "");
-    res.replace("\rOK\r", "");
-    res.replace("\r\n", " ");
-    res.replace("\r", " ");
-    res.trim();
+    if (thisModem().waitResponse(1000L, res) != 1) { return manf; }
+    thisModem().cleanResponseString(res);
     return res;
   }
 
   // Gets the modem hardware version
-  String getModemHardwareVersionImpl() {
-    thisModem().sendAT(GF("CGMM"));
+  String getModemModelImpl() {
+    String model = MODEM_MODEL;
+    thisModem().sendAT(GF("+CGMM"));  // 3GPP TS 27.007 standard
     String res;
-    if (thisModem().waitResponse(1000L, res) != 1) { return ""; }
-    // Do the replaces twice so we cover both \r and \r\n type endings
-    res.replace("\r\nOK\r\n", "");
-    res.replace("\rOK\r", "");
-    res.replace("\r\n", " ");
-    res.replace("\r", " ");
-    res.trim();
+    if (thisModem().waitResponse(1000L, res) != 1) { return model; }
+    thisModem().cleanResponseString(res);
     return res;
   }
 
   // Gets the modem firmware version
-  String getModemFirmwareVersionImpl() {
-    thisModem().sendAT(GF("CGMR"));
+  String getModemRevisionImpl() {
+    thisModem().sendAT(GF("+CGMR"));  // 3GPP TS 27.007 standard
     String res;
-    if (thisModem().waitResponse(1000L, res) != 1) { return ""; }
-    // Do the replaces twice so we cover both \r and \r\n type endings
-    res.replace("\r\nOK\r\n", "");
-    res.replace("\rOK\r", "");
-    res.replace("\r\n", " ");
-    res.replace("\r", " ");
-    res.trim();
+    if (thisModem().waitResponse(1000L, res) != 1) { return "unknown"; }
+    thisModem().cleanResponseString(res);
+    return res;
+  }
+
+  // Gets the modem serial number
+  String getModemSerialNumberImpl() {
+    thisModem().sendAT(GF("+CGSN"));  // 3GPP TS 27.007 standard
+    String res;
+    if (thisModem().waitResponse(1000L, res) != 1) { return "unknown"; }
+    thisModem().cleanResponseString(res);
     return res;
   }
 

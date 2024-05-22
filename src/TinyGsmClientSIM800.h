@@ -18,7 +18,25 @@
 #ifdef AT_NL
 #undef AT_NL
 #endif
-#define AT_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
+#define AT_NL "\r\n"
+
+#ifdef MODEM_MANUFACTURER
+#undef MODEM_MANUFACTURER
+#endif
+#define MODEM_MANUFACTURER "unknown"
+
+#ifdef MODEM_MODEL
+#undef MODEM_MODEL
+#endif
+#if defined(TINY_GSM_MODEM_SIM808)
+#define MODEM_MODEL "SIM808";
+#elif defined(TINY_GSM_MODEM_SIM868)
+#define MODEM_MODEL "SIM868";
+#elif defined(TINY_GSM_MODEM_SIM900)
+#define MODEM_MODEL "SIM900";
+#else
+#define MODEM_MODEL "SIM800";
+#endif
 
 #include "TinyGsmModem.tpp"
 #include "TinyGsmTCP.tpp"
@@ -193,30 +211,6 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
     }
   }
 
-  String getModemNameImpl() {
-    String name = "";
-#if defined(TINY_GSM_MODEM_SIM800)
-    name = "SIMCom SIM800";
-#elif defined(TINY_GSM_MODEM_SIM808)
-    name = "SIMCom SIM808";
-#elif defined(TINY_GSM_MODEM_SIM868)
-    name = "SIMCom SIM868";
-#elif defined(TINY_GSM_MODEM_SIM900)
-    name = "SIMCom SIM900";
-#endif
-
-    sendAT(GF("+GMM"));
-    String res2;
-    if (waitResponse(1000L, res2) != 1) { return name; }
-    res2.replace(AT_NL "OK" AT_NL, "");
-    res2.replace("_", " ");
-    res2.trim();
-
-    name = res2;
-    DBG("### Modem:", name);
-    return name;
-  }
-
   bool factoryDefaultImpl() {
     sendAT(GF("&FZE0&W"));  // Factory + Reset + Echo Off + Write
     waitResponse();
@@ -299,9 +293,7 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
     sendAT(GF("+CIFSR;E0"));
     String res;
     if (waitResponse(10000L, res) != 1) { return ""; }
-    res.replace(AT_NL "OK" AT_NL, "");
-    res.replace(AT_NL, "");
-    res.trim();
+    cleanResponseString(res);
     return res;
   }
 

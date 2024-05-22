@@ -17,7 +17,17 @@
 #ifdef AT_NL
 #undef AT_NL
 #endif
-#define AT_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
+#define AT_NL "\r\n"
+
+#ifdef MODEM_MANUFACTURER
+#undef MODEM_MANUFACTURER
+#endif
+#define MODEM_MANUFACTURER "Neoway"
+
+#ifdef MODEM_MODEL
+#undef MODEM_MODEL
+#endif
+#define MODEM_MODEL "M590"
 
 #include "TinyGsmModem.tpp"
 #include "TinyGsmTCP.tpp"
@@ -161,9 +171,31 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590>,
     return factory + String(" ") + model;
   }
 
+  // This is extracted from the modem info
+  String getModemManufacturerImpl() {
+    sendAT(GF("I"));
+    String factory = stream.readStringUntil('\n');  // read the factory
+    factory.trim();
+    streamSkipUntil('\n');  // skip the model
+    streamSkipUntil('\n');  // skip the revision
+    if (waitResponse() == 1) { return factory; }
+    return MODEM_MANUFACTURER;
+  }
+
+  // This is extracted from the modem info
+  String getModemModelImpl() {
+    sendAT(GF("I"));
+    streamSkipUntil('\n');                        // skip the factory
+    String model = stream.readStringUntil('\n');  // read the model
+    model.trim();
+    streamSkipUntil('\n');  // skip the revision
+    if (waitResponse() == 1) { return model; }
+    return MODEM_MODEL;
+  }
+
   // Gets the modem firmware version
   // This is extracted from the modem info
-  String getModemFirmwareVersionImpl() {
+  String getModemRevisionImpl() {
     sendAT(GF("I"));
     streamSkipUntil('\n');                      // skip the factory
     streamSkipUntil('\n');                      // skip the model

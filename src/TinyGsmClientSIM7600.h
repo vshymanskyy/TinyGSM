@@ -17,7 +17,23 @@
 #ifdef AT_NL
 #undef AT_NL
 #endif
-#define AT_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
+#define AT_NL "\r\n"
+
+#ifdef MODEM_MANUFACTURER
+#undef MODEM_MANUFACTURER
+#endif
+#define MODEM_MANUFACTURER "SIMCom"
+
+#ifdef MODEM_MODEL
+#undef MODEM_MODEL
+#endif
+#if defined(TINY_GSM_MODEM_SIM7500)
+#define MODEM_MODEL "SIM7500";
+#elif defined(TINY_GSM_MODEM_SIM7800)
+#define MODEM_MODEL "SIM7800";
+#else
+#define MODEM_MODEL "SIM7600";
+#endif
 
 #include "TinyGsmModem.tpp"
 #include "TinyGsmTCP.tpp"
@@ -178,21 +194,6 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     }
   }
 
-  String getModemNameImpl() {
-    String name = "SIMCom SIM7600";
-
-    sendAT(GF("+CGMM"));
-    String res2;
-    if (waitResponse(1000L, res2) != 1) { return name; }
-    res2.replace(AT_NL "OK" AT_NL, "");
-    res2.replace("_", " ");
-    res2.trim();
-
-    name = res2;
-    DBG("### Modem:", name);
-    return name;
-  }
-
   bool factoryDefaultImpl() {  // these commands aren't supported
     return false;
   }
@@ -283,8 +284,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     // sendAT(GF("+CGPADDR=1"));  // Show PDP address
     String res;
     if (waitResponse(10000L, res) != 1) { return ""; }
-    res.replace(AT_NL "OK" AT_NL, "");
-    res.replace(AT_NL, "");
+    cleanResponseString(res);
     res.trim();
     return res;
   }

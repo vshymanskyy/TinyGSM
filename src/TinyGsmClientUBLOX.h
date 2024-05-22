@@ -17,7 +17,17 @@
 #ifdef AT_NL
 #undef AT_NL
 #endif
-#define AT_NL "\r\n"  // NOTE:  define before including TinyGsmModem!
+#define AT_NL "\r\n"
+
+#ifdef MODEM_MANUFACTURER
+#undef MODEM_MANUFACTURER
+#endif
+#define MODEM_MANUFACTURER "u-blox"
+
+#ifdef MODEM_MODEL
+#undef MODEM_MODEL
+#endif
+#define MODEM_MODEL "unknown"
 
 #include "TinyGsmModem.tpp"
 #include "TinyGsmTCP.tpp"
@@ -206,26 +216,15 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
 
   // only difference in implementation is the warning on the wrong type
   String getModemNameImpl() {
-    sendAT(GF("+CGMI"));
-    String res1;
-    if (waitResponse(1000L, res1) != 1) { return "u-blox Cellular Modem"; }
-    res1.replace(AT_NL "OK" AT_NL, "");
-    res1.trim();
-
-    sendAT(GF("+GMM"));
-    String res2;
-    if (waitResponse(1000L, res2) != 1) { return "u-blox Cellular Modem"; }
-    res2.replace(AT_NL "OK" AT_NL, "");
-    res2.trim();
-
-    String name = res1 + String(' ') + res2;
+    String manufacturer = getModemManufacturer();
+    String model        = getModemModel();
+    String name         = manufacturer + String(" ") + model;
     if (name.startsWith("u-blox SARA-R4") ||
         name.startsWith("u-blox SARA-N4")) {
       DBG("### WARNING:  You are using the wrong TinyGSM modem!");
     } else if (name.startsWith("u-blox SARA-N2")) {
       DBG("### SARA N2 NB-IoT modems not supported!");
     }
-
     return name;
   }
 
