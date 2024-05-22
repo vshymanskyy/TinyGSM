@@ -42,7 +42,7 @@ enum A7672xRegStatus {
 class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
                       public TinyGsmGPRS<TinyGsmA7672X>,
                       public TinyGsmTCP<TinyGsmA7672X, TINY_GSM_MUX_COUNT>,
-                      public TinyGsmSSL<TinyGsmA7672X>,
+                      public TinyGsmSSL<TinyGsmA7672X, TINY_GSM_MUX_COUNT>,
                       public TinyGsmCalling<TinyGsmA7672X>,
                       public TinyGsmSMS<TinyGsmA7672X>,
                       public TinyGsmGSMLocation<TinyGsmA7672X>,
@@ -53,7 +53,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
   friend class TinyGsmModem<TinyGsmA7672X>;
   friend class TinyGsmGPRS<TinyGsmA7672X>;
   friend class TinyGsmTCP<TinyGsmA7672X, TINY_GSM_MUX_COUNT>;
-  friend class TinyGsmSSL<TinyGsmA7672X>;
+  friend class TinyGsmSSL<TinyGsmA7672X, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmCalling<TinyGsmA7672X>;
   friend class TinyGsmSMS<TinyGsmA7672X>;
   friend class TinyGsmGSMLocation<TinyGsmA7672X>;
@@ -342,8 +342,8 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
   // havetype like ".pem" or ".der".
   // The certificate like - const char ca_cert[] PROGMEM =  R"EOF(-----BEGIN...
   // len of certificate like - sizeof(ca_cert)
-  bool addCertificate(const String& certificateName, const String& cert,
-                      const uint16_t len) {
+  bool addCertificateImpl(const String& certificateName, const String& cert,
+                          const uint16_t len) {
     sendAT(GF("+CCERTDOWN="), certificateName, GF(","), len);
     if (waitResponse(GF(">")) != 1) { return 0; }
     stream.write(cert.c_str(), len);
@@ -351,13 +351,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
     return waitResponse() == 1;
   }
 
-  bool setCertificate(const String& certificateName, const uint8_t mux = 0) {
-    if (mux >= TINY_GSM_MUX_COUNT) return false;
-    certificates[mux] = certificateName;
-    return true;
-  }
-
-  bool deleteCertificate(const String& certificateName) {  // todo test
+  bool deleteCertificateImpl(const String& certificateName) {  // todo test
     sendAT(GF("+CCERTDELE="), certificateName);
     return waitResponse() == 1;
   }

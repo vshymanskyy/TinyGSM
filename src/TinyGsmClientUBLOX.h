@@ -43,7 +43,7 @@ enum UBLOXRegStatus {
 class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
                      public TinyGsmGPRS<TinyGsmUBLOX>,
                      public TinyGsmTCP<TinyGsmUBLOX, TINY_GSM_MUX_COUNT>,
-                     public TinyGsmSSL<TinyGsmUBLOX>,
+                     public TinyGsmSSL<TinyGsmUBLOX, TINY_GSM_MUX_COUNT>,
                      public TinyGsmCalling<TinyGsmUBLOX>,
                      public TinyGsmSMS<TinyGsmUBLOX>,
                      public TinyGsmGSMLocation<TinyGsmUBLOX>,
@@ -53,7 +53,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
   friend class TinyGsmModem<TinyGsmUBLOX>;
   friend class TinyGsmGPRS<TinyGsmUBLOX>;
   friend class TinyGsmTCP<TinyGsmUBLOX, TINY_GSM_MUX_COUNT>;
-  friend class TinyGsmSSL<TinyGsmUBLOX>;
+  friend class TinyGsmSSL<TinyGsmUBLOX, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmCalling<TinyGsmUBLOX>;
   friend class TinyGsmSMS<TinyGsmUBLOX>;
   friend class TinyGsmGSMLocation<TinyGsmUBLOX>;

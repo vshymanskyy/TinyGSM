@@ -26,7 +26,7 @@
 class TinyGsmSim7000SSL
     : public TinyGsmSim70xx<TinyGsmSim7000SSL>,
       public TinyGsmTCP<TinyGsmSim7000SSL, TINY_GSM_MUX_COUNT>,
-      public TinyGsmSSL<TinyGsmSim7000SSL>,
+      public TinyGsmSSL<TinyGsmSim7000SSL, TINY_GSM_MUX_COUNT>,
       public TinyGsmSMS<TinyGsmSim7000SSL>,
       public TinyGsmTime<TinyGsmSim7000SSL>,
       public TinyGsmNTP<TinyGsmSim7000SSL>,
@@ -34,7 +34,7 @@ class TinyGsmSim7000SSL
       public TinyGsmGSMLocation<TinyGsmSim7000SSL> {
   friend class TinyGsmSim70xx<TinyGsmSim7000SSL>;
   friend class TinyGsmTCP<TinyGsmSim7000SSL, TINY_GSM_MUX_COUNT>;
-  friend class TinyGsmSSL<TinyGsmSim7000SSL>;
+  friend class TinyGsmSSL<TinyGsmSim7000SSL, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmModem<TinyGsmSim7000SSL>;
   friend class TinyGsmGPRS<TinyGsmSim7000SSL>;
   friend class TinyGsmSMS<TinyGsmSim7000SSL>;
@@ -222,11 +222,7 @@ class TinyGsmSim7000SSL
    * Secure socket layer (SSL) functions
    */
  protected:
-  bool setCertificate(const String& certificateName, const uint8_t mux = 0) {
-    if (mux >= TINY_GSM_MUX_COUNT) return false;
-    certificates[mux] = certificateName;
-    return true;
-  }
+  // Follows functions as inherited from TinyGsmSSL.tpp
 
   /*
    * GPRS functions

@@ -71,7 +71,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
                     public TinyGsmGPRS<TinyGsmXBee>,
                     public TinyGsmWifi<TinyGsmXBee>,
                     public TinyGsmTCP<TinyGsmXBee, TINY_GSM_MUX_COUNT>,
-                    public TinyGsmSSL<TinyGsmXBee>,
+                    public TinyGsmSSL<TinyGsmXBee, TINY_GSM_MUX_COUNT>,
                     public TinyGsmSMS<TinyGsmXBee>,
                     public TinyGsmBattery<TinyGsmXBee>,
                     public TinyGsmTemperature<TinyGsmXBee> {
@@ -79,7 +79,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
   friend class TinyGsmGPRS<TinyGsmXBee>;
   friend class TinyGsmWifi<TinyGsmXBee>;
   friend class TinyGsmTCP<TinyGsmXBee, TINY_GSM_MUX_COUNT>;
-  friend class TinyGsmSSL<TinyGsmXBee>;
+  friend class TinyGsmSSL<TinyGsmXBee, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmSMS<TinyGsmXBee>;
   friend class TinyGsmBattery<TinyGsmXBee>;
   friend class TinyGsmTemperature<TinyGsmXBee>;

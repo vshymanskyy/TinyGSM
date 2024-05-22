@@ -44,6 +44,7 @@ enum BG96RegStatus {
 class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
                     public TinyGsmGPRS<TinyGsmBG96>,
                     public TinyGsmTCP<TinyGsmBG96, TINY_GSM_MUX_COUNT>,
+                    public TinyGsmSSL<TinyGsmBG96, TINY_GSM_MUX_COUNT>,
                     public TinyGsmCalling<TinyGsmBG96>,
                     public TinyGsmSMS<TinyGsmBG96>,
                     public TinyGsmTime<TinyGsmBG96>,
@@ -54,6 +55,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
   friend class TinyGsmModem<TinyGsmBG96>;
   friend class TinyGsmGPRS<TinyGsmBG96>;
   friend class TinyGsmTCP<TinyGsmBG96, TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmSSL<TinyGsmBG96, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmCalling<TinyGsmBG96>;
   friend class TinyGsmSMS<TinyGsmBG96>;
   friend class TinyGsmTime<TinyGsmBG96>;
@@ -263,11 +265,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
    * Secure socket layer (SSL) functions
    */
  protected:
-  bool setCertificate(const String& certificateName, const uint8_t mux = 0) {
-    if (mux >= TINY_GSM_MUX_COUNT) return false;
-    certificates[mux] = certificateName;
-    return true;
-  }
+  // Follows functions as inherited from TinyGsmSSL.tpp
 
   /*
    * GPRS functions

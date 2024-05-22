@@ -51,7 +51,7 @@ class TinyGsmSequansMonarch
     : public TinyGsmModem<TinyGsmSequansMonarch>,
       public TinyGsmGPRS<TinyGsmSequansMonarch>,
       public TinyGsmTCP<TinyGsmSequansMonarch, TINY_GSM_MUX_COUNT>,
-      public TinyGsmSSL<TinyGsmSequansMonarch>,
+      public TinyGsmSSL<TinyGsmSequansMonarch, TINY_GSM_MUX_COUNT>,
       public TinyGsmCalling<TinyGsmSequansMonarch>,
       public TinyGsmSMS<TinyGsmSequansMonarch>,
       public TinyGsmTime<TinyGsmSequansMonarch>,
@@ -59,7 +59,7 @@ class TinyGsmSequansMonarch
   friend class TinyGsmModem<TinyGsmSequansMonarch>;
   friend class TinyGsmGPRS<TinyGsmSequansMonarch>;
   friend class TinyGsmTCP<TinyGsmSequansMonarch, TINY_GSM_MUX_COUNT>;
-  friend class TinyGsmSSL<TinyGsmSequansMonarch>;
+  friend class TinyGsmSSL<TinyGsmSequansMonarch, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmCalling<TinyGsmSequansMonarch>;
   friend class TinyGsmSMS<TinyGsmSequansMonarch>;
   friend class TinyGsmTime<TinyGsmSequansMonarch>;

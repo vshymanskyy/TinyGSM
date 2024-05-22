@@ -228,11 +228,7 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
    * Secure socket layer (SSL) functions
    */
  protected:
-  bool setCertificate(const String& certificateName, const uint8_t mux = 0) {
-    if (mux >= TINY_GSM_MUX_COUNT) return false;
-    certificates[mux] = certificateName;
-    return true;
-  }
+  // Follows functions as inherited from TinyGsmSSL.tpp
 
   /*
    * GPRS functions

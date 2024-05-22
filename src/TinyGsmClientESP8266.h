@@ -46,11 +46,11 @@ enum ESP8266RegStatus {
 class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
                        public TinyGsmWifi<TinyGsmESP8266>,
                        public TinyGsmTCP<TinyGsmESP8266, TINY_GSM_MUX_COUNT>,
-                       public TinyGsmSSL<TinyGsmESP8266> {
+                       public TinyGsmSSL<TinyGsmESP8266, TINY_GSM_MUX_COUNT> {
   friend class TinyGsmModem<TinyGsmESP8266>;
   friend class TinyGsmWifi<TinyGsmESP8266>;
   friend class TinyGsmTCP<TinyGsmESP8266, TINY_GSM_MUX_COUNT>;
-  friend class TinyGsmSSL<TinyGsmESP8266>;
+  friend class TinyGsmSSL<TinyGsmESP8266, TINY_GSM_MUX_COUNT>;
 
   /*
    * Inner Client

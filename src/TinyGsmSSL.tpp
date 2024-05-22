@@ -13,7 +13,7 @@
 
 #define TINY_GSM_MODEM_HAS_SSL
 
-template <class modemType>
+template <class modemType, uint8_t muxCount>
 class TinyGsmSSL {
   /* =========================================== */
   /* =========================================== */
@@ -29,6 +29,12 @@ class TinyGsmSSL {
   }
   bool deleteCertificate() {
     return thisModem().deleteCertificateImpl();
+  }
+
+  bool setCertificate(const String& certificateName, const uint8_t mux = 0) {
+    if (mux >= muxCount) return false;
+    certificates[mux] = certificateName;
+    return true;
   }
 
   /*
@@ -55,6 +61,8 @@ class TinyGsmSSL {
  protected:
   bool addCertificateImpl(const char* filename) TINY_GSM_ATTR_NOT_IMPLEMENTED;
   bool deleteCertificateImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
+  String certificates[muxCount];
 };
 
 #endif  // SRC_TINYGSMSSL_H_

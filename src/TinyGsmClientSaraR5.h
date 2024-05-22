@@ -60,7 +60,7 @@ enum SaraR5RegStatus {
 class TinyGsmSaraR5 : public TinyGsmModem<TinyGsmSaraR5>,
                       public TinyGsmGPRS<TinyGsmSaraR5>,
                       public TinyGsmTCP<TinyGsmSaraR5, TINY_GSM_MUX_COUNT>,
-                      public TinyGsmSSL<TinyGsmSaraR5>,
+                      public TinyGsmSSL<TinyGsmSaraR5, TINY_GSM_MUX_COUNT>,
                       public TinyGsmCalling<TinyGsmSaraR5>,
                       public TinyGsmSMS<TinyGsmSaraR5>,
                       public TinyGsmGSMLocation<TinyGsmSaraR5>,
@@ -70,7 +70,7 @@ class TinyGsmSaraR5 : public TinyGsmModem<TinyGsmSaraR5>,
   friend class TinyGsmModem<TinyGsmSaraR5>;
   friend class TinyGsmGPRS<TinyGsmSaraR5>;
   friend class TinyGsmTCP<TinyGsmSaraR5, TINY_GSM_MUX_COUNT>;
-  friend class TinyGsmSSL<TinyGsmSaraR5>;
+  friend class TinyGsmSSL<TinyGsmSaraR5, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmCalling<TinyGsmSaraR5>;
   friend class TinyGsmSMS<TinyGsmSaraR5>;
   friend class TinyGsmGSMLocation<TinyGsmSaraR5>;
