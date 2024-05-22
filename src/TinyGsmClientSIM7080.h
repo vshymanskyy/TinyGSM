@@ -225,7 +225,7 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
   }
 
   /*
-   * Secure socket layer functions
+   * Secure socket layer (SSL) functions
    */
  protected:
   bool setCertificate(const String& certificateName, const uint8_t mux = 0) {
@@ -320,24 +320,24 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
    * SIM card functions
    */
  protected:
-  // Follows the SIM70xx template
+  // Follows functions as inherited from TinyGsmClientSIM70xx.h
 
   /*
    * Messaging functions
    */
  protected:
-  // Follows all messaging functions per template
+  // Follows all messaging functions as inherited from TinyGsmSMS.tpp
 
   /*
    * GPS/GNSS/GLONASS location functions
    */
  protected:
-  // Follows the SIM70xx template
+  // Follows functions as inherited from TinyGsmClientSIM70xx.h
 
   /*
    * Time functions
    */
-  // Can follow CCLK as per template
+  // Follows all clock functions as inherited from TinyGsmTime.tpp
 
   /*
    * NTP server functions
@@ -386,7 +386,7 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
    * Battery functions
    */
  protected:
-  // Follows all battery functions per template
+  // Follows all battery functions as inherited from TinyGsmBattery.tpp
 
   /*
    * Client related functions

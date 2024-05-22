@@ -391,7 +391,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
    * Time functions
    */
  protected:
-  // Can follow the standard CCLK function in the template
+  // Follows all clock functions as inherited from TinyGsmTime.tpp
   // Note - the clock probably has to be set manaually first
 
   /*

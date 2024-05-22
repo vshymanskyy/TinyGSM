@@ -266,7 +266,7 @@ class TinyGsmSim70xx : public TinyGsmModem<TinyGsmSim70xx<modemType>>,
    * Messaging functions
    */
  protected:
-  // Follows all messaging functions per template
+  // Follows all messaging functions as inherited from TinyGsmSMS.tpp
 
   /*
    * GPS/GNSS/GLONASS location functions
@@ -383,18 +383,18 @@ class TinyGsmSim70xx : public TinyGsmModem<TinyGsmSim70xx<modemType>>,
   /*
    * Time functions
    */
-  // Can follow the standard CCLK function in the template
+  // Follows all clock functions as inherited from TinyGsmTime.tpp
 
   /*
    * NTP server functions
    */
-  // Can sync with server using CNTP as per template
+  // Follows all NTP server functions as inherited from TinyGsmNTP.tpp
 
   /*
    * Battery functions
    */
  protected:
-  // Follows all battery functions per template
+  // Follows all battery functions as inherited from TinyGsmBattery.tpp
 
   /*
    * Client related functions

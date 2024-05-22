@@ -260,7 +260,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
   }
 
   /*
-   * Secure socket layer functions
+   * Secure socket layer (SSL) functions
    */
  protected:
   bool setCertificate(const String& certificateName, const uint8_t mux = 0) {
@@ -317,13 +317,13 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
    * Phone Call functions
    */
  protected:
-  // Can follow all of the phone call functions from the template
+  // Follows all phone call functions as inherited from TinyGsmCalling.tpp
 
   /*
    * Messaging functions
    */
  protected:
-  // Follows all messaging functions per template
+  // Follows all messaging functions as inherited from TinyGsmSMS.tpp
 
   /*
    * GSM Location functions
@@ -561,7 +561,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
    * Battery functions
    */
  protected:
-  // Can follow CBC as in the template
+  // Follows all battery functions as inherited from TinyGsmBattery.tpp
 
   /*
    * Temperature functions

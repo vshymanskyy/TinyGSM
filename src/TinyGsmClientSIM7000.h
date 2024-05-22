@@ -144,7 +144,7 @@ class TinyGsmSim7000 : public TinyGsmSim70xx<TinyGsmSim7000>,
    * Power functions
    */
  protected:
-  // Follows the SIM70xx template
+  // Follows functions as inherited from TinyGsmClientSIM70xx.h
 
   /*
    * Generic network functions
@@ -252,35 +252,35 @@ class TinyGsmSim7000 : public TinyGsmSim70xx<TinyGsmSim7000>,
    * SIM card functions
    */
  protected:
-  // Follows the SIM70xx template
+  // Follows functions as inherited from TinyGsmClientSIM70xx.h
 
   /*
    * Messaging functions
    */
  protected:
-  // Follows all messaging functions per template
+  // Follows all messaging functions as inherited from TinyGsmSMS.tpp
 
   /*
    * GPS/GNSS/GLONASS location functions
    */
  protected:
-  // Follows the SIM70xx template
+  // Follows functions as inherited from TinyGsmClientSIM70xx.h
 
   /*
    * Time functions
    */
-  // Can follow CCLK as per template
+  // Follows all clock functions as inherited from TinyGsmTime.tpp
 
   /*
    * NTP server functions
    */
-  // Can sync with server using CNTP as per template
+  // Follows all NTP server functions as inherited from TinyGsmNTP.tpp
 
   /*
    * Battery functions
    */
  protected:
-  // Follows all battery functions per template
+  // Follows all battery functions as inherited from TinyGsmBattery.tpp
 
   /*
    * Client related functions

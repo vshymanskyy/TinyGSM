@@ -335,7 +335,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
   }
 
   /*
-   * Secure socket layer functions
+   * Secure socket layer (SSL) functions
    */
  public:
   // The name of the certificate/key/password file. The file name must

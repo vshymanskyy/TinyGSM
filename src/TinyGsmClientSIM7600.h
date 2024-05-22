@@ -427,13 +427,14 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
    * Messaging functions
    */
  protected:
-  // Follows all messaging functions per template
+  // Follows all messaging functions as inherited from TinyGsmSMS.tpp
 
   /*
    * GSM Location functions
    */
  protected:
-  // Can return a GSM-based location from CLBS as per the template
+  // Follows all GSM-based location functions as inherited from
+  // TinyGsmGSMLocation.tpp
 
   /*
    * GPS/GNSS/GLONASS location functions
@@ -573,12 +574,12 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
    * Time functions
    */
  protected:
-  // Can follow the standard CCLK function in the template
+  // Follows all clock functions as inherited from TinyGsmTime.tpp
 
   /*
    * NTP server functions
    */
-  // Can sync with server using CNTP as per template
+  // Follows all NTP server functions as inherited from TinyGsmNTP.tpp
 
   /*
    * Battery functions

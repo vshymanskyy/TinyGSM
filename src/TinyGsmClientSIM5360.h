@@ -525,7 +525,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
    * Messaging functions
    */
  protected:
-  // Follows all messaging functions per template
+  // Follows all messaging functions as inherited from TinyGsmSMS.tpp
 
   /*
    * GSM Location functions
@@ -538,12 +538,12 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
    * Time functions
    */
  protected:
-  // Can follow the standard CCLK function in the template
+  // Follows all clock functions as inherited from TinyGsmTime.tpp
 
   /*
    * NTP server functions
    */
-  // Can sync with server using CNTP as per template
+  // Follows all NTP server functions as inherited from TinyGsmNTP.tpp
 
   /*
    * Battery functions

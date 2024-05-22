@@ -461,13 +461,13 @@ class TinyGsmSaraR5 : public TinyGsmModem<TinyGsmSaraR5>,
    * Phone Call functions
    */
  protected:
-  // Can follow all of the phone call functions from the template
+  // Follows all phone call functions as inherited from TinyGsmCalling.tpp
 
   /*
    * Messaging functions
    */
  protected:
-  // Can follow all template functions
+  // Follows all messaging functions as inherited from TinyGsmSMS.tpp
 
   /*
    * GSM/GPS/GNSS/GLONASS Location functions
@@ -622,7 +622,7 @@ class TinyGsmSaraR5 : public TinyGsmModem<TinyGsmSaraR5>,
    * Time functions
    */
  protected:
-  // Can follow the standard CCLK function in the template
+  // Follows all clock functions as inherited from TinyGsmTime.tpp
 
   /*
    * Battery functions

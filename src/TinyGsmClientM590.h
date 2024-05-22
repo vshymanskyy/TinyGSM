@@ -293,7 +293,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590>,
    * SIM card functions
    */
  protected:
-  // Able to follow all SIM card functions as inherited from the template
+  // Able to follow all SIM card functions as inherited from TinyGsmGPRS.tpp
 
   /*
    * Messaging functions
@@ -306,7 +306,7 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590>,
    * Time functions
    */
  protected:
-  // Can follow the standard CCLK function in the template
+  // Follows all clock functions as inherited from TinyGsmTime.tpp
 
   /*
    * Client related functions

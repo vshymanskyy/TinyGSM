@@ -19,16 +19,30 @@
 #include "TinyGsmTCP.tpp"
 #include "TinyGsmSSL.tpp"
 #include "TinyGsmNTP.tpp"
+#include "TinyGsmSMS.tpp"
+#include "TinyGsmTime.tpp"
+#include "TinyGsmGSMLocation.tpp"
 
 class TinyGsmSim7000SSL
     : public TinyGsmSim70xx<TinyGsmSim7000SSL>,
       public TinyGsmTCP<TinyGsmSim7000SSL, TINY_GSM_MUX_COUNT>,
+      public TinyGsmSSL<TinyGsmSim7000SSL>,
+      public TinyGsmSMS<TinyGsmSim7000SSL>,
+      public TinyGsmTime<TinyGsmSim7000SSL>,
       public TinyGsmNTP<TinyGsmSim7000SSL>,
-      public TinyGsmSSL<TinyGsmSim7000SSL> {
+      public TinyGsmBattery<TinyGsmSim7000SSL>,
+      public TinyGsmGSMLocation<TinyGsmSim7000SSL> {
   friend class TinyGsmSim70xx<TinyGsmSim7000SSL>;
   friend class TinyGsmTCP<TinyGsmSim7000SSL, TINY_GSM_MUX_COUNT>;
-  friend class TinyGsmNTP<TinyGsmSim7000SSL>;
   friend class TinyGsmSSL<TinyGsmSim7000SSL>;
+  friend class TinyGsmModem<TinyGsmSim7000SSL>;
+  friend class TinyGsmGPRS<TinyGsmSim7000SSL>;
+  friend class TinyGsmSMS<TinyGsmSim7000SSL>;
+  friend class TinyGsmNTP<TinyGsmSim7000SSL>;
+  friend class TinyGsmTime<TinyGsmSim7000SSL>;
+  friend class TinyGsmBattery<TinyGsmSim7000SSL>;
+  friend class TinyGsmGSMLocation<TinyGsmSim7000SSL>;
+  friend class TinyGsmGPS<TinyGsmSim7000SSL>;
 
   /*
    * Inner Client
@@ -189,7 +203,7 @@ class TinyGsmSim7000SSL
    * Power functions
    */
  protected:
-  // Follows the SIM70xx template
+  // Follows functions as inherited from TinyGsmClientSIM70xx.h
 
   /*
    * Generic network functions
@@ -205,7 +219,7 @@ class TinyGsmSim7000SSL
   }
 
   /*
-   * Secure socket layer functions
+   * Secure socket layer (SSL) functions
    */
  protected:
   bool setCertificate(const String& certificateName, const uint8_t mux = 0) {
@@ -293,35 +307,35 @@ class TinyGsmSim7000SSL
    * SIM card functions
    */
  protected:
-  // Follows the SIM70xx template
+  // Follows functions as inherited from TinyGsmClientSIM70xx.h
 
   /*
    * Messaging functions
    */
  protected:
-  // Follows all messaging functions per template
+  // Follows all messaging functions as inherited from TinyGsmSMS.tpp
 
   /*
    * GPS/GNSS/GLONASS location functions
    */
  protected:
-  // Follows the SIM70xx template
+  // Follows functions as inherited from TinyGsmClientSIM70xx.h
 
   /*
    * Time functions
    */
-  // Can follow CCLK as per template
+  // Follows all clock functions as inherited from TinyGsmTime.tpp
 
   /*
    * NTP server functions
    */
-  // Can sync with server using CNTP as per template
+  // Follows all NTP server functions as inherited from TinyGsmNTP.tpp
 
   /*
    * Battery functions
    */
  protected:
-  // Follows all battery functions per template
+  // Follows all battery functions as inherited from TinyGsmBattery.tpp
 
   /*
    * Client related functions
@@ -645,7 +659,6 @@ class TinyGsmSim7000SSL
       data = "";
       DBG("### Unexpected module reset!");
       init();
-      data = "";
       return true;
     }
     return false;

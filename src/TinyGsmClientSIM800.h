@@ -425,14 +425,14 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
    * Messaging functions
    */
  protected:
-  // Follows all messaging functions per template
+  // Follows all messaging functions as inherited from TinyGsmSMS.tpp
 
   /*
    * GSM Location functions
    */
  protected:
   // Depending on the exacty model and firmware revision, should return a
-  // GSM-based location from CLBS as per the template
+  // GSM-based location from CLBS as as inherited from TinyGsmGSMLocation.tpp
   // TODO(?):  Check number of digits in year (2 or 4)
 
   /*
@@ -484,23 +484,23 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
    * Time functions
    */
  protected:
-  // Can follow the standard CCLK function in the template
+  // Follows all clock functions as inherited from TinyGsmTime.tpp
 
   /*
    * NTP server functions
    */
-  // Can sync with server using CNTP as per template
+  // Follows all NTP server functions as inherited from TinyGsmNTP.tpp
 
   /*
    * Battery functions
    */
  protected:
-  // Follows all battery functions per template
+  // Follows all battery functions as inherited from TinyGsmBattery.tpp
 
   /*
    * NTP server functions
    */
-  // Can sync with server using CNTP as per template
+  // Follows all NTP server functions as inherited from TinyGsmNTP.tpp
 
   /*
    * Client related functions

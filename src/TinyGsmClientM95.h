@@ -353,13 +353,13 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95>,
    * Phone Call functions
    */
  protected:
-  // Can follow all of the phone call functions from the template
+  // Follows all phone call functions as inherited from TinyGsmCalling.tpp
 
   /*
    * Messaging functions
    */
  protected:
-  // Can follow all template functions
+  // Follows all messaging functions as inherited from TinyGsmSMS.tpp
 
  public:
   /** Delete all SMS */
@@ -375,12 +375,12 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95>,
    * Time functions
    */
  protected:
-  // Can follow the standard CCLK function in the template
+  // Follows all clock functions as inherited from TinyGsmTime.tpp
 
   /*
    * Battery functions
    */
-  // Can follow the battery functions in the template
+  // Follows all battery functions as inherited from TinyGsmBattery.tpp
 
   /*
    * Temperature functions
