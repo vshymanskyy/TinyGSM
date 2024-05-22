@@ -30,8 +30,6 @@
 #include "TinyGsmTime.tpp"
 #include "TinyGsmBattery.tpp"
 
-#include <string.h>
-
 enum SaraR5RegStatus {
   REG_NO_RESULT        = -1,
   REG_UNREGISTERED     = 0,
@@ -312,7 +310,7 @@ class TinyGsmSaraR5 : public TinyGsmModem<TinyGsmSaraR5>,
     return true;
   }
 
-  bool getCurrentRadioAccessTechnology(int& set) {
+  bool getCurrentRadioAccessTechnology() {
     sendAT(GF("+URAT?"));
     String response;
     if (waitResponse(10000L, response) != 1) { return false; }
@@ -416,9 +414,8 @@ class TinyGsmSaraR5 : public TinyGsmModem<TinyGsmSaraR5>,
         "+UPSDA=0,4"));  // Deactivate the PDP context associated with profile 0
     waitResponse(360000L);  // Can return an error if previously not activated
 
-    sendAT(
-        GF("+UPSD=0,100,") +
-        String(rcid));  // Deactivate the PDP context associated with profile 0
+    sendAT(GF("+UPSD=0,100,"),
+           rcid);  // Deactivate the PDP context associated with profile 0
     waitResponse();
 
     sendAT(GF(
