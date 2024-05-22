@@ -32,6 +32,7 @@
 // #define TINY_GSM_MODEM_MC60
 // #define TINY_GSM_MODEM_MC60E
 // #define TINY_GSM_MODEM_ESP8266
+// #define TINY_GSM_MODEM_ESP32
 // #define TINY_GSM_MODEM_XBEE
 // #define TINY_GSM_MODEM_SEQUANS_MONARCH
 
@@ -72,17 +73,17 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 #define TINY_GSM_TEST_WIFI false
 #define TINY_GSM_TEST_TCP true
 #define TINY_GSM_TEST_SSL true
-#define TINY_GSM_TEST_CALL false
-#define TINY_GSM_TEST_SMS false
-#define TINY_GSM_TEST_USSD false
+#define TINY_GSM_TEST_CALL true
+#define TINY_GSM_TEST_SMS true
+#define TINY_GSM_TEST_USSD true
 #define TINY_GSM_TEST_BATTERY true
 #define TINY_GSM_TEST_TEMPERATURE true
-#define TINY_GSM_TEST_GSM_LOCATION false
-#define TINY_GSM_TEST_NTP false
-#define TINY_GSM_TEST_TIME false
-#define TINY_GSM_TEST_GPS false
+#define TINY_GSM_TEST_GSM_LOCATION true
+#define TINY_GSM_TEST_GPS true
+#define TINY_GSM_TEST_NTP true
+#define TINY_GSM_TEST_TIME true
 // disconnect and power down modem after tests
-#define TINY_GSM_POWERDOWN false
+#define TINY_GSM_POWERDOWN true
 
 // set GSM PIN, if any
 #define GSM_PIN ""
@@ -157,11 +158,25 @@ void loop() {
     return;
   }
 
+  String modemInfo = modem.getModemInfo();
+  DBG("Modem Info:", modemInfo);
+
   String name = modem.getModemName();
   DBG("Modem Name:", name);
 
-  String modemInfo = modem.getModemInfo();
-  DBG("Modem Info:", modemInfo);
+  String manufacturer = modem.getModemManufacturer();
+  DBG("Modem Manufacturer:", manufacturer);
+
+  String hw_ver = modem.getModemModel();
+  DBG("Modem Hardware Version:", hw_ver);
+
+  String fv_ver = modem.getModemRevision();
+  DBG("Modem Firware Version:", fv_ver);
+
+#if not defined(TINY_GSM_MODEM_ESP8266) && not defined(TINY_GSM_MODEM_ESP32)
+  String mod_sn = modem.getModemSerialNumber();
+  DBG("Modem Serial Number (may be SIM CCID):", mod_sn);
+#endif
 
 #if TINY_GSM_TEST_GPRS
   // Unlock your SIM card with a PIN if needed
@@ -212,6 +227,9 @@ void loop() {
 
   String cop = modem.getOperator();
   DBG("Operator:", cop);
+
+  String prov = modem.getProvider();
+  DBG("Provider:", prov);
 
   IPAddress local = modem.localIP();
   DBG("Local IP:", local);
@@ -268,6 +286,7 @@ void loop() {
 #endif
 
 #if TINY_GSM_TEST_SSL && defined TINY_GSM_MODEM_HAS_SSL
+  // TODO: Add test of adding certificcate
   TinyGsmClientSecure secureClient(modem, 1);
   const int           securePort = 443;
   DBG("Connecting securely to", server);
@@ -306,8 +325,8 @@ void loop() {
   }
 #endif
 
-#if TINY_GSM_TEST_CALL && defined TINY_GSM_MODEM_HAS_CALLING && \
-    defined                       CALL_TARGET
+#if TINY_GSM_TEST_CALL && defined(TINY_GSM_MODEM_HAS_CALLING) && \
+    defined(CALL_TARGET)
   DBG("Calling:", CALL_TARGET);
 
   // This is NOT supported on M590
