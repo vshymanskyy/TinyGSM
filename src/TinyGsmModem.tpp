@@ -405,6 +405,7 @@ class TinyGsmModem {
           DBG(GF("Verbose details <<<"), data, GF(">>>"));
 #endif
           data = "";
+          goto finish;
         }
 #endif
         else if (thisModem().handleURCs(data)) {
