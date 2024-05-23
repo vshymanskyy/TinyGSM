@@ -159,7 +159,8 @@ void loop() {
     SerialMon.println(F(" Is your serial speed (baud rate) correct?"));
     SerialMon.println(F(" Is your modem powered on?"));
     SerialMon.println(F(" Do you use a good, stable power source?"));
-    SerialMon.println(F(" Try using File -> Examples -> TinyGSM -> tools -> AT_Debug to find correct configuration"));
+    SerialMon.println(F(" Try using File -> Examples -> TinyGSM -> tools -> "
+                        "AT_Debug to find correct configuration"));
     SerialMon.println(F("************************"));
     delay(10000);
     return;
