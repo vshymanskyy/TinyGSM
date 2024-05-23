@@ -451,7 +451,7 @@ class TinyGsmModem {
     String manufacturer = MODEM_MANUFACTURER;
     thisModem().sendAT(GF("+CGMI"));  // 3GPP TS 27.007 standard
     String res;
-    if (thisModem().waitResponse(1000L, res) != 1) { return manf; }
+    if (thisModem().waitResponse(1000L, res) != 1) { return manufacturer; }
     thisModem().cleanResponseString(res);
     return res;
   }

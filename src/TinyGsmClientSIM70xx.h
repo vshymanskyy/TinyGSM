@@ -81,7 +81,7 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType>,
    */
  protected:
   bool factoryDefaultImpl() {
-    return false
+    return false;
   }
 
   /*
