@@ -166,7 +166,7 @@ void loop() {
 
 // Test the GPS functions
 #if defined(TINY_GSM_MODEM_HAS_GPS) && not defined(__AVR_ATmega32U4__)
-#if !defined(TINY_GSM_MODEM_SARAR5)  // not needed for this module
+#if !defined(TINY_GSM_MODEM_SARAR5)  // not available for this module
   modem.enableGPS();
 #endif
   modem.getGPSraw();
@@ -186,7 +186,9 @@ void loop() {
   modem.getGPS(&latitude, &longitude);
   modem.getGPS(&latitude, &longitude, &speed, &alt, &vsat, &usat, &acc, &year,
                &month, &day, &hour, &minute, &second);
+#if !defined(TINY_GSM_MODEM_SARAR5)  // not available for this module
   modem.disableGPS();
+#endif
 #endif
 
 // Test the Network time function
