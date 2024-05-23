@@ -394,15 +394,15 @@ class TinyGsmModem {
 #if defined TINY_GSM_DEBUG
         else if (data.endsWith(GFP(GSM_VERBOSE)) ||
                  data.endsWith(GFP(GSM_VERBOSE_2))) {
+          // check how long the new line is
+          // should be either 1 ('\r' or '\n') or 2 ("\r\n"))
+          int len_atnl = strnlen(AT_NL, 3);
+          // Read out the verbose message, until the last character of the new
+          // line
+          data += thisModem().stream.readStringUntil(AT_NL[len_atnl]);
 #ifdef TINY_GSM_DEBUG_DEEP
-          DBG(GF("Verbose details <<<"));
-#endif
-          // Read out the verbose message, until whichever type of new line
-          // comes first
-          thisModem().stream.findUntil(const_cast<char*>("\r"),
-                                       const_cast<char*>("\n"));
-#ifdef TINY_GSM_DEBUG_DEEP
-          DBG(GF(">>>"));
+          data.trim();
+          DBG(GF("Verbose details <<<"), data, GF(">>>"));
 #endif
           data = "";
         }
