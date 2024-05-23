@@ -313,8 +313,8 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
   // havetype like ".pem" or ".der".
   // The certificate like - const char ca_cert[] PROGMEM =  R"EOF(-----BEGIN...
   // len of certificate like - sizeof(ca_cert)
-  bool addCertificateImpl(const String& certificateName, const String& cert,
-                          const uint16_t len) {
+  bool addCertificate(const String& certificateName, const String& cert,
+                      const uint16_t len) {
     sendAT(GF("+CCERTDOWN="), certificateName, GF(","), len);
     if (waitResponse(GF(">")) != 1) { return 0; }
     stream.write(cert.c_str(), len);
@@ -322,7 +322,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
     return waitResponse() == 1;
   }
 
-  bool deleteCertificateImpl(const String& certificateName) {  // todo test
+  bool deleteCertificate(const String& certificateName) {  // todo test
     sendAT(GF("+CCERTDELE="), certificateName);
     return waitResponse() == 1;
   }
