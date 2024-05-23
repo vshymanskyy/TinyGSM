@@ -166,7 +166,9 @@ void loop() {
 
 // Test the GPS functions
 #if defined(TINY_GSM_MODEM_HAS_GPS) && not defined(__AVR_ATmega32U4__)
+#if !defined(TINY_GSM_MODEM_SARAR5)  // not needed for this module
   modem.enableGPS();
+#endif
   modem.getGPSraw();
   float latitude  = -9999;
   float longitude = -9999;
