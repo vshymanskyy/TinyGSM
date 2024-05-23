@@ -144,10 +144,22 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
     DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientSIM7080"));
 
-    if (!testAT()) { return false; }
-
-    sendAT(GF("E0"));  // Echo Off
-    if (waitResponse() != 1) { return false; }
+    bool gotATOK = false;
+    for (uint32_t start = millis(); millis() - start < 10000L;) {
+      sendAT(GF(""));
+      int8_t resp = waitResponse(200L, GFP(GSM_OK), GFP(GSM_ERROR), GF("AT"));
+      if (resp == 1) {
+        gotATOK = true;
+        break;
+      } else if (resp == 3) {
+        waitResponse(200L);  // get the OK
+        sendAT(GF("E0"));    // Echo Off
+        DBG(GF("## Turning off echo!"));
+        waitResponse(2000L);
+      }
+      delay(100);
+    }
+    if (!gotATOK) { return false; }
 
 #ifdef TINY_GSM_DEBUG
     sendAT(GF("+CMEE=2"));  // turn on verbose error codes
@@ -201,8 +213,24 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
  protected:
   bool restartImpl(const char* pin = nullptr) {
     bool success = true;
-    sendAT(GF("E0"));  // Echo Off
-    waitResponse();
+
+    bool gotATOK = false;
+    for (uint32_t start = millis(); millis() - start < 10000L;) {
+      sendAT(GF(""));
+      int8_t resp = waitResponse(200L, GFP(GSM_OK), GFP(GSM_ERROR), GF("AT"));
+      if (resp == 1) {
+        gotATOK = true;
+        break;
+      } else if (resp == 3) {
+        waitResponse(200L);  // get the OK
+        DBG(GF("## Turning off echo!"));
+        sendAT(GF("E0"));  // Echo Off
+        waitResponse(2000L);
+      }
+      delay(100);
+    }
+    if (!gotATOK) { return false; }
+
     sendAT(GF("+CREBOOT"));  // Reboot
     success &= waitResponse() == 1;
     waitResponse(30000L, GF("SMS Ready"));
