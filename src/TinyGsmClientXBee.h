@@ -413,13 +413,20 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
   }
 
   // Gets the modem hardware version
-  String getModemModelImpl() {
+  String getModemHardwareVersion() {
     return sendATGetString(GF("HV"));
   }
 
   // Gets the modem firmware version
-  String getModemRevisionImpl() {
+  String getModemFirmwareVersion() {
     return sendATGetString(GF("VR"));
+  }
+
+  // Gets the modem combined version
+  String getModemRevisionImpl() {
+    String hw_ver = getModemHardwareVersion();
+    String fw_ver = getModemFirmwareVersion();
+    return hw_ver + String(" ") + fw_ver;
   }
 
   bool setBaudImpl(uint32_t baud) {
