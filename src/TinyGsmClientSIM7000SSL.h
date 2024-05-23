@@ -372,7 +372,9 @@ class TinyGsmSim7000SSL
     if (ssl) {
       // set the ssl version
       // AT+CSSLCFG="SSLVERSION",<ctxindex>,<sslversion>
-      // <ctxindex> PDP context identifier
+      // <ctxindex> PDP context identifier - for reasons not understood by me,
+      //            use PDP context identifier of 0 for what we defined as 1 in
+      //            the gprsConnect function
       // <sslversion> 0: QAPI_NET_SSL_PROTOCOL_UNKNOWN
       //              1: QAPI_NET_SSL_PROTOCOL_TLS_1_0
       //              2: QAPI_NET_SSL_PROTOCOL_TLS_1_1
@@ -395,8 +397,11 @@ class TinyGsmSim7000SSL
     if (ssl) {
       // set the PDP context to apply SSL to
       // AT+CSSLCFG="CTXINDEX",<ctxindex>
-      // <ctxindex> PDP context identifier
-      // NOTE:  despite docs using caps, "ctxindex" must be in lower case
+      // <ctxindex> PDP context identifier - for reasons not understood by me,
+      //            use PDP context identifier of 0 for what we defined as 1 in
+      //            the gprsConnect function
+      // NOTE:  despite docs using "CRINDEX" in all caps, the module only
+      // accepts the command "ctxindex" and it must be in lower case
       sendAT(GF("+CSSLCFG=\"ctxindex\",0"));
       if (waitResponse(5000L, GF("+CSSLCFG:")) != 1) return false;
       streamSkipUntil('\n');  // read out the certificate information
@@ -418,8 +423,12 @@ class TinyGsmSim7000SSL
       waitResponse();
 
       // set the SSL SNI (server name indication)
+      // AT+CSSLCFG="SNI",<ctxindex>,<servername>
+      // <ctxindex> PDP context identifier - for reasons not understood by me,
+      //            use PDP context identifier of 0 for what we defined as 1 in
+      //            the gprsConnect function
       // NOTE:  despite docs using caps, "sni" must be in lower case
-      sendAT(GF("+CSSLCFG=\"sni\","), mux, ',', GF("\""), host, GF("\""));
+      sendAT(GF("+CSSLCFG=\"sni\",0,"), GF("\""), host, GF("\""));
       waitResponse();
     }
 
