@@ -307,6 +307,15 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60>,
     return waitResponse(60000L, GF("DEACT OK"), GF("ERROR")) == 1;
   }
 
+  String getProviderImpl() {
+    sendAT(GF("+QSPN?"));
+    if (waitResponse(GF("+QSPN:")) != 1) { return ""; }
+    streamSkipUntil('"');                      // Skip mode and format
+    String res = stream.readStringUntil('"');  // read the provider
+    waitResponse();                            // skip anything else
+    return res;
+  }
+
   /*
    * SIM card functions
    */

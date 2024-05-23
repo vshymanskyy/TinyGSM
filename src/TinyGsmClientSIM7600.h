@@ -389,6 +389,15 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     return true;
   }
 
+  String getProviderImpl() {
+    sendAT(GF("+CSPN?"));
+    if (waitResponse(GF("+CSPN:")) != 1) { return ""; }
+    streamSkipUntil('"'); /* Skip mode and format */
+    String res = stream.readStringUntil('"');
+    waitResponse();
+    return res;
+  }
+
   /*
    * SIM card functions
    */

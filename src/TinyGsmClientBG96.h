@@ -316,6 +316,15 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96>,
     return true;
   }
 
+  String getProviderImpl() {
+    sendAT(GF("+QSPN?"));
+    if (waitResponse(GF("+QSPN:")) != 1) { return ""; }
+    streamSkipUntil('"');                      // Skip mode and format
+    String res = stream.readStringUntil('"');  // read the provider
+    waitResponse();                            // skip anything else
+    return res;
+  }
+
   /*
    * SIM card functions
    */

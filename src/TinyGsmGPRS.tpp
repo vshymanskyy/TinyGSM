@@ -184,14 +184,7 @@ class TinyGsmGPRS {
     return res;
   }
 
-  String getProviderImpl() {
-    thisModem().sendAT(GF("+CSPN?"));
-    if (thisModem().waitResponse(GF("+CSPN:")) != 1) { return ""; }
-    thisModem().streamSkipUntil('"'); /* Skip mode and format */
-    String res = thisModem().stream.readStringUntil('"');
-    thisModem().waitResponse();
-    return res;
-  }
+  String getProviderImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 };
 
 #endif  // SRC_TINYGSMGPRS_H_

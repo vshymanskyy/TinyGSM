@@ -228,8 +228,8 @@ void loop() {
   String cop = modem.getOperator();
   DBG("Operator:", cop);
 
-  String prov = modem.getProvider();
-  DBG("Provider:", prov);
+  // String prov = modem.getProvider();
+  // DBG("Provider:", prov);
 
   IPAddress local = modem.localIP();
   DBG("Local IP:", local);
