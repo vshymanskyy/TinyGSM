@@ -27,8 +27,20 @@ class TinyGsmSSL {
   bool addCertificate(const char* filename) {
     return thisModem().addCertificateImpl(filename);
   }
-  bool deleteCertificate() {
-    return thisModem().deleteCertificateImpl();
+  bool addCertificate(const String& filename) {
+    return addCertificate(filename.c_str());
+  }
+  bool addCertificate(const char* certificateName, const char* cert,
+                      const uint16_t len) {
+    return thisModem().addCertificateImpl(certificateName, cert, len);
+  }
+  bool addCertificate(const String& certificateName, const String& cert,
+                      const uint16_t len) {
+    return addCertificate(certificateName.c_str(), cert.c_str(), len);
+  }
+
+  bool deleteCertificate(const char* filename) {
+    return thisModem().deleteCertificateImpl(filename);
   }
 
   bool setCertificate(const String& certificateName, const uint8_t mux = 0) {
@@ -60,7 +72,10 @@ class TinyGsmSSL {
    */
  protected:
   bool addCertificateImpl(const char* filename) TINY_GSM_ATTR_NOT_IMPLEMENTED;
-  bool deleteCertificateImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool addCertificateImpl(const char* certificateName, const char* cert,
+                          const uint16_t len) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool
+  deleteCertificateImpl(const char* filename) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
   String certificates[muxCount];
 };

@@ -142,16 +142,16 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
         : GsmClientA7672X(modem, mux) {}
 
    public:
-    bool addCertificate(const String& certificateName, const String& cert,
+    bool addCertificate(const char* certificateName, const char* cert,
                         const uint16_t len) {
       return at->addCertificate(certificateName, cert, len);
     }
 
-    bool setCertificate(const String& certificateName) {
+    bool setCertificate(const char* certificateName) {
       return at->setCertificate(certificateName, mux);
     }
 
-    bool deleteCertificate(const String& certificateName) {
+    bool deleteCertificate(const char* certificateName) {
       return at->deleteCertificate(certificateName);
     }
 
@@ -313,16 +313,16 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
   // havetype like ".pem" or ".der".
   // The certificate like - const char ca_cert[] PROGMEM =  R"EOF(-----BEGIN...
   // len of certificate like - sizeof(ca_cert)
-  bool addCertificate(const String& certificateName, const String& cert,
+  bool addCertificate(const char* certificateName, const char* cert,
                       const uint16_t len) {
     sendAT(GF("+CCERTDOWN="), certificateName, GF(","), len);
-    if (waitResponse(GF(">")) != 1) { return 0; }
-    stream.write(cert.c_str(), len);
+    if (waitResponse(GF(">")) != 1) { return false; }
+    stream.write(cert, len);
     stream.flush();
     return waitResponse() == 1;
   }
 
-  bool deleteCertificate(const String& certificateName) {  // todo test
+  bool deleteCertificate(const char* certificateName) {  // todo test
     sendAT(GF("+CCERTDELE="), certificateName);
     return waitResponse() == 1;
   }
