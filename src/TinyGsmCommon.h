@@ -10,7 +10,7 @@
 #define SRC_TINYGSMCOMMON_H_
 
 // The current library version number
-#define TINYGSM_VERSION "0.11.8"
+#define TINYGSM_VERSION "0.12.0"
 
 #if defined(SPARK) || defined(PARTICLE)
 #include "Particle.h"
@@ -90,6 +90,9 @@ const T& TinyGsmMax(const T& a, const T& b) {
   return (b < a) ? a : b;
 }
 
+/*
+ * Automatically find baud rate
+ */
 template <class T>
 uint32_t TinyGsmAutoBaud(T& SerialAT, uint32_t minimum = 9600,
                          uint32_t maximum = 115200) {

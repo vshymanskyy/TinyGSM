@@ -84,12 +84,15 @@ TinyGSM also pulls data gently from the modem (whenever possible), so it can ope
 - Quectel MC60 ***(alpha)***
 
 ### Supported boards/modules
+- EnviroDIY LTE Bee, WiFi Bee
 - Arduino MKR GSM 1400
-- GPRSbee
+- Sodaq GPRSbee, uBee
 - Microduino GSM
-- Adafruit FONA (Mini Cellular GSM Breakout)
-- Adafruit FONA 800/808 Shield
+- Adafruit FONA Mini Cellular GSM Breakout, 800/808 Shield, FONA 3G
 - Industruino GSM
+- Dragino NB-IoT Bee
+- Digi XBee S6B, XBee LTE Cat 1, XBee3 LTE Cat 1, XBee3 CatM
+- Nimbelink Skywire/Airgain NL-SW-LTE-QBG96, NL-SW-LTE-QBG95
 - RAK WisLTE ***(alpha)***
 - ... other modules, based on supported modems. Some boards require [**special configuration**](https://github.com/vshymanskyy/TinyGSM/wiki/Board-configuration).
 
@@ -173,6 +176,10 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
     - [V1pr](https://github.com/V1pr)
 - Quectel M95
     - [replicadeltd](https://github.com/replicadeltd)
+- UBLOX SARA-R5
+  - [Sebastian Bergner](https://github.com/sebastianbergner)
+- SIMCOM A7672X
+  - [Giovanni de Rosso Unruh](https://github.com/giovannirosso)
 - Other Contributors:
     - https://github.com/vshymanskyy/TinyGSM/graphs/contributors
 
