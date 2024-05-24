@@ -24,13 +24,21 @@ void loop() {
 
   modem.getModemInfo();
   modem.getModemName();
+  modem.getModemManufacturer();
+  modem.getModemModel();
+  modem.getModemRevision();
   modem.factoryDefault();
+
+#if not defined(TINY_GSM_MODEM_ESP8266) && not defined(TINY_GSM_MODEM_ESP32)
+  modem.getModemSerialNumber();
+#endif
 
   // Test Power functions
   modem.restart();
   // modem.sleepEnable();  // Not available for all modems
-  // modem.radioOff();  // Not available for all modems
+  // modem.radioOff();     // Not available for all modems
   modem.poweroff();
+  // modem.setPhoneFunctionality(1, 1);  // Not available for all modems
 
   // Test generic network functions
   modem.getRegistrationStatus();
@@ -42,25 +50,27 @@ void loop() {
   modem.getLocalIP();
   modem.localIP();
 
+// Test WiFi Functions
+#if defined(TINY_GSM_MODEM_HAS_WIFI)
+  modem.networkConnect("mySSID", "mySSIDPassword");
+  modem.networkDisconnect();
+#endif
+
 // Test the GPRS and SIM card functions
 #if defined(TINY_GSM_MODEM_HAS_GPRS)
   modem.simUnlock("1234");
-  modem.getSimCCID();
-  modem.getIMEI();
-  modem.getIMSI();
   modem.getSimStatus();
 
   modem.gprsConnect("myAPN");
   modem.gprsConnect("myAPN", "myUser");
   modem.gprsConnect("myAPN", "myAPNUser", "myAPNPass");
   modem.gprsDisconnect();
-  modem.getOperator();
-#endif
 
-// Test WiFi Functions
-#if defined(TINY_GSM_MODEM_HAS_WIFI)
-  modem.networkConnect("mySSID", "mySSIDPassword");
-  modem.networkDisconnect();
+  modem.getSimCCID();
+  modem.getIMEI();
+  modem.getIMSI();
+  modem.getOperator();
+  // modem.getProvider();  // Not available for all modems
 #endif
 
   char server[]   = "somewhere";
@@ -92,8 +102,19 @@ void loop() {
   client.stop();
 
 #if defined(TINY_GSM_MODEM_HAS_SSL)
-  // modem.addCertificate();  // not yet impemented
-  // modem.deleteCertificate();  // not yet impemented
+  // modem.addCertificate("certificateName");  // Not available for all modems
+  // modem.addCertificate(
+  //     String("certificateName"));  // Not available for all modems
+  // modem.addCertificate("certificateName", "certificate_content",
+  //                      20);  // Not available for all modems
+  // modem.addCertificate(String("certificateName"),
+  // String("certificate_content"),
+  //                      20);                    // Not available for all
+  //                      modems
+  // modem.deleteCertificate("certificateName");  // Not available for all
+  // modems
+  modem.setCertificate("certificateName", 0);
+  modem.setCertificate(String("certificateName"), 0);
   TinyGsmClientSecure client_secure(modem);
   TinyGsmClientSecure client_secure2(modem);
   TinyGsmClientSecure client_secure3(modem, 1);
@@ -149,75 +170,98 @@ void loop() {
 #if defined(TINY_GSM_MODEM_HAS_GSM_LOCATION) && not defined(__AVR_ATmega32U4__)
   modem.getGsmLocationRaw();
   modem.getGsmLocation();
-  float glatitude  = -9999;
-  float glongitude = -9999;
-  float gacc       = 0;
-  int   gyear      = 0;
-  int   gmonth     = 0;
-  int   gday       = 0;
-  int   ghour      = 0;
-  int   gmin       = 0;
-  int   gsec       = 0;
-  modem.getGsmLocation(&glatitude, &glongitude);
-  modem.getGsmLocation(&glatitude, &glongitude, &gacc, &gyear, &gmonth, &gday,
-                       &ghour, &gmin, &gsec);
-  modem.getGsmLocationTime(&gyear, &gmonth, &gday, &ghour, &gmin, &gsec);
+  float gsm_latitude  = 0;
+  float gsm_longitude = 0;
+  float gsm_accuracy  = 0;
+  int   gsm_year      = 0;
+  int   gsm_month     = 0;
+  int   gsm_day       = 0;
+  int   gsm_hour      = 0;
+  int   gsm_minute    = 0;
+  int   gsm_second    = 0;
+  modem.getGsmLocation(&gsm_latitude, &gsm_longitude);
+  modem.getGsmLocation(&gsm_latitude, &gsm_longitude, &gsm_accuracy, &gsm_year,
+                       &gsm_month, &gsm_day, &gsm_hour, &gsm_minute,
+                       &gsm_second);
+  modem.getGsmLocationTime(&gsm_year, &gsm_month, &gsm_day, &gsm_hour,
+                           &gsm_minute, &gsm_second);
+  modem.getGsmLocation();
 #endif
 
 // Test the GPS functions
 #if defined(TINY_GSM_MODEM_HAS_GPS) && not defined(__AVR_ATmega32U4__)
+  // modem.setGNSSMode(1, true);        // Not available for all modems
+  // modem.getGNSSMode();               // Not available for all modems
 #if !defined(TINY_GSM_MODEM_SARAR5)  // not available for this module
   modem.enableGPS();
 #endif
+  float gps_latitude  = 0;
+  float gps_longitude = 0;
+  float gps_speed     = 0;
+  float gps_altitude  = 0;
+  int   gps_vsat      = 0;
+  int   gps_usat      = 0;
+  float gps_accuracy  = 0;
+  int   gps_year      = 0;
+  int   gps_month     = 0;
+  int   gps_day       = 0;
+  int   gps_hour      = 0;
+  int   gps_minute    = 0;
+  int   gps_second    = 0;
+  modem.getGPS(&gps_latitude, &gps_longitude);
+  modem.getGPS(&gps_latitude, &gps_longitude, &gps_speed, &gps_altitude,
+               &gps_vsat, &gps_usat, &gps_accuracy, &gps_year, &gps_month,
+               &gps_day, &gps_hour, &gps_minute, &gps_second);
   modem.getGPSraw();
-  float latitude  = -9999;
-  float longitude = -9999;
-  float speed     = 0;
-  float alt       = 0;
-  int   vsat      = 0;
-  int   usat      = 0;
-  float acc       = 0;
-  int   year      = 0;
-  int   month     = 0;
-  int   day       = 0;
-  int   hour      = 0;
-  int   minute    = 0;
-  int   second    = 0;
-  modem.getGPS(&latitude, &longitude);
-  modem.getGPS(&latitude, &longitude, &speed, &alt, &vsat, &usat, &acc, &year,
-               &month, &day, &hour, &minute, &second);
 #if !defined(TINY_GSM_MODEM_SARAR5)  // not available for this module
   modem.disableGPS();
 #endif
 #endif
 
-// Test the Network time function
+// Test the Network time functions
 #if defined(TINY_GSM_MODEM_HAS_NTP) && not defined(__AVR_ATmega32U4__)
   modem.NTPServerSync("pool.ntp.org", 3);
+  // modem.ShowNTPError(1);  // Not available for all modems
 #endif
 
 // Test the Network time function
 #if defined(TINY_GSM_MODEM_HAS_TIME) && not defined(__AVR_ATmega32U4__)
   modem.getGSMDateTime(DATE_FULL);
-  int   year3    = 0;
-  int   month3   = 0;
-  int   day3     = 0;
-  int   hour3    = 0;
-  int   min3     = 0;
-  int   sec3     = 0;
-  float timezone = 0;
-  modem.getNetworkTime(&year3, &month3, &day3, &hour3, &min3, &sec3, &timezone);
+  int   ntp_year     = 0;
+  int   ntp_month    = 0;
+  int   ntp_day      = 0;
+  int   ntp_hour     = 0;
+  int   ntp_min      = 0;
+  int   ntp_sec      = 0;
+  float ntp_timezone = 0;
+  modem.getNetworkTime(&ntp_year, &ntp_month, &ntp_day, &ntp_hour, &ntp_min,
+                       &ntp_sec, &ntp_timezone);
+  // modem.getNetworkUTCTime(&ntp_year, &ntp_month, &ntp_day, &ntp_hour,
+  // &ntp_min,
+  //                         &ntp_sec,
+  //                         &ntp_timezone);  // Not available for all modems
+#endif
+
+// Test bluetooth functions
+#if defined(TINY_GSM_MODEM_HAS_BLUETOOTH)
+  modem.enableBluetooth();
+  modem.disableBluetooth();
+  modem.setBluetoothVisibility(true);
+  modem.setBluetoothHostName("bluetooth");
 #endif
 
 // Test Battery functions
 #if defined(TINY_GSM_MODEM_HAS_BATTERY)
-  uint8_t  chargeState   = 0;
-  int8_t   chargePercent = 0;
-  uint16_t milliVolts    = 0;
+  // modem.getBattVoltage();      // Not available for all modems
+  // modem.getBattPercent();      // Not available for all modems
+  // modem.getBattChargeState();  // Not available for all modems
+  uint8_t  chargeState   = -99;
+  int8_t   chargePercent = -99;
+  uint16_t milliVolts    = -9999;
   modem.getBattStats(chargeState, chargePercent, milliVolts);
 #endif
 
-// Test the temperature function
+// Test temperature functions
 #if defined(TINY_GSM_MODEM_HAS_TEMPERATURE)
   modem.getTemperature();
 #endif
