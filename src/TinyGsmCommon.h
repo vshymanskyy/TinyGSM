@@ -80,6 +80,9 @@ static void DBG(Args... args) {
 #define DBG(...)
 #endif
 
+/*
+ * Min/Max Helpers
+ */
 template <class T>
 const T& TinyGsmMin(const T& a, const T& b) {
   return (b < a) ? b : a;

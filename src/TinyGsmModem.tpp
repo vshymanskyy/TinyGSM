@@ -330,6 +330,8 @@ class TinyGsmModem {
    * Basic functions
    */
  protected:
+  bool initImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
   bool setBaudImpl(uint32_t baud) {
     thisModem().sendAT(GF("+IPR="), baud);
     return thisModem().waitResponse() == 1;
@@ -343,7 +345,6 @@ class TinyGsmModem {
     }
     return false;
   }
-
 
   // TODO(vshymanskyy): Optimize this!
   int8_t waitResponseImpl(uint32_t timeout_ms, String& data,
