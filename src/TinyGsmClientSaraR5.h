@@ -621,7 +621,7 @@ class TinyGsmSaraR5 : public TinyGsmModem<TinyGsmSaraR5>,
    * Battery functions
    */
  protected:
-  uint16_t getBattVoltageImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
+  int16_t getBattVoltageImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
 
   int8_t getBattPercentImpl() {
     sendAT(GF("+CIND?"));
@@ -634,10 +634,10 @@ class TinyGsmSaraR5 : public TinyGsmModem<TinyGsmSaraR5>,
     return percent;
   }
 
-  uint8_t getBattChargeStateImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
+  int8_t getBattChargeStateImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
 
-  bool getBattStatsImpl(uint8_t& chargeState, int8_t& percent,
-                        uint16_t& milliVolts) {
+  bool getBattStatsImpl(int8_t& chargeState, int8_t& percent,
+                        int16_t& milliVolts) {
     chargeState = 0;
     percent     = getBattPercent();
     milliVolts  = 0;

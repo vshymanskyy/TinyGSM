@@ -479,9 +479,9 @@ void loop() {
 
 // Test Battery functions
 #if TINY_GSM_TEST_BATTERY && defined TINY_GSM_MODEM_HAS_BATTERY
-  uint8_t  chargeState   = -99;
-  int8_t   chargePercent = -99;
-  uint16_t milliVolts    = -9999;
+  int8_t  chargeState   = -99;
+  int8_t  chargePercent = -99;
+  int16_t milliVolts    = -9999;
   modem.getBattStats(chargeState, chargePercent, milliVolts);
   DBG("Battery charge state:", chargeState);
   DBG("Battery charge 'percent':", chargePercent);

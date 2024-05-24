@@ -255,9 +255,9 @@ void loop() {
   // modem.getBattVoltage();      // Not available for all modems
   // modem.getBattPercent();      // Not available for all modems
   // modem.getBattChargeState();  // Not available for all modems
-  uint8_t  chargeState   = -99;
-  int8_t   chargePercent = -99;
-  uint16_t milliVolts    = -9999;
+  int8_t  chargeState   = -99;
+  int8_t  chargePercent = -99;
+  int16_t milliVolts    = -9999;
   modem.getBattStats(chargeState, chargePercent, milliVolts);
 #endif
 

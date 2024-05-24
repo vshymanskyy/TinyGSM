@@ -435,7 +435,7 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
    * Battery functions
    */
  protected:
-  uint16_t getBattVoltageImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
+  int16_t getBattVoltageImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
 
   // Needs a '?' after CBC, unlike most
   int8_t getBattPercentImpl() {
@@ -450,8 +450,8 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6>,
   }
 
   // Needs a '?' after CBC, unlike most
-  bool getBattStatsImpl(uint8_t& chargeState, int8_t& percent,
-                        uint16_t& milliVolts) {
+  bool getBattStatsImpl(int8_t& chargeState, int8_t& percent,
+                        int16_t& milliVolts) {
     sendAT(GF("+CBC?"));
     if (waitResponse(GF(AT_NL "+CBC:")) != 1) { return false; }
     chargeState = streamGetIntBefore(',');

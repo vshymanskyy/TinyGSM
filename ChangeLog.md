@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Changed inputs for (unimplemented) SSL certificate functions.
 - All modems will now return the pre-defined manufacturer and model in the name if the function to get the internal name fails.
 - Cleaned up code for getting modem names.
+- Made battery return types signed.
 
 ### Added
 - Added support for SSL for the Quentcel BG95 and BG96 from [Aurelien BOUIN](https://github.com/aurelihein) and [George O'Connor](https://github.com/georgeman93)

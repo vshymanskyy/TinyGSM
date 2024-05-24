@@ -590,7 +590,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
    */
  protected:
   // returns volts, multiply by 1000 to get mV
-  uint16_t getBattVoltageImpl() {
+  int16_t getBattVoltageImpl() {
     sendAT(GF("+CBC"));
     if (waitResponse(GF(AT_NL "+CBC:")) != 1) { return 0; }
 
@@ -605,10 +605,10 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
 
   int8_t getBattPercentImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
 
-  uint8_t getBattChargeStateImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
+  int8_t getBattChargeStateImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
 
-  bool getBattStatsImpl(uint8_t& chargeState, int8_t& percent,
-                        uint16_t& milliVolts) {
+  bool getBattStatsImpl(int8_t& chargeState, int8_t& percent,
+                        int16_t& milliVolts) {
     chargeState = 0;
     percent     = 0;
     milliVolts  = getBattVoltage();
