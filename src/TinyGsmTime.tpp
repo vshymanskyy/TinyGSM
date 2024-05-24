@@ -117,6 +117,10 @@ class TinyGsmTime {
     thisModem().waitResponse();
     return true;
   }
+
+  bool getNetworkUTCTimeImpl(int* year, int* month, int* day, int* hour,
+                             int* minute, int* second,
+                             float* timezone) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 };
 
 #endif  // SRC_TINYGSMTIME_H_

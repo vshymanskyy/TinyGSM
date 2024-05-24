@@ -526,6 +526,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
       if (alt != nullptr) *alt = ialt;
       if (vsat != nullptr) *vsat = ivsat;
       if (usat != nullptr) *usat = iusat;
+      if (accuracy != nullptr) *accuracy = -9999;
       if (iyear < 2000) iyear += 2000;
       if (year != nullptr) *year = iyear;
       if (month != nullptr) *month = imonth;
