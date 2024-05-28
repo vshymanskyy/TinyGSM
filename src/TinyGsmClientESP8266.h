@@ -14,38 +14,57 @@
 
 #define TINY_GSM_MUX_COUNT 5
 #define TINY_GSM_NO_MODEM_BUFFER
+#ifdef AT_NL
+#undef AT_NL
+#endif
+#define AT_NL "\r\n"
+
+#ifdef MODEM_MANUFACTURER
+#undef MODEM_MANUFACTURER
+#endif
+#define MODEM_MANUFACTURER "Espressif"
+
+#ifdef MODEM_MODEL
+#undef MODEM_MODEL
+#endif
+#if defined(TINY_GSM_MODEM_ESP8266)
+#define MODEM_MODEL "ESP8266"
+#else
+#define MODEM_MODEL "ESP32"
+#endif
 
 #include "TinyGsmModem.tpp"
-#include "TinyGsmSSL.tpp"
 #include "TinyGsmTCP.tpp"
+#include "TinyGsmSSL.tpp"
 #include "TinyGsmWifi.tpp"
 
-#define GSM_NL "\r\n"
-static const char GSM_OK[] TINY_GSM_PROGMEM    = "OK" GSM_NL;
-static const char GSM_ERROR[] TINY_GSM_PROGMEM = "ERROR" GSM_NL;
-static uint8_t    TINY_GSM_TCP_KEEP_ALIVE      = 120;
+static uint8_t TINY_GSM_TCP_KEEP_ALIVE = 120;
 
 // <stat> status of ESP8266 station interface
+// 0: ESP8266 station is not initialized.
+// 1: ESP8266 station is initialized, but not started a Wi-Fi connection yet.
 // 2 : ESP8266 station connected to an AP and has obtained IP
 // 3 : ESP8266 station created a TCP or UDP transmission
 // 4 : the TCP or UDP transmission of ESP8266 station disconnected
 // 5 : ESP8266 station did NOT connect to an AP
-enum RegStatus {
-  REG_OK_IP     = 2,
-  REG_OK_TCP    = 3,
-  REG_OK_NO_TCP = 4,
-  REG_DENIED    = 5,
-  REG_UNKNOWN   = 6,
+enum ESP8266RegStatus {
+  REG_UNINITIALIZED = 0,
+  REG_UNREGISTERED  = 1,
+  REG_OK_IP         = 2,
+  REG_OK_TCP        = 3,
+  REG_OK_NO_TCP     = 4,
+  REG_DENIED        = 5,
+  REG_UNKNOWN       = 6,
 };
 
 class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
-                       public TinyGsmWifi<TinyGsmESP8266>,
                        public TinyGsmTCP<TinyGsmESP8266, TINY_GSM_MUX_COUNT>,
-                       public TinyGsmSSL<TinyGsmESP8266> {
+                       public TinyGsmSSL<TinyGsmESP8266, TINY_GSM_MUX_COUNT>,
+                       public TinyGsmWifi<TinyGsmESP8266> {
   friend class TinyGsmModem<TinyGsmESP8266>;
-  friend class TinyGsmWifi<TinyGsmESP8266>;
   friend class TinyGsmTCP<TinyGsmESP8266, TINY_GSM_MUX_COUNT>;
-  friend class TinyGsmSSL<TinyGsmESP8266>;
+  friend class TinyGsmSSL<TinyGsmESP8266, TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmWifi<TinyGsmESP8266>;
 
   /*
    * Inner Client
@@ -137,7 +156,7 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
    * Basic functions
    */
  protected:
-  bool initImpl(const char* pin = NULL) {
+  bool initImpl(const char* pin = nullptr) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
     DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientESP8266"));
 
@@ -159,11 +178,7 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
     return true;
   }
 
-  String getModemNameImpl() {
-    return "ESP8266";
-  }
-
-  void setBaudImpl(uint32_t baud) {
+  bool setBaudImpl(uint32_t baud) {
     sendAT(GF("+UART_CUR="), baud, "8,1,0,0");
     if (waitResponse() != 1) {
       sendAT(GF("+UART="), baud,
@@ -171,35 +186,69 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
       // if (waitResponse() != 1) {
       //   sendAT(GF("+IPR="), baud);  // First release firmwares might need
       //   this
-      waitResponse();
+      return waitResponse() == 1;
       // }
     }
-  }
-
-  bool factoryDefaultImpl() {
-    sendAT(GF("+RESTORE"));
-    return waitResponse() == 1;
+    return false;
   }
 
   String getModemInfoImpl() {
     sendAT(GF("+GMR"));
     String res;
     if (waitResponse(1000L, res) != 1) { return ""; }
-    res.replace(GSM_NL "OK" GSM_NL, "");
-    res.replace(GSM_NL, " ");
-    res.trim();
+    cleanResponseString(res);
     return res;
+  }
+
+  // Gets the modem hardware version
+  String getModemManufacturerImpl() {
+    return MODEM_MANUFACTURER;
+  }
+
+  // Gets the modem hardware version
+  String getModemModelImpl() {
+    String model = MODEM_MODEL;
+    sendAT(GF("+GMR"));
+    streamSkipUntil('\n');  // skip the AT version
+    streamSkipUntil('\n');  // skip the SDK version
+    streamSkipUntil('\n');  // skip the compile time
+    // read the hardware from the Bin version
+    streamSkipUntil('(');  // skip the text "Bin version"
+    String wroom = stream.readStringUntil(
+        ')');                        // read the WRoom version in the parethesis
+    streamSkipUntil('(');            // skip the bin version itself
+    if (waitResponse(1000L) == 1) {  // wait for the ending OK
+      return wroom;
+    }
+    return model;
+  }
+
+  // Gets the modem firmware version
+  String getModemRevisionImpl() {
+    sendAT(GF("GMR"));  // GMR instead of CGMR
+    String res;
+    if (waitResponse(1000L, res) != 1) { return ""; }
+    cleanResponseString(res);
+    return res;
+  }
+
+  // Gets the modem serial number
+  String getModemSerialNumberImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
+
+  bool factoryDefaultImpl() {
+    sendAT(GF("+RESTORE"));
+    return waitResponse() == 1;
   }
 
   /*
    * Power functions
    */
  protected:
-  bool restartImpl(const char* pin = NULL) {
+  bool restartImpl(const char* pin = nullptr) {
     if (!testAT()) { return false; }
     sendAT(GF("+RST"));
     if (waitResponse(10000L) != 1) { return false; }
-    if (waitResponse(10000L, GF(GSM_NL "ready" GSM_NL)) != 1) { return false; }
+    if (waitResponse(10000L, GF(AT_NL "ready" AT_NL)) != 1) { return false; }
     delay(500);
     return init(pin);
   }
@@ -220,13 +269,18 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
    * Generic network functions
    */
  public:
-  RegStatus getRegistrationStatus() {
+  ESP8266RegStatus getRegistrationStatus() {
     sendAT(GF("+CIPSTATUS"));
     if (waitResponse(3000, GF("STATUS:")) != 1) return REG_UNKNOWN;
-    int8_t status = waitResponse(GFP(GSM_ERROR), GF("2"), GF("3"), GF("4"),
-                                 GF("5"));
-    waitResponse();  // Returns an OK after the status
-    return (RegStatus)status;
+    // after "STATUS:" it should return the status number (0,1,2,3,4,5),
+    // followed by an OK
+    // Since there are more possible status number codes than the arguments for
+    // waitResponse, we'll capture the response in a string and then parse it.
+    String res;
+    if (waitResponse(3000L, res) != 1) { return REG_UNKNOWN; }
+    res.trim();
+    int8_t status = res.toInt();
+    return (ESP8266RegStatus)status;
   }
 
  protected:
@@ -252,7 +306,7 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
   }
 
   bool isNetworkConnectedImpl() {
-    RegStatus s = getRegistrationStatus();
+    ESP8266RegStatus s = getRegistrationStatus();
     if (s == REG_OK_IP || s == REG_OK_TCP) {
       // with these, we're definitely connected
       return true;
@@ -286,6 +340,12 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
   }
 
   /*
+   * Secure socket layer (SSL) functions
+   */
+  // Follows functions as inherited from TinyGsmSSL.tpp
+
+
+  /*
    * WiFi functions
    */
  protected:
@@ -293,9 +353,9 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
     // attempt first without than with the 'current' flag used in some firmware
     // versions
     sendAT(GF("+CWJAP=\""), ssid, GF("\",\""), pwd, GF("\""));
-    if (waitResponse(30000L, GFP(GSM_OK), GF(GSM_NL "FAIL" GSM_NL)) != 1) {
+    if (waitResponse(30000L, GFP(GSM_OK), GF(AT_NL "FAIL" AT_NL)) != 1) {
       sendAT(GF("+CWJAP_CUR=\""), ssid, GF("\",\""), pwd, GF("\""));
-      if (waitResponse(30000L, GFP(GSM_OK), GF(GSM_NL "FAIL" GSM_NL)) != 1) {
+      if (waitResponse(30000L, GFP(GSM_OK), GF(AT_NL "FAIL" AT_NL)) != 1) {
         return false;
       }
     }
@@ -309,6 +369,62 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
     waitResponse(GF("WIFI DISCONNECT"));
     return retVal;
   }
+
+
+  /*
+   * GPRS functions
+   */
+  // No functions of this type supported
+
+  /*
+   * SIM card functions
+   */
+  // No functions of this type supported
+
+  /*
+   * Audio functions
+   */
+  // No functions of this type supported
+
+  /*
+   * Text messaging (SMS) functions
+   */
+  // No functions of this type supported
+
+  /*
+   * GSM Location functions
+   */
+  // No functions of this type supported
+
+  /*
+   * GPS/GNSS/GLONASS location functions
+   */
+  // No functions of this type supported
+
+  /*
+   * Time functions
+   */
+  // No functions of this type supported
+
+  /*
+   * NTP server functions
+   */
+  // No functions of this type supported
+
+  /*
+   * BLE functions
+   */
+  // No functions of this type supported
+
+  /*
+   * Battery functions
+   */
+  // No functions of this type supported
+
+  /*
+   * Temperature functions
+   */
+  // No functions of this type supported
 
   /*
    * Client related functions
@@ -337,18 +453,19 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
     if (waitResponse(GF(">")) != 1) { return 0; }
     stream.write(reinterpret_cast<const uint8_t*>(buff), len);
     stream.flush();
-    if (waitResponse(10000L, GF(GSM_NL "SEND OK" GSM_NL)) != 1) { return 0; }
+    if (waitResponse(10000L, GF(AT_NL "SEND OK" AT_NL)) != 1) { return 0; }
     return len;
   }
 
   bool modemGetConnected(uint8_t mux) {
     sendAT(GF("+CIPSTATUS"));
     if (waitResponse(3000, GF("STATUS:")) != 1) { return false; }
-    int8_t status = waitResponse(GFP(GSM_ERROR), GF("2"), GF("3"), GF("4"),
-                                 GF("5"));
-    if (status != 3) {
-      // if the status is anything but 3, there are no connections open
-      waitResponse();  // Returns an OK after the status
+    // after "STATUS:" it should return the status number (0,1,2,3,4,5),
+    // followed by an OK
+    // Hopefully we'll catch the "3" here, but fall back to the OK or Error
+    int8_t status = waitResponse(GF("3"), GFP(GSM_OK), GFP(GSM_ERROR));
+    // if the status is anything but 3, there are no connections open
+    if (status != 1) {
       for (int muxNo = 0; muxNo < TINY_GSM_MUX_COUNT; muxNo++) {
         if (sockets[muxNo]) { sockets[muxNo]->sock_connected = false; }
       }
@@ -382,96 +499,41 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
    * Utilities
    */
  public:
-  // TODO(vshymanskyy): Optimize this!
-  int8_t waitResponse(uint32_t timeout_ms, String& data,
-                      GsmConstStr r1 = GFP(GSM_OK),
-                      GsmConstStr r2 = GFP(GSM_ERROR), GsmConstStr r3 = NULL,
-                      GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
-    /*String r1s(r1); r1s.trim();
-    String r2s(r2); r2s.trim();
-    String r3s(r3); r3s.trim();
-    String r4s(r4); r4s.trim();
-    String r5s(r5); r5s.trim();
-    DBG("### ..:", r1s, ",", r2s, ",", r3s, ",", r4s, ",", r5s);*/
-    data.reserve(64);
-    uint8_t  index       = 0;
-    uint32_t startMillis = millis();
-    do {
-      TINY_GSM_YIELD();
-      while (stream.available() > 0) {
-        TINY_GSM_YIELD();
-        int8_t a = stream.read();
-        if (a <= 0) continue;  // Skip 0x00 bytes, just in case
-        data += static_cast<char>(a);
-        if (r1 && data.endsWith(r1)) {
-          index = 1;
-          goto finish;
-        } else if (r2 && data.endsWith(r2)) {
-          index = 2;
-          goto finish;
-        } else if (r3 && data.endsWith(r3)) {
-          index = 3;
-          goto finish;
-        } else if (r4 && data.endsWith(r4)) {
-          index = 4;
-          goto finish;
-        } else if (r5 && data.endsWith(r5)) {
-          index = 5;
-          goto finish;
-        } else if (data.endsWith(GF("+IPD,"))) {
-          int8_t  mux      = streamGetIntBefore(',');
-          int16_t len      = streamGetIntBefore(':');
-          int16_t len_orig = len;
-          if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
-            if (len > sockets[mux]->rx.free()) {
-              DBG("### Buffer overflow: ", len, "received vs",
-                  sockets[mux]->rx.free(), "available");
-            } else {
-              // DBG("### Got Data: ", len, "on", mux);
-            }
-            while (len--) { moveCharFromStreamToFifo(mux); }
-            // TODO(SRGDamia1): deal with buffer overflow/missed characters
-            if (len_orig > sockets[mux]->available()) {
-              DBG("### Fewer characters received than expected: ",
-                  sockets[mux]->available(), " vs ", len_orig);
-            }
-          }
-          data = "";
-        } else if (data.endsWith(GF("CLOSED"))) {
-          int8_t muxStart =
-              TinyGsmMax(0, data.lastIndexOf(GSM_NL, data.length() - 8));
-          int8_t coma = data.indexOf(',', muxStart);
-          int8_t mux  = data.substring(muxStart, coma).toInt();
-          if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
-            sockets[mux]->sock_connected = false;
-          }
-          data = "";
-          DBG("### Closed: ", mux);
+  bool handleURCs(String& data) {
+    if (data.endsWith(GF("+IPD,"))) {
+      int8_t  mux      = streamGetIntBefore(',');
+      int16_t len      = streamGetIntBefore(':');
+      int16_t len_orig = len;
+      if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+        if (len > sockets[mux]->rx.free()) {
+          DBG("### Buffer overflow: ", len, "->", sockets[mux]->rx.free());
+          // reset the len to read to the amount free
+          len = sockets[mux]->rx.free();
+        }
+        while (len--) { moveCharFromStreamToFifo(mux); }
+        // TODO(SRGDamia1): deal with buffer overflow/missed characters
+        if (len_orig != sockets[mux]->available()) {
+          DBG("### Different number of characters received than expected: ",
+              sockets[mux]->available(), " vs ", len_orig);
         }
       }
-    } while (millis() - startMillis < timeout_ms);
-  finish:
-    if (!index) {
-      data.trim();
-      if (data.length()) { DBG("### Unhandled:", data); }
       data = "";
+      DBG("### Got Data: ", len_orig, "on", mux);
+      return true;
+    } else if (data.endsWith(GF("CLOSED"))) {
+      int8_t muxStart = TinyGsmMax(0,
+                                   data.lastIndexOf(AT_NL, data.length() - 8));
+      int8_t coma     = data.indexOf(',', muxStart);
+      int8_t mux      = data.substring(muxStart, coma).toInt();
+      if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+        sockets[mux]->sock_connected = false;
+      }
+      streamSkipUntil('\n');  // throw away the new line
+      data = "";
+      DBG("### Closed: ", mux);
+      return true;
     }
-    // data.replace(GSM_NL, "/");
-    // DBG('<', index, '>', data);
-    return index;
-  }
-
-  int8_t waitResponse(uint32_t timeout_ms, GsmConstStr r1 = GFP(GSM_OK),
-                      GsmConstStr r2 = GFP(GSM_ERROR), GsmConstStr r3 = NULL,
-                      GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
-    String data;
-    return waitResponse(timeout_ms, data, r1, r2, r3, r4, r5);
-  }
-
-  int8_t waitResponse(GsmConstStr r1 = GFP(GSM_OK),
-                      GsmConstStr r2 = GFP(GSM_ERROR), GsmConstStr r3 = NULL,
-                      GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
-    return waitResponse(1000, r1, r2, r3, r4, r5);
+    return false;
   }
 
  public:
@@ -479,7 +541,6 @@ class TinyGsmESP8266 : public TinyGsmModem<TinyGsmESP8266>,
 
  protected:
   GsmClientESP8266* sockets[TINY_GSM_MUX_COUNT];
-  const char*       gsmNL = GSM_NL;
 };
 
 #endif  // SRC_TINYGSMCLIENTESP8266_H_

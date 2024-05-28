@@ -1,14 +1,14 @@
 /**
- * @file       TinyGsmClientSaraR4.h
- * @author     Volodymyr Shymanskyy
+ * @file       TinyGsmClientSaraR5.h
+ * @author     Sebastian Bergner, Volodymyr Shymanskyy
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
- * @date       Nov 2016
+ * @date       Aug 2023
  */
 
-#ifndef SRC_TINYGSMCLIENTSARAR4_H_
-#define SRC_TINYGSMCLIENTSARAR4_H_
-// #pragma message("TinyGSM:  TinyGsmClientSaraR4")
+#ifndef SRC_TINYGSMCLIENTSARAR5_H_
+#define SRC_TINYGSMCLIENTSARAR5_H_
+// #pragma message("TinyGSM:  TinyGsmClientSaraR5")
 
 // #define TINY_GSM_DEBUG Serial
 
@@ -27,65 +27,80 @@
 #ifdef MODEM_MODEL
 #undef MODEM_MODEL
 #endif
-#define MODEM_MODEL "SARA-R4"
+#define MODEM_MODEL "SARA-R5"
 
 #include "TinyGsmModem.tpp"
 #include "TinyGsmTCP.tpp"
 #include "TinyGsmSSL.tpp"
 #include "TinyGsmGPRS.tpp"
+#include "TinyGsmCalling.tpp"
 #include "TinyGsmSMS.tpp"
 #include "TinyGsmGSMLocation.tpp"
 #include "TinyGsmGPS.tpp"
 #include "TinyGsmTime.tpp"
 #include "TinyGsmBattery.tpp"
-#include "TinyGsmTemperature.tpp"
 
-enum SaraR4RegStatus {
-  REG_NO_RESULT    = -1,
-  REG_UNREGISTERED = 0,
-  REG_SEARCHING    = 2,
-  REG_DENIED       = 3,
-  REG_OK_HOME      = 1,
-  REG_OK_ROAMING   = 5,
-  REG_UNKNOWN      = 4,
+enum SaraR5RegStatus {
+  REG_NO_RESULT        = -1,
+  REG_UNREGISTERED     = 0,
+  REG_SEARCHING        = 2,
+  REG_DENIED           = 3,
+  REG_OK_HOME          = 1,
+  REG_OK_ROAMING       = 5,
+  REG_UNKNOWN          = 4,
+  REG_SMS_ONLY_HOME    = 6,
+  REG_SMS_ONLY_ROAMING = 7,
+  REG_EMERGENCY_ONLY =
+      8,  // blox AT command manual states: attached for emergency bearer
+          // services only (see 3GPP TS 24.008 [85] and 3GPP TS 24.301 [120]
+          // that specify the condition when the MS is considered as attached
+          // for emergency bearer services)
+  REG_NO_FALLBACK_LTE_HOME =
+      9,  // not 100% certain, ublox AT command manual states: registered for
+          // "CSFB not preferred", home network (applicable only when
+          // <AcTStatus> indicates E-UTRAN)
+  REG_NO_FALLBACK_LTE_ROAMING =
+      10  // not 100% certain, ublox AT command manual states: registered for
+          // "CSFB not preferred", roaming (applicable only when <AcTStatus>
+          // indicates E-UTRAN)
 };
 
-class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
-                      public TinyGsmGPRS<TinyGsmSaraR4>,
-                      public TinyGsmTCP<TinyGsmSaraR4, TINY_GSM_MUX_COUNT>,
-                      public TinyGsmSSL<TinyGsmSaraR4, TINY_GSM_MUX_COUNT>,
-                      public TinyGsmSMS<TinyGsmSaraR4>,
-                      public TinyGsmGSMLocation<TinyGsmSaraR4>,
-                      public TinyGsmGPS<TinyGsmSaraR4>,
-                      public TinyGsmTime<TinyGsmSaraR4>,
-                      public TinyGsmBattery<TinyGsmSaraR4>,
-                      public TinyGsmTemperature<TinyGsmSaraR4> {
-  friend class TinyGsmModem<TinyGsmSaraR4>;
-  friend class TinyGsmGPRS<TinyGsmSaraR4>;
-  friend class TinyGsmTCP<TinyGsmSaraR4, TINY_GSM_MUX_COUNT>;
-  friend class TinyGsmSSL<TinyGsmSaraR4, TINY_GSM_MUX_COUNT>;
-  friend class TinyGsmSMS<TinyGsmSaraR4>;
-  friend class TinyGsmGSMLocation<TinyGsmSaraR4>;
-  friend class TinyGsmGPS<TinyGsmSaraR4>;
-  friend class TinyGsmTime<TinyGsmSaraR4>;
-  friend class TinyGsmTemperature<TinyGsmSaraR4>;
-  friend class TinyGsmBattery<TinyGsmSaraR4>;
+class TinyGsmSaraR5 : public TinyGsmModem<TinyGsmSaraR5>,
+                      public TinyGsmGPRS<TinyGsmSaraR5>,
+                      public TinyGsmTCP<TinyGsmSaraR5, TINY_GSM_MUX_COUNT>,
+                      public TinyGsmSSL<TinyGsmSaraR5, TINY_GSM_MUX_COUNT>,
+                      public TinyGsmCalling<TinyGsmSaraR5>,
+                      public TinyGsmSMS<TinyGsmSaraR5>,
+                      public TinyGsmGSMLocation<TinyGsmSaraR5>,
+                      public TinyGsmGPS<TinyGsmSaraR5>,
+                      public TinyGsmTime<TinyGsmSaraR5>,
+                      public TinyGsmBattery<TinyGsmSaraR5> {
+  friend class TinyGsmModem<TinyGsmSaraR5>;
+  friend class TinyGsmGPRS<TinyGsmSaraR5>;
+  friend class TinyGsmTCP<TinyGsmSaraR5, TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmSSL<TinyGsmSaraR5, TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmCalling<TinyGsmSaraR5>;
+  friend class TinyGsmSMS<TinyGsmSaraR5>;
+  friend class TinyGsmGSMLocation<TinyGsmSaraR5>;
+  friend class TinyGsmGPS<TinyGsmSaraR5>;
+  friend class TinyGsmTime<TinyGsmSaraR5>;
+  friend class TinyGsmBattery<TinyGsmSaraR5>;
 
   /*
    * Inner Client
    */
  public:
-  class GsmClientSaraR4 : public GsmClient {
-    friend class TinyGsmSaraR4;
+  class GsmClientSaraR5 : public GsmClient {
+    friend class TinyGsmSaraR5;
 
    public:
-    GsmClientSaraR4() {}
+    GsmClientSaraR5() {}
 
-    explicit GsmClientSaraR4(TinyGsmSaraR4& modem, uint8_t mux = 0) {
+    explicit GsmClientSaraR5(TinyGsmSaraR5& modem, uint8_t mux = 0) {
       init(&modem, mux);
     }
 
-    bool init(TinyGsmSaraR4* modem, uint8_t mux = 0) {
+    bool init(TinyGsmSaraR5* modem, uint8_t mux = 0) {
       this->at       = modem;
       sock_available = 0;
       prev_check     = 0;
@@ -119,49 +134,16 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
 
       return sock_connected;
     }
-    virtual int connect(IPAddress ip, uint16_t port, int timeout_s) {
-      return connect(TinyGsmStringFromIp(ip).c_str(), port, timeout_s);
-    }
-    int connect(const char* host, uint16_t port) override {
-      return connect(host, port, 120);
-    }
-    int connect(IPAddress ip, uint16_t port) override {
-      return connect(ip, port, 120);
-    }
+    TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
     void stop(uint32_t maxWaitMs) {
-      uint32_t startMillis = millis();
       dumpModemBuffer(maxWaitMs);
-      // We want to use an async socket close because the syncrhonous close of
-      // an open socket is INCREDIBLY SLOW and the modem can freeze up.  But we
-      // only attempt the async close if we already KNOW the socket is open
-      // because calling the async close on a closed socket and then attempting
-      // opening a new socket causes the board to lock up for 2-3 minutes and
-      // then finally return with a "new" socket that is immediately closed.
-      // Attempting to close a socket that is already closed with a synchronous
-      // close quickly returns an error.
-      if (at->supportsAsyncSockets && sock_connected) {
-        DBG("### Closing socket asynchronously!  Socket might remain open "
-            "until arrival of +UUSOCL:",
-            mux);
-        // faster asynchronous close
-        // NOT supported on SARA-R404M / SARA-R410M-01B
-        at->sendAT(GF("+USOCL="), mux, GF(",1"));
-        // NOTE:  can take up to 120s to get a response
-        at->waitResponse((maxWaitMs - (millis() - startMillis)));
-        // We set the sock as disconnected right away because it can no longer
-        // be used
-        sock_connected = false;
-      } else {
-        // synchronous close
-        at->sendAT(GF("+USOCL="), mux);
-        // NOTE:  can take up to 120s to get a response
-        at->waitResponse((maxWaitMs - (millis() - startMillis)));
-        sock_connected = false;
-      }
+      at->sendAT(GF("+USOCL="), mux);
+      at->waitResponse();  // should return within 1s
+      sock_connected = false;
     }
     void stop() override {
-      stop(135000L);
+      stop(15000L);
     }
 
     /*
@@ -175,12 +157,12 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
    * Inner Secure Client
    */
  public:
-  class GsmClientSecureR4 : public GsmClientSaraR4 {
+  class GsmClientSecureR5 : public GsmClientSaraR5 {
    public:
-    GsmClientSecureR4() {}
+    GsmClientSecureR5() {}
 
-    explicit GsmClientSecureR4(TinyGsmSaraR4& modem, uint8_t mux = 0)
-        : GsmClientSaraR4(modem, mux) {}
+    explicit GsmClientSecureR5(TinyGsmSaraR5& modem, uint8_t mux = 0)
+        : GsmClientSaraR5(modem, mux) {}
 
    public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
@@ -197,25 +179,14 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
       at->maintain();
       return sock_connected;
     }
-    int connect(IPAddress ip, uint16_t port, int timeout_s) override {
-      return connect(TinyGsmStringFromIp(ip).c_str(), port, timeout_s);
-    }
-    int connect(const char* host, uint16_t port) override {
-      return connect(host, port, 120);
-    }
-    int connect(IPAddress ip, uint16_t port) override {
-      return connect(ip, port, 120);
-    }
+    TINY_GSM_CLIENT_CONNECT_OVERRIDES
   };
 
   /*
    * Constructor
    */
  public:
-  explicit TinyGsmSaraR4(Stream& stream)
-      : stream(stream),
-        has2GFallback(false),
-        supportsAsyncSockets(false) {
+  explicit TinyGsmSaraR5(Stream& stream) : stream(stream) {
     memset(sockets, 0, sizeof(sockets));
   }
 
@@ -225,7 +196,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
  protected:
   bool initImpl(const char* pin = nullptr) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
-    DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientSaraR4"));
+    DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientSaraR5"));
 
     if (!testAT()) { return false; }
 
@@ -239,23 +210,13 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
 #endif
     waitResponse();
 
-    String modemName = getModemName();
-    DBG(GF("### Modem:"), modemName);
-    if (modemName.startsWith("u-blox SARA-R412")) {
-      has2GFallback = true;
-    } else {
-      has2GFallback = false;
-    }
-    if (modemName.startsWith("u-blox SARA-R404M") ||
-        modemName.startsWith("u-blox SARA-R410M-01B")) {
-      supportsAsyncSockets = false;
-    } else {
-      supportsAsyncSockets = true;
-    }
+    DBG(GF("### Modem:"), getModemName());
 
     // Enable automatic time zome update
     sendAT(GF("+CTZU=1"));
-    if (waitResponse(10000L) != 1) { return false; }
+    waitResponse(10000L);
+    // Ignore the response, in case the network doesn't support it.
+    // if (waitResponse(10000L) != 1) { return false; }
 
     SimStatus ret = getSimStatus();
     // if the sim isn't ready and a pin has been provided, try to unlock the sim
@@ -274,27 +235,28 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
     String manufacturer = getModemManufacturer();
     String model        = getModemModel();
     String name         = manufacturer + String(" ") + model;
-    DBG("### Modem:", name);
-    if (!name.startsWith("u-blox SARA-R4") &&
-        !name.startsWith("u-blox SARA-N4")) {
+    if (name.startsWith("u-blox SARA-R4") ||
+        name.startsWith("u-blox SARA-N4")) {
       DBG("### WARNING:  You are using the wrong TinyGSM modem!");
+    } else if (name.startsWith("u-blox SARA-N2")) {
+      DBG("### SARA N2 NB-IoT modems not supported!");
     }
     return name;
   }
 
   bool factoryDefaultImpl() {
-    sendAT(GF("&F"));  // Resets the current profile, other NVM not affected
-    return waitResponse() == 1;
+    sendAT(GF("+UFACTORY=0,1"));  // No factory restore, erase NVM
+    waitResponse();
+    return setPhoneFunctionality(16);  // Reset
   }
 
   /*
    * Power functions
    */
  protected:
-  // using +CFUN=15 instead of the more common CFUN=1,1
   bool restartImpl(const char* pin = nullptr) {
     if (!testAT()) { return false; }
-    if (!setPhoneFunctionality(15)) { return false; }
+    if (!setPhoneFunctionality(16)) { return false; }
     delay(3000);  // TODO(?):  Verify delay timing here
     return init(pin);
   }
@@ -315,48 +277,67 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
    * Generic network functions
    */
  public:
-  SaraR4RegStatus getRegistrationStatus() {
+  SaraR5RegStatus getRegistrationStatus() {
     // Check first for EPS registration
-    SaraR4RegStatus epsStatus =
-        (SaraR4RegStatus)getRegistrationStatusXREG("CEREG");
+    SaraR5RegStatus epsStatus =
+        (SaraR5RegStatus)getRegistrationStatusXREG("CEREG");
 
     // If we're connected on EPS, great!
     if (epsStatus == REG_OK_HOME || epsStatus == REG_OK_ROAMING) {
       return epsStatus;
     } else {
       // Otherwise, check generic network status
-      return (SaraR4RegStatus)getRegistrationStatusXREG("CREG");
+      return (SaraR5RegStatus)getRegistrationStatusXREG("CREG");
     }
+  }
+
+  bool setRadioAccessTechnology(int selected, int preferred) {
+    // selected:
+    // 0: GSM / GPRS / eGPRS (single mode)
+    // 1: GSM / UMTS (dual mode)
+    // 2: UMTS (single mode)
+    // 3: LTE (single mode)
+    // 4: GSM / UMTS / LTE (tri mode)
+    // 5: GSM / LTE (dual mode)
+    // 6: UMTS / LTE (dual mode)
+    // preferred:
+    // 0: GSM / GPRS / eGPRS
+    // 2: UTRAN
+    // 3: LTE
+    sendAT(GF("+URAT="), selected, GF(","), preferred);
+    if (waitResponse() != 1) { return false; }
+    return true;
+  }
+
+  bool getCurrentRadioAccessTechnology() {
+    sendAT(GF("+URAT?"));
+    String response;
+    if (waitResponse(10000L, response) != 1) { return false; }
+
+    return true;
   }
 
  protected:
   bool isNetworkConnectedImpl() {
-    SaraR4RegStatus s = getRegistrationStatus();
-    return (s == REG_OK_HOME || s == REG_OK_ROAMING);
+    SaraR5RegStatus s = getRegistrationStatus();
+    if (s == REG_OK_HOME || s == REG_OK_ROAMING || s == REG_SMS_ONLY_ROAMING ||
+        s == REG_SMS_ONLY_HOME)
+      return true;
+    else if (s == REG_UNKNOWN)  // for some reason, it can hang at unknown..
+      return isGprsConnected();
+    else
+      return false;
   }
 
- public:
-  bool setURAT(uint8_t urat) {
-    // AT+URAT=<SelectedAcT>[,<PreferredAct>[,<2ndPreferredAct>]]
-
-    sendAT(GF("+COPS=2"));  // Deregister from network
-    if (waitResponse() != 1) { return false; }
-    sendAT(GF("+URAT="), urat);  // Radio Access Technology (RAT) selection
-    if (waitResponse() != 1) { return false; }
-    sendAT(GF("+COPS=0"));  // Auto-register to the network
-    if (waitResponse() != 1) { return false; }
-    return restart();
+  String getLocalIPImpl() {
+    sendAT(GF("+UPSND=0,0"));
+    if (waitResponse(GF(AT_NL "+UPSND:")) != 1) { return ""; }
+    streamSkipUntil(',');   // Skip PSD profile
+    streamSkipUntil('\"');  // Skip request type
+    String res = stream.readStringUntil('\"');
+    if (waitResponse() != 1) { return ""; }
+    return res;
   }
-
-  /*
-   * Secure socket layer (SSL) functions
-   */
-  // Follows functions as inherited from TinyGsmSSL.tpp
-
-  /*
-   * WiFi functions
-   */
-  // No functions of this type supported
 
   /*
    * GPRS functions
@@ -364,44 +345,93 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
  protected:
   bool gprsConnectImpl(const char* apn, const char* user = nullptr,
                        const char* pwd = nullptr) {
-    // gprsDisconnect();
-
     sendAT(GF("+CGATT=1"));  // attach to GPRS
     if (waitResponse(360000L) != 1) { return false; }
 
-    // Using CGDCONT sets up an "external" PCP context, i.e. a data connection
-    // using the external IP stack (e.g. Windows dial up) and PPP link over the
-    // serial interface.  This is the only command set supported by the LTE-M
-    // and LTE NB-IoT modules (SARA-R4xx, SARA-N4xx)
+    // Setting up the PSD profile/PDP context with the UPSD commands sets up an
+    // "internal" PDP context, i.e. a data connection using the internal IP
+    // stack and related AT commands for sockets.
 
-    // Set the authentication
-    if (user && strlen(user) > 0) {
-      sendAT(GF("+CGAUTH=1,0,\""), user, GF("\",\""), pwd, '"');
-      waitResponse();
+    // Packet switched data configuration
+    // AT+UPSD=<profile_id>,<param_tag>,<param_val>
+    // profile_id = 0 - PSD profile identifier, in range 0-6 (NOT PDP context)
+    // param_tag = 1: APN
+    // param_tag = 2: username  -> not working for SARA-R5
+    // param_tag = 3: password  -> not working for SARA-R5
+    // param_tag = 7: IP address Note: IP address set as "0.0.0.0" means
+    //    dynamic IP address assigned during PDP context activation
+
+
+    // check all available PDP context identifiers
+    String response;
+    response.reserve(1024);
+    sendAT(GF("+CGDCONT?"));
+
+    waitResponseUntilEndStream(1000, response);
+
+    if (response.length() == 0) {
+      return false;  // no apn at all found
+    }
+    // parse string & look for apn -> modified from SparkFun u-blox SARA-R5 lib
+    // Example:
+    // +CGDCONT: 0,"IP","payandgo.o2.co.uk","0.0.0.0",0,0,0,0,0,0,0,0,0,0
+    // +CGDCONT:
+    // 1,"IP","payandgo.o2.co.uk.mnc010.mcc234.gprs","10.160.182.234",0,0,0,2,0,0,0,0,0,0
+
+    // create search buffer where we can search
+    char* searchBuf = (char*)malloc(response.length() + 1);
+    response.toCharArray(searchBuf, response.length() + 1);
+
+    int   rcid      = -1;
+    char* searchPtr = searchBuf;
+
+    for (size_t index = 0; index <= response.length(); index++) {
+      int scanned = 0;
+      // Find the first/next occurrence of +CGDCONT:
+      searchPtr = strstr(searchPtr, "+CGDCONT:");
+      if (searchPtr != nullptr) {
+        char strPdpType[10];
+        char strApn[128];
+        int  ipOct[4];
+
+        searchPtr += strlen("+CGDCONT:");
+        while (*searchPtr == ' ') searchPtr++;  // skip spaces
+        scanned = sscanf(searchPtr, "%d,\"%[^\"]\",\"%[^\"]\",\"%d.%d.%d.%d",
+                         &rcid, strPdpType, strApn, &ipOct[0], &ipOct[1],
+                         &ipOct[2], &ipOct[3]);
+
+        if (!strcmp(strApn, apn)) {
+          // found the configuration that we want to connect to
+          break;
+        }
+      }
     }
 
-    sendAT(GF("+CGDCONT=1,\"IP\",\""), apn, '"');  // Define PDP context 1
+    free(searchBuf);
+
+    sendAT(GF(
+        "+UPSDA=0,4"));  // Deactivate the PDP context associated with profile 0
+    waitResponse(360000L);  // Can return an error if previously not activated
+
+    sendAT(GF("+UPSD=0,100,"),
+           rcid);  // Deactivate the PDP context associated with profile 0
     waitResponse();
 
-    sendAT(GF("+CGACT=1,1"));  // activate PDP profile/context 1
-    if (waitResponse(150000L) != 1) { return false; }
+    sendAT(GF(
+        "+UPSDA=0,3"));  // Activate the PDP context associated with profile 0
+    if (waitResponse(360000L) != 1) { return false; }
+
+    sendAT(GF("+UPSD=0,0,2"));  // Set protocol type to IPv4v6 with IPv4
+                                // preferred for internal sockets
+    waitResponse();
 
     return true;
   }
 
   bool gprsDisconnectImpl() {
-    // Mark all the sockets as closed
-    // This ensures that asynchronously closed sockets are marked closed
-    for (int mux = 0; mux < TINY_GSM_MUX_COUNT; mux++) {
-      GsmClientSaraR4* sock = sockets[mux];
-      if (sock && sock->sock_connected) { sock->sock_connected = false; }
-    }
-
-    // sendAT(GF("+CGACT=0,1"));  // Deactivate PDP context 1
-    sendAT(GF("+CGACT=0"));  // Deactivate all contexts
-    if (waitResponse(40000L) != 1) {
-      // return false;
-    }
+    sendAT(GF(
+        "+UPSDA=0,4"));  // Deactivate the PDP context associated with profile 0
+    if (waitResponse(360000L) != 1) { return false; }
 
     sendAT(GF("+CGATT=0"));  // detach from GPRS
     if (waitResponse(360000L) != 1) { return false; }
@@ -426,20 +456,12 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
   /*
    * Phone Call functions
    */
-  // No functions of this type supported
-
-  /*
-   * Audio functions
-   */
-  // No functions of this type supported
+  // Follows all phone call functions as inherited from TinyGsmCalling.tpp
 
   /*
    * Text messaging (SMS) functions
    */
- protected:
-  String sendUSSDImpl(const String& code) TINY_GSM_ATTR_NOT_IMPLEMENTED;
-  bool   sendSMS_UTF16Impl(const String& number, const void* text,
-                           size_t len) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  // Follows all text messaging (SMS) functions as inherited from TinyGsmSMS.tpp
 
   /*
    * GSM/GPS/GNSS/GLONASS Location functions
@@ -450,20 +472,6 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
    * I2C port, the GSM-based "Cell Locate" location will be returned instead.
    */
  protected:
-  bool enableGPSImpl() {
-    // AT+UGPS=<mode>[,<aid_mode>[,<GNSS_systems>]]
-    // <mode> - 0: GNSS receiver powered off, 1: on
-    // <aid_mode> - 0: no aiding (default)
-    // <GNSS_systems> - 3: GPS + SBAS (default)
-    sendAT(GF("+UGPS=1,0,3"));
-    if (waitResponse(10000L, GF(AT_NL "+UGPS:")) != 1) { return false; }
-    return waitResponse(10000L) == 1;
-  }
-  bool disableGPSImpl() {
-    sendAT(GF("+UGPS=0"));
-    if (waitResponse(10000L, GF(AT_NL "+UGPS:")) != 1) { return false; }
-    return waitResponse(10000L) == 1;
-  }
   String inline getUbloxLocationRaw(int8_t sensor) {
     // AT+ULOC=<mode>,<sensor>,<response_type>,<timeout>,<accuracy>
     // <mode> - 2: single shot position
@@ -479,6 +487,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
     // <accuracy> - Target accuracy in meters (1 - 999999)
     sendAT(GF("+ULOC=2,"), sensor, GF(",0,120,1"));
     // wait for first "OK"
+    // waitResponse(10000L) ;
     if (waitResponse(10000L) != 1) { return ""; }
     // wait for the final result - wait full timeout time
     if (waitResponse(120000L, GF(AT_NL "+UULOC:")) != 1) { return ""; }
@@ -487,6 +496,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
     res.trim();
     return res;
   }
+
   String getGsmLocationRawImpl() {
     return getUbloxLocationRaw(2);
   }
@@ -509,10 +519,13 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
     //          - 3: ?? use the combined GNSS receiver and CellLocate service
     //          information ?? - Docs show using sensor 3 and it's documented
     //          for the +UTIME command but not for +ULOC
-    // <response_type> - 0: standard (single-hypothesis) response
+    // <response_type> - 0: standard (single-hypothesis) response  -> +UULOC:
+    // <date>,<time>,<lat>,<long>,<alt>,<uncertainty>
+    //                   1: detailed (single-hypothesis) response  -> +UULOC:
+    //                   <date>,<time>,<lat>,<long>,<alt>,<uncertainty>,<speed>,<direction>,<vertical_acc>,<sensor_used>,<SV_used>,<antenna_status>,<jamming_status>
     // <timeout> - Timeout period in seconds
     // <accuracy> - Target accuracy in meters (1 - 999999)
-    sendAT(GF("+ULOC=2,"), sensor, GF(",0,120,1"));
+    sendAT(GF("+ULOC=2,"), sensor, GF(",1,120,1"));
     // wait for first "OK"
     if (waitResponse(10000L) != 1) { return false; }
     // wait for the final result - wait full timeout time
@@ -605,26 +618,6 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
   // Follows all clock functions as inherited from TinyGsmTime.tpp
 
   /*
-   * NTP server functions
-   */
-  // No functions of this type supported
-
-  /*
-   * BLE functions
-   */
-  // No functions of this type supported
-
-  /*
-   * NTP server functions
-   */
-  // No functions of this type supported
-
-  /*
-   * BLE functions
-   */
-  // No functions of this type supported
-
-  /*
    * Battery functions
    */
  protected:
@@ -654,20 +647,10 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
   /*
    * Temperature functions
    */
- protected:
-  float getTemperatureImpl() {
-    // First make sure the temperature is set to be in celsius
-    sendAT(GF("+UTEMP=0"));  // Would use 1 for Fahrenheit
-    if (waitResponse() != 1) { return static_cast<float>(-9999); }
-    sendAT(GF("+UTEMP?"));
-    if (waitResponse(GF(AT_NL "+UTEMP:")) != 1) {
-      return static_cast<float>(-9999);
-    }
-    int16_t res  = streamGetIntBefore('\n');
-    float   temp = -9999;
-    if (res != -1) { temp = (static_cast<float>(res)) / 10; }
-    return temp;
-  }
+
+  // This would only available for a small number of modules in this group
+  // (TOBY-L)
+  float getTemperatureImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
   /*
    * Client related functions
@@ -703,34 +686,9 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
     // waitResponse();
 
     // connect on the allocated socket
-
-    // Use an asynchronous open to reduce the number of terminal freeze-ups
-    // This is still blocking until the URC arrives
-    // The SARA-R410M-02B with firmware revisions prior to L0.0.00.00.05.08
-    // has a nasty habit of locking up when opening a socket, especially if
-    // the cellular service is poor.
-    // NOT supported on SARA-R404M / SARA-R410M-01B
-    if (supportsAsyncSockets) {
-      DBG("### Opening socket asynchronously!  Socket cannot be used until "
-          "the URC '+UUSOCO' appears.");
-      sendAT(GF("+USOCO="), *mux, ",\"", host, "\",", port, ",1");
-      if (waitResponse(timeout_ms - (millis() - startMillis),
-                       GF(AT_NL "+UUSOCO:")) == 1) {
-        streamGetIntBefore(',');  // skip repeated mux
-        int8_t connection_status = streamGetIntBefore('\n');
-        DBG("### Waited", millis() - startMillis, "ms for socket to open");
-        return (0 == connection_status);
-      } else {
-        DBG("### Waited", millis() - startMillis,
-            "but never got socket open notice");
-        return false;
-      }
-    } else {
-      // use synchronous open
-      sendAT(GF("+USOCO="), *mux, ",\"", host, "\",", port);
-      int8_t rsp = waitResponse(timeout_ms - (millis() - startMillis));
-      return (1 == rsp);
-    }
+    sendAT(GF("+USOCO="), *mux, ",\"", host, "\",", port);
+    int8_t rsp = waitResponse(timeout_ms - (millis() - startMillis));
+    return (1 == rsp);
   }
 
   int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
@@ -821,7 +779,7 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
         if (len >= 0 && len <= 1024) { sockets[mux]->sock_available = len; }
       }
       data = "";
-      DBG("### URC Data Received:", len, "on", mux);
+      // DBG("### URC Data Received:", len, "on", mux);
       return true;
     } else if (data.endsWith(GF("+UUSOCL:"))) {
       int8_t mux = streamGetIntBefore('\n');
@@ -831,27 +789,35 @@ class TinyGsmSaraR4 : public TinyGsmModem<TinyGsmSaraR4>,
       data = "";
       DBG("### URC Sock Closed: ", mux);
       return true;
-    } else if (data.endsWith(GF("+UUSOCO:"))) {
-      int8_t mux          = streamGetIntBefore('\n');
-      int8_t socket_error = streamGetIntBefore('\n');
-      if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux] &&
-          socket_error == 0) {
-        sockets[mux]->sock_connected = true;
-      }
-      data = "";
-      DBG("### URC Sock Opened: ", mux);
-      return true;
     }
     return false;
+  }
+
+ private:  // basically the same as waitResponse but without preemptive exiting
+           // (except when time runs out) this is used for +CGDCONT? as it can
+           // return multiple cid/apn configurations each terminated with OK\r\n
+  int8_t waitResponseUntilEndStream(uint32_t timeout_ms, String& data) {
+    data.reserve(1024);  // buffer of the same size as in the SparkFun lib
+    uint8_t  index       = 0;
+    uint32_t startMillis = millis();
+    do {
+      TINY_GSM_YIELD();
+      while (stream.available() > 0) {
+        TINY_GSM_YIELD();
+        int8_t a = stream.read();
+
+        if (a <= 0) continue;  // Skip 0x00 bytes, just in case
+        data += static_cast<char>(a);
+      }
+    } while (millis() - startMillis < timeout_ms);
+    return index;
   }
 
  public:
   Stream& stream;
 
  protected:
-  GsmClientSaraR4* sockets[TINY_GSM_MUX_COUNT];
-  bool             has2GFallback;
-  bool             supportsAsyncSockets;
+  GsmClientSaraR5* sockets[TINY_GSM_MUX_COUNT];
 };
 
-#endif  // SRC_TINYGSMCLIENTSARAR4_H_
+#endif  // SRC_TINYGSMCLIENTSARAR5_H_

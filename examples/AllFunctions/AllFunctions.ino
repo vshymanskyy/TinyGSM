@@ -19,9 +19,12 @@
 // #define TINY_GSM_MODEM_SIM7080
 // #define TINY_GSM_MODEM_SIM5360
 // #define TINY_GSM_MODEM_SIM7600
+// #define TINY_GSM_MODEM_A7672X
 // #define TINY_GSM_MODEM_UBLOX
 // #define TINY_GSM_MODEM_SARAR4
+// #define TINY_GSM_MODEM_SARAR5
 // #define TINY_GSM_MODEM_M95
+// #define TINY_GSM_MODEM_BG95
 // #define TINY_GSM_MODEM_BG96
 // #define TINY_GSM_MODEM_A6
 // #define TINY_GSM_MODEM_A7
@@ -29,6 +32,7 @@
 // #define TINY_GSM_MODEM_MC60
 // #define TINY_GSM_MODEM_MC60E
 // #define TINY_GSM_MODEM_ESP8266
+// #define TINY_GSM_MODEM_ESP32
 // #define TINY_GSM_MODEM_XBEE
 // #define TINY_GSM_MODEM_SEQUANS_MONARCH
 
@@ -69,17 +73,17 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 #define TINY_GSM_TEST_WIFI false
 #define TINY_GSM_TEST_TCP true
 #define TINY_GSM_TEST_SSL true
-#define TINY_GSM_TEST_CALL false
-#define TINY_GSM_TEST_SMS false
-#define TINY_GSM_TEST_USSD false
+#define TINY_GSM_TEST_CALL true
+#define TINY_GSM_TEST_SMS true
+#define TINY_GSM_TEST_USSD true
 #define TINY_GSM_TEST_BATTERY true
 #define TINY_GSM_TEST_TEMPERATURE true
-#define TINY_GSM_TEST_GSM_LOCATION false
-#define TINY_GSM_TEST_NTP false
-#define TINY_GSM_TEST_TIME false
-#define TINY_GSM_TEST_GPS false
+#define TINY_GSM_TEST_GSM_LOCATION true
+#define TINY_GSM_TEST_GPS true
+#define TINY_GSM_TEST_NTP true
+#define TINY_GSM_TEST_TIME true
 // disconnect and power down modem after tests
-#define TINY_GSM_POWERDOWN false
+#define TINY_GSM_POWERDOWN true
 
 // set GSM PIN, if any
 #define GSM_PIN ""
@@ -135,7 +139,7 @@ void setup() {
   // !!!!!!!!!!!
 
   DBG("Wait...");
-  delay(6000);
+  delay(6000L);
 
   // Set GSM module baud rate
   TinyGsmAutoBaud(SerialAT, GSM_AUTOBAUD_MIN, GSM_AUTOBAUD_MAX);
@@ -154,18 +158,32 @@ void loop() {
     return;
   }
 
+  String modemInfo = modem.getModemInfo();
+  DBG("Modem Info:", modemInfo);
+
   String name = modem.getModemName();
   DBG("Modem Name:", name);
 
-  String modemInfo = modem.getModemInfo();
-  DBG("Modem Info:", modemInfo);
+  String manufacturer = modem.getModemManufacturer();
+  DBG("Modem Manufacturer:", manufacturer);
+
+  String hw_ver = modem.getModemModel();
+  DBG("Modem Hardware Version:", hw_ver);
+
+  String fv_ver = modem.getModemRevision();
+  DBG("Modem Firware Version:", fv_ver);
+
+#if not defined(TINY_GSM_MODEM_ESP8266) && not defined(TINY_GSM_MODEM_ESP32)
+  String mod_sn = modem.getModemSerialNumber();
+  DBG("Modem Serial Number (may be SIM CCID):", mod_sn);
+#endif
 
 #if TINY_GSM_TEST_GPRS
   // Unlock your SIM card with a PIN if needed
   if (GSM_PIN && modem.getSimStatus() != 3) { modem.simUnlock(GSM_PIN); }
 #endif
 
-#if TINY_GSM_TEST_WIFI
+#if TINY_GSM_TEST_WIFI && defined(TINY_GSM_MODEM_HAS_WIFI)
   DBG("Setting SSID/password...");
   if (!modem.networkConnect(wifiSSID, wifiPass)) {
     DBG(" fail");
@@ -175,7 +193,7 @@ void loop() {
   SerialMon.println(" success");
 #endif
 
-#if TINY_GSM_TEST_GPRS && defined TINY_GSM_MODEM_XBEE
+#if TINY_GSM_TEST_GPRS && defined(TINY_GSM_MODEM_XBEE)
   // The XBee must run the gprsConnect function BEFORE waiting for network!
   modem.gprsConnect(apn, gprsUser, gprsPass);
 #endif
@@ -209,6 +227,9 @@ void loop() {
 
   String cop = modem.getOperator();
   DBG("Operator:", cop);
+
+  // String prov = modem.getProvider();
+  // DBG("Provider:", prov);
 
   IPAddress local = modem.localIP();
   DBG("Local IP:", local);
@@ -265,6 +286,7 @@ void loop() {
 #endif
 
 #if TINY_GSM_TEST_SSL && defined TINY_GSM_MODEM_HAS_SSL
+  // TODO: Add test of adding certificcate
   TinyGsmClientSecure secureClient(modem, 1);
   const int           securePort = 443;
   DBG("Connecting securely to", server);
@@ -303,8 +325,8 @@ void loop() {
   }
 #endif
 
-#if TINY_GSM_TEST_CALL && defined TINY_GSM_MODEM_HAS_CALLING && \
-    defined                       CALL_TARGET
+#if TINY_GSM_TEST_CALL && defined(TINY_GSM_MODEM_HAS_CALLING) && \
+    defined(CALL_TARGET)
   DBG("Calling:", CALL_TARGET);
 
   // This is NOT supported on M590
@@ -327,6 +349,7 @@ void loop() {
   }
 #endif
 
+// Test the SMS functions
 #if TINY_GSM_TEST_SMS && defined TINY_GSM_MODEM_HAS_SMS && defined SMS_TARGET
   res = modem.sendSMS(SMS_TARGET, String("Hello from ") + imei);
   DBG("SMS:", res ? "OK" : "fail");
@@ -343,24 +366,27 @@ void loop() {
 
 #endif
 
+// Test the GSM location functions
 #if TINY_GSM_TEST_GSM_LOCATION && defined TINY_GSM_MODEM_HAS_GSM_LOCATION
-  float lat      = 0;
-  float lon      = 0;
-  float accuracy = 0;
-  int   year     = 0;
-  int   month    = 0;
-  int   day      = 0;
-  int   hour     = 0;
-  int   min      = 0;
-  int   sec      = 0;
+  float gsm_latitude  = 0;
+  float gsm_longitude = 0;
+  float gsm_accuracy  = 0;
+  int   gsm_year      = 0;
+  int   gsm_month     = 0;
+  int   gsm_day       = 0;
+  int   gsm_hour      = 0;
+  int   gsm_minute    = 0;
+  int   gsm_second    = 0;
   for (int8_t i = 15; i; i--) {
     DBG("Requesting current GSM location");
-    if (modem.getGsmLocation(&lat, &lon, &accuracy, &year, &month, &day, &hour,
-                             &min, &sec)) {
-      DBG("Latitude:", String(lat, 8), "\tLongitude:", String(lon, 8));
-      DBG("Accuracy:", accuracy);
-      DBG("Year:", year, "\tMonth:", month, "\tDay:", day);
-      DBG("Hour:", hour, "\tMinute:", min, "\tSecond:", sec);
+    if (modem.getGsmLocation(&gsm_latitude, &gsm_longitude, &gsm_accuracy,
+                             &gsm_year, &gsm_month, &gsm_day, &gsm_hour,
+                             &gsm_minute, &gsm_second)) {
+      DBG("Latitude:", String(gsm_latitude, 8),
+          "\tLongitude:", String(gsm_longitude, 8));
+      DBG("Accuracy:", gsm_accuracy);
+      DBG("Year:", gsm_year, "\tMonth:", gsm_month, "\tDay:", gsm_day);
+      DBG("Hour:", gsm_hour, "\tMinute:", gsm_minute, "\tSecond:", gsm_second);
       break;
     } else {
       DBG("Couldn't get GSM location, retrying in 15s.");
@@ -372,33 +398,38 @@ void loop() {
   DBG("GSM Based Location String:", location);
 #endif
 
+// Test the GPS functions
 #if TINY_GSM_TEST_GPS && defined TINY_GSM_MODEM_HAS_GPS
   DBG("Enabling GPS/GNSS/GLONASS and waiting 15s for warm-up");
+#if !defined(TINY_GSM_MODEM_SARAR5)  // not needed for this module
   modem.enableGPS();
+#endif
   delay(15000L);
-  float lat2      = 0;
-  float lon2      = 0;
-  float speed2    = 0;
-  float alt2      = 0;
-  int   vsat2     = 0;
-  int   usat2     = 0;
-  float accuracy2 = 0;
-  int   year2     = 0;
-  int   month2    = 0;
-  int   day2      = 0;
-  int   hour2     = 0;
-  int   min2      = 0;
-  int   sec2      = 0;
+  float gps_latitude  = 0;
+  float gps_longitude = 0;
+  float gps_speed     = 0;
+  float gps_altitude  = 0;
+  int   gps_vsat      = 0;
+  int   gps_usat      = 0;
+  float gps_accuracy  = 0;
+  int   gps_year      = 0;
+  int   gps_month     = 0;
+  int   gps_day       = 0;
+  int   gps_hour      = 0;
+  int   gps_minute    = 0;
+  int   gps_second    = 0;
   for (int8_t i = 15; i; i--) {
     DBG("Requesting current GPS/GNSS/GLONASS location");
-    if (modem.getGPS(&lat2, &lon2, &speed2, &alt2, &vsat2, &usat2, &accuracy2,
-                     &year2, &month2, &day2, &hour2, &min2, &sec2)) {
-      DBG("Latitude:", String(lat2, 8), "\tLongitude:", String(lon2, 8));
-      DBG("Speed:", speed2, "\tAltitude:", alt2);
-      DBG("Visible Satellites:", vsat2, "\tUsed Satellites:", usat2);
-      DBG("Accuracy:", accuracy2);
-      DBG("Year:", year2, "\tMonth:", month2, "\tDay:", day2);
-      DBG("Hour:", hour2, "\tMinute:", min2, "\tSecond:", sec2);
+    if (modem.getGPS(&gps_latitude, &gps_longitude, &gps_speed, &gps_altitude,
+                     &gps_vsat, &gps_usat, &gps_accuracy, &gps_year, &gps_month,
+                     &gps_day, &gps_hour, &gps_minute, &gps_second)) {
+      DBG("Latitude:", String(gps_latitude, 8),
+          "\tLongitude:", String(gps_longitude, 8));
+      DBG("Speed:", gps_speed, "\tAltitude:", gps_altitude);
+      DBG("Visible Satellites:", gps_vsat, "\tUsed Satellites:", gps_usat);
+      DBG("Accuracy:", gps_accuracy);
+      DBG("Year:", gps_year, "\tMonth:", gps_month, "\tDay:", gps_day);
+      DBG("Hour:", gps_hour, "\tMinute:", gps_minute, "\tSecond:", gps_second);
       break;
     } else {
       DBG("Couldn't get GPS/GNSS/GLONASS location, retrying in 15s.");
@@ -407,31 +438,34 @@ void loop() {
   }
   DBG("Retrieving GPS/GNSS/GLONASS location again as a string");
   String gps_raw = modem.getGPSraw();
+#if !defined(TINY_GSM_MODEM_SARAR5)  // not available for this module
   DBG("GPS/GNSS Based Location String:", gps_raw);
   DBG("Disabling GPS");
   modem.disableGPS();
 #endif
+#endif
 
+// Test the Network time functions
 #if TINY_GSM_TEST_NTP && defined TINY_GSM_MODEM_HAS_NTP
   DBG("Asking modem to sync with NTP");
-  modem.NTPServerSync("132.163.96.5", 20);
+  modem.NTPServerSync("pool.ntp.org", 20);
 #endif
 
 #if TINY_GSM_TEST_TIME && defined TINY_GSM_MODEM_HAS_TIME
-  int   year3    = 0;
-  int   month3   = 0;
-  int   day3     = 0;
-  int   hour3    = 0;
-  int   min3     = 0;
-  int   sec3     = 0;
-  float timezone = 0;
+  int   ntp_year     = 0;
+  int   ntp_month    = 0;
+  int   ntp_day      = 0;
+  int   ntp_hour     = 0;
+  int   ntp_min      = 0;
+  int   ntp_sec      = 0;
+  float ntp_timezone = 0;
   for (int8_t i = 5; i; i--) {
     DBG("Requesting current network time");
-    if (modem.getNetworkTime(&year3, &month3, &day3, &hour3, &min3, &sec3,
-                             &timezone)) {
-      DBG("Year:", year3, "\tMonth:", month3, "\tDay:", day3);
-      DBG("Hour:", hour3, "\tMinute:", min3, "\tSecond:", sec3);
-      DBG("Timezone:", timezone);
+    if (modem.getNetworkTime(&ntp_year, &ntp_month, &ntp_day, &ntp_hour,
+                             &ntp_min, &ntp_sec, &ntp_timezone)) {
+      DBG("Year:", ntp_year, "\tMonth:", ntp_month, "\tDay:", ntp_day);
+      DBG("Hour:", ntp_hour, "\tMinute:", ntp_min, "\tSecond:", ntp_sec);
+      DBG("Timezone:", ntp_timezone);
       break;
     } else {
       DBG("Couldn't get network time, retrying in 15s.");
@@ -443,16 +477,18 @@ void loop() {
   DBG("Current Network Time:", time);
 #endif
 
+// Test Battery functions
 #if TINY_GSM_TEST_BATTERY && defined TINY_GSM_MODEM_HAS_BATTERY
-  uint8_t  chargeState = -99;
-  int8_t   percent     = -99;
-  uint16_t milliVolts  = -9999;
-  modem.getBattStats(chargeState, percent, milliVolts);
+  int8_t  chargeState   = -99;
+  int8_t  chargePercent = -99;
+  int16_t milliVolts    = -9999;
+  modem.getBattStats(chargeState, chargePercent, milliVolts);
   DBG("Battery charge state:", chargeState);
-  DBG("Battery charge 'percent':", percent);
+  DBG("Battery charge 'percent':", chargePercent);
   DBG("Battery voltage:", milliVolts / 1000.0F);
 #endif
 
+// Test temperature functions
 #if TINY_GSM_TEST_TEMPERATURE && defined TINY_GSM_MODEM_HAS_TEMPERATURE
   float temp = modem.getTemperature();
   DBG("Chip temperature:", temp);

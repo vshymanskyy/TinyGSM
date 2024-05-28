@@ -15,9 +15,20 @@
 
 template <class modemType>
 class TinyGsmTemperature {
+  /* =========================================== */
+  /* =========================================== */
+  /*
+   * Define the interface
+   */
  public:
   /*
    * Temperature functions
+   */
+
+  /**
+   * @brief Get the modem chip temperature in degrees celsius.
+   *
+   * @return *float* The modem chip temperature in degrees celsius.
    */
   float getTemperature() {
     return thisModem().getTemperatureImpl();
@@ -33,6 +44,17 @@ class TinyGsmTemperature {
   inline modemType& thisModem() {
     return static_cast<modemType&>(*this);
   }
+  ~TinyGsmTemperature() {}
+
+  /* =========================================== */
+  /* =========================================== */
+  /*
+   * Define the default function implementations
+   */
+
+  /*
+   * Temperature functions
+   */
 
   float getTemperatureImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 };

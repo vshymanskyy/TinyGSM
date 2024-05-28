@@ -68,15 +68,23 @@ typedef TinyGsmSaraR4                    TinyGsm;
 typedef TinyGsmSaraR4::GsmClientSaraR4   TinyGsmClient;
 typedef TinyGsmSaraR4::GsmClientSecureR4 TinyGsmClientSecure;
 
+#elif defined(TINY_GSM_MODEM_SARAR5)
+#include "TinyGsmClientSaraR5.h"
+typedef TinyGsmSaraR5                    TinyGsm;
+typedef TinyGsmSaraR5::GsmClientSaraR5   TinyGsmClient;
+typedef TinyGsmSaraR5::GsmClientSecureR5 TinyGsmClientSecure;
+
 #elif defined(TINY_GSM_MODEM_M95)
 #include "TinyGsmClientM95.h"
 typedef TinyGsmM95               TinyGsm;
 typedef TinyGsmM95::GsmClientM95 TinyGsmClient;
 
-#elif defined(TINY_GSM_MODEM_BG96)
+#elif defined(TINY_GSM_MODEM_BG96) || defined(TINY_GSM_MODEM_BG95) || \
+    defined(TINY_GSM_MODEM_BG95SSL)
 #include "TinyGsmClientBG96.h"
-typedef TinyGsmBG96                TinyGsm;
-typedef TinyGsmBG96::GsmClientBG96 TinyGsmClient;
+typedef TinyGsmBG96                      TinyGsm;
+typedef TinyGsmBG96::GsmClientBG96       TinyGsmClient;
+typedef TinyGsmBG96::GsmClientSecureBG96 TinyGsmClientSecure;
 
 #elif defined(TINY_GSM_MODEM_A6) || defined(TINY_GSM_MODEM_A7)
 #include "TinyGsmClientA6.h"
@@ -93,7 +101,7 @@ typedef TinyGsmM590::GsmClientM590 TinyGsmClient;
 typedef TinyGsmMC60                TinyGsm;
 typedef TinyGsmMC60::GsmClientMC60 TinyGsmClient;
 
-#elif defined(TINY_GSM_MODEM_ESP8266)
+#elif defined(TINY_GSM_MODEM_ESP8266) || defined(TINY_GSM_MODEM_ESP32)
 #define TINY_GSM_MODEM_HAS_WIFI
 #include "TinyGsmClientESP8266.h"
 typedef TinyGsmESP8266                         TinyGsm;
@@ -113,6 +121,12 @@ typedef TinyGsmSequansMonarch                          TinyGsm;
 typedef TinyGsmSequansMonarch::GsmClientSequansMonarch TinyGsmClient;
 typedef TinyGsmSequansMonarch::GsmClientSecureSequansMonarch
     TinyGsmClientSecure;
+
+#elif defined(TINY_GSM_MODEM_A7672X)
+#include "TinyGsmClientA7672x.h"
+typedef TinyGsmA7672X                        TinyGsm;
+typedef TinyGsmA7672X::GsmClientA7672X       TinyGsmClient;
+typedef TinyGsmA7672X::GsmClientSecureA7672X TinyGsmClientSecure;
 
 #else
 #error "Please define GSM modem model"

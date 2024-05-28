@@ -11,25 +11,36 @@
 
 // #define TINY_GSM_DEBUG Serial
 // #define TINY_GSM_USE_HEX
+#ifdef AT_NL
+#undef AT_NL
+#endif
+#define AT_NL "\r\n"
 
-#include "TinyGsmBattery.tpp"
-#include "TinyGsmGPRS.tpp"
-#include "TinyGsmGPS.tpp"
-#include "TinyGsmModem.tpp"
-#include "TinyGsmSMS.tpp"
-#include "TinyGsmTime.tpp"
-#include "TinyGsmNTP.tpp"
-#include "TinyGsmGSMLocation.tpp"
+#ifdef MODEM_MANUFACTURER
+#undef MODEM_MANUFACTURER
+#endif
+#define MODEM_MANUFACTURER "SIMCom"
 
-#define GSM_NL "\r\n"
-static const char GSM_OK[] TINY_GSM_PROGMEM    = "OK" GSM_NL;
-static const char GSM_ERROR[] TINY_GSM_PROGMEM = "ERROR" GSM_NL;
-#if defined       TINY_GSM_DEBUG
-static const char GSM_CME_ERROR[] TINY_GSM_PROGMEM = GSM_NL "+CME ERROR:";
-static const char GSM_CMS_ERROR[] TINY_GSM_PROGMEM = GSM_NL "+CMS ERROR:";
+#ifdef MODEM_MODEL
+#undef MODEM_MODEL
+#endif
+#if defined(TINY_GSM_MODEM_SIM7070)
+#define MODEM_MODEL "SIM7070";
+#elif defined(TINY_GSM_MODEM_SIM7080)
+#define MODEM_MODEL "SIM7080";
+#elif defined(TINY_GSM_MODEM_SIM7090)
+#define MODEM_MODEL "SIM7090";
+#elif defined(TINY_GSM_MODEM_SIM7000) || defined(TINY_GSM_MODEM_SIM7000SSL)
+#define MODEM_MODEL "SIM7000";
+#else
+#define MODEM_MODEL "SIM70xx";
 #endif
 
-enum RegStatus {
+#include "TinyGsmModem.tpp"
+#include "TinyGsmGPRS.tpp"
+#include "TinyGsmGPS.tpp"
+
+enum SIM70xxRegStatus {
   REG_NO_RESULT    = -1,
   REG_UNREGISTERED = 0,
   REG_SEARCHING    = 2,
@@ -39,34 +50,25 @@ enum RegStatus {
   REG_UNKNOWN      = 4,
 };
 
-template <class modemType>
-class TinyGsmSim70xx : public TinyGsmModem<TinyGsmSim70xx<modemType>>,
-                       public TinyGsmGPRS<TinyGsmSim70xx<modemType>>,
-                       public TinyGsmSMS<TinyGsmSim70xx<modemType>>,
-                       public TinyGsmGPS<TinyGsmSim70xx<modemType>>,
-                       public TinyGsmTime<TinyGsmSim70xx<modemType>>,
-                       public TinyGsmNTP<TinyGsmSim70xx<modemType>>,
-                       public TinyGsmBattery<TinyGsmSim70xx<modemType>>,
-                       public TinyGsmGSMLocation<TinyGsmSim70xx<modemType>> {
-  friend class TinyGsmModem<TinyGsmSim70xx<modemType>>;
-  friend class TinyGsmGPRS<TinyGsmSim70xx<modemType>>;
-  friend class TinyGsmSMS<TinyGsmSim70xx<modemType>>;
-  friend class TinyGsmGPS<TinyGsmSim70xx<modemType>>;
-  friend class TinyGsmTime<TinyGsmSim70xx<modemType>>;
-  friend class TinyGsmNTP<TinyGsmSim70xx<modemType>>;
-  friend class TinyGsmBattery<TinyGsmSim70xx<modemType>>;
-  friend class TinyGsmGSMLocation<TinyGsmSim70xx<modemType>>;
+template <class SIM70xxType>
+class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType>,
+                       public TinyGsmGPRS<SIM70xxType>,
+                       public TinyGsmGPS<SIM70xxType> {
+  friend class TinyGsmModem<SIM70xxType>;
+  friend class TinyGsmGPRS<SIM70xxType>;
+  friend class TinyGsmGPS<SIM70xxType>;
 
   /*
    * CRTP Helper
    */
  protected:
-  inline const modemType& thisModem() const {
-    return static_cast<const modemType&>(*this);
+  inline const SIM70xxType& thisModem() const {
+    return static_cast<const SIM70xxType&>(*this);
   }
-  inline modemType& thisModem() {
-    return static_cast<modemType&>(*this);
+  inline SIM70xxType& thisModem() {
+    return static_cast<SIM70xxType&>(*this);
   }
+  ~TinyGsmSim70xx() {}
 
   /*
    * Constructor
@@ -78,44 +80,15 @@ class TinyGsmSim70xx : public TinyGsmModem<TinyGsmSim70xx<modemType>>,
    * Basic functions
    */
  protected:
-  bool initImpl(const char* pin = NULL) {
-    return thisModem().initImpl(pin);
-  }
-
-  String getModemNameImpl() {
-    String name = "SIMCom SIM7000";
-
-    thisModem().sendAT(GF("+GMM"));
-    String res2;
-    if (thisModem().waitResponse(5000L, res2) != 1) { return name; }
-    res2.replace(GSM_NL "OK" GSM_NL, "");
-    res2.replace("_", " ");
-    res2.trim();
-
-    name = res2;
-    return name;
-  }
-
-  bool factoryDefaultImpl() {           // these commands aren't supported
-    thisModem().sendAT(GF("&FZE0&W"));  // Factory + Reset + Echo Off + Write
-    thisModem().waitResponse();
-    thisModem().sendAT(GF("+IPR=0"));  // Auto-baud
-    thisModem().waitResponse();
-    thisModem().sendAT(GF("+IFC=0,0"));  // No Flow Control
-    thisModem().waitResponse();
-    thisModem().sendAT(GF("+ICF=3,3"));  // 8 data 0 parity 1 stop
-    thisModem().waitResponse();
-    thisModem().sendAT(GF("+CSCLK=0"));  // Disable Slow Clock
-    thisModem().waitResponse();
-    thisModem().sendAT(GF("&W"));  // Write configuration
-    return thisModem().waitResponse() == 1;
+  bool factoryDefaultImpl() {
+    return false;
   }
 
   /*
    * Power functions
    */
  protected:
-  bool restartImpl(const char* pin = NULL) {
+  bool restartImpl(const char* pin = nullptr) {
     thisModem().sendAT(GF("E0"));  // Echo Off
     thisModem().waitResponse();
     if (!thisModem().setPhoneFunctionality(0)) { return false; }
@@ -147,22 +120,22 @@ class TinyGsmSim70xx : public TinyGsmModem<TinyGsmSim70xx<modemType>>,
    * Generic network functions
    */
  public:
-  RegStatus getRegistrationStatus() {
-    RegStatus epsStatus =
-        (RegStatus)thisModem().getRegistrationStatusXREG("CEREG");
+  SIM70xxRegStatus getRegistrationStatus() {
+    SIM70xxRegStatus epsStatus =
+        (SIM70xxRegStatus)thisModem().getRegistrationStatusXREG("CEREG");
     // If we're connected on EPS, great!
     if (epsStatus == REG_OK_HOME || epsStatus == REG_OK_ROAMING) {
       return epsStatus;
     } else {
       // Otherwise, check GPRS network status
       // We could be using GPRS fall-back or the board could be being moody
-      return (RegStatus)thisModem().getRegistrationStatusXREG("CGREG");
+      return (SIM70xxRegStatus)thisModem().getRegistrationStatusXREG("CGREG");
     }
   }
 
  protected:
   bool isNetworkConnectedImpl() {
-    RegStatus s = getRegistrationStatus();
+    SIM70xxRegStatus s = getRegistrationStatus();
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
   }
 
@@ -170,7 +143,7 @@ class TinyGsmSim70xx : public TinyGsmModem<TinyGsmSim70xx<modemType>>,
   String getNetworkModes() {
     // Get the help string, not the setting value
     thisModem().sendAT(GF("+CNMP=?"));
-    if (thisModem().waitResponse(GF(GSM_NL "+CNMP:")) != 1) { return ""; }
+    if (thisModem().waitResponse(GF(AT_NL "+CNMP:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     thisModem().waitResponse();
     return res;
@@ -178,7 +151,7 @@ class TinyGsmSim70xx : public TinyGsmModem<TinyGsmSim70xx<modemType>>,
 
   int16_t getNetworkMode() {
     thisModem().sendAT(GF("+CNMP?"));
-    if (thisModem().waitResponse(GF(GSM_NL "+CNMP:")) != 1) { return false; }
+    if (thisModem().waitResponse(GF(AT_NL "+CNMP:")) != 1) { return false; }
     int16_t mode = thisModem().streamGetIntBefore('\n');
     thisModem().waitResponse();
     return mode;
@@ -196,7 +169,7 @@ class TinyGsmSim70xx : public TinyGsmModem<TinyGsmSim70xx<modemType>>,
   String getPreferredModes() {
     // Get the help string, not the setting value
     thisModem().sendAT(GF("+CMNB=?"));
-    if (thisModem().waitResponse(GF(GSM_NL "+CMNB:")) != 1) { return ""; }
+    if (thisModem().waitResponse(GF(AT_NL "+CMNB:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     thisModem().waitResponse();
     return res;
@@ -204,7 +177,7 @@ class TinyGsmSim70xx : public TinyGsmModem<TinyGsmSim70xx<modemType>>,
 
   int16_t getPreferredMode() {
     thisModem().sendAT(GF("+CMNB?"));
-    if (thisModem().waitResponse(GF(GSM_NL "+CMNB:")) != 1) { return false; }
+    if (thisModem().waitResponse(GF(AT_NL "+CMNB:")) != 1) { return false; }
     int16_t mode = thisModem().streamGetIntBefore('\n');
     thisModem().waitResponse();
     return mode;
@@ -222,7 +195,7 @@ class TinyGsmSim70xx : public TinyGsmModem<TinyGsmSim70xx<modemType>>,
     // n: whether to automatically report the system mode info
     // stat: the current service. 0 if it not connected
     thisModem().sendAT(GF("+CNSMOD?"));
-    if (thisModem().waitResponse(GF(GSM_NL "+CNSMOD:")) != 1) { return false; }
+    if (thisModem().waitResponse(GF(AT_NL "+CNSMOD:")) != 1) { return false; }
     n    = thisModem().streamGetIntBefore(',') != 0;
     stat = thisModem().streamGetIntBefore('\n');
     thisModem().waitResponse();
@@ -235,23 +208,11 @@ class TinyGsmSim70xx : public TinyGsmModem<TinyGsmSim70xx<modemType>>,
     return thisModem().waitResponse() == 1;
   }
 
-  String getLocalIPImpl() {
-    return thisModem().getLocalIPImpl();
-  }
-
   /*
    * GPRS functions
    */
  protected:
   // should implement in sub-classes
-  bool gprsConnectImpl(const char* apn, const char* user = NULL,
-                       const char* pwd = NULL) {
-    return thisModem().gprsConnectImpl(apn, user, pwd);
-  }
-
-  bool gprsDisconnectImpl() {
-    return thisModem().gprsDisconnectImpl();
-  }
 
   /*
    * SIM card functions
@@ -260,18 +221,12 @@ class TinyGsmSim70xx : public TinyGsmModem<TinyGsmSim70xx<modemType>>,
   // Doesn't return the "+CCID" before the number
   String getSimCCIDImpl() {
     thisModem().sendAT(GF("+CCID"));
-    if (thisModem().waitResponse(GF(GSM_NL)) != 1) { return ""; }
+    if (thisModem().waitResponse(GF(AT_NL)) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     thisModem().waitResponse();
     res.trim();
     return res;
   }
-
-  /*
-   * Messaging functions
-   */
- protected:
-  // Follows all messaging functions per template
 
   /*
    * GPS/GNSS/GLONASS location functions
@@ -293,7 +248,7 @@ class TinyGsmSim70xx : public TinyGsmModem<TinyGsmSim70xx<modemType>>,
   // get the RAW GPS output
   String getGPSrawImpl() {
     thisModem().sendAT(GF("+CGNSINF"));
-    if (thisModem().waitResponse(10000L, GF(GSM_NL "+CGNSINF:")) != 1) {
+    if (thisModem().waitResponse(10000L, GF(AT_NL "+CGNSINF:")) != 1) {
       return "";
     }
     String res = stream.readStringUntil('\n');
@@ -308,7 +263,7 @@ class TinyGsmSim70xx : public TinyGsmModem<TinyGsmSim70xx<modemType>>,
                   int* year = 0, int* month = 0, int* day = 0, int* hour = 0,
                   int* minute = 0, int* second = 0) {
     thisModem().sendAT(GF("+CGNSINF"));
-    if (thisModem().waitResponse(10000L, GF(GSM_NL "+CGNSINF:")) != 1) {
+    if (thisModem().waitResponse(10000L, GF(AT_NL "+CGNSINF:")) != 1) {
       return false;
     }
 
@@ -361,20 +316,20 @@ class TinyGsmSim70xx : public TinyGsmModem<TinyGsmSim70xx<modemType>>,
       thisModem().streamSkipUntil('\n');            // VPA
 
       // Set pointers
-      if (lat != NULL) *lat = ilat;
-      if (lon != NULL) *lon = ilon;
-      if (speed != NULL) *speed = ispeed;
-      if (alt != NULL) *alt = ialt;
-      if (vsat != NULL) *vsat = ivsat;
-      if (usat != NULL) *usat = iusat;
-      if (accuracy != NULL) *accuracy = iaccuracy;
+      if (lat != nullptr) *lat = ilat;
+      if (lon != nullptr) *lon = ilon;
+      if (speed != nullptr) *speed = ispeed;
+      if (alt != nullptr) *alt = ialt;
+      if (vsat != nullptr) *vsat = ivsat;
+      if (usat != nullptr) *usat = iusat;
+      if (accuracy != nullptr) *accuracy = iaccuracy;
       if (iyear < 2000) iyear += 2000;
-      if (year != NULL) *year = iyear;
-      if (month != NULL) *month = imonth;
-      if (day != NULL) *day = iday;
-      if (hour != NULL) *hour = ihour;
-      if (minute != NULL) *minute = imin;
-      if (second != NULL) *second = static_cast<int>(secondWithSS);
+      if (year != nullptr) *year = iyear;
+      if (month != nullptr) *month = imonth;
+      if (day != nullptr) *day = iday;
+      if (hour != nullptr) *hour = ihour;
+      if (minute != nullptr) *minute = imin;
+      if (second != nullptr) *second = static_cast<int>(secondWithSS);
 
       thisModem().waitResponse();
       return true;
@@ -384,76 +339,12 @@ class TinyGsmSim70xx : public TinyGsmModem<TinyGsmSim70xx<modemType>>,
     thisModem().waitResponse();
     return false;
   }
-
-  /*
-   * Time functions
-   */
-  // Can follow CCLK as per template
-
-  /*
-   * NTP server functions
-   */
-  // Can sync with server using CNTP as per template
-
-  /*
-   * Battery functions
-   */
- protected:
-  // Follows all battery functions per template
-
-  /*
-   * Client related functions
-   */
-  // should implement in sub-classes
-
-  /*
-   * Utilities
-   */
- public:
-  // should implement in sub-classes
-  int8_t waitResponse(uint32_t timeout_ms, String& data,
-                      GsmConstStr r1 = GFP(GSM_OK),
-                      GsmConstStr r2 = GFP(GSM_ERROR),
-#if defined TINY_GSM_DEBUG
-                      GsmConstStr r3 = GFP(GSM_CME_ERROR),
-                      GsmConstStr r4 = GFP(GSM_CMS_ERROR),
-#else
-                      GsmConstStr r3 = NULL, GsmConstStr r4 = NULL,
-#endif
-                      GsmConstStr r5 = NULL) {
-    return thisModem().waitResponse(timeout_ms, data, r1, r2, r3, r4, r5);
-  }
-
-  int8_t waitResponse(uint32_t timeout_ms, GsmConstStr r1 = GFP(GSM_OK),
-                      GsmConstStr r2 = GFP(GSM_ERROR),
-#if defined TINY_GSM_DEBUG
-                      GsmConstStr r3 = GFP(GSM_CME_ERROR),
-                      GsmConstStr r4 = GFP(GSM_CMS_ERROR),
-#else
-                      GsmConstStr r3 = NULL, GsmConstStr r4 = NULL,
-#endif
-                      GsmConstStr r5 = NULL) {
-    String data;
-    return thisModem().waitResponse(timeout_ms, data, r1, r2, r3, r4, r5);
-  }
-
-  int8_t waitResponse(GsmConstStr r1 = GFP(GSM_OK),
-                      GsmConstStr r2 = GFP(GSM_ERROR),
-#if defined TINY_GSM_DEBUG
-                      GsmConstStr r3 = GFP(GSM_CME_ERROR),
-                      GsmConstStr r4 = GFP(GSM_CMS_ERROR),
-#else
-                      GsmConstStr r3 = NULL, GsmConstStr r4 = NULL,
-#endif
-                      GsmConstStr r5 = NULL) {
-    return thisModem().waitResponse(1000, r1, r2, r3, r4, r5);
+  bool handleURCs(String& data) {
+    return thisModem().handleURCs(data);
   }
 
  public:
   Stream& stream;
-
- protected:
-  const char* gsmNL = GSM_NL;
 };
 
 #endif  // SRC_TINYGSMCLIENTSIM70XX_H_

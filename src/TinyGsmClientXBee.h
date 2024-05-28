@@ -21,18 +21,29 @@
 // here)
 #define TINY_GSM_XBEE_GUARD_TIME 1010
 
-#include "TinyGsmBattery.tpp"
-#include "TinyGsmGPRS.tpp"
-#include "TinyGsmModem.tpp"
-#include "TinyGsmSMS.tpp"
-#include "TinyGsmSSL.tpp"
-#include "TinyGsmTCP.tpp"
-#include "TinyGsmTemperature.tpp"
-#include "TinyGsmWifi.tpp"
+#ifdef AT_NL
+#undef AT_NL
+#endif
+#define AT_NL "\r"
 
-#define GSM_NL "\r"
-static const char GSM_OK[] TINY_GSM_PROGMEM    = "OK" GSM_NL;
-static const char GSM_ERROR[] TINY_GSM_PROGMEM = "ERROR" GSM_NL;
+#ifdef MODEM_MANUFACTURER
+#undef MODEM_MANUFACTURER
+#endif
+#define MODEM_MANUFACTURER "Digi"
+
+#ifdef MODEM_MODEL
+#undef MODEM_MODEL
+#endif
+#define MODEM_MODEL "XBee"
+
+#include "TinyGsmModem.tpp"
+#include "TinyGsmWifi.tpp"
+#include "TinyGsmGPRS.tpp"
+#include "TinyGsmTCP.tpp"
+#include "TinyGsmSSL.tpp"
+#include "TinyGsmSMS.tpp"
+#include "TinyGsmTemperature.tpp"
+#include "TinyGsmBattery.tpp"
 
 // Use this to avoid too many entrances and exits from command mode.
 // The cellular Bee's often freeze up and won't respond when attempting
@@ -48,7 +59,7 @@ static const char GSM_ERROR[] TINY_GSM_PROGMEM = "ERROR" GSM_NL;
     exitCommand();                                                       \
   }
 
-enum RegStatus {
+enum XBeeRegStatus {
   REG_OK           = 0,
   REG_UNREGISTERED = 1,
   REG_SEARCHING    = 2,
@@ -70,7 +81,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
                     public TinyGsmGPRS<TinyGsmXBee>,
                     public TinyGsmWifi<TinyGsmXBee>,
                     public TinyGsmTCP<TinyGsmXBee, TINY_GSM_MUX_COUNT>,
-                    public TinyGsmSSL<TinyGsmXBee>,
+                    public TinyGsmSSL<TinyGsmXBee, TINY_GSM_MUX_COUNT>,
                     public TinyGsmSMS<TinyGsmXBee>,
                     public TinyGsmBattery<TinyGsmXBee>,
                     public TinyGsmTemperature<TinyGsmXBee> {
@@ -78,7 +89,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
   friend class TinyGsmGPRS<TinyGsmXBee>;
   friend class TinyGsmWifi<TinyGsmXBee>;
   friend class TinyGsmTCP<TinyGsmXBee, TINY_GSM_MUX_COUNT>;
-  friend class TinyGsmSSL<TinyGsmXBee>;
+  friend class TinyGsmSSL<TinyGsmXBee, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmSMS<TinyGsmXBee>;
   friend class TinyGsmBattery<TinyGsmXBee>;
   friend class TinyGsmTemperature<TinyGsmXBee>;
@@ -164,7 +175,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
     }
 
     size_t write(const char* str) {
-      if (str == NULL) return 0;
+      if (str == nullptr) return 0;
       return write((const uint8_t*)str, strlen(str));
     }
 
@@ -319,11 +330,12 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
     // Start with the default guard time of 1 second
     memset(sockets, 0, sizeof(sockets));
   }
+
   /*
    * Basic functions
    */
-
-  bool initImpl(const char* pin = NULL) {
+ protected:
+  bool initImpl(const char* pin = nullptr) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
     DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientXBee"));
 
@@ -381,8 +393,44 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
     return getBeeName();
   }
 
-  void setBaudImpl(uint32_t baud) {
-    XBEE_COMMAND_START_DECORATOR(5, )
+  String getModemModelImpl() {
+    switch (beeType) {
+      case XBEE_S6B_WIFI: return "XBee Wi-Fi";
+      case XBEE_LTE1_VZN: return "XBee Cellular LTE Cat 1";
+      case XBEE_3G: return "XBee Cellular 3G";
+      case XBEE3_LTE1_ATT: return "XBee3 Cellular LTE CAT 1";
+      case XBEE3_LTEM_ATT: return "XBee3 Cellular LTE-M";
+      default: return "XBee Unknown";
+    }
+  }
+  // Gets the modem serial number
+  String getModemSerialNumberImpl() {
+    String xbeeSnLow =
+        sendATGetString(GF("SL"));  // Request Module MAC/Serial Number Low
+    String xbeeSnHigh =
+        sendATGetString(GF("SH"));  // Request Module MAC/Serial Number High
+    return xbeeSnLow + String(" ") + xbeeSnHigh;
+  }
+
+  // Gets the modem hardware version
+  String getModemHardwareVersion() {
+    return sendATGetString(GF("HV"));
+  }
+
+  // Gets the modem firmware version
+  String getModemFirmwareVersion() {
+    return sendATGetString(GF("VR"));
+  }
+
+  // Gets the modem combined version
+  String getModemRevisionImpl() {
+    String hw_ver = getModemHardwareVersion();
+    String fw_ver = getModemFirmwareVersion();
+    return hw_ver + String(" ") + fw_ver;
+  }
+
+  bool setBaudImpl(uint32_t baud) {
+    XBEE_COMMAND_START_DECORATOR(5, false)
     bool changesMade = false;
     switch (baud) {
       case 2400: changesMade |= changeSettingIfNeeded(GF("BD"), 0x1); break;
@@ -404,6 +452,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
     }
     if (changesMade) { writeChanges(); }
     XBEE_COMMAND_END_DECORATOR
+    return true;
   }
 
   bool testATImpl(uint32_t timeout_ms = 10000L) {
@@ -512,7 +561,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
     }
   }
 
-  bool restartImpl(const char* pin = NULL) {
+  bool restartImpl(const char* pin = nullptr) {
     if (!commandMode()) {
       DBG("### XBee not in command mode for restart; Exit");
       return false;
@@ -610,7 +659,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
    * Generic network functions
    */
  public:
-  RegStatus getRegistrationStatus() {
+  XBeeRegStatus getRegistrationStatus() {
     XBEE_COMMAND_START_DECORATOR(5, REG_UNKNOWN)
 
     if (!inCommandMode) return REG_UNKNOWN;  // Return immediately
@@ -619,8 +668,8 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
       getSeries();  // Need to know the bee type to interpret response
 
     sendAT(GF("AI"));
-    int16_t   intRes = readResponseInt(10000L);
-    RegStatus stat   = REG_UNKNOWN;
+    int16_t       intRes = readResponseInt(10000L);
+    XBeeRegStatus stat   = REG_UNKNOWN;
 
     switch (beeType) {
       case XBEE_S6B_WIFI: {
@@ -730,7 +779,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
 
   bool isNetworkConnectedImpl() {
     // first check for association indicator
-    RegStatus s = getRegistrationStatus();
+    XBeeRegStatus s = getRegistrationStatus();
     if (s == REG_OK) {
       if (beeType == XBEE_S6B_WIFI) {
         // For wifi bees, if the association indicator is ok, check that a both
@@ -804,6 +853,11 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
   }
 
   /*
+   * Secure socket layer (SSL) functions
+   */
+  // Follows functions as inherited from TinyGsmSSL.tpp
+
+  /*
    * WiFi functions
    */
  protected:
@@ -813,7 +867,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
 
     XBEE_COMMAND_START_DECORATOR(5, false)
 
-    if (ssid == NULL) retVal = false;
+    if (ssid == nullptr) retVal = false;
 
     changesMade |= changeSettingIfNeeded(GF("ID"), ssid);
 
@@ -856,8 +910,8 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
    * GPRS functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char* user = NULL,
-                       const char* pwd = NULL) {
+  bool gprsConnectImpl(const char* apn, const char* user = nullptr,
+                       const char* pwd = nullptr) {
     bool success     = true;
     bool changesMade = false;
     XBEE_COMMAND_START_DECORATOR(5, false)
@@ -939,7 +993,17 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
   }
 
   /*
-   * Messaging functions
+   * Phone Call functions
+   */
+  // No functions of this type supported
+
+  /*
+   * Audio functions
+   */
+  // No functions of this type supported
+
+  /*
+   * Text messaging (SMS) functions
    */
  protected:
   String sendUSSDImpl(const String& code) TINY_GSM_ATTR_NOT_AVAILABLE;
@@ -993,11 +1057,36 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
   }
 
   /*
+   * GSM Location functions
+   */
+  // No functions of this type supported
+
+  /*
+   * GPS/GNSS/GLONASS location functions
+   */
+  // No functions of this type supported
+
+  /*
+   * Time functions
+   */
+  // No functions of this type supported
+
+  /*
+   * NTP server functions
+   */
+  // No functions of this type supported
+
+  /*
+   * BLE functions
+   */
+  // No functions of this type supported
+
+  /*
    * Battery functions
    */
  protected:
   // Use: float vBatt = modem.getBattVoltage() / 1000.0;
-  uint16_t getBattVoltageImpl() {
+  int16_t getBattVoltageImpl() {
     int16_t intRes = 0;
     XBEE_COMMAND_START_DECORATOR(5, false)
     if (beeType == XBEE_UNKNOWN) getSeries();
@@ -1009,11 +1098,11 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
     return intRes;
   }
 
-  int8_t  getBattPercentImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
-  uint8_t getBattChargeStateImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
+  int8_t getBattPercentImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
+  int8_t getBattChargeStateImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
 
-  bool getBattStatsImpl(uint8_t& chargeState, int8_t& percent,
-                        uint16_t& milliVolts) {
+  bool getBattStatsImpl(int8_t& chargeState, int8_t& percent,
+                        int16_t& milliVolts) {
     chargeState = 0;
     percent     = 0;
     milliVolts  = getBattVoltage();
@@ -1023,7 +1112,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
   /*
    * Temperature functions
    */
-
+ protected:
   float getTemperatureImpl() {
     XBEE_COMMAND_START_DECORATOR(5, static_cast<float>(-9999))
     String res = sendATGetString(GF("TP"));
@@ -1256,7 +1345,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
     switch (beeType) {
       // The wifi be can only say if it's connected to the netowrk
       case XBEE_S6B_WIFI: {
-        RegStatus s = getRegistrationStatus();
+        XBeeRegStatus s = getRegistrationStatus();
         XBEE_COMMAND_END_DECORATOR
         if (s != REG_OK) {
           sockets[0]->sock_connected = false;  // no multiplex
@@ -1314,7 +1403,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
             // // Ask for information about any open sockets
             // sendAT(GF("SI"));
             // String open_socks = stream.readStringUntil('\r');
-            // open_socks.replace(GSM_NL, "");
+            // open_socks.replace(AT_NL, "");
             // open_socks.trim();
             // if (open_socks != "") {
             //   // In transparent mode, only socket 0 should be possible
@@ -1381,80 +1470,9 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
       TINY_GSM_YIELD();
     }
   }
-
-  // TODO(vshymanskyy): Optimize this!
-  // NOTE:  This function is used while INSIDE command mode, so we're only
-  // waiting for requested responses.  The XBee has no unsoliliced responses
-  // (URC's) when in command mode.
-  int8_t waitResponse(uint32_t timeout_ms, String& data,
-                      GsmConstStr r1 = GFP(GSM_OK),
-                      GsmConstStr r2 = GFP(GSM_ERROR), GsmConstStr r3 = NULL,
-                      GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
-    /*String r1s(r1); r1s.trim();
-    String r2s(r2); r2s.trim();
-    String r3s(r3); r3s.trim();
-    String r4s(r4); r4s.trim();
-    String r5s(r5); r5s.trim();
-    DBG("### ..:", r1s, ",", r2s, ",", r3s, ",", r4s, ",", r5s);*/
-    data.reserve(16);  // Should never be getting much here for the XBee
-    int8_t   index       = 0;
-    uint32_t startMillis = millis();
-    do {
-      TINY_GSM_YIELD();
-      while (stream.available() > 0) {
-        TINY_GSM_YIELD();
-        int8_t a = stream.read();
-        if (a <= 0) continue;  // Skip 0x00 bytes, just in case
-        data += static_cast<char>(a);
-        if (r1 && data.endsWith(r1)) {
-          index = 1;
-          goto finish;
-        } else if (r2 && data.endsWith(r2)) {
-          index = 2;
-          goto finish;
-        } else if (r3 && data.endsWith(r3)) {
-          index = 3;
-          goto finish;
-        } else if (r4 && data.endsWith(r4)) {
-          index = 4;
-          goto finish;
-        } else if (r5 && data.endsWith(r5)) {
-          index = 5;
-          goto finish;
-        }
-      }
-    } while (millis() - startMillis < timeout_ms);
-  finish:
-    if (!index) {
-      data.trim();
-      data.replace(GSM_NL GSM_NL, GSM_NL);
-      data.replace(GSM_NL, "\r\n    ");
-      if (data.length()) {
-        DBG("### Unhandled:", data, "\r\n");
-      } else {
-        DBG("### NO RESPONSE FROM MODEM!\r\n");
-      }
-    } else {
-      data.trim();
-      data.replace(GSM_NL GSM_NL, GSM_NL);
-      data.replace(GSM_NL, "\r\n    ");
-    }
-    // data.replace(GSM_NL, "/");
-    // DBG('<', index, '>', data);
-    return index;
-  }
-
-  int8_t waitResponse(uint32_t timeout_ms, GsmConstStr r1 = GFP(GSM_OK),
-                      GsmConstStr r2 = GFP(GSM_ERROR), GsmConstStr r3 = NULL,
-                      GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
-    String data;
-    return waitResponse(timeout_ms, data, r1, r2, r3, r4, r5);
-  }
-
-  int8_t waitResponse(GsmConstStr r1 = GFP(GSM_OK),
-                      GsmConstStr r2 = GFP(GSM_ERROR), GsmConstStr r3 = NULL,
-                      GsmConstStr r4 = NULL, GsmConstStr r5 = NULL) {
-    return waitResponse(1000, r1, r2, r3, r4, r5);
+  // The XBee has no unsoliliced responses (URC's) when in command mode.
+  bool handleURCs(String&) {
+    return false;
   }
 
   bool commandMode(uint8_t retries = 5) {
@@ -1623,7 +1641,6 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
 
  protected:
   GsmClientXBee* sockets[TINY_GSM_MUX_COUNT];
-  const char*    gsmNL = GSM_NL;
   int16_t        guardTime;
   XBeeType       beeType;
   int8_t         resetPin;

@@ -15,19 +15,55 @@
 
 template <class modemType>
 class TinyGsmCalling {
+  /* =========================================== */
+  /* =========================================== */
+  /*
+   * Define the interface
+   */
  public:
   /*
    * Phone Call functions
    */
+
+  /**
+   * @brief Answer an incoming phone call
+   *
+   * @return *true* The call was answered.
+   * @return *false* The call was not answered.
+   */
   bool callAnswer() {
     return thisModem().callAnswerImpl();
   }
+
+  /**
+   * @brief Make a phone call
+   *
+   * @param number The number to call
+   * @return *true* The call was successfully made
+   * @return *false* The call wasn't made
+   */
   bool callNumber(const String& number) {
     return thisModem().callNumberImpl(number);
   }
+
+  /**
+   * @brief Hang up an in-progress phone call
+   *
+   * @return *true* The call was hung up.
+   * @return *false* The call was not hung up.
+   */
   bool callHangup() {
     return thisModem().callHangupImpl();
   }
+
+  /**
+   * @brief Sent a DTMF (dual tone multi frequency) message over a phone call.
+   *
+   * @param cmd The command to send
+   * @param duration_ms The tone duration
+   * @return *true* The message was sent
+   * @return *false* The message failed to send
+   */
   bool dtmfSend(char cmd, int duration_ms = 100) {
     return thisModem().dtmfSendImpl(cmd, duration_ms);
   }
@@ -42,6 +78,13 @@ class TinyGsmCalling {
   inline modemType& thisModem() {
     return static_cast<modemType&>(*this);
   }
+  ~TinyGsmCalling() {}
+
+  /* =========================================== */
+  /* =========================================== */
+  /*
+   * Define the default function implementations
+   */
 
   /*
    * Phone Call functions

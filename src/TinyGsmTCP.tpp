@@ -43,6 +43,11 @@
 
 template <class modemType, uint8_t muxCount>
 class TinyGsmTCP {
+  /* =========================================== */
+  /* =========================================== */
+  /*
+   * Define the interface
+   */
  public:
   /*
    * Basic functions
@@ -61,6 +66,7 @@ class TinyGsmTCP {
   inline modemType& thisModem() {
     return static_cast<modemType&>(*this);
   }
+  ~TinyGsmTCP() {}
 
   /*
    * Inner Client
@@ -118,7 +124,7 @@ class TinyGsmTCP {
     }
 
     size_t write(const char* str) {
-      if (str == NULL) return 0;
+      if (str == nullptr) return 0;
       return write((const uint8_t*)str, strlen(str));
     }
 
@@ -241,9 +247,9 @@ class TinyGsmTCP {
       return -1;
     }
 
-	int peek() override {
-		return (uint8_t)rx.peek();
-	}
+    int peek() override {
+      return (uint8_t)rx.peek();
+    }
 
     void flush() override {
       at->stream.flush();
@@ -315,6 +321,12 @@ class TinyGsmTCP {
     RxFifo     rx;
   };
 
+  /* =========================================== */
+  /* =========================================== */
+  /*
+   * Define the default function implementations
+   */
+
   /*
    * Basic functions
    */
@@ -331,12 +343,12 @@ class TinyGsmTCP {
       }
     }
     while (thisModem().stream.available()) {
-      thisModem().waitResponse(15, NULL, NULL);
+      thisModem().waitResponse(15, nullptr, nullptr);
     }
 
 #elif defined TINY_GSM_NO_MODEM_BUFFER || defined TINY_GSM_BUFFER_READ_NO_CHECK
     // Just listen for any URC's
-    thisModem().waitResponse(100, NULL, NULL);
+    thisModem().waitResponse(100, nullptr, nullptr);
 
 #else
 #error Modem client has been incorrectly created
@@ -345,7 +357,7 @@ class TinyGsmTCP {
 
   // Yields up to a time-out period and then reads a character from the stream
   // into the mux FIFO
-  // TODO(SRGDamia1):  Do we need to wait two _timeout periods for no
+  // TODO(SRGDamia1):  Do we really need to wait _two_ timeout periods for no
   // character return?  Will wait once in the first "while
   // !stream.available()" and then will wait again in the stream.read()
   // function.
