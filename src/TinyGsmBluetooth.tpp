@@ -24,15 +24,46 @@ class TinyGsmBluetooth {
   /*
    * Bluetooth functions
    */
+
+  /**
+   * @brief Enable module Bluetooth
+   *
+   * @return *true* Bluetooth was succcessfully enabled
+   * @return *false* Bluetooth failed to enable
+   */
   bool enableBluetooth() {
     return thisModem().enableBluetoothImpl();
   }
+
+  /**
+   * @brief Disable module Bluetooth
+   *
+   * @return *true* Bluetooth was succcessfully disabled
+   * @return *false* Bluetooth failed to disable
+   */
   bool disableBluetooth() {
     return thisModem().disableBluetoothImpl();
   }
+
+  /**
+   * @brief Set the Bluetooth visibility
+   *
+   * @param visible True to make the modem visible over Bluetooth, false to make
+   * it invisible.
+   * @return *true* Bluetooth visibility was successfully changed.
+   * @return *false* Bluetooth visibility failed to change
+   */
   bool setBluetoothVisibility(bool visible) {
     return thisModem().setBluetoothVisibilityImpl(visible);
   }
+
+  /**
+   * @brief Set the Bluetooth host name
+   *
+   * @param name The name visible to other Bluetooth objects
+   * @return *true* Bluetooth host name was successfully changed.
+   * @return *false* Bluetooth host name failed to change
+   */
   bool setBluetoothHostName(const char* name) {
     return thisModem().setBluetoothHostNameImpl(name);
   }

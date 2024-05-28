@@ -26,14 +26,52 @@ class TinyGsmTime {
   /*
    * Time functions
    */
+
+  /**
+   * @brief Get the Date Time as a String
+   *
+   * @param format The date or time part to get: DATE_FULL,
+   * DATE_TIME, or DATE_DATE
+   * @return *String*  The date and/or time from the module
+   */
   String getGSMDateTime(TinyGSMDateTimeFormat format) {
     return thisModem().getGSMDateTimeImpl(format);
   }
+
+  /**
+   * @brief Get the date and time as parts
+   *
+   * @param year Reference to an int for the year
+   * @param month Reference to an int for the month
+   * @param day Reference to an int for the day
+   * @param hour Reference to an int for the hour
+   * @param minute Reference to an int for the minute
+   * @param second Reference to an int for the second
+   * @param timezone Reference to a float for the timezone
+   * @return *true*  The references have been filled with valid values from the
+   * GSM module.
+   * @return *false*  There was a problem getting the time from the module.
+   */
   bool getNetworkTime(int* year, int* month, int* day, int* hour, int* minute,
                       int* second, float* timezone) {
     return thisModem().getNetworkTimeImpl(year, month, day, hour, minute,
                                           second, timezone);
   }
+
+  /**
+   * @brief Get the date and time as parts in UTC
+   *
+   * @param year Reference to an int for the year
+   * @param month Reference to an int for the month
+   * @param day Reference to an int for the day
+   * @param hour Reference to an int for the hour
+   * @param minute Reference to an int for the minute
+   * @param second Reference to an int for the second
+   * @param timezone Reference to a float for the timezone
+   * @return *true*  The references have been filled with valid values from the
+   * GSM module.
+   * @return *false*  There was a problem getting the time from the module.
+   */
   bool getNetworkUTCTime(int* year, int* month, int* day, int* hour,
                          int* minute, int* second, float* timezone) {
     return thisModem().getNetworkUTCTimeImpl(year, month, day, hour, minute,
@@ -57,6 +95,7 @@ class TinyGsmTime {
   /*
    * Define the default function implementations
    */
+
   /*
    * Time functions
    */

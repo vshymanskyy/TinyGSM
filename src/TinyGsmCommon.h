@@ -81,6 +81,23 @@ static void DBG(Args... args) {
 #endif
 
 /*
+ * CRTP Helper
+ */
+template <typename modemType, template <typename> class crtpType>
+struct tinygsm_crtp {
+  modemType& thisModem() {
+    return static_cast<modemType&>(*this);
+  }
+  modemType const& thisModem() const {
+    return static_cast<modemType const&>(*this);
+  }
+
+ private:
+  tinygsm_crtp() {}
+  friend crtpType<modemType>;
+};
+
+/*
  * Min/Max Helpers
  */
 template <class T>

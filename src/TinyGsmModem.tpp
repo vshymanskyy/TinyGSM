@@ -57,29 +57,88 @@ class TinyGsmModem {
    * Define the interface
    */
  public:
-  /*
-   * Basic functions
+  /**
+   * @anchor basic_functions
+   * @name Basic functions
+   */
+  /**@{*/
+
+  /**
+   * @brief Sets up the GSM module
+   *
+   * @param pin A pin code to unlock the SIM, if necessary
+   *
+   * @return *true* The module was set up as expected
+   * @return *false* Something failed in module set up
    */
   bool begin(const char* pin = nullptr) {
     return thisModem().initImpl(pin);
   }
+  /**
+   * @copydoc TinyGsmModem::begin()
+   */
   bool init(const char* pin = nullptr) {
     return thisModem().initImpl(pin);
   }
+
+  /**
+   * @brief Recursive variadic template to send AT commands
+   *
+   * @tparam Args
+   * @param cmd The commands to send
+   */
   template <typename... Args>
   inline void sendAT(Args... cmd) {
     thisModem().streamWrite("AT", cmd..., AT_NL);
     thisModem().stream.flush();
     TINY_GSM_YIELD(); /* DBG("### AT:", cmd...); */
   }
+
+  /**
+   * @brief Set the module baud rate
+   *
+   * @param baud The baud rate the use
+   *
+   * @note After setting and applying the new baud rate, you will have to end()
+   * and begin() the serial object.
+   */
   bool setBaud(uint32_t baud) {
     return thisModem().setBaudImpl(baud);
   }
-  // Test response to AT commands
+
+  /**
+   * @brief Test response to AT commands
+   *
+   * @param timeout_ms The the amount of time to test for; optional with a
+   * default value of 10s.
+   * @return *true*  The module responeded to AT commands
+   * @return *false*  The module failed to respond
+   */
   bool testAT(uint32_t timeout_ms = 10000L) {
     return thisModem().testATImpl(timeout_ms);
   }
-  // Listen for responses to commands and handle URCs
+
+  /**
+   * @brief Listen for responses to commands and handle URCs
+   *
+   * @param timeout_ms The time to wait for a response
+   * @param data A string of data to fill in with response results
+   * @param r1 The first output to test against, optional with a default value
+   * of "OK"
+   * @param r2 The second output to test against, optional with a default value
+   * of "ERROR"
+   * @param r3 The third output to test against, optional with a default value
+   * of NULL
+   * @param r4 The fourth output to test against, optional with a default value
+   * of NULL
+   * @param r5 The fifth output to test against, optional with a default value
+   * of NULL
+   * @param r6 The sixth output to test against, optional with a default value
+   * of NULL
+   * @param r7 The seventh output to test against, optional with a default value
+   * of NULL
+   * @return *int8_t* the index of the response input
+   */
   int8_t waitResponse(uint32_t timeout_ms, String& data,
                       GsmConstStr r1 = GFP(GSM_OK),
                       GsmConstStr r2 = GFP(GSM_ERROR), GsmConstStr r3 = nullptr,
@@ -89,6 +148,26 @@ class TinyGsmModem {
                                         r6, r7);
   }
 
+  /**
+   * @brief Listen for responses to commands and handle URCs
+   *
+   * @param timeout_ms The time to wait for a response
+   * @param r1 The first output to test against, optional with a default value
+   * of "OK"
+   * @param r2 The second output to test against, optional with a default value
+   * of "ERROR"
+   * @param r3 The third output to test against, optional with a default value
+   * of NULL
+   * @param r4 The fourth output to test against, optional with a default value
+   * of NULL
+   * @param r5 The fifth output to test against, optional with a default value
+   * of NULL
+   * @param r6 The sixth output to test against, optional with a default value
+   * of NULL
+   * @param r7 The seventh output to test against, optional with a default value
+   * of NULL
+   * @return *int8_t* the index of the response input
+   */
   int8_t waitResponse(uint32_t timeout_ms, GsmConstStr r1 = GFP(GSM_OK),
                       GsmConstStr r2 = GFP(GSM_ERROR), GsmConstStr r3 = nullptr,
                       GsmConstStr r4 = nullptr, GsmConstStr r5 = nullptr,
@@ -97,6 +176,26 @@ class TinyGsmModem {
     return waitResponse(timeout_ms, data, r1, r2, r3, r4, r5, r6, r7);
   }
 
+  /**
+   * @brief Listen for responses to commands and handle URCs; listening for 1
+   * second.
+   *
+   * @param r1 The first output to test against, optional with a default value
+   * of "OK"
+   * @param r2 The second output to test against, optional with a default value
+   * of "ERROR"
+   * @param r3 The third output to test against, optional with a default value
+   * of NULL
+   * @param r4 The fourth output to test against, optional with a default value
+   * of NULL
+   * @param r5 The fifth output to test against, optional with a default value
+   * of NULL
+   * @param r6 The sixth output to test against, optional with a default value
+   * of NULL
+   * @param r7 The seventh output to test against, optional with a default value
+   * of NULL
+   * @return *int8_t* the index of the response input
+   */
   int8_t waitResponse(GsmConstStr r1 = GFP(GSM_OK),
                       GsmConstStr r2 = GFP(GSM_ERROR), GsmConstStr r3 = nullptr,
                       GsmConstStr r4 = nullptr, GsmConstStr r5 = nullptr,
@@ -104,79 +203,216 @@ class TinyGsmModem {
     return waitResponse(1000L, r1, r2, r3, r4, r5, r6, r7);
   }
 
-  // Asks for modem information via the 3GPP TS 27.007 standard ATI command
-  // NOTE:  The actual value and style of the response is quite varied
+  /**
+   * @brief Asks for modem information via the 3GPP TS 27.007 standard ATI
+   * command
+   *
+   * @note  The actual value and style of the response is quite varied
+   * @return *String* Some info about the GSM module.
+   */
   String getModemInfo() {
     return thisModem().getModemInfoImpl();
   }
-  // Gets the modem name (as it calls itself)
+
+  /**
+   * @brief Get the modem name - a combination of the manufacturer and model, as
+   * the modem calls itself
+   *
+   * @return *String*  The modem name
+   */
   String getModemName() {
     return thisModem().getModemNameImpl();
   }
-  // Gets the modem manufacturer
+
+  /**
+   * @brief Get the modem manufacturer
+   *
+   * @return *String* The modem manufacturer
+   */
   String getModemManufacturer() {
     return thisModem().getModemManufacturerImpl();
   }
-  // Gets the modem hardware version
+
+  /**
+   * @brief Get the modem model
+   *
+   * @return *String* The modem model, as it calls itself
+   */
   String getModemModel() {
     return thisModem().getModemModelImpl();
   }
-  // Gets the modem firmware version
+
+  /**
+   * @brief Get the modem revision information.
+   *
+   * What is returned as the revision may be either a hardware or a firmware
+   * version or some combination of both.
+   *
+   * @return *String* The modem revision information
+   */
   String getModemRevision() {
     return thisModem().getModemRevisionImpl();
   }
-  // Gets the modem serial number
+
+  /**
+   * @brief Get the modem serial number
+   *
+   * @return *String* The modem serial number
+   */
   String getModemSerialNumber() {
     return thisModem().getModemSerialNumberImpl();
   }
+
+  /**
+   * @brief Reset the module to factory defaults.
+   *
+   * This generally restarts the module as well.
+   *
+   * @return *true* The module successfully reset to default.
+   * @return *false* The module failed to reset to default.
+   */
   bool factoryDefault() {
     return thisModem().factoryDefaultImpl();
   }
+  /**@}*/
 
-  /*
-   * Power functions
+  /**
+   * @anchor power_functions
+   * @name Power functions
+   */
+  /**@{*/
+
+  /**
+   * @brief Restart the module
+   *
+   * @param pin A pin code to unlock the SIM, if necessary
+   *
+   * @return *true* The module was successfully restarted.
+   * @return *false* There was an error in restarting the module.
    */
   bool restart(const char* pin = nullptr) {
     return thisModem().restartImpl(pin);
   }
+  /**
+   * @brief Power off the module
+   *
+   * @return *true* The module was successfully powered down.
+   * @return *false* There was an error in powering down module.
+   */
   bool poweroff() {
     return thisModem().powerOffImpl();
   }
+  /**
+   * @brief Turn off the module radio
+   *
+   * @return *true* The module radio was successfully turned off.
+   * @return *false* There was an error in turning off the radio.
+   */
   bool radioOff() {
     return thisModem().radioOffImpl();
   }
+
+  /**
+   * @brief Enable sleep on the module.
+   *
+   * For some modules this immediately puts
+   * the module to sleep, for others this sets them to be able to sleep based on
+   * pin levels.
+   *
+   * @param enable True to enable sleep, false to disable
+   * @return *true* Sleep was successfully enabled or disabled
+   * @return *false* There was a problem setting sleep
+   */
   bool sleepEnable(bool enable = true) {
     return thisModem().sleepEnableImpl(enable);
   }
+
+  /**
+   * @brief Set the phone functionality
+   *
+   * @param fun The phone functionality setting. The value and meaning of this
+   * varies by module; check your documentation.
+   * @param reset True to reset the module before changing the functionality.
+   * @return *true* The phone functionalilty was successfully changed.
+   * @return *false* There was a problem changing the functionality.
+   */
   bool setPhoneFunctionality(uint8_t fun, bool reset = false) {
     return thisModem().setPhoneFunctionalityImpl(fun, reset);
   }
+  /**@}*/
 
-  /*
-   * Generic network functions
+  /**
+   * @anchor network_functions
+   * @name Generic Network Functions
    */
+  /**@{*/
+
   // RegStatus getRegistrationStatus() {}
+
+  /**
+   * @brief Confirm whether the module is currently connected to the
+   * GSM/GPRS/LTE network.
+   *
+   * @return *true* The module is connected to the network
+   * @return *false* The module is not connected to the network
+   */
   bool isNetworkConnected() {
     return thisModem().isNetworkConnectedImpl();
   }
-  // Waits for network attachment
+
+  /**
+   * @brief Wait until the module has connected to the network
+   *
+   * @param timeout_ms The time to wait for attachment in milliseconds. Optional
+   * with a default value of 1 minute.
+   * @param check_signal True to alternate between checking for connection and
+   * checking the signal strength.
+   * @return *true* The module is now connected to the network.
+   * @return *false* The module did not connect to the network even after
+   * waiting.
+   */
   bool waitForNetwork(uint32_t timeout_ms = 60000L, bool check_signal = false) {
     return thisModem().waitForNetworkImpl(timeout_ms, check_signal);
   }
-  // Gets signal quality report
+
+  /**
+   * @brief Get the signal quality report
+   *
+   * This is often a "CSQ" value ranging from 0 to 32, but may be an RSSI or a
+   * percent.
+   *
+   * @return *int16_t* The signal quality
+   */
   int16_t getSignalQuality() {
     return thisModem().getSignalQualityImpl();
   }
+
+  /**
+   * @brief Get the Local IP address assigned to the module by the network as a
+   * String
+   *
+   * @return *String* The local IP address
+   */
   String getLocalIP() {
     return thisModem().getLocalIPImpl();
   }
+
+  /**
+   * @brief Get the Local IP address assigned to the module by the network as an
+   * IPAddress object.
+   *
+   * @return *IPAddress* The local IP address
+   */
   IPAddress localIP() {
     return thisModem().TinyGsmIpFromString(thisModem().getLocalIP());
   }
+  /**@}*/
 
-  /*
-   * CRTP Helper
+  /**
+   * @anchor crtp_helper
+   * @name CRTP Helper
    */
+  /**@{*/
  protected:
   inline const modemType& thisModem() const {
     return static_cast<const modemType&>(*this);
@@ -184,11 +420,15 @@ class TinyGsmModem {
   inline modemType& thisModem() {
     return static_cast<modemType&>(*this);
   }
+  /**@}*/
   ~TinyGsmModem() {}
 
-  /*
-   Utilities
+
+  /**
+   * @anchor modem_utilities
+   * @name Utilities
    */
+  /**@{*/
  public:
   // Utility templates for writing/skipping characters on a stream
   template <typename T>
@@ -319,6 +559,7 @@ class TinyGsmModem {
     }
     return IPAddress(Parts[0], Parts[1], Parts[2], Parts[3]);
   }
+  /**@}*/
 
   /* =========================================== */
   /* =========================================== */
