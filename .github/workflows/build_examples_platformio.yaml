@@ -33,7 +33,7 @@ jobs:
           echo "LIBRARY_INSTALL_ZIP=https://github.com/${GITHUB_REPOSITORY}/archive/${GITHUB_HEAD_REF}.zip" >> $GITHUB_ENV
           echo "LIBRARY_INSTALL_GIT=https://github.com/${GITHUB_REPOSITORY}.git#${GITHUB_HEAD_REF}" >> $GITHUB_ENV
 
-      - name: Set environment variable for PR's from any branch
+      - name: Set environment variable for PR's from any fork
         if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.name != github.repository
         run: |
           echo "Pull Request from the fork ${{ github.event.pull_request.head.repo.full_name }} at ${{ github.event.pull_request.head.ref }}"
