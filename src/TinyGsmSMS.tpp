@@ -34,6 +34,60 @@ class TinyGsmSMS {
     return thisModem().sendSMS_UTF16Impl(number, text, len);
   }
 
+ int newMessageInterrupt(String interrupt){
+    int Start=interrupt.indexOf(',');
+    int Stop=interrupt.indexOf('\n',Start);
+    int index=interrupt.substring(Start+1,Stop-1).toInt();
+    return index;
+  }
+  String readSMS(int index, const bool changeStatusToRead = true){
+    thisModem().sendAT(GF("+CMGF=1"));
+    thisModem().waitResponse();  
+    thisModem().sendAT(GF("+CMGR="), index, GF(","), static_cast<const uint8_t>(!changeStatusToRead)); 
+    String h="";
+    thisModem().streamSkipUntil('\n');
+    thisModem().streamSkipUntil('\n');
+    h=thisModem().stream.readStringUntil('\n');
+    return h;
+  }
+  int newMessageIndex(bool mode){
+    thisModem().sendAT(GF("+CMGF=1"));
+    thisModem().waitResponse();  
+    thisModem().sendAT(GF("+CMGL=\"REC UNREAD\",1"));
+    String h = thisModem().stream.readString();
+    int i;
+    if(mode){
+       i  = h.indexOf("+CMGL: ");
+    }else{
+       i  = h.lastIndexOf("+CMGL: ");
+    }
+
+    int index=h.substring(i+7,i+9).toInt();
+    if(index<=0)return 0;
+    return index;
+
+
+  }
+  bool emptySMSBuffer(){
+    thisModem().sendAT(GF("+CMGF=1"));
+    thisModem().waitResponse(); 
+    thisModem().sendAT(GF("+CMGDA=\"DEL ALL\""));
+    return thisModem().waitResponse(60000L) == 1;
+  }
+  String getSenderID(int index, const bool changeStatusToRead = true){
+    thisModem().sendAT(GF("+CMGF=1"));
+    thisModem().waitResponse(); 
+    thisModem().sendAT(GF("+CMGR="), index, GF(","), static_cast<const uint8_t>(changeStatusToRead)); 
+    String h="";
+    thisModem().streamSkipUntil('"');
+    thisModem().streamSkipUntil('"');
+    thisModem().streamSkipUntil('"');
+    h=thisModem().stream.readStringUntil('"');
+    thisModem().stream.readString();
+    return h;
+  }
+
+
   /*
    * CRTP Helper
    */
