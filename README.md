@@ -17,7 +17,7 @@ If you like **TinyGSM** - give it a star, or fork it and contribute!
 [![GitHub forks](https://img.shields.io/github/forks/vshymanskyy/TinyGSM.svg?style=social&label=Fork)](https://github.com/vshymanskyy/TinyGSM/network)
 
 You can also join our chat:
-[![Gitter](https://img.shields.io/gitter/room/vshymanskyy/TinyGSM.svg)](https://gitter.im/tinygsm)
+[![Gitter](https://img.shields.io/gitter/room/vshymanskyy/TinyGSM.svg)](https://app.gitter.im/#/room/#tinygsm_Lobby:gitter.im)
 
 - [Supported modems](#supported-modems)
   - [Supported boards/modules](#supported-boardsmodules)
@@ -29,7 +29,7 @@ You can also join our chat:
 - [How does it work?](#how-does-it-work)
 - [API Reference](#api-reference)
 - [Troubleshooting](#troubleshooting)
-  - [Ensure stable data & power connection](#ensure-stable-data--power-connection)
+  - [Ensure stable data \& power connection](#ensure-stable-data--power-connection)
   - [Baud rates](#baud-rates)
   - [Broken initial configuration](#broken-initial-configuration)
   - [Failed connection or no data received](#failed-connection-or-no-data-received)
@@ -70,33 +70,31 @@ TinyGSM also pulls data gently from the modem (whenever possible), so it can ope
 - SIMCom LTE Modules (SIM7100E, SIM7500E, SIM7500A, SIM7600C, SIM7600E)
 - SIMCom SIM7000E/A/G CAT-M1/NB-IoT Module
 - SIMCom SIM7070/SIM7080/SIM7090 CAT-M1/NB-IoT Module
+- SIMCom A7672X CAT-M1 Module
 - AI-Thinker A6, A6C, A7, A20
 - ESP8266/ESP32 (AT commands interface, similar to GSM modems)
 - Digi XBee WiFi and Cellular (using XBee command mode)
 - Neoway M590
 - u-blox 2G, 3G, 4G, and LTE Cat1 Cellular Modems (many modules including LEON-G100, LISA-U2xx, SARA-G3xx, SARA-U2xx, TOBY-L2xx, LARA-R2xx, MPCI-L2xx)
-- u-blox LTE-M/NB-IoT Modems (SARA-R4xx, SARA-N4xx, _but NOT SARA-N2xx_)
+- u-blox LTE-M/NB-IoT Modems (SARA-R4xx, SARA-N4xx, SARA-R5xx, _but NOT SARA-N2xx_)
 - Sequans Monarch LTE Cat M1/NB1 (VZM20Q)
 - Quectel BG96
+- Quectel BG95
 - Quectel M95
 - Quectel MC60 ***(alpha)***
 
 ### Supported boards/modules
+- EnviroDIY LTE Bee, WiFi Bee
 - Arduino MKR GSM 1400
-- GPRSbee
+- Sodaq GPRSbee, uBee
 - Microduino GSM
-- Adafruit FONA (Mini Cellular GSM Breakout)
-- Adafruit FONA 800/808 Shield
+- Adafruit FONA Mini Cellular GSM Breakout, 800/808 Shield, FONA 3G
 - Industruino GSM
+- Dragino NB-IoT Bee
+- Digi XBee S6B, XBee LTE Cat 1, XBee3 LTE Cat 1, XBee3 CatM
+- Nimbelink Skywire/Airgain NL-SW-LTE-QBG96, NL-SW-LTE-QBG95
 - RAK WisLTE ***(alpha)***
 - ... other modules, based on supported modems. Some boards require [**special configuration**](https://github.com/vshymanskyy/TinyGSM/wiki/Board-configuration).
-
-More modems may be supported later:
-- [ ] Quectel M10, UG95
-- [ ] SIMCom SIM7020
-- [ ] Telit GL865
-- [ ] ZTE MG2639
-- [ ] Hi-Link HLK-RM04
 
 Watch this repo for new updates! And of course, contributions are welcome ;)
 
@@ -110,6 +108,7 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
         - ESP8266 - 5
         - Neoway M590 - 2
         - Quectel BG96 - 12
+        - Quectel BG95 - 12
         - Quectel M95 - 6
         - Quectel MC60/MC60E - 6
         - Sequans Monarch - 6
@@ -118,6 +117,7 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
         - SIM7000 - 8 possible without SSL, only 2 with
         - SIM 7070/7080/7090 - 12
         - SIM 7500/7600/7800 - 10
+        - SIM A7672X - 10
         - u-blox 2G/3G - 7
         - u-blox SARA R4/N4 - 7
         - Digi XBee - _only 1 connection supported!_
@@ -125,10 +125,10 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
     - Not yet supported on any module, though it may be some day
 - SSL/TLS (HTTPS)
     - Supported on:
-        - SIM800, SIM7000, u-Blox, XBee _cellular_, ESP8266, and Sequans Monarch
+        - SIM800, SIM7000, A7672X, u-Blox, XBee _cellular_, ESP8266, Sequans Monarch and Quectel BG95 and BG96
         - Note:  **only some device models or firmware revisions have this feature** (SIM8xx R14.18, A7, etc.)
     - Not yet supported on:
-        - Quectel modems, SIM 5360/5320/7100, SIM 7500/7600/7800
+        - SIM 5360/5320/7100, SIM 7500/7600/7800
     - Not possible on:
         - SIM900, A6/A7, Neoway M590, XBee _WiFi_
     - Like TCP, most modules support simultaneous connections
@@ -151,14 +151,14 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
 - Not yet supported on:
     - SIM7000, SIM5360/5320/7100, SIM7500/7800, VZM20Q (Monarch)
 - Not possible on:
-    -  XBee (any type), u-blox SARA R4/N4, Neoway M590, ESP8266 (obviously)
+    -  XBee (any type), u-blox SARA R4/R5/N4, Neoway M590, ESP8266 (obviously)
 - Functions:
     - Dial, hangup
     - DTMF sending
 
 **Location**
 - GPS/GNSS
-    - SIM808, SIM7000, SIM7500/7600/7800, BG96, u-blox
+    - SIM808, SIM7000, SIM7500/7600/7800, BG96, BG95, u-blox
     - NOTE:  u-blox chips do _NOT_ have embedded GPS - this functionality only works if a secondary GPS is connected to primary cellular chip over I2C
 - GSM location service
     - SIM800, SIM7000, Quectel, u-blox
@@ -176,6 +176,10 @@ Watch this repo for new updates! And of course, contributions are welcome ;)
     - [V1pr](https://github.com/V1pr)
 - Quectel M95
     - [replicadeltd](https://github.com/replicadeltd)
+- UBLOX SARA-R5
+  - [Sebastian Bergner](https://github.com/sebastianbergner)
+- SIMCOM A7672X
+  - [Giovanni de Rosso Unruh](https://github.com/giovannirosso)
 - Other Contributors:
     - https://github.com/vshymanskyy/TinyGSM/graphs/contributors
 

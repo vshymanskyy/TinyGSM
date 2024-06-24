@@ -47,3 +47,6 @@ extras/At Command Manuals - Unsupported/*
 filters/*
 platformio_extra_envs.ini
 *.tar.gz
+pioScripts/generate_compile_commands.py
+compile_commands.json
+src/TinyGsmATDefines.h

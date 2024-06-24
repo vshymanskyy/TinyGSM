@@ -10,7 +10,7 @@
 #define SRC_TINYGSMCOMMON_H_
 
 // The current library version number
-#define TINYGSM_VERSION "0.11.5"
+#define TINYGSM_VERSION "0.12.0"
 
 #if defined(SPARK) || defined(PARTICLE)
 #include "Particle.h"
@@ -80,6 +80,26 @@ static void DBG(Args... args) {
 #define DBG(...)
 #endif
 
+/*
+ * CRTP Helper
+ */
+template <typename modemType, template <typename> class crtpType>
+struct tinygsm_crtp {
+  modemType& thisModem() {
+    return static_cast<modemType&>(*this);
+  }
+  modemType const& thisModem() const {
+    return static_cast<modemType const&>(*this);
+  }
+
+ private:
+  tinygsm_crtp() {}
+  friend crtpType<modemType>;
+};
+
+/*
+ * Min/Max Helpers
+ */
 template <class T>
 const T& TinyGsmMin(const T& a, const T& b) {
   return (b < a) ? b : a;
@@ -90,6 +110,9 @@ const T& TinyGsmMax(const T& a, const T& b) {
   return (b < a) ? a : b;
 }
 
+/*
+ * Automatically find baud rate
+ */
 template <class T>
 uint32_t TinyGsmAutoBaud(T& SerialAT, uint32_t minimum = 9600,
                          uint32_t maximum = 115200) {

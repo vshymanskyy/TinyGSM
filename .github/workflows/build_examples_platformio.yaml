@@ -3,10 +3,67 @@ name: Build Examples with PlatformIO
 # Triggers the workflow on push or pull request events
 on: [push, pull_request]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build:
+  determine_library_source:
+    name: determine_library_source
     runs-on: ubuntu-latest
     if: "!contains(github.event.head_commit.message, 'ci skip')"
+    outputs:
+      library_install_zip: ${{ steps.store_vars.outputs.library_install_zip }}
+      library_install_git: ${{ steps.store_vars.outputs.library_install_git }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set environment variables for pushes to any branch
+        if: github.event_name == 'push'
+        run: |
+          echo "Push to commit ${GITHUB_SHA}"
+          echo "LIBRARY_INSTALL_ZIP=https://github.com/${GITHUB_REPOSITORY}/archive/${GITHUB_SHA}.zip" >> $GITHUB_ENV
+          echo "LIBRARY_INSTALL_GIT=https://github.com/${GITHUB_REPOSITORY}.git#${GITHUB_SHA}" >> $GITHUB_ENV
+
+      - name: Set environment variable for PR's from any branch
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.name == github.repository
+        run: |
+          echo "Pull Request from the ${GITHUB_HEAD_REF} branch"
+          echo "LIBRARY_INSTALL_ZIP=https://github.com/${GITHUB_REPOSITORY}/archive/${GITHUB_HEAD_REF}.zip" >> $GITHUB_ENV
+          echo "LIBRARY_INSTALL_GIT=https://github.com/${GITHUB_REPOSITORY}.git#${GITHUB_HEAD_REF}" >> $GITHUB_ENV
+
+      - name: Set environment variable for PR's from any fork
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.name != github.repository
+        run: |
+          echo "Pull Request from the fork ${{ github.event.pull_request.head.repo.full_name }} at ${{ github.event.pull_request.head.ref }}"
+          echo "LIBRARY_INSTALL_ZIP=https://github.com/${{ github.event.pull_request.head.repo.full_name }}/archive/${{ github.event.pull_request.head.ref }}.zip" >> $GITHUB_ENV
+          echo "LIBRARY_INSTALL_GIT=https://github.com/${{ github.event.pull_request.head.repo.full_name }}.git#${{ github.event.pull_request.head.ref }}" >> $GITHUB_ENV
+
+      - name: store enviroment variables as output
+        id: store_vars
+        run: |
+          echo "library_install_zip=${{ env.LIBRARY_INSTALL_ZIP }}" >> $GITHUB_OUTPUT
+          echo "library_install_git=${{ env.LIBRARY_INSTALL_GIT }}" >> $GITHUB_OUTPUT
+
+  print_library_source:
+    name: print_library_source
+    runs-on: ubuntu-latest
+    needs: determine_library_source
+    steps:
+      - name: Check the library installation source
+        run: |
+          echo "Link to zip for Arduino CLI testing install:"
+          echo "${{ needs.determine_library_source.outputs.library_install_zip }}"
+          echo
+          echo "Git reference for PlatformIO testing install"
+          echo "${{ needs.determine_library_source.outputs.library_install_git }}"
+
+  build_pio:
+    runs-on: ubuntu-latest
+    needs: [determine_library_source]
+    env:
+      LIBRARY_INSTALL_GIT: ${{ needs.determine_library_source.outputs.library_install_git }}
 
     strategy:
       matrix:
@@ -23,6 +80,7 @@ jobs:
           [
             TINY_GSM_MODEM_A6,
             TINY_GSM_MODEM_BG96,
+            TINY_GSM_MODEM_A7672X,
             TINY_GSM_MODEM_ESP8266,
             TINY_GSM_MODEM_M95,
             TINY_GSM_MODEM_M590,
@@ -36,12 +94,13 @@ jobs:
             TINY_GSM_MODEM_SIM7070,
             TINY_GSM_MODEM_UBLOX,
             TINY_GSM_MODEM_SARAR4,
+            TINY_GSM_MODEM_SARAR5,
             TINY_GSM_MODEM_XBEE,
             TINY_GSM_MODEM_SEQUANS_MONARCH,
           ]
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Set variables
         run: |
@@ -54,7 +113,9 @@ jobs:
           fi
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
 
       # This should be pulled from cache, if there's not a new version
       - name: Install PlatformIO
@@ -62,8 +123,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install --upgrade platformio
 
-      - name: Restore or Cache Platforms and Libraries
-        uses: actions/cache@v2.1.5
+      - name: Restore or Cache PlatformIO Platforms and Libraries
+        uses: actions/cache@v4
         id: cache_pio
         with:
           path: ~/.platformio
@@ -73,7 +134,7 @@ jobs:
           key: ${{ hashFiles('./examples/example_dependencies.json') }}
 
       # Install cores and library dependencies for the Arduino CLI, iff no cache
-      - name: Install the Arduino libraries
+      - name: Install the Arduino libraries for PlatformIO
         if: steps.cache_pio.outputs.cache-hit != 'true'
         run: pio lib --global install 89 415 1202 1286
 
@@ -82,8 +143,8 @@ jobs:
           PLATFORMIO_CI_SRC: ${{ matrix.example }}
           TINYGSM_MODEM_TO_USE: ${{ matrix.modem }}
         run: |
-          echo "${{ env.LIBRARY_INSTALL_SOURCE }}"
-          pio lib --global install ${{ env.LIBRARY_INSTALL_SOURCE }}
+          echo "${{ env.LIBRARY_INSTALL_GIT }}"
+          pio pkg install -g --library ${{ env.LIBRARY_INSTALL_GIT }}
           sed -i 's/\/\/ #define TINY_GSM_MODEM_SIM800/#define TINY_GSM_MODEM_SIM800/g' ${{ matrix.example }}/*
           platformio ci --project-option='build_flags=-D ${{ env.TINYGSM_MODEM_TO_USE }}' --project-option='framework=arduino' --board=uno --board=leonardo --board=yun --board=megaatmega2560 --board=genuino101 --board=mkr1000USB --board=zero --board=teensy31 --board=bluepill_f103c8 --board=uno_pic32 --board=esp01 --board=nodemcuv2 --board=esp32dev
           pio lib --global uninstall TinyGSM

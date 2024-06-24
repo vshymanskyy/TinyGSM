@@ -15,6 +15,11 @@
 
 template <class modemType>
 class TinyGsmGPS {
+  /* =========================================== */
+  /* =========================================== */
+  /*
+   * Define the interface
+   */
  public:
   /*
    * GPS/GNSS/GLONASS location functions
@@ -61,6 +66,13 @@ class TinyGsmGPS {
   inline modemType& thisModem() {
     return static_cast<modemType&>(*this);
   }
+  ~TinyGsmGPS() {}
+
+  /* =========================================== */
+  /* =========================================== */
+  /*
+   * Define the default function implementations
+   */
 
   /*
    * GPS/GNSS/GLONASS location functions

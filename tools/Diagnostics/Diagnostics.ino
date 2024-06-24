@@ -19,9 +19,11 @@
 // #define TINY_GSM_MODEM_SIM7080
 // #define TINY_GSM_MODEM_SIM5360
 // #define TINY_GSM_MODEM_SIM7600
+// #define TINY_GSM_MODEM_A7672X
 // #define TINY_GSM_MODEM_UBLOX
 // #define TINY_GSM_MODEM_SARAR4
 // #define TINY_GSM_MODEM_M95
+// #define TINY_GSM_MODEM_BG95
 // #define TINY_GSM_MODEM_BG96
 // #define TINY_GSM_MODEM_A6
 // #define TINY_GSM_MODEM_A7
@@ -29,6 +31,7 @@
 // #define TINY_GSM_MODEM_MC60
 // #define TINY_GSM_MODEM_MC60E
 // #define TINY_GSM_MODEM_ESP8266
+// #define TINY_GSM_MODEM_ESP32
 // #define TINY_GSM_MODEM_XBEE
 // #define TINY_GSM_MODEM_SEQUANS_MONARCH
 
@@ -115,9 +118,13 @@ TinyGsm        modem(debugger);
 TinyGsm        modem(SerialAT);
 #endif
 
-#ifdef USE_SSL&& defined TINY_GSM_MODEM_HAS_SSL
-TinyGsmClientSecure      client(modem);
-const int                port = 443;
+#if defined(TINY_GSM_MODEM_HAS_SSL)
+#define USE_SSL
+#endif
+
+#ifdef USE_SSL
+TinyGsmClientSecure client(modem);
+const int           port = 443;
 #else
 TinyGsmClient  client(modem);
 const int      port = 80;
@@ -152,7 +159,8 @@ void loop() {
     SerialMon.println(F(" Is your serial speed (baud rate) correct?"));
     SerialMon.println(F(" Is your modem powered on?"));
     SerialMon.println(F(" Do you use a good, stable power source?"));
-    SerialMon.println(F(" Try using File -> Examples -> TinyGSM -> tools -> AT_Debug to find correct configuration"));
+    SerialMon.println(F(" Try using File -> Examples -> TinyGSM -> tools -> "
+                        "AT_Debug to find correct configuration"));
     SerialMon.println(F("************************"));
     delay(10000);
     return;
