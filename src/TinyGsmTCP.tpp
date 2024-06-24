@@ -116,6 +116,9 @@ class TinyGsmTCP {
     size_t write(const uint8_t* buf, size_t size) override {
       TINY_GSM_YIELD();
       at->maintain();
+#ifdef TINY_GSM_DEBUG_TRAFFIC      
+      tx_count += (uint32_t) size;
+#endif
       return at->modemSend(buf, size, mux);
     }
 
@@ -198,6 +201,9 @@ class TinyGsmTCP {
           int n = at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available),
                                 mux);
           if (n == 0) break;
+#ifdef TINY_GSM_DEBUG_TRAFFIC          
+          rx_count += (uint32_t) n;
+#endif
         } else {
           break;
         }
@@ -230,6 +236,9 @@ class TinyGsmTCP {
           int n = at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available),
                                 mux);
           if (n == 0) break;
+#ifdef TINY_GSM_DEBUG_TRAFFIC          
+          rx_count += (uint32_t) n;
+#endif
         } else {
           break;
         }
@@ -284,6 +293,20 @@ class TinyGsmTCP {
 
     String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
+#ifdef TINY_GSM_DEBUG_TRAFFIC
+    /*
+     * Debug Traffic
+     */
+
+    uint32_t getSentBytes() {
+      return tx_count;
+    }
+
+    uint32_t getReceivedBytes() {
+      return rx_count;
+    }
+#endif
+
    protected:
     // Read and dump anything remaining in the modem's internal buffer.
     // Using this in the client stop() function.
@@ -298,7 +321,10 @@ class TinyGsmTCP {
       uint32_t startMillis = millis();
       while (sock_available > 0 && (millis() - startMillis < maxWaitMs)) {
         rx.clear();
-        at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available), mux);
+        size_t rcv = at->modemRead(TinyGsmMin((uint16_t)rx.free(), sock_available), mux);
+#ifdef TINY_GSM_DEBUG_TRAFFIC
+        rx_count += (uint32_t) rcv;
+#endif
       }
       rx.clear();
       at->streamClear();
@@ -319,6 +345,11 @@ class TinyGsmTCP {
     bool       sock_connected;
     bool       got_data;
     RxFifo     rx;
+
+#ifdef TINY_GSM_DEBUG_TRAFFIC
+    uint32_t   rx_count;
+    uint32_t   tx_count;
+#endif
   };
 
   /* =========================================== */
