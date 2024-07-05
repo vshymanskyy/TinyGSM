@@ -23,6 +23,7 @@
 #include "TinyGsmTime.tpp"
 #include "TinyGsmNTP.tpp"
 #include "TinyGsmBattery.tpp"
+#include "TinyGsmMqtt.tpp"
 
 class TinyGsmSim7000SSL
     : public TinyGsmSim70xx<TinyGsmSim7000SSL>,
@@ -32,7 +33,8 @@ class TinyGsmSim7000SSL
       public TinyGsmGSMLocation<TinyGsmSim7000SSL>,
       public TinyGsmTime<TinyGsmSim7000SSL>,
       public TinyGsmNTP<TinyGsmSim7000SSL>,
-      public TinyGsmBattery<TinyGsmSim7000SSL> {
+      public TinyGsmBattery<TinyGsmSim7000SSL>,
+      public TinyGsmMqtt<TinyGsmSim7000SSL> {
   friend class TinyGsmSim70xx<TinyGsmSim7000SSL>;
   friend class TinyGsmTCP<TinyGsmSim7000SSL, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmSSL<TinyGsmSim7000SSL, TINY_GSM_MUX_COUNT>;
@@ -44,6 +46,7 @@ class TinyGsmSim7000SSL
   friend class TinyGsmNTP<TinyGsmSim7000SSL>;
   friend class TinyGsmTime<TinyGsmSim7000SSL>;
   friend class TinyGsmBattery<TinyGsmSim7000SSL>;
+  friend class TinyGsmMqtt<TinyGsmSim7000SSL>;
 
   /*
    * Inner Client
@@ -355,6 +358,92 @@ class TinyGsmSim7000SSL
    * Temperature functions
    */
   // No functions of this type supported
+
+
+  /*
+   * MQTT functions
+   */
+
+  bool mqttSetBrokerImpl(String host, uint16_t port) {
+    sendAT(GF("+SMCONF=\"URL\",\""), host, GF("\",\""), port, GF("\""));
+    int ret = waitResponse();
+    return (ret == 1);
+  }
+
+  bool mqttSetClientIdImpl(String id) {
+    sendAT(GF("+SMCONF=\"CLIENTID\",\""), id, GF("\""));
+    int ret = waitResponse();
+    return (ret == 1);
+  }
+
+  bool mqttSetKeepAliveImpl(uint16_t timeout) {
+    sendAT(GF("+SMCONF=\"KEEPTIME\",\""), timeout, GF("\""));
+    int ret = waitResponse();
+    return (ret == 1);
+  }
+
+  bool mqttConnectImpl() {
+    sendAT(GF("+SMCONN"));
+    int ret = waitResponse(60000);
+    connected = (ret == 1);
+    return connected;
+  }
+
+  void mqttDisconnectImpl() {
+    sendAT(GF("+SMDISC"));
+    waitResponse();
+    connected = false;
+  }
+
+  bool connected;
+  bool mqttIsConnectedImpl() {
+    //return connected;
+    bool ret = false;
+    sendAT(GF("+SMSTATE?"));
+    int res = waitResponse(3000, GF("+SMSTATE:"), GFP(GSM_OK),
+                             GFP(GSM_ERROR));
+    // if we get the +SMSTATE: response, read the status
+    if (res == 1) {
+      int status  = streamGetIntBefore('\n');
+      ret = (status == 1);
+      waitResponse(); //OK
+    }
+    connected = ret;
+    return ret;
+  }
+
+  bool mqttPublishImpl(const char* topic, const uint8_t * payload, unsigned int plength) {
+    // send data on prompt
+    int qos = 0;
+    int retain = 0;
+    sendAT(GF("+SMPUB=\""), topic, "\",\"", plength, "\",", qos, ",", retain);
+    if (waitResponse(GF(">")) != 1) { return false; }
+
+    stream.write(payload, plength);
+    stream.flush();
+
+    // after posting data, module responds with:
+    // OK
+    if (waitResponse(GF("OK")) != 1) { return false; }
+
+    return true;
+  }
+
+  bool mqttSubscribeImpl(const char* topic, uint8_t qos) {
+    sendAT(GF("+SMSUB=\""), topic, "\",", qos);
+    if (waitResponse(GF("OK")) != 1) { return false; }
+    return true;
+  }
+  bool mqttUnsubscribeImpl(const char* topic) {
+    sendAT(GF("+SMUNSUB=\""), topic, "\"");
+    if (waitResponse(GF("OK")) != 1) { return false; }
+    return true;
+  }
+
+  void mqttLoopImpl() {
+    mqttIsConnectedImpl();
+  }
+
 
   /*
    * Client related functions
@@ -688,6 +777,15 @@ class TinyGsmSim7000SSL
       DBG("### Unexpected module reset!");
       init();
       return true;
+    } else if (data.endsWith(GF("+SMSUB:"))) {
+      streamSkipUntil('\"');
+      String topic = stream.readStringUntil('\"');
+      streamSkipUntil('\"');
+      String message = stream.readStringUntil('\"');
+
+      if (mqtt_callback) {
+        mqtt_callback((char *)topic.c_str(), (uint8_t *) message.c_str(), message.length());
+      }
     }
     return false;
   }
