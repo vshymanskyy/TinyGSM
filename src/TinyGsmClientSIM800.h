@@ -15,27 +15,41 @@
 
 #define TINY_GSM_MUX_COUNT 5
 #define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
+#ifdef AT_NL
+#undef AT_NL
+#endif
+#define AT_NL "\r\n"
 
-#include "TinyGsmBattery.tpp"
-#include "TinyGsmCalling.tpp"
-#include "TinyGsmGPRS.tpp"
-#include "TinyGsmGSMLocation.tpp"
-#include "TinyGsmModem.tpp"
-#include "TinyGsmSMS.tpp"
-#include "TinyGsmSSL.tpp"
-#include "TinyGsmTCP.tpp"
-#include "TinyGsmTime.tpp"
-#include "TinyGsmNTP.tpp"
+#ifdef MODEM_MANUFACTURER
+#undef MODEM_MANUFACTURER
+#endif
+#define MODEM_MANUFACTURER "unknown"
 
-#define GSM_NL "\r\n"
-static const char GSM_OK[] TINY_GSM_PROGMEM    = "OK" GSM_NL;
-static const char GSM_ERROR[] TINY_GSM_PROGMEM = "ERROR" GSM_NL;
-#if defined       TINY_GSM_DEBUG
-static const char GSM_CME_ERROR[] TINY_GSM_PROGMEM = GSM_NL "+CME ERROR:";
-static const char GSM_CMS_ERROR[] TINY_GSM_PROGMEM = GSM_NL "+CMS ERROR:";
+#ifdef MODEM_MODEL
+#undef MODEM_MODEL
+#endif
+#if defined(TINY_GSM_MODEM_SIM808)
+#define MODEM_MODEL "SIM808";
+#elif defined(TINY_GSM_MODEM_SIM868)
+#define MODEM_MODEL "SIM868";
+#elif defined(TINY_GSM_MODEM_SIM900)
+#define MODEM_MODEL "SIM900";
+#else
+#define MODEM_MODEL "SIM800";
 #endif
 
-enum RegStatus {
+#include "TinyGsmModem.tpp"
+#include "TinyGsmTCP.tpp"
+#include "TinyGsmSSL.tpp"
+#include "TinyGsmGPRS.tpp"
+#include "TinyGsmCalling.tpp"
+#include "TinyGsmSMS.tpp"
+#include "TinyGsmGSMLocation.tpp"
+#include "TinyGsmTime.tpp"
+#include "TinyGsmNTP.tpp"
+#include "TinyGsmBattery.tpp"
+
+enum SIM800RegStatus {
   REG_NO_RESULT    = -1,
   REG_UNREGISTERED = 0,
   REG_SEARCHING    = 2,
@@ -47,7 +61,7 @@ enum RegStatus {
 class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
                       public TinyGsmGPRS<TinyGsmSim800>,
                       public TinyGsmTCP<TinyGsmSim800, TINY_GSM_MUX_COUNT>,
-                      public TinyGsmSSL<TinyGsmSim800>,
+                      public TinyGsmSSL<TinyGsmSim800, TINY_GSM_MUX_COUNT>,
                       public TinyGsmCalling<TinyGsmSim800>,
                       public TinyGsmSMS<TinyGsmSim800>,
                       public TinyGsmGSMLocation<TinyGsmSim800>,
@@ -57,7 +71,7 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
   friend class TinyGsmModem<TinyGsmSim800>;
   friend class TinyGsmGPRS<TinyGsmSim800>;
   friend class TinyGsmTCP<TinyGsmSim800, TINY_GSM_MUX_COUNT>;
-  friend class TinyGsmSSL<TinyGsmSim800>;
+  friend class TinyGsmSSL<TinyGsmSim800, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmCalling<TinyGsmSim800>;
   friend class TinyGsmSMS<TinyGsmSim800>;
   friend class TinyGsmGSMLocation<TinyGsmSim800>;
@@ -134,7 +148,6 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
     explicit GsmClientSecureSim800(TinyGsmSim800& modem, uint8_t mux = 0)
         : GsmClientSim800(modem, mux) {}
 
-   public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
       stop();
       TINY_GSM_YIELD();
@@ -157,7 +170,7 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
    * Basic functions
    */
  protected:
-  bool initImpl(const char* pin = NULL) {
+  bool initImpl(const char* pin = nullptr) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
     DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientSIM800"));
 
@@ -188,7 +201,7 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
 
     SimStatus ret = getSimStatus();
     // if the sim isn't ready and a pin has been provided, try to unlock the sim
-    if (ret != SIM_READY && pin != NULL && strlen(pin) > 0) {
+    if (ret != SIM_READY && pin != nullptr && strlen(pin) > 0) {
       simUnlock(pin);
       return (getSimStatus() == SIM_READY);
     } else {
@@ -196,30 +209,6 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
       // return true
       return (ret == SIM_READY || ret == SIM_LOCKED);
     }
-  }
-
-  String getModemNameImpl() {
-    String name = "";
-#if defined(TINY_GSM_MODEM_SIM800)
-    name = "SIMCom SIM800";
-#elif defined(TINY_GSM_MODEM_SIM808)
-    name = "SIMCom SIM808";
-#elif defined(TINY_GSM_MODEM_SIM868)
-    name = "SIMCom SIM868";
-#elif defined(TINY_GSM_MODEM_SIM900)
-    name = "SIMCom SIM900";
-#endif
-
-    sendAT(GF("+GMM"));
-    String res2;
-    if (waitResponse(1000L, res2) != 1) { return name; }
-    res2.replace(GSM_NL "OK" GSM_NL, "");
-    res2.replace("_", " ");
-    res2.trim();
-
-    name = res2;
-    DBG("### Modem:", name);
-    return name;
   }
 
   bool factoryDefaultImpl() {
@@ -243,7 +232,7 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
       return false;
   #else
       sendAT(GF("+CIPSSL=?"));
-      if (waitResponse(GF(GSM_NL "+CIPSSL:")) != 1) { return false; }
+      if (waitResponse(GF(AT_NL "+CIPSSL:")) != 1) { return false; }
       return waitResponse() == 1;
   #endif
     }
@@ -253,7 +242,7 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
    * Power functions
    */
  protected:
-  bool restartImpl(const char* pin = NULL) {
+  bool restartImpl(const char* pin = nullptr) {
     if (!testAT()) { return false; }
     sendAT(GF("&W"));
     waitResponse();
@@ -290,13 +279,13 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
    * Generic network functions
    */
  public:
-  RegStatus getRegistrationStatus() {
-    return (RegStatus)getRegistrationStatusXREG("CREG");
+  SIM800RegStatus getRegistrationStatus() {
+    return (SIM800RegStatus)getRegistrationStatusXREG("CREG");
   }
 
  protected:
   bool isNetworkConnectedImpl() {
-    RegStatus s = getRegistrationStatus();
+    SIM800RegStatus s = getRegistrationStatus();
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
   }
 
@@ -304,18 +293,26 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
     sendAT(GF("+CIFSR;E0"));
     String res;
     if (waitResponse(10000L, res) != 1) { return ""; }
-    res.replace(GSM_NL "OK" GSM_NL, "");
-    res.replace(GSM_NL, "");
-    res.trim();
+    cleanResponseString(res);
     return res;
   }
+
+  /*
+   * Secure socket layer (SSL) functions
+   */
+  // Follows functions as inherited from TinyGsmSSL.tpp
+
+  /*
+   * WiFi functions
+   */
+  // No functions of this type supported
 
   /*
    * GPRS functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char* user = NULL,
-                       const char* pwd = NULL) {
+  bool gprsConnectImpl(const char* apn, const char* user = nullptr,
+                       const char* pwd = nullptr) {
     gprsDisconnect();
 
     // Bearer settings for applications based on IP
@@ -400,6 +397,15 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
     return true;
   }
 
+  String getProviderImpl() {
+    sendAT(GF("+CSPN?"));
+    if (waitResponse(GF("+CSPN:")) != 1) { return ""; }
+    streamSkipUntil('"'); /* Skip mode and format */
+    String res = stream.readStringUntil('"');
+    waitResponse();
+    return res;
+  }
+
   /*
    * SIM card functions
    */
@@ -407,7 +413,7 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
   // May not return the "+CCID" before the number
   String getSimCCIDImpl() {
     sendAT(GF("+CCID"));
-    if (waitResponse(GF(GSM_NL)) != 1) { return ""; }
+    if (waitResponse(GF(AT_NL)) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     waitResponse();
     // Trim out the CCID header in case it is there
@@ -426,26 +432,6 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
   }
 
   /*
-   * Messaging functions
-   */
- protected:
-  // Follows all messaging functions per template
-
-  /*
-   * GSM Location functions
-   */
- protected:
-  // Depending on the exacty model and firmware revision, should return a
-  // GSM-based location from CLBS as per the template
-  // TODO(?):  Check number of digits in year (2 or 4)
-
-  /*
-   * GPS/GNSS/GLONASS location functions
-   */
- protected:
-  // No functions of this type supported
-
-  /*
    * Audio functions
    */
  public:
@@ -458,7 +444,7 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
   uint8_t getVolume() {
     // Get speaker volume
     sendAT(GF("+CLVL?"));
-    if (waitResponse(GF(GSM_NL)) != 1) { return 0; }
+    if (waitResponse(GF(AT_NL)) != 1) { return 0; }
     String res = stream.readStringUntil('\n');
     waitResponse();
     res.replace("+CLVL:", "");
@@ -485,26 +471,46 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
   }
 
   /*
+   * Text messaging (SMS) functions
+   */
+  // Follows all text messaging (SMS) functions as inherited from TinyGsmSMS.tpp
+
+  /*
+   * GSM Location functions
+   */
+  // Depending on the exacty model and firmware revision, should return a
+  // GSM-based location from CLBS as as inherited from TinyGsmGSMLocation.tpp
+  // TODO(?):  Check number of digits in year (2 or 4)
+
+  /*
+   * GPS/GNSS/GLONASS location functions
+   */
+  // No functions of this type supported
+
+  /*
    * Time functions
    */
- protected:
-  // Can follow the standard CCLK function in the template
+  // Follows all clock functions as inherited from TinyGsmTime.tpp
 
   /*
    * NTP server functions
    */
-  // Can sync with server using CNTP as per template
+  // Follows all NTP server functions as inherited from TinyGsmNTP.tpp
+
+  /*
+   * BLE functions
+   */
+  // No functions of this type supported
 
   /*
    * Battery functions
    */
- protected:
-  // Follows all battery functions per template
+  // Follows all battery functions as inherited from TinyGsmBattery.tpp
 
   /*
-   * NTP server functions
+   * Temperature functions
    */
-  // Can sync with server using CNTP as per template
+  // No functions of this type supported
 
   /*
    * Client related functions
@@ -534,9 +540,9 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
     sendAT(GF("+CIPSTART="), mux, ',', GF("\"TCP"), GF("\",\""), host,
            GF("\","), port);
     rsp = waitResponse(
-        timeout_ms, GF("CONNECT OK" GSM_NL), GF("CONNECT FAIL" GSM_NL),
-        GF("ALREADY CONNECT" GSM_NL), GF("ERROR" GSM_NL),
-        GF("CLOSE OK" GSM_NL));  // Happens when HTTPS handshake fails
+        timeout_ms, GF("CONNECT OK" AT_NL), GF("CONNECT FAIL" AT_NL),
+        GF("ALREADY CONNECT" AT_NL), GF("ERROR" AT_NL),
+        GF("CLOSE OK" AT_NL));  // Happens when HTTPS handshake fails
     return (1 == rsp);
   }
 
@@ -545,7 +551,7 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
     if (waitResponse(GF(">")) != 1) { return 0; }
     stream.write(reinterpret_cast<const uint8_t*>(buff), len);
     stream.flush();
-    if (waitResponse(GF(GSM_NL "DATA ACCEPT:")) != 1) { return 0; }
+    if (waitResponse(GF(AT_NL "DATA ACCEPT:")) != 1) { return 0; }
     streamSkipUntil(',');  // Skip mux
     return streamGetIntBefore('\n');
   }
@@ -581,7 +587,7 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
       };
       buf[0] = stream.read();
       buf[1] = stream.read();
-      char c = strtol(buf, NULL, 16);
+      char c = strtol(buf, nullptr, 16);
 #else
       while (!stream.available() &&
              (millis() - startMillis < sockets[mux]->_timeout)) {
@@ -627,137 +633,63 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
    * Utilities
    */
  public:
-  // TODO(vshymanskyy): Optimize this!
-  int8_t waitResponse(uint32_t timeout_ms, String& data,
-                      GsmConstStr r1 = GFP(GSM_OK),
-                      GsmConstStr r2 = GFP(GSM_ERROR),
-#if defined TINY_GSM_DEBUG
-                      GsmConstStr r3 = GFP(GSM_CME_ERROR),
-                      GsmConstStr r4 = GFP(GSM_CMS_ERROR),
-#else
-                      GsmConstStr r3 = NULL, GsmConstStr r4 = NULL,
-#endif
-                      GsmConstStr r5 = NULL) {
-    /*String r1s(r1); r1s.trim();
-    String r2s(r2); r2s.trim();
-    String r3s(r3); r3s.trim();
-    String r4s(r4); r4s.trim();
-    String r5s(r5); r5s.trim();
-    DBG("### ..:", r1s, ",", r2s, ",", r3s, ",", r4s, ",", r5s);*/
-    data.reserve(64);
-    uint8_t  index       = 0;
-    uint32_t startMillis = millis();
-    do {
-      TINY_GSM_YIELD();
-      while (stream.available() > 0) {
-        TINY_GSM_YIELD();
-        int8_t a = stream.read();
-        if (a <= 0) continue;  // Skip 0x00 bytes, just in case
-        data += static_cast<char>(a);
-        if (r1 && data.endsWith(r1)) {
-          index = 1;
-          goto finish;
-        } else if (r2 && data.endsWith(r2)) {
-          index = 2;
-          goto finish;
-        } else if (r3 && data.endsWith(r3)) {
-#if defined TINY_GSM_DEBUG
-          if (r3 == GFP(GSM_CME_ERROR)) {
-            streamSkipUntil('\n');  // Read out the error
-          }
-#endif
-          index = 3;
-          goto finish;
-        } else if (r4 && data.endsWith(r4)) {
-          index = 4;
-          goto finish;
-        } else if (r5 && data.endsWith(r5)) {
-          index = 5;
-          goto finish;
-        } else if (data.endsWith(GF(GSM_NL "+CIPRXGET:"))) {
-          int8_t mode = streamGetIntBefore(',');
-          if (mode == 1) {
-            int8_t mux = streamGetIntBefore('\n');
-            if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
-              sockets[mux]->got_data = true;
-            }
-            data = "";
-            // DBG("### Got Data:", mux);
-          } else {
-            data += mode;
-          }
-        } else if (data.endsWith(GF(GSM_NL "+RECEIVE:"))) {
-          int8_t  mux = streamGetIntBefore(',');
-          int16_t len = streamGetIntBefore('\n');
-          if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
-            sockets[mux]->got_data = true;
-            if (len >= 0 && len <= 1024) { sockets[mux]->sock_available = len; }
-          }
-          data = "";
-          // DBG("### Got Data:", len, "on", mux);
-        } else if (data.endsWith(GF("CLOSED" GSM_NL))) {
-          int8_t nl   = data.lastIndexOf(GSM_NL, data.length() - 8);
-          int8_t coma = data.indexOf(',', nl + 2);
-          int8_t mux  = data.substring(nl + 2, coma).toInt();
-          if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
-            sockets[mux]->sock_connected = false;
-          }
-          data = "";
-          DBG("### Closed: ", mux);
-        } else if (data.endsWith(GF("*PSNWID:"))) {
-          streamSkipUntil('\n');  // Refresh network name by network
-          data = "";
-          DBG("### Network name updated.");
-        } else if (data.endsWith(GF("*PSUTTZ:"))) {
-          streamSkipUntil('\n');  // Refresh time and time zone by network
-          data = "";
-          DBG("### Network time and time zone updated.");
-        } else if (data.endsWith(GF("+CTZV:"))) {
-          streamSkipUntil('\n');  // Refresh network time zone by network
-          data = "";
-          DBG("### Network time zone updated.");
-        } else if (data.endsWith(GF("DST:"))) {
-          streamSkipUntil(
-              '\n');  // Refresh Network Daylight Saving Time by network
-          data = "";
-          DBG("### Daylight savings time state updated.");
+  bool handleURCs(String& data) {
+    if (data.endsWith(GF(AT_NL "+CIPRXGET:"))) {
+      int8_t mode = streamGetIntBefore(',');
+      if (mode == 1) {
+        int8_t mux = streamGetIntBefore('\n');
+        if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+          sockets[mux]->got_data = true;
         }
+        data = "";
+        // DBG("### Got Data:", mux);
+        return true;
+      } else {
+        data += mode;
+        return false;
       }
-    } while (millis() - startMillis < timeout_ms);
-  finish:
-    if (!index) {
-      data.trim();
-      if (data.length()) { DBG("### Unhandled:", data); }
+    } else if (data.endsWith(GF(AT_NL "+RECEIVE:"))) {
+      int8_t  mux = streamGetIntBefore(',');
+      int16_t len = streamGetIntBefore('\n');
+      if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+        sockets[mux]->got_data = true;
+        if (len >= 0 && len <= 1024) { sockets[mux]->sock_available = len; }
+      }
       data = "";
+      // DBG("### Got Data:", len, "on", mux);
+      return true;
+    } else if (data.endsWith(GF("CLOSED" AT_NL))) {
+      int8_t nl   = data.lastIndexOf(AT_NL, data.length() - 8);
+      int8_t coma = data.indexOf(',', nl + 2);
+      int8_t mux  = data.substring(nl + 2, coma).toInt();
+      if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+        sockets[mux]->sock_connected = false;
+      }
+      data = "";
+      DBG("### Closed: ", mux);
+      return true;
+    } else if (data.endsWith(GF("*PSNWID:"))) {
+      streamSkipUntil('\n');  // Refresh network name by network
+      data = "";
+      DBG("### Network name updated.");
+      return true;
+    } else if (data.endsWith(GF("*PSUTTZ:"))) {
+      streamSkipUntil('\n');  // Refresh time and time zone by network
+      data = "";
+      DBG("### Network time and time zone updated.");
+      return true;
+    } else if (data.endsWith(GF("+CTZV:"))) {
+      streamSkipUntil('\n');  // Refresh network time zone by network
+      data = "";
+      DBG("### Network time zone updated.");
+      return true;
+    } else if (data.endsWith(GF("DST:"))) {
+      streamSkipUntil('\n');  // Refresh Network Daylight Saving Time by network
+      data = "";
+      DBG("### Daylight savings time state updated.");
+      return true;
     }
-    // data.replace(GSM_NL, "/");
-    // DBG('<', index, '>', data);
-    return index;
-  }
-
-  int8_t waitResponse(uint32_t timeout_ms, GsmConstStr r1 = GFP(GSM_OK),
-                      GsmConstStr r2 = GFP(GSM_ERROR),
-#if defined TINY_GSM_DEBUG
-                      GsmConstStr r3 = GFP(GSM_CME_ERROR),
-                      GsmConstStr r4 = GFP(GSM_CMS_ERROR),
-#else
-                      GsmConstStr r3 = NULL, GsmConstStr r4 = NULL,
-#endif
-                      GsmConstStr r5 = NULL) {
-    String data;
-    return waitResponse(timeout_ms, data, r1, r2, r3, r4, r5);
-  }
-
-  int8_t waitResponse(GsmConstStr r1 = GFP(GSM_OK),
-                      GsmConstStr r2 = GFP(GSM_ERROR),
-#if defined TINY_GSM_DEBUG
-                      GsmConstStr r3 = GFP(GSM_CME_ERROR),
-                      GsmConstStr r4 = GFP(GSM_CMS_ERROR),
-#else
-                      GsmConstStr r3 = NULL, GsmConstStr r4 = NULL,
-#endif
-                      GsmConstStr r5 = NULL) {
-    return waitResponse(1000, r1, r2, r3, r4, r5);
+    return false;
   }
 
  public:
@@ -765,7 +697,6 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
 
  protected:
   GsmClientSim800* sockets[TINY_GSM_MUX_COUNT];
-  const char*      gsmNL = GSM_NL;
 };
 
 #endif  // SRC_TINYGSMCLIENTSIM800_H_

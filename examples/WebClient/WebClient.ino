@@ -18,9 +18,12 @@
 // #define TINY_GSM_MODEM_SIM7080
 // #define TINY_GSM_MODEM_SIM5360
 // #define TINY_GSM_MODEM_SIM7600
+// #define TINY_GSM_MODEM_A7672X
 // #define TINY_GSM_MODEM_UBLOX
 // #define TINY_GSM_MODEM_SARAR4
+// #define TINY_GSM_MODEM_SARAR5
 // #define TINY_GSM_MODEM_M95
+// #define TINY_GSM_MODEM_BG95
 // #define TINY_GSM_MODEM_BG96
 // #define TINY_GSM_MODEM_A6
 // #define TINY_GSM_MODEM_A7
@@ -28,6 +31,7 @@
 // #define TINY_GSM_MODEM_MC60
 // #define TINY_GSM_MODEM_MC60E
 // #define TINY_GSM_MODEM_ESP8266
+// #define TINY_GSM_MODEM_ESP32
 // #define TINY_GSM_MODEM_XBEE
 // #define TINY_GSM_MODEM_SEQUANS_MONARCH
 
@@ -115,6 +119,10 @@ StreamDebugger debugger(SerialAT, SerialMon);
 TinyGsm        modem(debugger);
 #else
 TinyGsm        modem(SerialAT);
+#endif
+
+#if defined(TINY_GSM_MODEM_HAS_SSL)
+#define USE_SSL
 #endif
 
 #ifdef USE_SSL

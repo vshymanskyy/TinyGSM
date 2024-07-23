@@ -32,11 +32,11 @@
 
 
 #ifdef DUMP_AT_COMMANDS
-  #include <StreamDebugger.h>
-  StreamDebugger debugger(SerialAT, SerialMon);
-  TinyGsm modem(debugger);
+#include <StreamDebugger.h>
+StreamDebugger debugger(SerialAT, SerialMon);
+TinyGsm        modem(debugger);
 #else
-  TinyGsm modem(SerialAT);
+TinyGsm modem(SerialAT);
 #endif
 
 void setup() {
@@ -57,23 +57,21 @@ void setup() {
   const int cert_size = sizeof(cert);
 
   modem.sendAT(GF("+FSWRITE=" CERT_FILE ",0,"), cert_size, GF(",10"));
-  if (modem.waitResponse(GF(">")) != 1) {
-    return;
-  }
+  if (modem.waitResponse(GF(">")) != 1) { return; }
 
   for (int i = 0; i < cert_size; i++) {
     char c = pgm_read_byte(&cert[i]);
     modem.stream.write(c);
   }
 
-  modem.stream.write(GSM_NL);
+  modem.stream.write(AT_NL);
   modem.stream.flush();
 
   if (modem.waitResponse(2000) != 1) return;
 
   modem.sendAT(GF("+SSLSETCERT=\"" CERT_FILE "\""));
   if (modem.waitResponse() != 1) return;
-  if (modem.waitResponse(5000L, GF(GSM_NL "+SSLSETCERT:")) != 1) return;
+  if (modem.waitResponse(5000L, GF(AT_NL "+SSLSETCERT:")) != 1) return;
   const int retCode = modem.stream.readStringUntil('\n').toInt();
 
 
@@ -86,11 +84,7 @@ void setup() {
 }
 
 void loop() {
-  if (SerialAT.available()) {
-    SerialMon.write(SerialAT.read());
-  }
-  if (SerialMon.available()) {
-    SerialAT.write(SerialMon.read());
-  }
+  if (SerialAT.available()) { SerialMon.write(SerialAT.read()); }
+  if (SerialMon.available()) { SerialAT.write(SerialMon.read()); }
   delay(0);
 }

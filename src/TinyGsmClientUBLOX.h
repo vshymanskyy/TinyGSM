@@ -14,27 +14,33 @@
 
 #define TINY_GSM_MUX_COUNT 7
 #define TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
-
-#include "TinyGsmBattery.tpp"
-#include "TinyGsmCalling.tpp"
-#include "TinyGsmGPRS.tpp"
-#include "TinyGsmGPS.tpp"
-#include "TinyGsmGSMLocation.tpp"
-#include "TinyGsmModem.tpp"
-#include "TinyGsmSMS.tpp"
-#include "TinyGsmSSL.tpp"
-#include "TinyGsmTCP.tpp"
-#include "TinyGsmTime.tpp"
-
-#define GSM_NL "\r\n"
-static const char GSM_OK[] TINY_GSM_PROGMEM    = "OK" GSM_NL;
-static const char GSM_ERROR[] TINY_GSM_PROGMEM = "ERROR" GSM_NL;
-#if defined       TINY_GSM_DEBUG
-static const char GSM_CME_ERROR[] TINY_GSM_PROGMEM = GSM_NL "+CME ERROR:";
-static const char GSM_CMS_ERROR[] TINY_GSM_PROGMEM = GSM_NL "+CMS ERROR:";
+#ifdef AT_NL
+#undef AT_NL
 #endif
+#define AT_NL "\r\n"
 
-enum RegStatus {
+#ifdef MODEM_MANUFACTURER
+#undef MODEM_MANUFACTURER
+#endif
+#define MODEM_MANUFACTURER "u-blox"
+
+#ifdef MODEM_MODEL
+#undef MODEM_MODEL
+#endif
+#define MODEM_MODEL "unknown"
+
+#include "TinyGsmModem.tpp"
+#include "TinyGsmTCP.tpp"
+#include "TinyGsmSSL.tpp"
+#include "TinyGsmGPRS.tpp"
+#include "TinyGsmCalling.tpp"
+#include "TinyGsmSMS.tpp"
+#include "TinyGsmGSMLocation.tpp"
+#include "TinyGsmGPS.tpp"
+#include "TinyGsmTime.tpp"
+#include "TinyGsmBattery.tpp"
+
+enum UBLOXRegStatus {
   REG_NO_RESULT    = -1,
   REG_UNREGISTERED = 0,
   REG_SEARCHING    = 2,
@@ -47,7 +53,7 @@ enum RegStatus {
 class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
                      public TinyGsmGPRS<TinyGsmUBLOX>,
                      public TinyGsmTCP<TinyGsmUBLOX, TINY_GSM_MUX_COUNT>,
-                     public TinyGsmSSL<TinyGsmUBLOX>,
+                     public TinyGsmSSL<TinyGsmUBLOX, TINY_GSM_MUX_COUNT>,
                      public TinyGsmCalling<TinyGsmUBLOX>,
                      public TinyGsmSMS<TinyGsmUBLOX>,
                      public TinyGsmGSMLocation<TinyGsmUBLOX>,
@@ -57,7 +63,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
   friend class TinyGsmModem<TinyGsmUBLOX>;
   friend class TinyGsmGPRS<TinyGsmUBLOX>;
   friend class TinyGsmTCP<TinyGsmUBLOX, TINY_GSM_MUX_COUNT>;
-  friend class TinyGsmSSL<TinyGsmUBLOX>;
+  friend class TinyGsmSSL<TinyGsmUBLOX, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmCalling<TinyGsmUBLOX>;
   friend class TinyGsmSMS<TinyGsmUBLOX>;
   friend class TinyGsmGSMLocation<TinyGsmUBLOX>;
@@ -106,7 +112,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
       sock_connected = at->modemConnect(host, port, &mux, false, timeout_s);
       if (mux != oldMux) {
         DBG("WARNING:  Mux number changed from", oldMux, "to", mux);
-        at->sockets[oldMux] = NULL;
+        at->sockets[oldMux] = nullptr;
       }
       at->sockets[mux] = this;
       at->maintain();
@@ -143,7 +149,6 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
     explicit GsmClientSecureUBLOX(TinyGsmUBLOX& modem, uint8_t mux = 0)
         : GsmClientUBLOX(modem, mux) {}
 
-   public:
     int connect(const char* host, uint16_t port, int timeout_s) override {
       // stop();  // DON'T stop!
       TINY_GSM_YIELD();
@@ -152,7 +157,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
       sock_connected = at->modemConnect(host, port, &mux, true, timeout_s);
       if (mux != oldMux) {
         DBG("WARNING:  Mux number changed from", oldMux, "to", mux);
-        at->sockets[oldMux] = NULL;
+        at->sockets[oldMux] = nullptr;
       }
       at->sockets[mux] = this;
       at->maintain();
@@ -173,7 +178,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
    * Basic functions
    */
  protected:
-  bool initImpl(const char* pin = NULL) {
+  bool initImpl(const char* pin = nullptr) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
     DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientUBLOX"));
 
@@ -199,7 +204,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
 
     SimStatus ret = getSimStatus();
     // if the sim isn't ready and a pin has been provided, try to unlock the sim
-    if (ret != SIM_READY && pin != NULL && strlen(pin) > 0) {
+    if (ret != SIM_READY && pin != nullptr && strlen(pin) > 0) {
       simUnlock(pin);
       return (getSimStatus() == SIM_READY);
     } else {
@@ -211,26 +216,15 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
 
   // only difference in implementation is the warning on the wrong type
   String getModemNameImpl() {
-    sendAT(GF("+CGMI"));
-    String res1;
-    if (waitResponse(1000L, res1) != 1) { return "u-blox Cellular Modem"; }
-    res1.replace(GSM_NL "OK" GSM_NL, "");
-    res1.trim();
-
-    sendAT(GF("+GMM"));
-    String res2;
-    if (waitResponse(1000L, res2) != 1) { return "u-blox Cellular Modem"; }
-    res2.replace(GSM_NL "OK" GSM_NL, "");
-    res2.trim();
-
-    String name = res1 + String(' ') + res2;
+    String manufacturer = getModemManufacturer();
+    String model        = getModemModel();
+    String name         = manufacturer + String(" ") + model;
     if (name.startsWith("u-blox SARA-R4") ||
         name.startsWith("u-blox SARA-N4")) {
       DBG("### WARNING:  You are using the wrong TinyGSM modem!");
     } else if (name.startsWith("u-blox SARA-N2")) {
       DBG("### SARA N2 NB-IoT modems not supported!");
     }
-
     return name;
   }
 
@@ -244,7 +238,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
    * Power functions
    */
  protected:
-  bool restartImpl(const char* pin = NULL) {
+  bool restartImpl(const char* pin = nullptr) {
     if (!testAT()) { return false; }
     if (!setPhoneFunctionality(16)) { return false; }
     delay(3000);  // TODO(?):  Verify delay timing here
@@ -267,8 +261,8 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
    * Generic network functions
    */
  public:
-  RegStatus getRegistrationStatus() {
-    return (RegStatus)getRegistrationStatusXREG("CGREG");
+  UBLOXRegStatus getRegistrationStatus() {
+    return (UBLOXRegStatus)getRegistrationStatusXREG("CGREG");
   }
 
   bool setRadioAccessTecnology(int selected, int preferred) {
@@ -296,7 +290,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
 
  protected:
   bool isNetworkConnectedImpl() {
-    RegStatus s = getRegistrationStatus();
+    UBLOXRegStatus s = getRegistrationStatus();
     if (s == REG_OK_HOME || s == REG_OK_ROAMING)
       return true;
     else if (s == REG_UNKNOWN)  // for some reason, it can hang at unknown..
@@ -307,7 +301,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
 
   String getLocalIPImpl() {
     sendAT(GF("+UPSND=0,0"));
-    if (waitResponse(GF(GSM_NL "+UPSND:")) != 1) { return ""; }
+    if (waitResponse(GF(AT_NL "+UPSND:")) != 1) { return ""; }
     streamSkipUntil(',');   // Skip PSD profile
     streamSkipUntil('\"');  // Skip request type
     String res = stream.readStringUntil('\"');
@@ -316,11 +310,21 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
   }
 
   /*
+   * Secure socket layer (SSL) functions
+   */
+  // Follows functions as inherited from TinyGsmSSL.tpp
+
+  /*
+   * WiFi functions
+   */
+  // No functions of this type supported
+
+  /*
    * GPRS functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char* user = NULL,
-                       const char* pwd = NULL) {
+  bool gprsConnectImpl(const char* apn, const char* user = nullptr,
+                       const char* pwd = nullptr) {
     // gprsDisconnect();
 
     sendAT(GF("+CGATT=1"));  // attach to GPRS
@@ -406,7 +410,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
   // This uses "CGSN" instead of "GSN"
   String getIMEIImpl() {
     sendAT(GF("+CGSN"));
-    if (waitResponse(GF(GSM_NL)) != 1) { return ""; }
+    if (waitResponse(GF(AT_NL)) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     waitResponse();
     res.trim();
@@ -416,14 +420,17 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
   /*
    * Phone Call functions
    */
- protected:
-  // Can follow all of the phone call functions from the template
+  // Follows all phone call functions as inherited from TinyGsmCalling.tpp
 
   /*
-   * Messaging functions
+   * Audio functions
    */
- protected:
-  // Can follow all template functions
+  // No functions of this type supported
+
+  /*
+   * Text messaging (SMS) functions
+   */
+  // Follows all text messaging (SMS) functions as inherited from TinyGsmSMS.tpp
 
   /*
    * GSM/GPS/GNSS/GLONASS Location functions
@@ -440,12 +447,12 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
     // <aid_mode> - 0: no aiding (default)
     // <GNSS_systems> - 3: GPS + SBAS (default)
     sendAT(GF("+UGPS=1,0,3"));
-    if (waitResponse(10000L, GF(GSM_NL "+UGPS:")) != 1) { return false; }
+    if (waitResponse(10000L, GF(AT_NL "+UGPS:")) != 1) { return false; }
     return waitResponse(10000L) == 1;
   }
   bool disableGPSImpl() {
     sendAT(GF("+UGPS=0"));
-    if (waitResponse(10000L, GF(GSM_NL "+UGPS:")) != 1) { return false; }
+    if (waitResponse(10000L, GF(AT_NL "+UGPS:")) != 1) { return false; }
     return waitResponse(10000L) == 1;
   }
   String inline getUbloxLocationRaw(int8_t sensor) {
@@ -465,7 +472,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
     // wait for first "OK"
     if (waitResponse(10000L) != 1) { return ""; }
     // wait for the final result - wait full timeout time
-    if (waitResponse(120000L, GF(GSM_NL "+UULOC:")) != 1) { return ""; }
+    if (waitResponse(120000L, GF(AT_NL "+UULOC:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     waitResponse();
     res.trim();
@@ -500,7 +507,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
     // wait for first "OK"
     if (waitResponse(10000L) != 1) { return false; }
     // wait for the final result - wait full timeout time
-    if (waitResponse(120000L, GF(GSM_NL "+UULOC: ")) != 1) { return false; }
+    if (waitResponse(120000L, GF(AT_NL "+UULOC: ")) != 1) { return false; }
 
     // +UULOC: <date>, <time>, <lat>, <long>, <alt>, <uncertainty>, <speed>,
     // <direction>, <vertical_acc>, <sensor_used>, <SV_used>, <antenna_status>,
@@ -549,20 +556,21 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
     }
 
     // Set pointers
-    if (lat != NULL) *lat = ilat;
-    if (lon != NULL) *lon = ilon;
-    if (speed != NULL) *speed = ispeed;
-    if (alt != NULL) *alt = ialt;
-    if (vsat != NULL) *vsat = 0;  // Number of satellites viewed not reported;
-    if (usat != NULL) *usat = iusat;
-    if (accuracy != NULL) *accuracy = iaccuracy;
+    if (lat != nullptr) *lat = ilat;
+    if (lon != nullptr) *lon = ilon;
+    if (speed != nullptr) *speed = ispeed;
+    if (alt != nullptr) *alt = ialt;
+    if (vsat != nullptr)
+      *vsat = 0;  // Number of satellites viewed not reported;
+    if (usat != nullptr) *usat = iusat;
+    if (accuracy != nullptr) *accuracy = iaccuracy;
     if (iyear < 2000) iyear += 2000;
-    if (year != NULL) *year = iyear;
-    if (month != NULL) *month = imonth;
-    if (day != NULL) *day = iday;
-    if (hour != NULL) *hour = ihour;
-    if (minute != NULL) *minute = imin;
-    if (second != NULL) *second = static_cast<int>(secondWithSS);
+    if (year != nullptr) *year = iyear;
+    if (month != nullptr) *month = imonth;
+    if (day != nullptr) *day = iday;
+    if (hour != nullptr) *hour = ihour;
+    if (minute != nullptr) *minute = imin;
+    if (second != nullptr) *second = static_cast<int>(secondWithSS);
 
     // final ok
     waitResponse();
@@ -585,18 +593,27 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
   /*
    * Time functions
    */
- protected:
-  // Can follow the standard CCLK function in the template
+  // Follows all clock functions as inherited from TinyGsmTime.tpp
+
+  /*
+   * NTP server functions
+   */
+  // No functions of this type supported
+
+  /*
+   * BLE functions
+   */
+  // No functions of this type supported
 
   /*
    * Battery functions
    */
  protected:
-  uint16_t getBattVoltageImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
+  int16_t getBattVoltageImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
 
   int8_t getBattPercentImpl() {
     sendAT(GF("+CIND?"));
-    if (waitResponse(GF(GSM_NL "+CIND:")) != 1) { return 0; }
+    if (waitResponse(GF(AT_NL "+CIND:")) != 1) { return 0; }
 
     int8_t res     = streamGetIntBefore(',');
     int8_t percent = res * 20;  // return is 0-5
@@ -605,10 +622,10 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
     return percent;
   }
 
-  uint8_t getBattChargeStateImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
+  int8_t getBattChargeStateImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
 
-  bool getBattStatsImpl(uint8_t& chargeState, int8_t& percent,
-                        uint16_t& milliVolts) {
+  bool getBattStatsImpl(int8_t& chargeState, int8_t& percent,
+                        int16_t& milliVolts) {
     chargeState = 0;
     percent     = getBattPercent();
     milliVolts  = 0;
@@ -618,7 +635,6 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
   /*
    * Temperature functions
    */
-
   // This would only available for a small number of modules in this group
   // (TOBY-L)
   float getTemperatureImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
@@ -635,7 +651,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
     // create a socket
     sendAT(GF("+USOCR=6"));
     // reply is +USOCR: ## of socket created
-    if (waitResponse(GF(GSM_NL "+USOCR:")) != 1) { return false; }
+    if (waitResponse(GF(AT_NL "+USOCR:")) != 1) { return false; }
     *mux = streamGetIntBefore('\n');
     waitResponse();
 
@@ -669,7 +685,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
     delay(50);
     stream.write(reinterpret_cast<const uint8_t*>(buff), len);
     stream.flush();
-    if (waitResponse(GF(GSM_NL "+USOWR:")) != 1) { return 0; }
+    if (waitResponse(GF(AT_NL "+USOWR:")) != 1) { return 0; }
     streamSkipUntil(',');  // Skip mux
     int16_t sent = streamGetIntBefore('\n');
     waitResponse();  // sends back OK after the confirmation of number sent
@@ -679,7 +695,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
   size_t modemRead(size_t size, uint8_t mux) {
     if (!sockets[mux]) return 0;
     sendAT(GF("+USORD="), mux, ',', (uint16_t)size);
-    if (waitResponse(GF(GSM_NL "+USORD:")) != 1) { return 0; }
+    if (waitResponse(GF(AT_NL "+USORD:")) != 1) { return 0; }
     streamSkipUntil(',');  // Skip mux
     int16_t len = streamGetIntBefore(',');
     streamSkipUntil('\"');
@@ -697,7 +713,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
     // NOTE:  Querying a closed socket gives an error "operation not allowed"
     sendAT(GF("+USORD="), mux, ",0");
     size_t  result = 0;
-    uint8_t res    = waitResponse(GF(GSM_NL "+USORD:"));
+    uint8_t res    = waitResponse(GF(AT_NL "+USORD:"));
     // Will give error "operation not allowed" when attempting to read a socket
     // that you have already told to close
     if (res == 1) {
@@ -714,7 +730,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
   bool modemGetConnected(uint8_t mux) {
     // NOTE:  Querying a closed socket gives an error "operation not allowed"
     sendAT(GF("+USOCTL="), mux, ",10");
-    uint8_t res = waitResponse(GF(GSM_NL "+USOCTL:"));
+    uint8_t res = waitResponse(GF(AT_NL "+USOCTL:"));
     if (res != 1) { return false; }
 
     streamSkipUntil(',');  // Skip mux
@@ -740,107 +756,28 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
    * Utilities
    */
  public:
-  // TODO(vshymanskyy): Optimize this!
-  int8_t waitResponse(uint32_t timeout_ms, String& data,
-                      GsmConstStr r1 = GFP(GSM_OK),
-                      GsmConstStr r2 = GFP(GSM_ERROR),
-#if defined TINY_GSM_DEBUG
-                      GsmConstStr r3 = GFP(GSM_CME_ERROR),
-                      GsmConstStr r4 = GFP(GSM_CMS_ERROR),
-#else
-                      GsmConstStr r3 = NULL, GsmConstStr r4 = NULL,
-#endif
-                      GsmConstStr r5 = NULL) {
-    /*String r1s(r1); r1s.trim();
-    String r2s(r2); r2s.trim();
-    String r3s(r3); r3s.trim();
-    String r4s(r4); r4s.trim();
-    String r5s(r5); r5s.trim();
-    DBG("### ..:", r1s, ",", r2s, ",", r3s, ",", r4s, ",", r5s);*/
-    data.reserve(64);
-    uint8_t  index       = 0;
-    uint32_t startMillis = millis();
-    do {
-      TINY_GSM_YIELD();
-      while (stream.available() > 0) {
-        TINY_GSM_YIELD();
-        int8_t a = stream.read();
-        if (a <= 0) continue;  // Skip 0x00 bytes, just in case
-        data += static_cast<char>(a);
-        if (r1 && data.endsWith(r1)) {
-          index = 1;
-          goto finish;
-        } else if (r2 && data.endsWith(r2)) {
-          index = 2;
-          goto finish;
-        } else if (r3 && data.endsWith(r3)) {
-#if defined TINY_GSM_DEBUG
-          if (r3 == GFP(GSM_CME_ERROR)) {
-            streamSkipUntil('\n');  // Read out the error
-          }
-#endif
-          index = 3;
-          goto finish;
-        } else if (r4 && data.endsWith(r4)) {
-          index = 4;
-          goto finish;
-        } else if (r5 && data.endsWith(r5)) {
-          index = 5;
-          goto finish;
-        } else if (data.endsWith(GF("+UUSORD:"))) {
-          int8_t  mux = streamGetIntBefore(',');
-          int16_t len = streamGetIntBefore('\n');
-          if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
-            sockets[mux]->got_data = true;
-            // max size is 1024
-            if (len >= 0 && len <= 1024) { sockets[mux]->sock_available = len; }
-          }
-          data = "";
-          // DBG("### URC Data Received:", len, "on", mux);
-        } else if (data.endsWith(GF("+UUSOCL:"))) {
-          int8_t mux = streamGetIntBefore('\n');
-          if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
-            sockets[mux]->sock_connected = false;
-          }
-          data = "";
-          DBG("### URC Sock Closed: ", mux);
-        }
+  bool handleURCs(String& data) {
+    if (data.endsWith(GF("+UUSORD:"))) {
+      int8_t  mux = streamGetIntBefore(',');
+      int16_t len = streamGetIntBefore('\n');
+      if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+        sockets[mux]->got_data = true;
+        // max size is 1024
+        if (len >= 0 && len <= 1024) { sockets[mux]->sock_available = len; }
       }
-    } while (millis() - startMillis < timeout_ms);
-  finish:
-    if (!index) {
-      data.trim();
-      if (data.length()) { DBG("### Unhandled:", data); }
       data = "";
+      // DBG("### URC Data Received:", len, "on", mux);
+      return true;
+    } else if (data.endsWith(GF("+UUSOCL:"))) {
+      int8_t mux = streamGetIntBefore('\n');
+      if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+        sockets[mux]->sock_connected = false;
+      }
+      data = "";
+      DBG("### URC Sock Closed: ", mux);
+      return true;
     }
-    // data.replace(GSM_NL, "/");
-    // DBG('<', index, '>', data);
-    return index;
-  }
-
-  int8_t waitResponse(uint32_t timeout_ms, GsmConstStr r1 = GFP(GSM_OK),
-                      GsmConstStr r2 = GFP(GSM_ERROR),
-#if defined TINY_GSM_DEBUG
-                      GsmConstStr r3 = GFP(GSM_CME_ERROR),
-                      GsmConstStr r4 = GFP(GSM_CMS_ERROR),
-#else
-                      GsmConstStr r3 = NULL, GsmConstStr r4 = NULL,
-#endif
-                      GsmConstStr r5 = NULL) {
-    String data;
-    return waitResponse(timeout_ms, data, r1, r2, r3, r4, r5);
-  }
-
-  int8_t waitResponse(GsmConstStr r1 = GFP(GSM_OK),
-                      GsmConstStr r2 = GFP(GSM_ERROR),
-#if defined TINY_GSM_DEBUG
-                      GsmConstStr r3 = GFP(GSM_CME_ERROR),
-                      GsmConstStr r4 = GFP(GSM_CMS_ERROR),
-#else
-                      GsmConstStr r3 = NULL, GsmConstStr r4 = NULL,
-#endif
-                      GsmConstStr r5 = NULL) {
-    return waitResponse(1000, r1, r2, r3, r4, r5);
+    return false;
   }
 
  public:
@@ -848,7 +785,6 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
 
  protected:
   GsmClientUBLOX* sockets[TINY_GSM_MUX_COUNT];
-  const char*     gsmNL = GSM_NL;
 };
 
 #endif  // SRC_TINYGSMCLIENTUBLOX_H_

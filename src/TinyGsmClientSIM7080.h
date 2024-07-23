@@ -18,13 +18,31 @@
 #include "TinyGsmClientSIM70xx.h"
 #include "TinyGsmTCP.tpp"
 #include "TinyGsmSSL.tpp"
+#include "TinyGsmSMS.tpp"
+#include "TinyGsmGSMLocation.tpp"
+#include "TinyGsmTime.tpp"
+#include "TinyGsmNTP.tpp"
+#include "TinyGsmBattery.tpp"
 
 class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
                        public TinyGsmTCP<TinyGsmSim7080, TINY_GSM_MUX_COUNT>,
-                       public TinyGsmSSL<TinyGsmSim7080> {
+                       public TinyGsmSSL<TinyGsmSim7080, TINY_GSM_MUX_COUNT>,
+                       public TinyGsmSMS<TinyGsmSim7080>,
+                       public TinyGsmGSMLocation<TinyGsmSim7080>,
+                       public TinyGsmTime<TinyGsmSim7080>,
+                       public TinyGsmNTP<TinyGsmSim7080>,
+                       public TinyGsmBattery<TinyGsmSim7080> {
   friend class TinyGsmSim70xx<TinyGsmSim7080>;
+  friend class TinyGsmModem<TinyGsmSim7080>;
+  friend class TinyGsmGPRS<TinyGsmSim7080>;
   friend class TinyGsmTCP<TinyGsmSim7080, TINY_GSM_MUX_COUNT>;
-  friend class TinyGsmSSL<TinyGsmSim7080>;
+  friend class TinyGsmSSL<TinyGsmSim7080, TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmSMS<TinyGsmSim7080>;
+  friend class TinyGsmGSMLocation<TinyGsmSim7080>;
+  friend class TinyGsmGPS<TinyGsmSim7080>;
+  friend class TinyGsmTime<TinyGsmSim7080>;
+  friend class TinyGsmNTP<TinyGsmSim7080>;
+  friend class TinyGsmBattery<TinyGsmSim7080>;
 
   /*
    * Inner Client
@@ -87,7 +105,7 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
   /*
    * Inner Secure Client
    */
-
+ public:
   class GsmClientSecureSIM7080 : public GsmClientSim7080 {
    public:
     GsmClientSecureSIM7080() {}
@@ -95,13 +113,11 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     explicit GsmClientSecureSIM7080(TinyGsmSim7080& modem, uint8_t mux = 0)
         : GsmClientSim7080(modem, mux) {}
 
-   public:
     bool setCertificate(const String& certificateName) {
       return at->setCertificate(certificateName, mux);
     }
 
-    virtual int connect(const char* host, uint16_t port,
-                        int timeout_s) override {
+    int connect(const char* host, uint16_t port, int timeout_s) override {
       stop();
       TINY_GSM_YIELD();
       rx.clear();
@@ -116,8 +132,7 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
    */
  public:
   explicit TinyGsmSim7080(Stream& stream)
-      : TinyGsmSim70xx<TinyGsmSim7080>(stream),
-        certificates() {
+      : TinyGsmSim70xx<TinyGsmSim7080>(stream) {
     memset(sockets, 0, sizeof(sockets));
   }
 
@@ -125,14 +140,26 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
    * Basic functions
    */
  protected:
-  bool initImpl(const char* pin = NULL) {
+  bool initImpl(const char* pin = nullptr) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
     DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientSIM7080"));
 
-    if (!testAT()) { return false; }
-
-    sendAT(GF("E0"));  // Echo Off
-    if (waitResponse() != 1) { return false; }
+    bool gotATOK = false;
+    for (uint32_t start = millis(); millis() - start < 10000L;) {
+      sendAT(GF(""));
+      int8_t resp = waitResponse(200L, GFP(GSM_OK), GFP(GSM_ERROR), GF("AT"));
+      if (resp == 1) {
+        gotATOK = true;
+        break;
+      } else if (resp == 3) {
+        waitResponse(200L);  // get the OK
+        sendAT(GF("E0"));    // Echo Off
+        DBG(GF("## Turning off echo!"));
+        waitResponse(2000L);
+      }
+      delay(100);
+    }
+    if (!gotATOK) { return false; }
 
 #ifdef TINY_GSM_DEBUG
     sendAT(GF("+CMEE=2"));  // turn on verbose error codes
@@ -153,7 +180,7 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
 
     SimStatus ret = getSimStatus();
     // if the sim isn't ready and a pin has been provided, try to unlock the sim
-    if (ret != SIM_READY && pin != NULL && strlen(pin) > 0) {
+    if (ret != SIM_READY && pin != nullptr && strlen(pin) > 0) {
       simUnlock(pin);
       return (getSimStatus() == SIM_READY);
     } else {
@@ -177,14 +204,39 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     // modemGetAvailable checks all socks, so we only want to do it once
     // modemGetAvailable calls modemGetConnected(), which also checks allf
     if (check_socks) { modemGetAvailable(0); }
-    while (stream.available()) { waitResponse(15, NULL, NULL); }
+    while (stream.available()) { waitResponse(15, nullptr, nullptr); }
   }
 
   /*
    * Power functions
    */
  protected:
-  // Follows the SIM70xx template
+  bool restartImpl(const char* pin = nullptr) {
+    bool success = true;
+
+    bool gotATOK = false;
+    for (uint32_t start = millis(); millis() - start < 10000L;) {
+      sendAT(GF(""));
+      int8_t resp = waitResponse(200L, GFP(GSM_OK), GFP(GSM_ERROR), GF("AT"));
+      if (resp == 1) {
+        gotATOK = true;
+        break;
+      } else if (resp == 3) {
+        waitResponse(200L);  // get the OK
+        DBG(GF("## Turning off echo!"));
+        sendAT(GF("E0"));  // Echo Off
+        waitResponse(2000L);
+      }
+      delay(100);
+    }
+    if (!gotATOK) { return false; }
+
+    sendAT(GF("+CREBOOT"));  // Reboot
+    success &= waitResponse() == 1;
+    waitResponse(30000L, GF("SMS Ready"));
+    success &= initImpl(pin);
+    return success;
+  }
 
   /*
    * Generic network functions
@@ -192,7 +244,7 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
  protected:
   String getLocalIPImpl() {
     sendAT(GF("+CNACT?"));
-    if (waitResponse(GF(GSM_NL "+CNACT:")) != 1) { return ""; }
+    if (waitResponse(GF(AT_NL "+CNACT:")) != 1) { return ""; }
     streamSkipUntil('\"');
     String res = stream.readStringUntil('\"');
     waitResponse();
@@ -200,21 +252,21 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
   }
 
   /*
-   * Secure socket layer functions
+   * Secure socket layer (SSL) functions
    */
- protected:
-  bool setCertificate(const String& certificateName, const uint8_t mux = 0) {
-    if (mux >= TINY_GSM_MUX_COUNT) return false;
-    certificates[mux] = certificateName;
-    return true;
-  }
+  // Follows functions as inherited from TinyGsmSSL.tpp
+
+  /*
+   * WiFi functions
+   */
+  // No functions of this type supported
 
   /*
    * GPRS functions
    */
  protected:
-  bool gprsConnectImpl(const char* apn, const char* user = NULL,
-                       const char* pwd = NULL) {
+  bool gprsConnectImpl(const char* apn, const char* user = nullptr,
+                       const char* pwd = nullptr) {
     gprsDisconnect();
 
     // Define the PDP context
@@ -247,7 +299,7 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     //                  2: CHAP
     //                  3: PAP or CHAP
     if (pwd && strlen(pwd) > 0 && user && strlen(user) > 0) {
-      sendAT(GF("+CNCFG=0,1,\""), apn, "\",\"", user, "\",\"", pwd, '"');
+      sendAT(GF("+CNCFG=0,1,\""), apn, "\",\"", user, "\",\"", pwd, "\",3");
       waitResponse();
     } else if (user && strlen(user) > 0) {
       // Set the user name only
@@ -270,8 +322,8 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     int  ntries = 0;
     while (!res && ntries < 5) {
       sendAT(GF("+CNACT=0,1"));
-      res = waitResponse(60000L, GF(GSM_NL "+APP PDP: 0,ACTIVE"),
-                         GF(GSM_NL "+APP PDP: 0,DEACTIVE"));
+      res = waitResponse(60000L, GF(AT_NL "+APP PDP: 0,ACTIVE"),
+                         GF(AT_NL "+APP PDP: 0,DEACTIVE"));
       waitResponse();
       ntries++;
     }
@@ -294,36 +346,96 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
   /*
    * SIM card functions
    */
- protected:
-  // Follows the SIM70xx template
+  // Follows functions as inherited from TinyGsmClientSIM70xx.h
 
   /*
-   * Messaging functions
+   * Phone Call functions
    */
- protected:
-  // Follows all messaging functions per template
+  // No functions of this type supported
+
+  /*
+   * Audio functions
+   */
+  // No functions of this type supported
+
+  /*
+   * Text messaging (SMS) functions
+   */
+  // Follows all text messaging (SMS) functions as inherited from TinyGsmSMS.tpp
+
+  /*
+   * GSM Location functions
+   */
+  // Follows all GSM-based location functions as inherited from
+  // TinyGsmGSMLocation.tpp
 
   /*
    * GPS/GNSS/GLONASS location functions
    */
- protected:
-  // Follows the SIM70xx template
+  // Follows functions as inherited from TinyGsmClientSIM70xx.h
 
   /*
    * Time functions
    */
-  // Can follow CCLK as per template
+  // Follows all clock functions as inherited from TinyGsmTime.tpp
 
   /*
    * NTP server functions
    */
-  // Can sync with server using CNTP as per template
+ protected:
+  byte NTPServerSyncImpl(String server = "pool.ntp.org", int TimeZone = 0) {
+    // Set GPRS bearer profile to associate with NTP sync
+    // this may fail, it's not supported by all modules
+    sendAT(GF("+CNTPCID=0"));  // CID must be 0. With 1 (like other modules)
+                               // does not work!
+    waitResponse(10000L);
+
+    // Set NTP server and timezone
+    sendAT(GF("+CNTP=\""), server, "\",", String(TimeZone));
+    if (waitResponse(10000L) != 1) { return -1; }
+
+    // Request network synchronization
+    sendAT(GF("+CNTP"));
+    if (waitResponse(10000L, GF("+CNTP:"))) {
+      String result = stream.readStringUntil('\n');
+      // Check for ',' in case the module appends the time next to the return
+      // code. Eg: +CNTP: <code>[,<time>]
+      int index = result.indexOf(',');
+      if (index > 0) { result.remove(index); }
+      result.trim();
+      if (TinyGsmIsValidNumber(result)) { return result.toInt(); }
+    } else {
+      return -1;
+    }
+    return -1;
+  }
+
+  String ShowNTPErrorImpl(byte error) {
+    switch (error) {
+      case 1: return "Network time synchronization is successful";
+      case 61: return "Network error";
+      case 62: return "DNS resolution error";
+      case 63: return "Connection error";
+      case 64: return "Service response error";
+      case 65: return "Service response timeout";
+      default: return "Unknown error: " + String(error);
+    }
+  }
+
+  /*
+   * BLE functions
+   */
+  // No functions of this type supported
 
   /*
    * Battery functions
    */
- protected:
-  // Follows all battery functions per template
+  // Follows all battery functions as inherited from TinyGsmBattery.tpp
+
+  /*
+   * Temperature functions
+   */
+  // No functions of this type supported
 
   /*
    * Client related functions
@@ -341,7 +453,9 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     if (ssl) {
       // set the ssl version
       // AT+CSSLCFG="SSLVERSION",<ctxindex>,<sslversion>
-      // <ctxindex> PDP context identifier
+      // <ctxindex> PDP context identifier - for reasons not understood by me,
+      //            use PDP context identifier of 0 for what we defined as 1 in
+      //            the gprsConnect function
       // <sslversion> 0: QAPI_NET_SSL_PROTOCOL_UNKNOWN
       //              1: QAPI_NET_SSL_PROTOCOL_TLS_1_0
       //              2: QAPI_NET_SSL_PROTOCOL_TLS_1_1
@@ -364,7 +478,9 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     if (ssl) {
       // set the PDP context to apply SSL to
       // AT+CSSLCFG="CTXINDEX",<ctxindex>
-      // <ctxindex> PDP context identifier
+      // <ctxindex> PDP context identifier - for reasons not understood by me,
+      //            use PDP context identifier of 0 for what we defined as 1 in
+      //            the gprsConnect function
       // NOTE:  despite docs using "CRINDEX" in all caps, the module only
       // accepts the command "ctxindex" and it must be in lower case
       sendAT(GF("+CSSLCFG=\"ctxindex\",0"));
@@ -383,8 +499,12 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
       }
 
       // set the SSL SNI (server name indication)
+      // AT+CSSLCFG="SNI",<ctxindex>,<servername>
+      // <ctxindex> PDP context identifier - for reasons not understood by me,
+      //            use PDP context identifier of 0 for what we defined as 1 in
+      //            the gprsConnect function
       // NOTE:  despite docs using caps, "sni" must be in lower case
-      sendAT(GF("+CSSLCFG=\"sni\","), mux, ',', GF("\""), host, GF("\""));
+      sendAT(GF("+CSSLCFG=\"sni\",0,"), GF("\""), host, GF("\""));
       waitResponse();
     }
 
@@ -401,7 +521,7 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
     //                "recv",<id>,<length>,<remoteIP>,<remote_port><CR><LF><data>
     // NOTE:  including the <recv_mode> fails
     sendAT(GF("+CAOPEN="), mux, GF(",0,\"TCP\",\""), host, GF("\","), port);
-    if (waitResponse(timeout_ms, GF(GSM_NL "+CAOPEN:")) != 1) { return 0; }
+    if (waitResponse(timeout_ms, GF(AT_NL "+CAOPEN:")) != 1) { return 0; }
     // returns OK/r/n/r/n+CAOPEN: <cid>,<result>
     // <result> 0: Success
     //          1: Socket error
@@ -587,138 +707,64 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
    * Utilities
    */
  public:
-  // TODO(vshymanskyy): Optimize this!
-  int8_t waitResponse(uint32_t timeout_ms, String& data,
-                      GsmConstStr r1 = GFP(GSM_OK),
-                      GsmConstStr r2 = GFP(GSM_ERROR),
-#if defined TINY_GSM_DEBUG
-                      GsmConstStr r3 = GFP(GSM_CME_ERROR),
-                      GsmConstStr r4 = GFP(GSM_CMS_ERROR),
-#else
-                      GsmConstStr r3 = NULL, GsmConstStr r4 = NULL,
-#endif
-                      GsmConstStr r5 = NULL) {
-    /*String r1s(r1); r1s.trim();
-    String r2s(r2); r2s.trim();
-    String r3s(r3); r3s.trim();
-    String r4s(r4); r4s.trim();
-    String r5s(r5); r5s.trim();
-    DBG("### ..:", r1s, ",", r2s, ",", r3s, ",", r4s, ",", r5s);*/
-    data.reserve(64);
-    uint8_t  index       = 0;
-    uint32_t startMillis = millis();
-    do {
-      TINY_GSM_YIELD();
-      while (stream.available() > 0) {
-        TINY_GSM_YIELD();
-        int8_t a = stream.read();
-        if (a <= 0) continue;  // Skip 0x00 bytes, just in case
-        data += static_cast<char>(a);
-        if (r1 && data.endsWith(r1)) {
-          index = 1;
-          goto finish;
-        } else if (r2 && data.endsWith(r2)) {
-          index = 2;
-          goto finish;
-        } else if (r3 && data.endsWith(r3)) {
-#if defined TINY_GSM_DEBUG
-          if (r3 == GFP(GSM_CME_ERROR)) {
-            streamSkipUntil('\n');  // Read out the error
-          }
-#endif
-          index = 3;
-          goto finish;
-        } else if (r4 && data.endsWith(r4)) {
-          index = 4;
-          goto finish;
-        } else if (r5 && data.endsWith(r5)) {
-          index = 5;
-          goto finish;
-        } else if (data.endsWith(GF("+CARECV:"))) {
-          int8_t  mux = streamGetIntBefore(',');
-          int16_t len = streamGetIntBefore('\n');
-          if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
-            sockets[mux]->got_data = true;
-            if (len >= 0 && len <= 1024) { sockets[mux]->sock_available = len; }
-          }
-          data = "";
-          DBG("### Got Data:", len, "on", mux);
-        } else if (data.endsWith(GF("+CADATAIND:"))) {
-          int8_t mux = streamGetIntBefore('\n');
-          if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
-            sockets[mux]->got_data = true;
-          }
-          data = "";
-          DBG("### Got Data:", mux);
-        } else if (data.endsWith(GF("+CASTATE:"))) {
-          int8_t mux   = streamGetIntBefore(',');
-          int8_t state = streamGetIntBefore('\n');
-          if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
-            if (state != 1) {
-              sockets[mux]->sock_connected = false;
-              DBG("### Closed: ", mux);
-            }
-          }
-          data = "";
-        } else if (data.endsWith(GF("*PSNWID:"))) {
-          streamSkipUntil('\n');  // Refresh network name by network
-          data = "";
-          DBG("### Network name updated.");
-        } else if (data.endsWith(GF("*PSUTTZ:"))) {
-          streamSkipUntil('\n');  // Refresh time and time zone by network
-          data = "";
-          DBG("### Network time and time zone updated.");
-        } else if (data.endsWith(GF("+CTZV:"))) {
-          streamSkipUntil('\n');  // Refresh network time zone by network
-          data = "";
-          DBG("### Network time zone updated.");
-        } else if (data.endsWith(GF("DST: "))) {
-          streamSkipUntil(
-              '\n');  // Refresh Network Daylight Saving Time by network
-          data = "";
-          DBG("### Daylight savings time state updated.");
-        } else if (data.endsWith(GF(GSM_NL "SMS Ready" GSM_NL))) {
-          data = "";
-          DBG("### Unexpected module reset!");
-          init();
-          data = "";
+  bool handleURCs(String& data) {
+    if (data.endsWith(GF("+CARECV:"))) {
+      int8_t  mux = streamGetIntBefore(',');
+      int16_t len = streamGetIntBefore('\n');
+      if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+        sockets[mux]->got_data = true;
+        if (len >= 0 && len <= 1024) { sockets[mux]->sock_available = len; }
+      }
+      data = "";
+      DBG("### Got Data:", len, "on", mux);
+      return true;
+    } else if (data.endsWith(GF("+CADATAIND:"))) {
+      int8_t mux = streamGetIntBefore('\n');
+      if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+        sockets[mux]->got_data = true;
+      }
+      data = "";
+      DBG("### Got Data:", mux);
+      return true;
+    } else if (data.endsWith(GF("+CASTATE:"))) {
+      int8_t mux   = streamGetIntBefore(',');
+      int8_t state = streamGetIntBefore('\n');
+      if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {
+        if (state != 1) {
+          sockets[mux]->sock_connected = false;
+          DBG("### Closed: ", mux);
         }
       }
-    } while (millis() - startMillis < timeout_ms);
-  finish:
-    if (!index) {
-      data.trim();
-      if (data.length()) { DBG("### Unhandled:", data); }
       data = "";
+      return true;
+    } else if (data.endsWith(GF("*PSNWID:"))) {
+      streamSkipUntil('\n');  // Refresh network name by network
+      data = "";
+      DBG("### Network name updated.");
+      return true;
+    } else if (data.endsWith(GF("*PSUTTZ:"))) {
+      streamSkipUntil('\n');  // Refresh time and time zone by network
+      data = "";
+      DBG("### Network time and time zone updated.");
+      return true;
+    } else if (data.endsWith(GF("+CTZV:"))) {
+      streamSkipUntil('\n');  // Refresh network time zone by network
+      data = "";
+      DBG("### Network time zone updated.");
+      return true;
+    } else if (data.endsWith(GF("DST: "))) {
+      streamSkipUntil('\n');  // Refresh Network Daylight Saving Time by network
+      data = "";
+      DBG("### Daylight savings time state updated.");
+      return true;
+    } else if (data.endsWith(GF(AT_NL "SMS Ready" AT_NL))) {
+      data = "";
+      DBG("### Unexpected module reset!");
+      init();
+      data = "";
+      return true;
     }
-    // data.replace(GSM_NL, "/");
-    // DBG('<', index, '>', data);
-    return index;
-  }
-
-  int8_t waitResponse(uint32_t timeout_ms, GsmConstStr r1 = GFP(GSM_OK),
-                      GsmConstStr r2 = GFP(GSM_ERROR),
-#if defined TINY_GSM_DEBUG
-                      GsmConstStr r3 = GFP(GSM_CME_ERROR),
-                      GsmConstStr r4 = GFP(GSM_CMS_ERROR),
-#else
-                      GsmConstStr r3 = NULL, GsmConstStr r4 = NULL,
-#endif
-                      GsmConstStr r5 = NULL) {
-    String data;
-    return waitResponse(timeout_ms, data, r1, r2, r3, r4, r5);
-  }
-
-  int8_t waitResponse(GsmConstStr r1 = GFP(GSM_OK),
-                      GsmConstStr r2 = GFP(GSM_ERROR),
-#if defined TINY_GSM_DEBUG
-                      GsmConstStr r3 = GFP(GSM_CME_ERROR),
-                      GsmConstStr r4 = GFP(GSM_CMS_ERROR),
-#else
-                      GsmConstStr r3 = NULL, GsmConstStr r4 = NULL,
-#endif
-                      GsmConstStr r5 = NULL) {
-    return waitResponse(1000, r1, r2, r3, r4, r5);
+    return false;
   }
 
  protected:
