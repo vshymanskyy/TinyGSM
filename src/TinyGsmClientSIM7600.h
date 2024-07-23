@@ -159,7 +159,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       if (at->waitResponse(GF(">")) != 1) { return 0; }
       at->stream.write(reinterpret_cast<const uint8_t*>(buff), len);
       at->stream.flush();
-      if (at->waitResponse(GF(GSM_NL "+CIPSEND:")) != 1) { return 0; }
+      if (at->waitResponse(GF(AT_NL "+CIPSEND:")) != 1) { return 0; }
       at->streamSkipUntil(',');  // Skip mux
       at->streamSkipUntil(',');  // Skip requested bytes to send
       // TODO(?):  make sure requested and confirmed bytes match
@@ -324,7 +324,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       size_t result = 0;
       if (!at->sockets[mux]) return 0;
       at->sendAT(GF("+CCHRECV?"));
-      if (at->waitResponse(GF(GSM_NL "+CCHRECV: ")) != 1) {
+      if (at->waitResponse(GF(AT_NL "+CCHRECV: ")) != 1) {
         at->sendAT(GF("+CIPRXGET=4,"), mux);
         size_t result = 0;
         if (at->waitResponse(GF("+CIPRXGET:")) == 1) {
@@ -972,7 +972,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       sendAT(GF("+CCHOPEN="), mux, ',', GF("\""), host, GF("\","), port);
       // The reply is OK followed by +CIPOPEN: <link_num>,<err> where <link_num>
       // is the mux number and <err> should be 0 if there's no error
-      if (waitResponse(timeout_ms, GF(GSM_NL "+CCHOPEN:")) != 1) {
+      if (waitResponse(timeout_ms, GF(AT_NL "+CCHOPEN:")) != 1) {
         return false;
       }
 
