@@ -442,7 +442,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     if (!testAT()) { return false; }
     sendAT(GF("+CRESET"));
     if (waitResponse(10000L) != 1) { return false; }
-    delay(24000L);
+    delay(10000L);
     return init(pin);
   }
 
@@ -1051,13 +1051,12 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     // Read the status of all sockets at once
     sendAT(GF("+CIPOPEN?"));
     if (waitResponse(GF("+CIPOPEN:")) != 1) {
-      // return false;  // TODO:  Why does this not read correctly?
+       return false;
     }
     for (int muxNo = 0; muxNo < TINY_GSM_MUX_COUNT; muxNo++) {
       // +CIPOPEN:<mux>,<State or blank...>
       String state = stream.readStringUntil('\n');
       if (state.indexOf(',') > 0) { sockets[muxNo]->sock_connected = true; }
-      waitResponse(GF("+CIPOPEN:"));
     }
     waitResponse();  // Should be an OK at the end
     if (!sockets[mux]) return false;
