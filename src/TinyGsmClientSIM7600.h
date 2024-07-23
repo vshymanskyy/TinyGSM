@@ -35,12 +35,6 @@
 #define MODEM_MODEL "SIM7600";
 #endif
 
-#include <utility>
-
-#include "TinyGsmBattery.tpp"
-#include "TinyGsmCalling.tpp"
-#include "TinyGsmSMS.tpp"
-#include "TinyGsmGSMLocation.tpp"
 #include "TinyGsmModem.tpp"
 #include "TinyGsmTCP.tpp"
 #include "TinyGsmGPRS.tpp"
