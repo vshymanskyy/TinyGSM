@@ -333,7 +333,6 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
         }
         return result;
       }
-      int startMillis = millis();
       at->streamSkipUntil(',');  // Skip mode 4
       if (mux) {
         at->streamSkipUntil(',');  // Skip mode 4
