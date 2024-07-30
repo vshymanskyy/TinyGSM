@@ -988,58 +988,10 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
 
   // Secure specific overides
   int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
-    sendAT(GF("+CIPSEND="), mux, ',', (uint16_t)len);
-    if (waitResponse(GF(">")) != 1) { return 0; }
-    stream.write(reinterpret_cast<const uint8_t*>(buff), len);
-    stream.flush();
-    if (waitResponse(GF(AT_NL "+CIPSEND:")) != 1) { return 0; }
-    streamSkipUntil(',');  // Skip mux
-    streamSkipUntil(',');  // Skip requested bytes to send
-    // TODO(?):  make sure requested and confirmed bytes match
-    return streamGetIntBefore('\n');
+    return sockets[mux]->modemSend(buff, len, mux);
   }
   size_t modemRead(size_t size, uint8_t mux) {
-    if (!sockets[mux]) return 0;
-#ifdef TINY_GSM_USE_HEX
-    sendAT(GF("+CIPRXGET=3,"), mux, ',', (uint16_t)size);
-    if (waitResponse(GF("+CIPRXGET:")) != 1) { return 0; }
-#else
-    sendAT(GF("+CIPRXGET=2,"), mux, ',', (uint16_t)size);
-    if (waitResponse(GF("+CIPRXGET:")) != 1) { return 0; }
-#endif
-    streamSkipUntil(',');  // Skip Rx mode 2/normal or 3/HEX
-    streamSkipUntil(',');  // Skip mux/cid (connecion id)
-    int16_t len_requested = streamGetIntBefore(',');
-    //  ^^ Requested number of data bytes (1-1460 bytes)to be read
-    int16_t len_confirmed = streamGetIntBefore('\n');
-    // ^^ The data length which not read in the buffer
-    for (int i = 0; i < len_requested; i++) {
-      uint32_t startMillis = millis();
-#ifdef TINY_GSM_USE_HEX
-      while (stream.available() < 2 &&
-             (millis() - startMillis < sockets[mux]->_timeout)) {
-        TINY_GSM_YIELD();
-      }
-      char buf[4] = {
-          0,
-      };
-      buf[0] = stream.read();
-      buf[1] = stream.read();
-      char c = strtol(buf, nullptr, 16);
-#else
-      while (!stream.available() &&
-             (millis() - startMillis < sockets[mux]->_timeout)) {
-        TINY_GSM_YIELD();
-      }
-      char c = stream.read();
-#endif
-      sockets[mux]->rx.put(c);
-    }
-    // DBG("### READ:", len_requested, "from", mux);
-    // sockets[mux]->sock_available = modemGetAvailable(mux);
-    sockets[mux]->sock_available = len_confirmed;
-    waitResponse();
-    return len_requested;
+    return sockets[mux]->modemRead(size, mux);
   }
 
   size_t modemGetAvailable(uint8_t mux) {
