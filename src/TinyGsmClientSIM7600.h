@@ -361,8 +361,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       rx.clear();
       if (certValidation && certificates[mux].isEmpty()) {return -1;}
       sock_connected = at->modemConnect(host, port, mux, sslVersion,
-                                        timeout_s, certificates[mux], clientCertificates[mux],
-                                        clientPrivateKeys[mux]);
+                                        timeout_s);
       return sock_connected;
     }
 
@@ -901,9 +900,7 @@ public:
    */
  protected:
   bool modemConnect(const char* host, uint16_t port, uint8_t mux,
-                    SSLVersion sslVersion, int timeout_s = 15,
-                    String cacert = "", String clientcert = "",
-                    String clientkey = "") {
+                    SSLVersion sslVersion, int timeout_s = 15) {
     if (sslVersion != SSLVersion::NO_SSL) {
       uint8_t authmode = 0;
       // List the certs available
@@ -916,6 +913,7 @@ public:
       if (!certificates[mux].isEmpty()) {
         sendAT(GF("+CSSLCFG=\"cacert\","), mux, ",\"",certificates[mux].c_str(), "\""); // set the root CA
         if (waitResponse(5000L) != 1) return false;
+        authmode = 1;
       }
 
       if (!clientCertificates[mux].isEmpty()) {
@@ -928,12 +926,9 @@ public:
         if (waitResponse(5000L) != 1) return false;
       }
 
-      if (!certificates[mux].isEmpty()) {
-        authmode = 1;
-        if (!clientCertificates[mux].isEmpty() && !clientPrivateKeys[mux].isEmpty()) {
-          authmode = 2;
-        }
-      } else if (!clientCertificates[mux].isEmpty() && !clientPrivateKeys[mux].isEmpty()) {
+      if (!certificates[mux].isEmpty() &&!clientCertificates[mux].isEmpty() && !clientPrivateKeys[mux].isEmpty()) {
+        authmode = 2;
+      } else if (certificates[mux].isEmpty() && !clientCertificates[mux].isEmpty() && !clientPrivateKeys[mux].isEmpty()) {
         authmode = 3;
       }
 
