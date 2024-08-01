@@ -37,6 +37,7 @@
 
 #include "TinyGsmModem.tpp"
 #include "TinyGsmTCP.tpp"
+#include "TinyGsmSSL.tpp"
 #include "TinyGsmGPRS.tpp"
 #include "TinyGsmCalling.tpp"
 #include "TinyGsmSMS.tpp"
@@ -69,6 +70,7 @@ enum class SSLVersion: int8_t {
 class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
                        public TinyGsmGPRS<TinyGsmSim7600>,
                        public TinyGsmTCP<TinyGsmSim7600, TINY_GSM_MUX_COUNT>,
+                       public TinyGsmSSL<TinyGsmSim7600, TINY_GSM_MUX_COUNT>,
                        public TinyGsmSMS<TinyGsmSim7600>,
                        public TinyGsmGSMLocation<TinyGsmSim7600>,
                        public TinyGsmGPS<TinyGsmSim7600>,
@@ -80,6 +82,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
   friend class TinyGsmModem<TinyGsmSim7600>;
   friend class TinyGsmGPRS<TinyGsmSim7600>;
   friend class TinyGsmTCP<TinyGsmSim7600, TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmSSL<TinyGsmSim7600, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmSMS<TinyGsmSim7600>;
   friend class TinyGsmGPS<TinyGsmSim7600>;
   friend class TinyGsmGSMLocation<TinyGsmSim7600>;
@@ -235,20 +238,29 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
         : GsmClientSim7600(modem, mux) {}
 
    protected:
-    String cacert;
+    String certificates[TINY_GSM_MUX_COUNT];
     String clientcert;
     String clientkey;
     bool certValidation = true;
     SSLVersion sslVersion = SSLVersion::ALL_SSL;
 
    public:
-    void setCACert(String certificateString) {
-      cacert = std::move(certificateString);
+    bool addCertificate(const char* certificateName, const char* cert,
+                        const uint16_t len) {
+      return at->addCertificate(certificateName, cert, len);
     }
 
-    void setCertificate(String certificateString) {
-      clientcert = std::move(certificateString);
+    bool setCertificate(const char* certificateName) {
+      return at->setCertificate(certificateName, mux);
     }
+
+    bool deleteCertificate(const char* certificateName) {
+      return at->deleteCertificate(certificateName);
+    }
+
+    //void setCertificate(String certificateString) {
+    //  clientcert = std::move(certificateString);
+    //}
 
     void setPrivateKey(String certificateString) {
       clientkey = std::move(certificateString);
@@ -347,9 +359,9 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       stop(15000L);
       TINY_GSM_YIELD();
       rx.clear();
-      if (certValidation && cacert.isEmpty()) {return -1;}
+      if (certValidation && certificates[mux] != "") {return -1;}
       sock_connected = at->modemConnect(host, port, mux, sslVersion,
-                                        timeout_s, cacert, clientcert,
+                                        timeout_s, certificates[mux], clientcert,
                                         clientkey);
       return sock_connected;
     }
@@ -358,9 +370,8 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       at->sendAT(GF("+CCHCLOSE="), mux);
       at->waitResponse(5000L);
 
-      if (!cacert.isEmpty()) {
-        at->sendAT(GF("+CCERTDELE=\"cacert"), static_cast<int>(mux), ".pem\"");
-        at->waitResponse();
+      if (certificates[mux] != "") {
+        deleteCertificate(certificates[mux].c_str());
       }
 
       if (!clientcert.isEmpty()) {
@@ -527,7 +538,21 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
   /*
    * Secure socket layer (SSL) functions
    */
-  // No functions of this type supported
+public:
+  bool addCertificate(const char* certificateName, const char* cert,
+                      const uint16_t len) {
+    sendAT(GF("+CCERTDOWN=\""), certificateName, GF("\","), len);
+    if (!waitResponse(GF(">"))) { return false; }
+    stream.write(cert, len);
+    stream.flush();
+    return waitResponse() == 1;
+  }
+
+  bool deleteCertificate(const char* certificateName) {
+    sendAT(GF("+CCERTDELE=\""), certificateName,GF("\""));
+    return waitResponse() == 1;
+  }
+
 
   /*
    * WiFi functions
@@ -892,19 +917,9 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
              static_cast<int>(sslVersion));
       if (waitResponse(5000L) != 1) return false;
 
-      if (!cacert.isEmpty()) {
-        sendAT(GF("+CCERTDOWN=\"cacert"), static_cast<int>(mux), ".pem\",",
-               cacert.length());
-
-        if (waitResponse(GF(">"))) {
-          stream.write(reinterpret_cast<const uint8_t*>(cacert.c_str()),
-                       cacert.length());
-          waitResponse(5000L);
-
-        sendAT(GF("+CSSLCFG=\"cacert\","), mux, ",\"cacert",  // set the root CA
-               static_cast<int>(mux), ".pem\"");
+      if (certificates[mux] != "") {       
+        sendAT(GF("+CSSLCFG=\"cacert\","), mux, ",\"",certificates[mux].c_str(), "\""); // set the root CA
         if (waitResponse(5000L) != 1) return false;
-        }
       }
 
       if (!clientcert.isEmpty()) {
@@ -936,7 +951,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
         if (waitResponse(5000L) != 1) return false;
       }
 
-      if (!cacert.isEmpty()) {
+      if (certificates[mux] != "") {
         authmode = 1;
         if (!clientcert.isEmpty() && !clientkey.isEmpty()) {
           authmode = 2;
