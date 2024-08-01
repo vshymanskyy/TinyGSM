@@ -239,8 +239,8 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
 
    protected:
     String certificates[TINY_GSM_MUX_COUNT];
-    String clientcert;
-    String clientkey;
+    String clientCertificates[TINY_GSM_MUX_COUNT];
+    String clientPrivateKeys[TINY_GSM_MUX_COUNT];
     bool certValidation = true;
     SSLVersion sslVersion = SSLVersion::ALL_SSL;
 
@@ -250,20 +250,20 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       return at->addCertificate(certificateName, cert, len);
     }
 
-    bool setCertificate(const char* certificateName) {
-      return at->setCertificate(certificateName, mux);
-    }
-
     bool deleteCertificate(const char* certificateName) {
       return at->deleteCertificate(certificateName);
     }
 
-    //void setCertificate(String certificateString) {
-    //  clientcert = std::move(certificateString);
-    //}
+    bool setCertificate(const char* certificateName) {
+      return at->setCertificate(certificateName, mux);
+    }
 
-    void setPrivateKey(String certificateString) {
-      clientkey = std::move(certificateString);
+    bool setClientCertificate(const char* certificateName) {
+      return at->setClientCertificate(certificateName, mux);
+    }
+
+    bool setClientKey(const char* certificateName) {
+      return at->setClientPrivateKey(certificateName, mux);
     }
 
     void setCertValidation(bool validation = true) {
@@ -359,10 +359,10 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       stop(15000L);
       TINY_GSM_YIELD();
       rx.clear();
-      if (certValidation && certificates[mux] != "") {return -1;}
+      if (certValidation && certificates[mux].isEmpty()) {return -1;}
       sock_connected = at->modemConnect(host, port, mux, sslVersion,
-                                        timeout_s, certificates[mux], clientcert,
-                                        clientkey);
+                                        timeout_s, certificates[mux], clientCertificates[mux],
+                                        clientPrivateKeys[mux]);
       return sock_connected;
     }
 
@@ -370,20 +370,16 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       at->sendAT(GF("+CCHCLOSE="), mux);
       at->waitResponse(5000L);
 
-      if (certificates[mux] != "") {
+      if (!certificates[mux].isEmpty()) {
         deleteCertificate(certificates[mux].c_str());
       }
 
-      if (!clientcert.isEmpty()) {
-        at->sendAT(GF("+CCERTDELE=\"clientcert"), static_cast<int>(mux),
-                   ".pem\"");
-        at->waitResponse();
+      if (!clientCertificates[mux].isEmpty()) {
+        deleteCertificate(clientCertificates[mux].c_str());
       }
 
-      if (!clientkey.isEmpty()) {
-        at->sendAT(GF("+CCERTDELE=\"clientkey"), static_cast<int>(mux),
-                   ".pem\"");
-        at->waitResponse();
+      if (!clientPrivateKeys[mux].isEmpty()) {
+        deleteCertificate(clientPrivateKeys[mux].c_str());
       }
       GsmClientSim7600::stop(maxWaitMs);
     }
@@ -916,47 +912,28 @@ public:
       sendAT(GF("+CSSLCFG=\"sslversion\","), mux, ',',
              static_cast<int>(sslVersion));
       if (waitResponse(5000L) != 1) return false;
-
-      if (certificates[mux] != "") {       
+     
+      if (!certificates[mux].isEmpty()) {
         sendAT(GF("+CSSLCFG=\"cacert\","), mux, ",\"",certificates[mux].c_str(), "\""); // set the root CA
         if (waitResponse(5000L) != 1) return false;
       }
 
-      if (!clientcert.isEmpty()) {
-        sendAT(GF("+CCERTDOWN=\"clientcert"),
-               static_cast<int>(mux), ".pem\",", clientcert.length());
-
-        if (waitResponse(GF(">"))) {
-          stream.write(reinterpret_cast<const uint8_t*>(clientcert.c_str()),
-                       clientcert.length());
-          waitResponse(5000L);
-        }
-
-        sendAT(GF("+CSSLCFG=\"clientcert\","), mux, ",\"clientcert",
-               static_cast<int>(mux), ".pem\"");  // set the client certificate
+      if (!clientCertificates[mux].isEmpty()) {
+        sendAT(GF("+CSSLCFG=\"clientcert\","), mux, ",\"",clientCertificates[mux].c_str(), "\""); // set the client certificate
         if (waitResponse(5000L) != 1) return false;
       }
 
-      if (!clientkey.isEmpty()) {
-        sendAT(GF("+CCERTDOWN=\"clientkey"), static_cast<int>(mux), ".pem\",",
-               clientkey.length());
-
-        if (waitResponse(GF(">"))) {
-          stream.write(reinterpret_cast<const uint8_t*>(clientkey.c_str()),
-                       clientkey.length());
-          waitResponse(5000L);
-        }
-        sendAT(GF("+CSSLCFG=\"clientkey\","), mux, ",\"clientkey",
-               static_cast<int>(mux), ".pem\"");  // set the client key
+      if (!clientPrivateKeys[mux].isEmpty()) {
+        sendAT(GF("+CSSLCFG=\"clientkey\","), mux, ",\"",clientPrivateKeys[mux].c_str(), "\""); // set the client key
         if (waitResponse(5000L) != 1) return false;
       }
 
-      if (certificates[mux] != "") {
+      if (!certificates[mux].isEmpty()) {
         authmode = 1;
-        if (!clientcert.isEmpty() && !clientkey.isEmpty()) {
+        if (!clientCertificates[mux].isEmpty() && !clientPrivateKeys[mux].isEmpty()) {
           authmode = 2;
         }
-      } else if (!clientcert.isEmpty() && !clientkey.isEmpty()) {
+      } else if (!clientCertificates[mux].isEmpty() && !clientPrivateKeys[mux].isEmpty()) {
         authmode = 3;
       }
 
