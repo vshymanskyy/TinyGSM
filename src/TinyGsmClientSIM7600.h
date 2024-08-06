@@ -533,7 +533,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
   /*
    * Secure socket layer (SSL) functions
    */
-public:
+ public:
   bool addCertificate(const char* certificateName, const char* cert,
                       const uint16_t len) {
     sendAT(GF("+CCERTDOWN=\""), certificateName, GF("\","), len);
@@ -544,7 +544,7 @@ public:
   }
 
   bool deleteCertificate(const char* certificateName) {
-    sendAT(GF("+CCERTDELE=\""), certificateName,GF("\""));
+    sendAT(GF("+CCERTDELE=\""), certificateName, GF("\""));
     return waitResponse() == 1;
   }
 
@@ -909,26 +909,32 @@ public:
       sendAT(GF("+CSSLCFG=\"sslversion\","), mux, ',',
              static_cast<int>(sslVersion));
       if (waitResponse(5000L) != 1) return false;
-     
+
       if (!certificates[mux].isEmpty()) {
-        sendAT(GF("+CSSLCFG=\"cacert\","), mux, ",\"",certificates[mux].c_str(), "\""); // set the root CA
+        sendAT(GF("+CSSLCFG=\"cacert\","), mux, ",\"",
+               certificates[mux].c_str(), "\"");  // set root CA
         if (waitResponse(5000L) != 1) return false;
         authmode = 1;
       }
 
       if (!clientCertificates[mux].isEmpty()) {
-        sendAT(GF("+CSSLCFG=\"clientcert\","), mux, ",\"",clientCertificates[mux].c_str(), "\""); // set the client certificate
+        sendAT(GF("+CSSLCFG=\"clientcert\","), mux, ",\"",
+               clientCertificates[mux].c_str(), "\"");  // set clientcertificate
         if (waitResponse(5000L) != 1) return false;
       }
 
       if (!clientPrivateKeys[mux].isEmpty()) {
-        sendAT(GF("+CSSLCFG=\"clientkey\","), mux, ",\"",clientPrivateKeys[mux].c_str(), "\""); // set the client key
+        sendAT(GF("+CSSLCFG=\"clientkey\","), mux, ",\"",
+               clientPrivateKeys[mux].c_str(), "\"");  // set the clientkey
         if (waitResponse(5000L) != 1) return false;
       }
 
-      if (!certificates[mux].isEmpty() &&!clientCertificates[mux].isEmpty() && !clientPrivateKeys[mux].isEmpty()) {
+      if (!certificates[mux].isEmpty() &&!clientCertificates[mux].isEmpty()
+          && !clientPrivateKeys[mux].isEmpty()) {
         authmode = 2;
-      } else if (certificates[mux].isEmpty() && !clientCertificates[mux].isEmpty() && !clientPrivateKeys[mux].isEmpty()) {
+      } else if (certificates[mux].isEmpty() &&
+                 !clientCertificates[mux].isEmpty() &&
+                 !clientPrivateKeys[mux].isEmpty()) {
         authmode = 3;
       }
 
