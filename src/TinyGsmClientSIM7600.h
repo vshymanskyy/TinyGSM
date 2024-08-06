@@ -359,7 +359,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       stop(15000L);
       TINY_GSM_YIELD();
       rx.clear();
-      if (certValidation && certificates[mux].isEmpty()) {return -1;}
+      if (certValidation && at->certificates[mux].isEmpty()) {return -1;}
       sock_connected = at->modemConnect(host, port, mux, sslVersion,
                                         timeout_s);
       return sock_connected;
@@ -447,7 +447,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     if (!testAT()) { return false; }
     sendAT(GF("+CRESET"));
     if (waitResponse(10000L) != 1) { return false; }
-    delay(10000L);
+    delay(16000L);
     return init(pin);
   }
 
