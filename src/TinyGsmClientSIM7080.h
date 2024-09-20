@@ -769,7 +769,6 @@ class TinyGsmSim7080 : public TinyGsmSim70xx<TinyGsmSim7080>,
 
  protected:
   GsmClientSim7080* sockets[TINY_GSM_MUX_COUNT];
-  String            certificates[TINY_GSM_MUX_COUNT];
 };
 
 #endif  // SRC_TINYGSMCLIENTSIM7080_H_
