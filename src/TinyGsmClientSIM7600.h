@@ -359,7 +359,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       stop(15000L);
       TINY_GSM_YIELD();
       rx.clear();
-      if (certValidation && at->certificates[mux].isEmpty()) {return -1;}
+      if (certValidation && at->certificates[mux].length() == 0) {return -1;}
       sock_connected = at->modemConnect(host, port, mux, sslVersion,
                                         timeout_s);
       return sock_connected;
@@ -369,15 +369,15 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
       at->sendAT(GF("+CCHCLOSE="), mux);
       at->waitResponse(5000L);
 
-      if (!certificates[mux].isEmpty()) {
+      if (certificates[mux].length() != 0) {
         deleteCertificate(certificates[mux].c_str());
       }
 
-      if (!clientCertificates[mux].isEmpty()) {
+      if (!clientCertificates[mux].length() != 0) {
         deleteCertificate(clientCertificates[mux].c_str());
       }
 
-      if (!clientPrivateKeys[mux].isEmpty()) {
+      if (!clientPrivateKeys[mux].length() != 0) {
         deleteCertificate(clientPrivateKeys[mux].c_str());
       }
       GsmClientSim7600::stop(maxWaitMs);
@@ -910,31 +910,32 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
              static_cast<int>(sslVersion));
       if (waitResponse(5000L) != 1) return false;
 
-      if (!certificates[mux].isEmpty()) {
+      if (certificates[mux].length() != 0) {
         sendAT(GF("+CSSLCFG=\"cacert\","), mux, ",\"",
                certificates[mux].c_str(), "\"");  // set root CA
         if (waitResponse(5000L) != 1) return false;
         authmode = 1;
       }
 
-      if (!clientCertificates[mux].isEmpty()) {
+      if (clientCertificates[mux].length() != 0) {
         sendAT(GF("+CSSLCFG=\"clientcert\","), mux, ",\"",
                clientCertificates[mux].c_str(), "\"");  // set clientcertificate
         if (waitResponse(5000L) != 1) return false;
       }
 
-      if (!clientPrivateKeys[mux].isEmpty()) {
+      if (clientPrivateKeys[mux].length() != 0) {
         sendAT(GF("+CSSLCFG=\"clientkey\","), mux, ",\"",
                clientPrivateKeys[mux].c_str(), "\"");  // set the clientkey
         if (waitResponse(5000L) != 1) return false;
       }
 
-      if (!certificates[mux].isEmpty() &&!clientCertificates[mux].isEmpty()
-          && !clientPrivateKeys[mux].isEmpty()) {
+      if (certificates[mux].length() != 0 &&
+          clientCertificates[mux].length() != 0 &&
+          clientPrivateKeys[mux].length() != 0) {
         authmode = 2;
-      } else if (certificates[mux].isEmpty() &&
-                 !clientCertificates[mux].isEmpty() &&
-                 !clientPrivateKeys[mux].isEmpty()) {
+      } else if (certificates[mux].length() == 0 &&
+                 clientCertificates[mux].length() != 0 &&
+                 clientPrivateKeys[mux].length() != 0) {
         authmode = 3;
       }
 
