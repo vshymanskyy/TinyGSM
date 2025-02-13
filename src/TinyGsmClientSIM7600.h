@@ -366,21 +366,10 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     }
 
      void stop(uint32_t maxWaitMs) override {
+      dumpModemBuffer(maxWaitMs);
       at->sendAT(GF("+CCHCLOSE="), mux);
-      at->waitResponse(5000L);
-
-      if (certificates[mux].length() != 0) {
-        deleteCertificate(certificates[mux].c_str());
-      }
-
-      if (!clientCertificates[mux].length() != 0) {
-        deleteCertificate(clientCertificates[mux].c_str());
-      }
-
-      if (!clientPrivateKeys[mux].length() != 0) {
-        deleteCertificate(clientPrivateKeys[mux].c_str());
-      }
-      GsmClientSim7600::stop(maxWaitMs);
+      sock_connected = false;
+      at->waitResponse();
     }
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
   };
