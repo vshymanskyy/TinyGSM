@@ -412,9 +412,16 @@ class TinyGsmSim7000 : public TinyGsmSim70xx<TinyGsmSim7000>,
 
     sendAT(GF("+CIPRXGET=4,"), mux);
     size_t result = 0;
+
     if (waitResponse(GF("+CIPRXGET:")) == 1) {
-      streamSkipUntil(',');  // Skip mode 4
+      int16_t first_mode_to_appear = streamGetIntBefore(','); // Skip and get first mode to appear
+
       streamSkipUntil(',');  // Skip mux
+
+      if (first_mode_to_appear == 1) {
+        streamSkipUntil(','); // Skip last comma, if appears +CIPRXGET: 1,0 first than +CIPRXGET: 4 in response
+      }
+
       result = streamGetIntBefore('\n');
       waitResponse();
     }
