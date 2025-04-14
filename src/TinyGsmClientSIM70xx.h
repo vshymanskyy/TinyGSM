@@ -233,7 +233,7 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType>,
    */
  protected:
   // enable GPS
-  bool enableGPSImpl() {
+  bool enableGPSImpl(GpsStartMode startMode = GPS_START_AUTO) {
     thisModem().sendAT(GF("+CGNSPWR=1"));
     if (thisModem().waitResponse() != 1) { return false; }
     return true;

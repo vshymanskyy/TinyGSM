@@ -13,6 +13,13 @@
 
 #define TINY_GSM_MODEM_HAS_GPS
 
+enum GpsStartMode {
+  GPS_START_AUTO = 0,
+  GPS_START_COLD = 1,
+  GPS_START_WARM = 2,
+  GPS_START_HOT  = 3,
+};
+
 template <class modemType>
 class TinyGsmGPS {
   /* =========================================== */
@@ -24,8 +31,8 @@ class TinyGsmGPS {
   /*
    * GPS/GNSS/GLONASS location functions
    */
-  bool enableGPS() {
-    return thisModem().enableGPSImpl();
+  bool enableGPS(GpsStartMode startMode = GPS_START_AUTO) {
+    return thisModem().enableGPSImpl(startMode);
   }
   bool disableGPS() {
     return thisModem().disableGPSImpl();
@@ -78,7 +85,8 @@ class TinyGsmGPS {
    * GPS/GNSS/GLONASS location functions
    */
 
-  bool    enableGPSImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool enableGPSImpl(GpsStartMode startMode = GPS_START_AUTO)
+      TINY_GSM_ATTR_NOT_IMPLEMENTED;
   bool    disableGPSImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
   String  getGPSrawImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
   bool    getGPSImpl(float* lat, float* lon, float* speed = 0, float* alt = 0,
