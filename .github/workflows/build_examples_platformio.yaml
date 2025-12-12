@@ -124,7 +124,7 @@ jobs:
           pip install --upgrade platformio
 
       - name: Restore or Cache PlatformIO Platforms and Libraries
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         id: cache_pio
         with:
           path: ~/.platformio
