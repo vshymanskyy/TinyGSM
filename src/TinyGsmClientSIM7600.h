@@ -443,7 +443,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
  protected:
   // enable GPS
   bool enableGPSImpl() {
-    sendAT(GF("+CGPS=1"));
+    sendAT(GF("+CGNSSPWR=1"));
     if (waitResponse() != 1) { return false; }
     return true;
   }
@@ -476,24 +476,25 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
                                                 // TODO(?) Can 1 be returned
     if (fixMode == 1 || fixMode == 2 || fixMode == 3) {
       // init variables
-      float ilat = 0;
+      float ilat = 0.F;
       char  north;
-      float ilon = 0;
+      float ilon = 0.F;
       char  east;
-      float ispeed       = 0;
-      float ialt         = 0;
+      float ispeed       = 0.F;
+      float ialt         = 0.F;
       int   ivsat        = 0;
       int   iusat        = 0;
-      float iaccuracy    = 0;
+      float iaccuracy    = 0.F;
       int   iyear        = 0;
       int   imonth       = 0;
       int   iday         = 0;
       int   ihour        = 0;
       int   imin         = 0;
-      float secondWithSS = 0;
+      float secondWithSS = 0.F;
 
       streamSkipUntil(',');               // GPS satellite valid numbers
       streamSkipUntil(',');               // GLONASS satellite valid numbers
+      streamSkipUntil(',');               // GALILEO satellite valid numbers
       streamSkipUntil(',');               // BEIDOU satellite valid numbers
       ilat  = streamGetFloatBefore(',');  // Latitude in ddmm.mmmmmm
       north = stream.readStringUntil(',').charAt(
@@ -522,11 +523,9 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
 
       // Set pointers
       if (lat != nullptr)
-        *lat = (floor(ilat / 100) + fmod(ilat, 100.) / 60) *
-            (north == 'N' ? 1 : -1);
+        *lat = ilat * (north == 'N' ? 1.F : -1.F);
       if (lon != nullptr)
-        *lon = (floor(ilon / 100) + fmod(ilon, 100.) / 60) *
-            (east == 'E' ? 1 : -1);
+        *lon = ilon * (east == 'E' ? 1.F : -1.F);
       if (speed != nullptr) *speed = ispeed;
       if (alt != nullptr) *alt = ialt;
       if (vsat != nullptr) *vsat = ivsat;
