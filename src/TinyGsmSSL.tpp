@@ -49,6 +49,20 @@ class TinyGsmSSL {
     return true;
   }
 
+  bool setClientCertificate(const String& certificateName,
+                            const uint8_t mux = 0) {
+    if (mux >= muxCount) return false;
+    clientCertificates[mux] = certificateName;
+    return true;
+  }
+
+  bool setClientPrivateKey(const String& certificateName,
+                           const uint8_t mux = 0) {
+    if (mux >= muxCount) return false;
+    clientPrivateKeys[mux] = certificateName;
+    return true;
+  }
+
   /*
    * CRTP Helper
    */
@@ -78,6 +92,8 @@ class TinyGsmSSL {
   deleteCertificateImpl(const char* filename) TINY_GSM_ATTR_NOT_IMPLEMENTED;
 
   String certificates[muxCount];
+  String clientCertificates[muxCount];
+  String clientPrivateKeys[muxCount];
 };
 
 #endif  // SRC_TINYGSMSSL_H_
