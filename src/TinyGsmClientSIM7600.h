@@ -283,8 +283,20 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     sendAT(GF("+IPADDR"));  // Inquire Socket PDP address
     // sendAT(GF("+CGPADDR=1"));  // Show PDP address
     String res;
+	int pIni, pEnd;
     if (waitResponse(10000L, res) != 1) { return ""; }
-    cleanResponseString(res);
+    pIni = res.indexOf("+IPADDR: ");
+    if (pIni >= 0) {
+      pIni += 9;   // Jump 9 chars "+IPADDR: "
+      pEnd = res.indexOf("OK", pIni);
+      res = res.substring(pIni, pEnd);
+      res.replace("\r", "");
+      res.replace("\n", "");
+      res.replace(" ", "");
+      res.trim();
+    } else {
+	  cleanResponseString(res);
+	}
     res.trim();
     return res;
   }
