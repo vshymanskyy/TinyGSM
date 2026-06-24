@@ -55,6 +55,11 @@ class TinyGsmSim7000 : public TinyGsmSim70xx<TinyGsmSim7000>,
       init(&modem, mux);
     }
 
+    virtual ~GsmClientSim7000() {
+      stop();
+      at->sockets[mux] = nullptr;
+    }
+
     bool init(TinyGsmSim7000* modem, uint8_t mux = 0) {
       this->at       = modem;
       sock_available = 0;
@@ -73,6 +78,19 @@ class TinyGsmSim7000 : public TinyGsmSim70xx<TinyGsmSim7000>,
     }
 
    public:
+
+    GsmClientSim7000* createClient() {
+      for (uint8_t idx = 0; idx < TINY_GSM_MUX_COUNT; idx++) {
+        if (!sockets[idx]) {
+          GsmClientSim7000* client = new GsmClientSim7000();
+          client->init(this, idx);
+          return client;
+        }
+      }
+      DBG(GF("ERROR: Cannot create client, TINYGSM_MUX_COUNT ["), TINY_GSM_MUX_COUNT, GF("] exceeded."));
+      return nullptr;
+    }
+
     virtual int connect(const char* host, uint16_t port, int timeout_s) {
       stop();
       TINY_GSM_YIELD();
