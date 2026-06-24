@@ -30,6 +30,7 @@
 
 #include "TinyGsmModem.tpp"
 #include "TinyGsmTCP.tpp"
+#include "TinyGsmUDP.tpp"
 #include "TinyGsmSSL.tpp"
 #include "TinyGsmGPRS.tpp"
 #include "TinyGsmCalling.tpp"
@@ -53,6 +54,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
                       public TinyGsmGPRS<TinyGsmA7672X>,
                       public TinyGsmTCP<TinyGsmA7672X, TINY_GSM_MUX_COUNT>,
                       public TinyGsmSSL<TinyGsmA7672X, TINY_GSM_MUX_COUNT>,
+                      public TinyGsmUDP<TinyGsmA7672X, TINY_GSM_MUX_COUNT>,
                       public TinyGsmCalling<TinyGsmA7672X>,
                       public TinyGsmSMS<TinyGsmA7672X>,
                       public TinyGsmGSMLocation<TinyGsmA7672X>,
@@ -64,6 +66,8 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
   friend class TinyGsmGPRS<TinyGsmA7672X>;
   friend class TinyGsmTCP<TinyGsmA7672X, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmSSL<TinyGsmA7672X, TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmUDP<TinyGsmA7672X, TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmSocket<TinyGsmA7672X, TINY_GSM_MUX_COUNT>;
   friend class TinyGsmCalling<TinyGsmA7672X>;
   friend class TinyGsmSMS<TinyGsmA7672X>;
   friend class TinyGsmGSMLocation<TinyGsmA7672X>;
@@ -81,6 +85,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
 
    public:
     GsmClientA7672X() {}
+    virtual ~GsmClientA7672X() {}
 
     explicit GsmClientA7672X(TinyGsmA7672X& modem, uint8_t mux = 0) {
       init(&modem, mux);
@@ -114,7 +119,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
     void stop(uint32_t maxWaitMs) {
-      dumpModemBuffer(maxWaitMs);
+      this->dumpModemBuffer(maxWaitMs);
       at->sendAT(GF("+CIPCLOSE="), mux);
       sock_connected = false;
       at->waitResponse();
@@ -165,7 +170,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
     TINY_GSM_CLIENT_CONNECT_OVERRIDES
 
     void stop(uint32_t maxWaitMs) {
-      dumpModemBuffer(maxWaitMs);
+      this->dumpModemBuffer(maxWaitMs);
       at->sendAT(GF("+CCHCLOSE="), mux);  //, GF(",1"));  // Quick close
       sock_connected = false;
       at->waitResponse();
@@ -173,6 +178,62 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
     void stop() override {
       stop(15000L);
     }
+  };
+
+  /*
+   * Inner Client
+   */
+ public:
+  class GsmClientUdpA7672X : public GsmUdp {
+    friend class TinyGsmA7672X;
+  
+   public:
+    GsmClientUdpA7672X() {}
+    virtual ~GsmClientUdpA7672X() {}
+
+    explicit GsmClientUdpA7672X(TinyGsmA7672X& modem, uint8_t mux = 0) {
+      init(&modem, mux);
+    }
+
+    bool init(TinyGsmA7672X* modem, uint8_t mux = 0) {
+      this->at       = modem;
+      sock_available = 0;
+      prev_check     = 0;
+      sock_connected = false;
+      got_data       = false;
+
+      if (mux < TINY_GSM_MUX_COUNT) {
+        this->mux = mux;
+      } else {
+        this->mux = (mux % TINY_GSM_MUX_COUNT);
+      }
+      at->sockets[this->mux] = this;
+
+      return true;
+    }
+
+   public:
+
+    void stop(uint32_t maxWaitMs) {
+      this->dumpModemBuffer(maxWaitMs);
+      at->sendAT(GF("+CIPCLOSE="), mux);
+      sock_connected = false;
+      at->waitResponse();
+      this->host = nullptr;
+      this->port = 0;
+    }
+    void stop() override {
+      stop(15000L);
+    }
+
+    /*
+     * Extended API
+     */
+
+    //IPAddress remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+
+    //uint16_t remotePort() TINY_GSM_ATTR_NOT_IMPLEMENTED;
+    
   };
 
   /*
@@ -202,7 +263,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
 #ifdef TINY_GSM_DEBUG
     sendAT(GF("V1"));  // turn on verbose error codes
 #else
-    sendAT(GF("V0"));  // turn off error codes
+    sendAT(GF("V1"));  // turn off error codes
 #endif
     waitResponse();
 
@@ -357,6 +418,9 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
     if (waitResponse() != 1) { return false; }
 
     // Get Local IP Address, only assigned after connection
+    //if (getLocalIP() == "") {
+    //  return false;
+    //}
     sendAT(GF("+CGPADDR=1"));
     if (waitResponse(10000L) != 1) { return false; }
 
@@ -416,6 +480,25 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
     if (waitResponse(GF(AT_NL "+ICCID:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     waitResponse();
+    res.trim();
+    return res;
+  }
+
+  // Asks for TA Serial Number Identification (IMEI) via the V.25TER standard
+  // AT+GSN command
+  String getIMEIImpl() {
+    sendAT(GF("+CGSN"));
+    streamSkipUntil('\n');  // skip first newline
+    String res = stream.readStringUntil('\n');
+    uint8_t resp = waitResponse();
+    if (resp != 1) {
+      sendAT(GF("+SIMEI?"));
+      resp = waitResponse(2000, GF("+SIMEI:"));
+      if (resp == 1) {
+        res = stream.readStringUntil('\n');
+        waitResponse();
+      }
+    }
     res.trim();
     return res;
   }
@@ -484,6 +567,27 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
    * Client related functions
    */
  protected:
+
+  uint8_t modemBeginUdp(uint16_t port, int timeout_s, uint8_t mux) {
+    int8_t   rsp;
+    uint32_t timeout_ms = ((uint32_t)timeout_s) * 1000;
+
+    sendAT(GF("+NETOPEN"));
+    if (waitResponse(2000L) != 1) { return false; }
+
+    sendAT(GF("+NETOPEN?"));
+    if (waitResponse(2000L) != 1) { return false; }
+
+    sendAT(GF("+CIPOPEN="), mux, ',', GF("\"UDP"), GF("\",,,"), port);
+
+    rsp = waitResponse(
+        timeout_ms, GF("+CIPOPEN: 0,0" AT_NL), GF("+CIPOPEN: 0,1" AT_NL),
+        GF("+CIPOPEN: 0,4" AT_NL), GF("ERROR" AT_NL),
+        GF("CLOSE OK" AT_NL));  // Happens when HTTPS handshake fails
+    
+    return (1 == rsp);
+  }
+  
   bool modemConnect(const char* host, uint16_t port, uint8_t mux,
                     bool ssl = false, int timeout_s = 75) {
     int8_t   rsp;
@@ -566,9 +670,11 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
     return (1 == rsp);
   }
 
-  int16_t modemSend(const void* buff, size_t len, uint8_t mux) {
+  int16_t modemSend(const void* buff, size_t len, uint8_t mux, const char* host = nullptr, uint16_t port = 0) {
     if (hasSSL)
       sendAT(GF("+CCHSEND="), mux, ',', (uint16_t)len);
+    else if (host != nullptr)
+      sendAT(GF("+CIPSEND="), mux, ',', (uint16_t)len, ',', host, ',', port);
     else
       sendAT(GF("+CIPSEND="), mux, ',', (uint16_t)len);
     if (waitResponse(GF(">")) != 1) { return 0; }
@@ -576,10 +682,21 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
     stream.flush();
 
     if (waitResponse() != 1) { return 0; }
-    if (waitResponse(10000L, GF("+CCHSEND: 0,0" AT_NL),
-                     GF("+CCHSEND: 0,4" AT_NL), GF("+CCHSEND: 0,9" AT_NL),
-                     GF("ERROR" AT_NL), GF("CLOSE OK" AT_NL)) != 1) {
-      return 0;
+    if (hasSSL) {
+      if (waitResponse(10000L, GF("+CCHSEND: 0,0" AT_NL),
+                      GF("+CCHSEND: 0,4" AT_NL), GF("+CCHSEND: 0,9" AT_NL),
+                      GF("ERROR" AT_NL), GF("CLOSE OK" AT_NL)) != 1) {
+        return 0;
+      }
+    } else {
+      int8_t res = waitResponse(10000L, GF("+CIPSEND: 0,"),
+                      GF("+CIPERROR:" AT_NL), GF("+CIPSEND: 0,9" AT_NL),
+                      GF("ERROR" AT_NL), GF("CLOSE OK" AT_NL));
+      if (res != 1) {
+        return 0;
+      } else {
+        streamSkipUntil('\n');
+      }
     }
     return len;
   }
@@ -767,7 +884,7 @@ class TinyGsmA7672X : public TinyGsmModem<TinyGsmA7672X>,
   Stream& stream;
 
  protected:
-  GsmClientA7672X* sockets[TINY_GSM_MUX_COUNT];
+  GsmSocket* sockets[TINY_GSM_MUX_COUNT];
   bool             hasSSL = false;
   String           certificates[TINY_GSM_MUX_COUNT];
 };

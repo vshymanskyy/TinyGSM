@@ -127,6 +127,7 @@ typedef TinyGsmSequansMonarch::GsmClientSecureSequansMonarch
 typedef TinyGsmA7672X                        TinyGsm;
 typedef TinyGsmA7672X::GsmClientA7672X       TinyGsmClient;
 typedef TinyGsmA7672X::GsmClientSecureA7672X TinyGsmClientSecure;
+typedef TinyGsmA7672X::GsmClientUdpA7672X    TinyGsmClientUdp;
 
 #else
 #error "Please define GSM modem model"
