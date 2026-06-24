@@ -167,6 +167,9 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee>,
 
     size_t write(const uint8_t* buf, size_t size) override {
       TINY_GSM_YIELD();
+#ifdef TINY_GSM_DEBUG_TRAFFIC
+      tx_count += size;
+#endif      
       return at->modemSend(buf, size, mux);
     }
 
