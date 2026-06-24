@@ -421,6 +421,12 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
     res.trim();
     return res;
   }
+  bool isIPconnected() {
+    sendAT(GF("+CIPSTATUS"));
+    String h = stream.readString();
+    if (h.indexOf("CONNECT") > 0) return 1;
+    return 0;
+  }
 
   /*
    * Phone Call functions
@@ -457,6 +463,12 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
     sendAT(GF("+CMIC="), level);
     return waitResponse() == 1;
   }
+  int newMessageInterrupt(String interrupt) {
+    int Start = interrupt.indexOf(',');
+    int Stop  = interrupt.indexOf('\n', Start);
+    int index = interrupt.substring(Start + 1, Stop - 1).toInt();
+    return index;
+  }
 
   bool setAudioChannel(uint8_t channel) {
     sendAT(GF("+CHFA="), channel);
@@ -469,7 +481,52 @@ class TinyGsmSim800 : public TinyGsmModem<TinyGsmSim800>,
     sendAT(GF("STTONE="), 0);
     return waitResponse();
   }
+  String readSMS(int index, const bool changeStatusToRead = true) {
+    sendAT(GF("+CMGF=1"));
+    waitResponse();
+    sendAT(GF("+CMGR="), index, GF(","),
+           static_cast<const uint8_t>(!changeStatusToRead));
+    String h = "";
+    streamSkipUntil('\n');
+    streamSkipUntil('\n');
+    h = stream.readStringUntil('\n');
+    return h;
+  }
+  int newMessageIndex(bool mode) {
+    sendAT(GF("+CMGF=1"));
+    waitResponse();
+    sendAT(GF("+CMGL=\"REC UNREAD\",1"));
+    String h = stream.readString();
+    int    i;
+    if (mode) {
+      i = h.indexOf("+CMGL: ");
+    } else {
+      i = h.lastIndexOf("+CMGL: ");
+    }
 
+    int index = h.substring(i + 7, i + 9).toInt();
+    if (index <= 0) return 0;
+    return index;
+  }
+  bool emptySMSBuffer() {
+    sendAT(GF("+CMGF=1"));
+    waitResponse();
+    sendAT(GF("+CMGDA=\"DEL ALL\""));
+    return waitResponse(60000L) == 1;
+  }
+  String getSenderID(int index, const bool changeStatusToRead = true) {
+    sendAT(GF("+CMGF=1"));
+    waitResponse();
+    sendAT(GF("+CMGR="), index, GF(","),
+           static_cast<const uint8_t>(changeStatusToRead));
+    String h = "";
+    streamSkipUntil('"');
+    streamSkipUntil('"');
+    streamSkipUntil('"');
+    h = stream.readStringUntil('"');
+    stream.readString();
+    return h;
+  }
   /*
    * Text messaging (SMS) functions
    */
