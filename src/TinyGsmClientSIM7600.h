@@ -412,6 +412,16 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     return res;
   }
 
+  // Gets the IMEI of the modem with AT+CGSN
+  String getIMEIImpl() {
+    sendAT(GF("+CGSN"));
+    if (waitResponse(GF(AT_NL)) != 1) { return ""; }
+    String res = stream.readStringUntil('\n');
+    waitResponse();
+    res.trim();
+    return res;
+  }
+
   /*
    * Phone Call functions
    */
