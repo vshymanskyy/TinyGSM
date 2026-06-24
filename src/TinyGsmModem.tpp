@@ -10,7 +10,8 @@
 #define SRC_TINYGSMMODEM_H_
 
 #include "TinyGsmCommon.h"
-
+#define TINY_GSM_DEBUG
+// #define TINY_GSM_DEBUG_DEEP
 #ifndef AT_NL
 #define AT_NL "\r\n"
 #endif
@@ -601,6 +602,7 @@ class TinyGsmModem {
         GF("> r3 <"), r3 ? r3 : GF("NULL"), GF("> r4 <"), r4 ? r4 : GF("NULL"),
         GF("> r5 <"), r5 ? r5 : GF("NULL"), GF("> r6 <"), r6 ? r6 : GF("NULL"),
         GF("> r7 <"), r7 ? r7 : GF("NULL"), '>');
+        //DBG(GF("Checking responses:"), r1, r2, r3, r4, r5, r6, r7);
 #endif
     uint8_t  index       = 0;
     uint32_t startMillis = millis();
@@ -642,10 +644,10 @@ class TinyGsmModem {
           // Read out the verbose message, until the last character of the new
           // line
           data += thisModem().stream.readStringUntil(AT_NL[len_atnl]);
-#ifdef TINY_GSM_DEBUG_DEEP
+// #ifdef TINY_GSM_DEBUG_DEEP
           data.trim();
           DBG(GF("Verbose details <<<"), data, GF(">>>"));
-#endif
+// #endif
           data = "";
           goto finish;
         }
@@ -656,18 +658,18 @@ class TinyGsmModem {
       }
     } while (millis() - startMillis < timeout_ms);
   finish:
-#ifdef TINY_GSM_DEBUG_DEEP
+ #ifdef TINY_GSM_DEBUG_DEEP
     data.replace("\r", "←");
     data.replace("\n", "↓");
-#endif
+ #endif
     if (!index) {
       data.trim();
       if (data.length()) { DBG("### Unhandled:", data); }
       data = "";
     } else {
-#ifdef TINY_GSM_DEBUG_DEEP
+// #ifdef TINY_GSM_DEBUG_DEEP
       DBG('<', index, '>', data);
-#endif
+// #endif
     }
     return index;
   }
@@ -676,7 +678,10 @@ class TinyGsmModem {
   String getModemInfoImpl() {
     thisModem().sendAT(GF("I"));  // 3GPP TS 27.007
     String res;
-    if (thisModem().waitResponse(1000L, res) != 1) { return ""; }
+    if (thisModem().waitResponse(1000L, res) != 1) { 
+      return "";
+     }
+     
     thisModem().cleanResponseString(res);
     return res;
   }
@@ -760,6 +765,7 @@ class TinyGsmModem {
   // CGREG = GPRS service registration
   // CEREG = EPS registration for LTE modules
   int8_t getRegistrationStatusXREG(const char* regCommand) {
+    DBG(regCommand);
     thisModem().sendAT('+', regCommand, '?');
     // check for any of the three for simplicity
     int8_t resp = thisModem().waitResponse(GF("+CREG:"), GF("+CGREG:"),

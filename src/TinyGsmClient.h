@@ -96,10 +96,20 @@ typedef TinyGsmA6::GsmClientA6 TinyGsmClient;
 typedef TinyGsmM590                TinyGsm;
 typedef TinyGsmM590::GsmClientM590 TinyGsmClient;
 
+#elif defined(TINY_GSM_MODEM_EC200) || defined(TINY_GSM_MODEM_EC200A)
+#include "TinyGsmClientEC200.h"
+typedef TinyGsmEC200                TinyGsm;
+typedef TinyGsmEC200::GsmClientEC200 TinyGsmClient;
+
 #elif defined(TINY_GSM_MODEM_MC60) || defined(TINY_GSM_MODEM_MC60E)
 #include "TinyGsmClientMC60.h"
 typedef TinyGsmMC60                TinyGsm;
 typedef TinyGsmMC60::GsmClientMC60 TinyGsmClient;
+
+#elif defined(TINY_GSM_MODEM_M66)
+#include "TinyGsmClientM66.h"
+typedef TinyGsmM66                TinyGsm;
+typedef TinyGsmM66::GsmClientM66 TinyGsmClient;
 
 #elif defined(TINY_GSM_MODEM_ESP8266) || defined(TINY_GSM_MODEM_ESP32)
 #define TINY_GSM_MODEM_HAS_WIFI

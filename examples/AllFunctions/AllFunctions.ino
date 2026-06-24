@@ -8,9 +8,9 @@
  * Just comment them out.
  *
  **************************************************************/
-
+//#include <AltSoftSerial.h>
 // Select your modem:
-#define TINY_GSM_MODEM_SIM800
+//#define TINY_GSM_MODEM_SIM800
 // #define TINY_GSM_MODEM_SIM808
 // #define TINY_GSM_MODEM_SIM868
 // #define TINY_GSM_MODEM_SIM900
@@ -30,25 +30,33 @@
 // #define TINY_GSM_MODEM_A7
 // #define TINY_GSM_MODEM_M590
 // #define TINY_GSM_MODEM_MC60
+// #define TINY_GSM_MODEM_M66
 // #define TINY_GSM_MODEM_MC60E
 // #define TINY_GSM_MODEM_ESP8266
 // #define TINY_GSM_MODEM_ESP32
 // #define TINY_GSM_MODEM_XBEE
 // #define TINY_GSM_MODEM_SEQUANS_MONARCH
+ #define TINY_GSM_MODEM_EC200
 
 // Set serial for debug console (to the Serial Monitor, default speed 115200)
 #define SerialMon Serial
 
 // Set serial for AT commands (to the module)
 // Use Hardware Serial on Mega, Leonardo, Micro
+// #define __AVR_ATmega328P__
+
 #ifndef __AVR_ATmega328P__
 #define SerialAT Serial1
 
 // or Software Serial on Uno, Nano
 #else
-#include <SoftwareSerial.h>
-SoftwareSerial SerialAT(2, 3);  // RX, TX
+ #include <NeoSWSerial.h>
+ NeoSWSerial SerialAT(2, 3);
+
 #endif
+
+
+// AltSoftSerial SerialAT;
 
 // See all AT commands, if wanted
 // #define DUMP_AT_COMMANDS
@@ -69,31 +77,34 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 /*
  * Tests enabled
  */
-#define TINY_GSM_TEST_GPRS true
+#define TINY_GSM_TEST_GPRS false
 #define TINY_GSM_TEST_WIFI false
 #define TINY_GSM_TEST_TCP true
-#define TINY_GSM_TEST_SSL true
-#define TINY_GSM_TEST_CALL true
-#define TINY_GSM_TEST_SMS true
-#define TINY_GSM_TEST_USSD true
-#define TINY_GSM_TEST_BATTERY true
-#define TINY_GSM_TEST_TEMPERATURE true
-#define TINY_GSM_TEST_GSM_LOCATION true
-#define TINY_GSM_TEST_GPS true
-#define TINY_GSM_TEST_NTP true
-#define TINY_GSM_TEST_TIME true
+#define TINY_GSM_TEST_SSL false
+#define TINY_GSM_TEST_CALL false
+#define TINY_GSM_TEST_SMS false
+#define TINY_GSM_TEST_USSD false
+#define TINY_GSM_TEST_BATTERY false
+#define TINY_GSM_TEST_TEMPERATURE false
+#define TINY_GSM_TEST_GSM_LOCATION false
+#define TINY_GSM_TEST_GPS false
+#define TINY_GSM_TEST_NTP false
+#define TINY_GSM_TEST_TIME false
+#define TINYGSM_TEST_BLUTHOOT false
 // disconnect and power down modem after tests
-#define TINY_GSM_POWERDOWN true
+#define TINY_GSM_POWERDOWN false
 
+#define TINY_GSM_MODEM_HAS_GPS true
+#define TINY_GSM_MODEM_HAS_CALLING true
 // set GSM PIN, if any
 #define GSM_PIN ""
 
 // Set phone numbers, if you want to test SMS and Calls
-// #define SMS_TARGET  "+380xxxxxxxxx"
-// #define CALL_TARGET "+380xxxxxxxxx"
+ #define SMS_TARGET  ""
+ #define CALL_TARGET ""
 
 // Your GPRS credentials, if any
-const char apn[] = "YourAPN";
+const char apn[] = "";
 // const char apn[] = "ibasis.iot";
 const char gprsUser[] = "";
 const char gprsPass[] = "";
@@ -103,10 +114,17 @@ const char wifiSSID[] = "YourSSID";
 const char wifiPass[] = "YourWiFiPass";
 
 // Server details to test TCP/SSL
+
+const char httpRequest[] =
+    "GET / HTTP/1.1\r\n"
+    "Host: vsh.pp.ua\r\n"
+    "Connection: close\r\n\r\n";
 const char server[]   = "vsh.pp.ua";
 const char resource[] = "/TinyGSM/logo.txt";
 
+
 #include <TinyGsmClient.h>
+
 
 #if TINY_GSM_TEST_GPRS && not defined TINY_GSM_MODEM_HAS_GPRS
 #undef TINY_GSM_TEST_GPRS
@@ -131,7 +149,7 @@ TinyGsm        modem(SerialAT);
 
 void setup() {
   // Set console baud rate
-  SerialMon.begin(115200);
+  SerialMon.begin(9600);
   delay(10);
 
   // !!!!!!!!!!!
@@ -142,22 +160,29 @@ void setup() {
   delay(6000L);
 
   // Set GSM module baud rate
-  TinyGsmAutoBaud(SerialAT, GSM_AUTOBAUD_MIN, GSM_AUTOBAUD_MAX);
-  // SerialAT.begin(9600);
+  //TinyGsmAutoBaud(SerialAT, GSM_AUTOBAUD_MIN, GSM_AUTOBAUD_MAX);
+   SerialAT.begin(9600);
+
+
+    
+    delay(10000);  // Wait before next reading
 }
 
 void loop() {
   // Restart takes quite some time
   // To skip it, call init() instead of restart()
   DBG("Initializing modem...");
-  if (!modem.restart()) {
-    // if (!modem.init()) {
+  //if (!modem.restart()) {
+  if (!modem.init()) {
     DBG("Failed to restart modem, delaying 10s and retrying");
     // restart autobaud in case GSM just rebooted
     // TinyGsmAutoBaud(SerialAT, GSM_AUTOBAUD_MIN, GSM_AUTOBAUD_MAX);
     return;
   }
 
+
+// Serial.flush();
+  DBG("Modem Spec...");
   String modemInfo = modem.getModemInfo();
   DBG("Modem Info:", modemInfo);
 
@@ -198,8 +223,8 @@ void loop() {
   modem.gprsConnect(apn, gprsUser, gprsPass);
 #endif
 
-  DBG("Waiting for network...");
-  if (!modem.waitForNetwork(600000L, true)) {
+  DBG("Waiting for network..."); //CSQ,CREG
+  if (!modem.waitForNetwork(60, true)) {
     delay(10000);
     return;
   }
@@ -238,15 +263,49 @@ void loop() {
   DBG("Signal quality:", csq);
 #endif
 
+
+
 #if TINY_GSM_TEST_USSD && defined TINY_GSM_MODEM_HAS_SMS
-  String ussd_balance = modem.sendUSSD("*111#");
+  String ussd_balance = modem.sendUSSD("*140*11#");
   DBG("Balance (USSD):", ussd_balance);
 
-  String ussd_phone_num = modem.sendUSSD("*161#");
+  String ussd_phone_num = modem.sendUSSD("*121*10#");
   DBG("Phone number (USSD):", ussd_phone_num);
 #endif
 
+
+#if TINYGSM_TEST_BLUTHOOT
+
+DBG("BT Enaleing...");
+  if (modem.enableBluetooth()) {
+    DBG("Bluetooth enabled");
+  }
+DBG("BT Visibility");
+  if(modem.setBluetoothVisibility(true)) {
+    DBG("BT is visibale");
+  }
+  
+  DBG("BT naming...");
+  if (modem.setBluetoothHostName("TinyGsmBT")) {
+    DBG("Host name set");
+  }
+#endif //Bluthoot
+
+
+
+
 #if TINY_GSM_TEST_TCP && defined TINY_GSM_MODEM_HAS_TCP
+
+
+  DBG("Waiting for network...");
+  if (!modem.waitForNetwork(600000L, true)) {
+    delay(10000);
+    return;
+  }
+
+  if (modem.isNetworkConnected()) { DBG("Network connected"); }
+
+
   TinyGsmClient client(modem, 0);
   const int     port = 80;
   DBG("Connecting to", server);
@@ -328,7 +387,7 @@ void loop() {
 #if TINY_GSM_TEST_CALL && defined(TINY_GSM_MODEM_HAS_CALLING) && \
     defined(CALL_TARGET)
   DBG("Calling:", CALL_TARGET);
-
+bool res=0;
   // This is NOT supported on M590
   res = modem.callNumber(CALL_TARGET);
   DBG("Call:", res ? "OK" : "fail");
@@ -353,7 +412,7 @@ void loop() {
 #if TINY_GSM_TEST_SMS && defined TINY_GSM_MODEM_HAS_SMS && defined SMS_TARGET
   res = modem.sendSMS(SMS_TARGET, String("Hello from ") + imei);
   DBG("SMS:", res ? "OK" : "fail");
-
+  DBG("SMS");
   // This is only supported on SIMxxx series
   res = modem.sendSMS_UTF8_begin(SMS_TARGET);
   if (res) {
@@ -362,7 +421,10 @@ void loop() {
     stream.print(595);
     res = modem.sendSMS_UTF8_end();
   }
-  DBG("UTF8 SMS:", res ? "OK" : "fail");
+  modem.sendAT("+CMGF=1"); // Set to text mode
+    bool res = modem.sendSMS(SMS_TARGET, "Hello in UTF-8!\r\n");
+   
+  DBG("SMS:", res ? "OK" : "fail");
 
 #endif
 
@@ -516,9 +578,55 @@ void loop() {
   modem.poweroff();
   DBG("Poweroff.");
 #endif
+#if TINYGSM_TEST_BLUTHOOT
 
-  DBG("End of tests.");
+DBG("BT Enaleing...");
+  if (modem.enableBluetooth()) {
+    DBG("Bluetooth enabled");
+  }
+DBG("BT Visibility");
+  if(modem.setBluetoothVisibility(true)) {
+    DBG("BT is visibale");
+  }
+  
+  DBG("BT naming...");
+  if (modem.setBluetoothHostName("TinyGsmBT")) {
+    DBG("Host name set");
+  }
+#endif //Bluthoot
 
+#if TINYGSM_TEST_AUDIO
+// Audio features
+modem.setSpeakerVolume(80);
+int volume = modem.getSpeakerVolume();
+DBG("volum");
+DBG(volume);
+   // Set speaker volume to 50%
+  if (modem.setSpeakerVolume(50)) {
+    DBG("Speaker volume set.");
+  }
+
+  // Mute microphone
+  if (modem.setMicMute(true)) {
+    DBG("Microphone muted.");
+  }
+
+  // Set mic gain to 10
+  modem.setMicGain(10);
+
+  // Set monitor loudness to level 3
+  modem.setMonitorLoudness(3);
+
+  // Enable DTMF detection
+  modem.enableDTMFDetection(true);
+
+  // Read back speaker volume
+  int vol = modem.getSpeakerVolume();
+  DBG("Speaker volume: ");
+  DBG(vol);
+#endif //test audio
+
+DBG("End of tests.");
   // Do nothing forevermore
   while (true) { modem.maintain(); }
 }

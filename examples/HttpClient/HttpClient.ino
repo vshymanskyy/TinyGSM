@@ -40,6 +40,8 @@
 // #define TINY_GSM_MODEM_M590
 // #define TINY_GSM_MODEM_MC60
 // #define TINY_GSM_MODEM_MC60E
+// #define TINY_GSM_MODEM_M66
+// #define TINY_GSM_MODEM_EC200
 // #define TINY_GSM_MODEM_ESP8266
 // #define TINY_GSM_MODEM_ESP32
 // #define TINY_GSM_MODEM_XBEE
@@ -55,8 +57,8 @@
 
 // or Software Serial on Uno, Nano
 #else
-#include <SoftwareSerial.h>
-SoftwareSerial SerialAT(2, 3);  // RX, TX
+ #include <NeoSWSerial.h>
+ NeoSWSerial SerialAT(2, 3); // RX, TX
 #endif
 
 // Increase RX buffer to capture the entire response

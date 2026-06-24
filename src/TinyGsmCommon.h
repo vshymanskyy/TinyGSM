@@ -80,6 +80,7 @@ static void DBG(Args... args) {
 #define DBG(...)
 #endif
 
+
 /*
  * CRTP Helper
  */

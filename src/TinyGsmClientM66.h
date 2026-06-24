@@ -1,40 +1,38 @@
 /**
- * @file       TinyGsmClientMC60.h
+ * @file       TinyGsmClientM66.h
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
  * @date       Nov 2016
  *
- * @MC60 support added by Tamas Dajka 2017.10.15 - with fixes by Sara Damiano
+ * @M66 support added by EICUT 2025
  *
  */
 
-#ifndef SRC_TINYGSMCLIENTMC60_H_
-#define SRC_TINYGSMCLIENTMC60_H_
-// #pragma message("TinyGSM:  TinyGsmClientMC60")
-
-// #define TINY_GSM_DEBUG Serial
-
-#define TINY_GSM_MUX_COUNT 6
-#define TINY_GSM_BUFFER_READ_NO_CHECK
-#ifdef AT_NL
-#undef AT_NL
-#endif
-#define AT_NL "\r\n"
-
-#ifdef MODEM_MANUFACTURER
-#undef MODEM_MANUFACTURER
-#endif
-#define MODEM_MANUFACTURER "Quectel"
-
-#ifdef MODEM_MODEL
-#undef MODEM_MODEL
-#endif
-#if defined(TINY_GSM_MODEM_MC60E)
-#define MODEM_MODEL "MC60E"
-#else
-#define MODEM_MODEL "MC60"
-#endif
+ #ifndef SRC_TINYGSMCLIENTM66_H_
+ #define SRC_TINYGSMCLIENTM66_H_
+ // #pragma message("TinyGSM:  TinyGsmClientM66")
+ 
+ // #define TINY_GSM_DEBUG Serial
+ 
+ #define TINY_GSM_MUX_COUNT 6
+ #define TINY_GSM_BUFFER_READ_NO_CHECK
+ #ifdef AT_NL
+ #undef AT_NL
+ #endif
+ #define AT_NL "\r\n"
+ 
+ #ifdef MODEM_MANUFACTURER
+ #undef MODEM_MANUFACTURER
+ #endif
+ #define MODEM_MANUFACTURER "Quectel"
+ 
+ #ifdef MODEM_MODEL
+ #undef MODEM_MODEL
+ #endif
+ #if defined(TINY_GSM_MODEM_M66)
+ #define MODEM_MODEL "M66"
+ #endif
 
 #include "TinyGsmModem.tpp"
 #include "TinyGsmTCP.tpp"
@@ -45,11 +43,10 @@
 #include "TinyGsmBattery.tpp"
 #include "TinyGSMAudio.tpp"
 #include "TinyGSMAudio.tpp"
-#include "TinyGsmGPS.tpp"
 #include "TinyGsmBluetooth.tpp"
 #include "TinyGsmNTP.tpp"
 
-enum MC60RegStatus {
+enum M66RegStatus {
   REG_NO_RESULT    = -1,
   REG_UNREGISTERED = 0,
   REG_SEARCHING    = 2,
@@ -59,43 +56,41 @@ enum MC60RegStatus {
   REG_UNKNOWN      = 4,
 };
 
-class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60>,
-                    public TinyGsmGPRS<TinyGsmMC60>,
-                    public TinyGsmTCP<TinyGsmMC60, TINY_GSM_MUX_COUNT>,
-                    public TinyGsmCalling<TinyGsmMC60>,
-                    public TinyGsmSMS<TinyGsmMC60>,
-                    public TinyGsmTime<TinyGsmMC60>,
-                    public TinyGsmBattery<TinyGsmMC60>,
-                    public TinyGSMAudio<TinyGsmMC60>,
-                    public TinyGsmGPS<TinyGsmMC60>,
-                    public TinyGsmBluetooth<TinyGsmMC60>,
-                    public TinyGsmNTP<TinyGsmMC60>  {
-  friend class TinyGsmModem<TinyGsmMC60>;
-  friend class TinyGsmGPRS<TinyGsmMC60>;
-  friend class TinyGsmTCP<TinyGsmMC60, TINY_GSM_MUX_COUNT>;
-  friend class TinyGsmCalling<TinyGsmMC60>;
-  friend class TinyGsmSMS<TinyGsmMC60>;
-  friend class TinyGsmTime<TinyGsmMC60>;
-  friend class TinyGsmBattery<TinyGsmMC60>;
-  friend class TinyGSMAudio<TinyGsmMC60>;
-  friend class TinyGsmGPS<TinyGsmMC60>;
-  friend class TinyGsmBluetooth<TinyGsmMC60>;
-  friend class TinyGsmNTP<TinyGsmMC60>;
+class TinyGsmM66 : public TinyGsmModem<TinyGsmM66>,
+                    public TinyGsmGPRS<TinyGsmM66>,
+                    public TinyGsmTCP<TinyGsmM66, TINY_GSM_MUX_COUNT>,
+                    public TinyGsmCalling<TinyGsmM66>,
+                    public TinyGsmSMS<TinyGsmM66>,
+                    public TinyGsmTime<TinyGsmM66>,
+                    public TinyGsmBattery<TinyGsmM66>,
+                    public TinyGSMAudio<TinyGsmM66>,
+                    public TinyGsmBluetooth<TinyGsmM66>,
+                    public TinyGsmNTP<TinyGsmM66>  {
+  friend class TinyGsmModem<TinyGsmM66>;
+  friend class TinyGsmGPRS<TinyGsmM66>;
+  friend class TinyGsmTCP<TinyGsmM66, TINY_GSM_MUX_COUNT>;
+  friend class TinyGsmCalling<TinyGsmM66>;
+  friend class TinyGsmSMS<TinyGsmM66>;
+  friend class TinyGsmTime<TinyGsmM66>;
+  friend class TinyGsmBattery<TinyGsmM66>;
+  friend class TinyGSMAudio<TinyGsmM66>;
+  friend class TinyGsmBluetooth<TinyGsmM66>;
+  friend class TinyGsmNTP<TinyGsmM66>;
   /*
    * Inner Client
    */
  public:
-  class GsmClientMC60 : public GsmClient {
-    friend class TinyGsmMC60;
+  class GsmClientM66 : public GsmClient {
+    friend class TinyGsmM66;
 
    public:
-    GsmClientMC60() {}
+    GsmClientM66() {}
 
-    explicit GsmClientMC60(TinyGsmMC60& modem, uint8_t mux = 0) { //mux=multiplexing
+    explicit GsmClientM66(TinyGsmM66& modem, uint8_t mux = 0) { //mux=multiplexing
       init(&modem, mux);
     }
 
-    bool init(TinyGsmMC60* modem, uint8_t mux = 0) {
+    bool init(TinyGsmM66* modem, uint8_t mux = 0) {
       this->at       = modem;
       sock_available = 0;
       sock_connected = false;
@@ -137,7 +132,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60>,
      */
 
     String remoteIP() TINY_GSM_ATTR_NOT_IMPLEMENTED;
-  }; //end of GsmClientMC60
+  }; //end of GsmClientM66
 
   /*
    * Inner Secure Client
@@ -148,7 +143,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60>,
    * Constructor of outer class
    */
  public:
-  explicit TinyGsmMC60(Stream& stream) : stream(stream) {
+  explicit TinyGsmM66(Stream& stream) : stream(stream) {
     memset(sockets, 0, sizeof(sockets));
   }
 
@@ -158,7 +153,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60>,
  protected:
   bool initImpl(const char* pin = nullptr) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
-    DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientMC60"));
+    DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientM66"));
 
     if (!testAT()) { return false; }
 
@@ -229,13 +224,13 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60>,
    * Generic network functions
    */
  public:
-  MC60RegStatus getRegistrationStatus() {
-    return (MC60RegStatus)getRegistrationStatusXREG("CREG");
+  M66RegStatus getRegistrationStatus() {
+    return (M66RegStatus)getRegistrationStatusXREG("CREG");
   }
 
  protected:
   bool isNetworkConnectedImpl() {
-    MC60RegStatus s = getRegistrationStatus();
+    M66RegStatus s = getRegistrationStatus();
     return (s == REG_OK_HOME || s == REG_OK_ROAMING);
   }
 
@@ -388,85 +383,7 @@ class TinyGsmMC60 : public TinyGsmModem<TinyGsmMC60>,
   /*
    * GPS/GNSS/GLONASS location functions
    */
-
-protected:
-  // Enable GNSS
-  bool enableGPSImpl() {
-    sendAT("+QGNSSC=1");  // Power on GNSS
-    return waitResponse(GF("OK")) == 1;
-  }
-
-  // Disable GNSS
-  bool disableGPSImpl() {
-    sendAT("+QGNSSC=0");  // Power off GNSS
-    return waitResponse(GF("OK")) == 1;
-  }
-
-  // Get RAW GNSS NMEA sentence
-  String getGPSrawImpl() {
-    sendAT("+QGNSSRD?");
-    String res;
-    if (waitResponse(15000L, res, GF("OK")) != 1) return "";
-    DBG("Raw GNSS Data:", res);  // Debug output
-
-    res.trim();
-    return res;
-  }
-
-  // Get RMC (Recommended Minimum GNSS Data) information
-  String getGPSRMCImpl() {
-    sendAT("+QGNSSRD=\"NMEA/RMC\"");
-    String res;
-    if (waitResponse(5000, res, GF("OK")) != 1) return "";
-    res.trim();
-    return res;
-  }
-
-  // Get GSA (GNSS Satellite Data) information
-  String getGPSGSAImpl() {
-    sendAT("+QGNSSRD=\"NMEA/GSA\"");
-    String res;
-    if (waitResponse(5000, res, GF("OK")) != 1) return "";
-    res.trim();
-    return res;
-  }
-
-bool getGPSImpl(float* lat, float* lon, float* speed = nullptr, float* alt = nullptr,
-                int* vsat = nullptr, int* usat = nullptr, float* accuracy = nullptr,
-                int* year = nullptr, int* month = nullptr, int* day = nullptr,
-                int* hour = nullptr, int* minute = nullptr, int* second = nullptr)
- {
-
-    sendAT("+QGNSSRD=\"NMEA/RMC\"");
-    String gpsData;
-    if (waitResponse(5000, gpsData, GF("OK")) != 1) return false;
-
-    if (gpsData.length() == 0) return false;  // Fixed `isEmpty()` issue
-
-    float ilat, ilon, ispeed, ialt;
-    int iyear, imonth, iday, ihour, imin, isecond;
-
-    // Parsing GPS data (adjust format if needed)
-    if (sscanf(gpsData.c_str(), "%f,%f,%f,%f,%d,%d,%d,%d,%d,%d", 
-               &ilat, &ilon, &ispeed, &ialt, &iyear, &imonth, &iday, &ihour, &imin, &isecond) == 10) {
-
-      if (lat) *lat = ilat;
-      if (lon) *lon = ilon;
-      if (speed) *speed = ispeed;
-      if (alt) *alt = ialt;
-      if (year) *year = iyear;
-      if (month) *month = imonth;
-      if (day) *day = iday;
-      if (hour) *hour = ihour;
-      if (minute) *minute = imin;
-      if (second) *second = isecond;
-
-      return true;
-    }
-
-    return false;
-  }
-
+  // It does not support GPS
 
   /*
    * Time functions
@@ -506,25 +423,25 @@ public:
    */
 // Enable Bluetooth
 
-bool TinyGsmMC60::enableBluetoothImpl() {
+bool TinyGsmM66::enableBluetoothImpl() {
   sendAT(GF("+QBTPWR=1")); 
   return waitResponse() == 1;
 }
 
 // Disable Bluetooth
-bool TinyGsmMC60::disableBluetoothImpl() {
+bool TinyGsmM66::disableBluetoothImpl() {
   sendAT(GF("+QBTPWER=0"));
   return waitResponse() == 1;
 }
 
 // Set Bluetooth visibility
-bool TinyGsmMC60::setBluetoothVisibilityImpl(bool visible) {
+bool TinyGsmM66::setBluetoothVisibilityImpl(bool visible) {
   sendAT(GF("+QBTVISB="), visible ? 1 : 0);
   return waitResponse() == 1;
 }
 
 // Set Bluetooth host name
-bool TinyGsmMC60::setBluetoothHostNameImpl(const char* name) {
+bool TinyGsmM66::setBluetoothHostNameImpl(const char* name) {
   sendAT(GF("+QBTNAME="), name);
   return waitResponse() == 1;
 }
@@ -547,7 +464,7 @@ bool TinyGsmMC60::setBluetoothHostNameImpl(const char* name) {
                     bool ssl = false, int timeout_s = 75) {
     if (ssl) { DBG("SSL not yet supported on this module!"); }
 
-    // By default, MC60 expects IP address as 'host' parameter.
+    // By default, M66 expects IP address as 'host' parameter.
     // If it is a domain name, "AT+QIDNSIP=1" should be executed.
     // "AT+QIDNSIP=0" is for dotted decimal IP address.
     IPAddress addr;
@@ -574,7 +491,7 @@ bool TinyGsmMC60::setBluetoothHostNameImpl(const char* name) {
     bool allAcknowledged = false;
     // bool failed = false;
     while (!allAcknowledged) {
-      sendAT(GF("+QISACK="), mux);  // If 'mux' is not specified, MC60 returns
+      sendAT(GF("+QISACK="), mux);  // If 'mux' is not specified, M66 returns
                                     // 'ERRROR' (for QIMUX == 1)
       if (waitResponse(5000L, GF(AT_NL "+QISACK:")) != 1) {
         return -1;
@@ -701,7 +618,8 @@ bool TinyGsmMC60::setBluetoothHostNameImpl(const char* name) {
   Stream& stream;
 
  protected:
-  GsmClientMC60* sockets[TINY_GSM_MUX_COUNT];
+  GsmClientM66* sockets[TINY_GSM_MUX_COUNT];
 };
-
-#endif  // SRC_TINYGSMCLIENTMC60_H_
+ 
+ #endif  // SRC_TINYGSMCLIENTM66_H_
+ 

@@ -44,8 +44,8 @@
 
 // or Software Serial on Uno, Nano
 #else
-#include <SoftwareSerial.h>
-SoftwareSerial SerialAT(2, 3);  // RX, TX
+ #include <NeoSWSerial.h>
+ NeoSWSerial SerialAT(2, 3); // RX, TX
 #endif
 
 // Increase RX buffer to capture the entire response
