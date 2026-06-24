@@ -17,7 +17,7 @@ jobs:
       library_install_git: ${{ steps.store_vars.outputs.library_install_git }}
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set environment variables for pushes to any branch
         if: github.event_name == 'push'
@@ -100,7 +100,7 @@ jobs:
           ]
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set variables
         run: |
