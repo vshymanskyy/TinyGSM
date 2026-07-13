@@ -350,12 +350,12 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
     // AsyncMode = sets mode of executing commands
     //           = 0 (synchronous command executing)
     // TimeoutVal = minimum retransmission timeout in milliseconds = 75000
-    sendAT(GF("+CIPCCFG=10,0,0,0,1,0,75000"));
+    sendAT(GF("+CIPCCFG=10,0,0,0,1,0," TINY_GSM_STRINGIFY(TINY_GSM_TCP_RTX_TIMEOUT_MS)));
     if (waitResponse() != 1) { return false; }
 
     // Configure timeouts for opening and closing sockets
     // AT+CIPTIMEOUT=<netopen_timeout>, <cipopen_timeout>, <cipsend_timeout>
-    sendAT(GF("+CIPTIMEOUT="), 75000, ',', 15000, ',', 15000);
+    sendAT(GF("+CIPTIMEOUT="), TINY_GSM_NETOPEN_TIMEOUT_MS, ',', TINY_GSM_CIPOPEN_TIMEOUT_MS, ',', TINY_GSM_CIPSEND_TIMEOUT_MS);
     waitResponse();
 
     // Start the socket service
@@ -366,7 +366,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
     // We to ignore any immediate response and wait for the
     // URC to show it's really connected.
     sendAT(GF("+NETOPEN"));
-    if (waitResponse(75000L, GF(AT_NL "+NETOPEN: 0")) != 1) { return false; }
+    if (waitResponse(TINY_GSM_NETOPEN_TIMEOUT_MS, GF(AT_NL "+NETOPEN: 0")) != 1) { return false; }
 
     return true;
   }
@@ -382,7 +382,7 @@ class TinyGsmSim5360 : public TinyGsmModem<TinyGsmSim5360>,
     // Note: all sockets should be closed first - on 3G/4G models the sockets
     // must be closed manually
     sendAT(GF("+NETCLOSE"));
-    if (waitResponse(60000L, GF(AT_NL "+NETCLOSE: 0")) != 1) { return false; }
+    if (waitResponse(TINY_GSM_NETCLOSE_TIMEOUT_MS, GF(AT_NL "+NETCLOSE: 0")) != 1) { return false; }
 
     return true;
   }

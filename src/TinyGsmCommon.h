@@ -28,6 +28,30 @@
 #include <Client.h>
 #endif
 
+#define _TINY_GSM_STRINGIFY(x) #x
+#define TINY_GSM_STRINGIFY(x) _TINY_GSM_STRINGIFY(x)
+
+#ifndef TINY_GSM_NETOPEN_TIMEOUT_MS
+#define TINY_GSM_NETOPEN_TIMEOUT_MS 75000
+#endif
+
+#ifndef TINY_GSM_NETCLOSE_TIMEOUT_MS
+#define TINY_GSM_NETCLOSE_TIMEOUT_MS 75000
+#endif
+
+/* minimum retransmission timeout value for TCP connection */
+#ifndef TINY_GSM_TCP_RTX_TIMEOUT_MS
+#define TINY_GSM_TCP_RTX_TIMEOUT_MS 75000
+#endif
+
+#ifndef TINY_GSM_CIPOPEN_TIMEOUT_MS
+#define TINY_GSM_CIPOPEN_TIMEOUT_MS 15000
+#endif 
+
+#ifndef TINY_GSM_CIPSEND_TIMEOUT_MS
+#define TINY_GSM_CIPSEND_TIMEOUT_MS 15000
+#endif 
+
 #ifndef TINY_GSM_YIELD_MS
 #define TINY_GSM_YIELD_MS 0
 #endif

@@ -26,10 +26,10 @@
     return connect(TinyGsmStringFromIp(ip).c_str(), port, timeout_s); \
   }                                                                   \
   int connect(const char* host, uint16_t port) override {             \
-    return connect(host, port, 75);                                   \
+    return connect(host, port, (TINY_GSM_CIPOPEN_TIMEOUT_MS / 1000)); \
   }                                                                   \
   int connect(IPAddress ip, uint16_t port) override {                 \
-    return connect(ip, port, 75);                                     \
+    return connect(ip, port, (TINY_GSM_CIPOPEN_TIMEOUT_MS / 1000));   \
   }
 
 // // For modules that do not store incoming data in any sort of buffer
