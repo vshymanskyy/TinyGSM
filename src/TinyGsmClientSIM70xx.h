@@ -298,7 +298,7 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType>,
       ialt = thisModem().streamGetFloatBefore(
           ',');  // MSL Altitude. Unit is meters
       ispeed = thisModem().streamGetFloatBefore(
-          ',');                          // Speed Over Ground. Unit is knots.
+          ',');  // Speed Over Ground. Unit is km/h (AT manuals, table "AT+CGNSINF return Parameters").
       thisModem().streamSkipUntil(',');  // Course Over Ground. Degrees.
       thisModem().streamSkipUntil(',');  // Fix Mode
       thisModem().streamSkipUntil(',');  // Reserved1
@@ -308,12 +308,23 @@ class TinyGsmSim70xx : public TinyGsmModem<SIM70xxType>,
       thisModem().streamSkipUntil(',');  // Vertical Dilution Of Precision
       thisModem().streamSkipUntil(',');  // Reserved2
       ivsat = thisModem().streamGetIntBefore(',');  // GNSS Satellites in View
-      iusat = thisModem().streamGetIntBefore(',');  // GNSS Satellites Used
-      thisModem().streamSkipUntil(',');             // GLONASS Satellites Used
-      thisModem().streamSkipUntil(',');             // Reserved3
-      thisModem().streamSkipUntil(',');             // C/N0 max
-      thisModem().streamSkipUntil(',');             // HPA
-      thisModem().streamSkipUntil('\n');            // VPA
+
+      // The rest of the line differs between modules. A SIM7000 goes on with
+      // <GNSS Satellites Used>,<GLONASS Satellites Used>,<Reserved3>,
+      // <C/N0 max>,<HPA>,<VPA>; a SIM7070/SIM7080/SIM7090 answers only
+      // <Reserved3>,<HPA>,<VPA> (SIM7070_SIM7080_SIM7090 Series AT Command
+      // Manual V1.04, section 8.2.2). Skipping six fields on the short layout
+      // waited out a full stream timeout on each missing field and on the OK,
+      // five seconds per call, so read the remainder as one line and let its
+      // field count pick the layout.
+      String rest   = thisModem().stream.readStringUntil('\n');
+      int    fields = 1;
+      for (unsigned int i = 0; i < rest.length(); i++) {
+        if (rest[i] == ',') { fields++; }
+      }
+      if (fields >= 6) {  // SIM7000 layout: the first remaining field is "used"
+        iusat = rest.substring(0, rest.indexOf(',')).toInt();
+      }
 
       // Set pointers
       if (lat != nullptr) *lat = ilat;
