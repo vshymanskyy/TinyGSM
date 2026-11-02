@@ -176,6 +176,8 @@ class TinyGsmM95 : public TinyGsmModem<TinyGsmM95, TinyGsmM95ModemConfig>,
         uint8_t nextMux = at->findFirstUnassignedMux();
         if (nextMux != static_cast<uint8_t>(-1)) {
           this->mux = nextMux;
+          DBG("Could not use requested mux", mux,
+              ", assigned next available mux:", nextMux);
         } else {
           // If we can't find anything available, overwrite something, using mod
           // to make sure we're in range
