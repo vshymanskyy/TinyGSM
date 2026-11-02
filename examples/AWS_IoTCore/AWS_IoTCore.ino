@@ -80,7 +80,7 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 #define TINY_GSM_USE_CELLULAR_DATA true
 #define TINY_GSM_USE_WIFI false
 
-// set GSM PIN, if any
+// set SIM card pin, if any
 #define SIM_PIN ""
 
 // Your SIM card credentials, if any

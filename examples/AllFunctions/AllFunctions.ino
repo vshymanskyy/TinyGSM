@@ -90,7 +90,7 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 // disconnect and power down modem after tests
 #define TINY_GSM_POWERDOWN true
 
-// set GSM PIN, if any
+// set SIM card pin, if any
 #define SIM_PIN ""
 
 // Set phone numbers, if you want to test SMS and Calls

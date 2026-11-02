@@ -291,7 +291,6 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
      */
     int connect(const char* host, uint16_t port, int timeout_s) override {
       if (at == nullptr) { return 0; }
-      at->sockets[0] = this;
       // NOTE:  Not calling stop() or yield() here
       at->streamClear();  // Empty anything in the buffer before starting
       sock_connected      = at->modemConnect(host, port, mux, timeout_s);
@@ -301,14 +300,12 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     /// @copydoc GsmClient::connect(const char*, uint16_t)
     int connect(const char* host, uint16_t port) override {
       if (at == nullptr) { return 0; }
-      at->sockets[0] = this;
       return connect(host, port, TcpConfig::kConnectTimeoutS);
     }
 
     /// @copydoc GsmClient::connect(IPAddress, uint16_t, int)
     int connect(IPAddress ip, uint16_t port, int timeout_s) override {
       if (at == nullptr) { return 0; }
-      at->sockets[0] = this;
       if (timeout_s != 0) {
         DBG("Timeout [", timeout_s, "] doesn't apply here.");
       }
@@ -321,7 +318,6 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     /// @copydoc GsmClient::connect(IPAddress, uint16_t)
     int connect(IPAddress ip, uint16_t port) override {
       if (at == nullptr) { return 0; }
-      at->sockets[0] = this;
       return connect(ip, port, 0);
     }
 
@@ -483,7 +479,6 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     int connect(const char* host, uint16_t port, int timeout_s) override {
       // NOTE:  Not calling stop() or yield() here
       if (at == nullptr) { return 0; }
-      at->sockets[0] = this;
       if (!validateAndConfigureSSLContext()) { return 0; }
       // do the rest of the connection process
       sock_connected      = at->modemConnect(host, port, mux, timeout_s);
@@ -494,7 +489,6 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     int connect(IPAddress ip, uint16_t port, int timeout_s) override {
       // NOTE:  Not calling stop() or yield() here
       if (at == nullptr) { return 0; }
-      at->sockets[0] = this;
       if (!validateAndConfigureSSLContext()) { return 0; }
       if (timeout_s != 0) {
         DBG("Timeout [", timeout_s, "] doesn't apply here.");

@@ -71,7 +71,7 @@ SoftwareSerial SerialAT2(2, 3);  // RX, TX
 #define GSM_AUTOBAUD_MIN 9600
 #define GSM_AUTOBAUD_MAX 921600
 
-// set GSM PIN, if any
+// set SIM card pin, if any
 #define SIM_PIN ""
 
 // Your SIM card credentials, if any
