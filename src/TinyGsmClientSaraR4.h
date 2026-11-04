@@ -186,58 +186,25 @@ class TinyGsmSaraR4
      * @copydetails GsmClientSaraR4::GsmClientSaraR4(TinyGsmSaraR4&, uint8_t)
      */
     bool init(TinyGsmSaraR4* modem, uint8_t /*mux*/ = 0) override {
-      if (modem == nullptr) { return false; }
-      this->at       = modem;
-      sock_available = 0;
-      prev_check     = 0;
-      sock_connected = false;
-      got_data       = false;
-      is_mid_send    = false;
-      uint8_t mux    = 0;  // only a placeholder!
-
-      // The SARA R4 does NOT allow you to choose the mux number; this is an
-      // initial place holder for before connection. We need to assign a mux
-      // number here first so that we can assign the pointer for the client in
-      // the socket array and in-turn allow the modem to look back at the
-      // properties of the client to check if the client needs SSL and, if so,
-      // what the SSL specs are. If the mux number returned at the end of the
-      // connection process is different from the one we assigned here, we
-      // update the position of the pointer to this in the socket array after
-      // the connection finishes.
-
-      // NOTE: Because we can't control the mux number, we don't need to worry
-      // about attempting to assign a mux number for a secure socket that is out
-      // of range of even though the number of secure sockets is smaller than
-      // the number of standard sockets.
-
-      // if it's a valid mux number, and that mux number isn't in use (or it's
-      // already this), accept the mux number
-      if (mux < TcpConfig::kMuxCount &&
-          (at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
-        this->mux = mux;
-        // If the mux number is in use or out of range, find the next available
-        // one
-      } else {
-        uint8_t nextMux = at->findFirstUnassignedMux();
-        if (nextMux != static_cast<uint8_t>(-1)) {
-          this->mux = nextMux;
-          DBG("Could not use requested mux", mux,
-              ", assigned next available mux:", nextMux);
-        } else {
-          // If we can't find anything available, overwrite something, using mod
-          // to make sure we're in range
-          this->mux = (mux % TcpConfig::kMuxCount);
-        }
-      }
-      at->sockets[this->mux] = this;
-
-      return true;
+      // This is a placeholder registration. The modem assigns the actual mux
+      // during connect(), and the client registration is moved at that time.
+      return this->attachToModem(this, modem, 0);
     }
 
     /*
      * Arduino Client interface
      */
    public:
+    /**
+     * @copydoc GsmClient::connect(const char*, uint16_t, int)
+     * @warning The SARA-R4 modem automatically assigns the multiplexing
+     * channel.  When the modem assigns the mux, the client will be registered
+     * there.  An attempt will be made to move any other client that had been at
+     * that position in the modem's socket array.  If it cannot be moved, the
+     * client at the assigned mux will be forcibly overwritten.  This function
+     * assumes that the client you just asked to connect is more important than
+     * any client that might already be at the assigned mux.
+     */
     int connect(const char* host, uint16_t port, int timeout_s) override {
       if (at == nullptr) { return 0; }
       is_mid_send = false;
@@ -255,34 +222,11 @@ class TinyGsmSaraR4
       // return false and set the assignedMux to -1 if the mux number is invalid
       // or the connection fails
       sock_connected = at->modemConnect(host, port, &assignedMux, timeout_s);
-      if (sock_connected && assignedMux != mux) {
-        // If we successfully connected, and the assigned mux number is
-        // different from the requested mux number, we need to move any existing
-        // client at the assigned mux number before we can insert this client
-        // into the sockets array at the assigned mux.
-        // Set the requested mux to -1 to get the next available mux number.
-        // If there was no existing client at the assigned mux number, this will
-        // do nothing.
-        at->moveSocket(assignedMux, static_cast<uint8_t>(-1));
-        // If the original mux number was valid, and the pointer to this client
-        // is still in the original mux position in the sockets array, set the
-        // pointer in that position to null.
-        if (mux < TcpConfig::kMuxCount && at->sockets[mux] == this) {
-          at->sockets[mux] = nullptr;
-        }
-        // set the client's internal mux number and insert it into the array
-        at->sockets[assignedMux] = this;
-        mux                      = assignedMux;
+      if (sock_connected &&
+          !this->registerAssignedMux(this, assignedMux, true)) {
+        at->modemStop(assignedMux, TcpConfig::kStopTimeoutS * 1000L);
+        sock_connected = false;
       }
-      // NOTE: If the sock didn't connect, DO NOT assign an invalid mux number
-      // or move the pointer to this client in the modem's sockets array.  The
-      // modem still needs to be able to access this client via its mux number
-      // in the socket array to check if it's expected to be an SSL connection
-      // and, if so, what the SSL specs are.  If we set an invalid mux number or
-      // break the alignment between the mux number and the position of the
-      // pointer in the array client in the sockets array when the connection
-      // fails, the modem loses access to the client.
-
       at->maintain();
       return sock_connected;
     }

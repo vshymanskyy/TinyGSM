@@ -823,6 +823,20 @@ class GsmSecureContext {
   }
 
   /**
+   * @brief Detach this context from its modem SSL context slot.
+   *
+   * This releases only the TinyGSM context registration. It does not erase
+   * configuration already applied to the modem.
+   */
+  void detach() {
+    if (modem != nullptr) {
+      modem->detachSSLContext(this, sslCtxIndex);
+      modem       = nullptr;
+      sslCtxIndex = TINY_GSM_DEFAULT_SSL_CTX;
+    }
+  }
+
+  /**
    * @brief Get the hardware SSL context index.
    * @return The registered index, or #TINY_GSM_DEFAULT_SSL_CTX when unattached.
    */
@@ -999,13 +1013,6 @@ class GsmSecureContext {
     memset(pskTableName, '\0', sizeof(pskTableName));
     memset(pskIdent, '\0', sizeof(pskIdent));
     memset(psKey, '\0', sizeof(psKey));
-  }
-
-  void detach() {
-    if (modem != nullptr) {
-      modem->detachSSLContext(this, sslCtxIndex);
-      modem = nullptr;
-    }
   }
 };
 

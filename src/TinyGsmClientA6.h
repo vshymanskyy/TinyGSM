@@ -154,19 +154,23 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
      * @copydetails GsmClientA6::GsmClientA6(TinyGsmA6&, uint8_t)
      */
     bool init(TinyGsmA6* modem, uint8_t /*mux*/ = 0) override {
-      if (modem == nullptr) { return false; }
-      this->at       = modem;
-      this->mux      = static_cast<uint8_t>(-1);
-      sock_connected = false;
-      is_mid_send    = false;
-
-      return true;
+      return this->attachToModem(this, modem);
     }
 
     /*
      * Arduino Client interface
      */
    public:
+    /**
+     * @copydoc GsmClient::connect(const char*, uint16_t, int)
+     * @warning The A6 and A7 modems automatically assign the multiplexing
+     * channel.  When the modem assigns the mux, the client will be registered
+     * there.  An attempt will be made to move any other client that had been at
+     * that position in the modem's socket array.  If it cannot be moved, the
+     * client at the assigned mux will be forcibly overwritten.  This function
+     * assumes that the client you just asked to connect is more important than
+     * any client that might already be at the assigned mux.
+     */
     int connect(const char* host, uint16_t port, int timeout_s) override {
       if (at == nullptr) { return 0; }
       is_mid_send = false;
@@ -185,24 +189,12 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
       // return false and set the assignedMux to -1 if the mux number is invalid
       // or the connection fails
       sock_connected = at->modemConnect(host, port, &assignedMux, timeout_s);
-      if (sock_connected && assignedMux != mux) {
-        // If we successfully connected, and the assigned mux number is
-        // different from the requested mux number, we need to move any existing
-        // client at the assigned mux number before we can insert this client
-        // into the sockets array at the assigned mux.
-        // Set the requested mux to -1 to get the next available mux number.
-        // If there was no existing client at the assigned mux number, this will
-        // do nothing.
-        at->moveSocket(assignedMux, static_cast<uint8_t>(-1));
-        // If the original mux number was valid, and the pointer to this client
-        // is still in the original mux position in the sockets array, set the
-        // pointer in that position to null.
-        if (mux < TcpConfig::kMuxCount && at->sockets[mux] == this) {
-          at->sockets[mux] = nullptr;
-        }
-        // set the client's internal mux number and insert it into the array
-        at->sockets[assignedMux] = this;
-        mux                      = assignedMux;
+      // if the connection succeeded, but we can't register the assigned mux,
+      // even with a forced overwrite, stop the connection and return false
+      if (sock_connected &&
+          !this->registerAssignedMux(this, assignedMux, true)) {
+        at->modemStop(assignedMux, TcpConfig::kStopTimeoutS * 1000L);
+        sock_connected = false;
       }
       return sock_connected;
     }

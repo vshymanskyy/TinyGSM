@@ -202,6 +202,8 @@ peek	KEYWORD2
 flush	KEYWORD2
 connected	KEYWORD2
 operator bool	KEYWORD2
+isAttached	KEYWORD2
+detach	KEYWORD2
 ~GsmClient	KEYWORD2
 remoteIP	KEYWORD2
 getMux	KEYWORD2
@@ -218,7 +220,6 @@ setCACertName	KEYWORD2
 setClientCredentials	KEYWORD2
 setPSKTableName	KEYWORD2
 setPreSharedKey	KEYWORD2
-isAttached	KEYWORD2
 getSSLContextIndex	KEYWORD2
 begin	KEYWORD2
 sendAT	KEYWORD2

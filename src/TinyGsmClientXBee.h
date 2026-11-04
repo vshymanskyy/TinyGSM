@@ -263,16 +263,8 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
      * @copydetails GsmClientXBee::GsmClientXBee(TinyGsmXBee&, uint8_t)
      */
     bool init(TinyGsmXBee* modem, uint8_t /*mux*/ = 0) override {
-      if (modem == nullptr) { return false; }
-      this->at       = modem;
-      this->mux      = 0;
-      sock_connected = false;
-      is_mid_send    = false;
-
       // only 1 possible socket for XBee in transparent mode
-      at->sockets[0] = this;
-
-      return true;
+      return this->attachToModem(this, modem, 0);
     }
 
     /*

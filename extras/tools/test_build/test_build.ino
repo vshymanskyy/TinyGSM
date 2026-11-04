@@ -576,6 +576,7 @@ void loop() {
   TinyGsmClient client3(modem, 1);
   client.init(&modem);
   client.init(&modem, 1);
+  client.isAttached();
 
   client.connect(server, 80);
 
@@ -600,6 +601,9 @@ void loop() {
   }
 
   client.stop();
+  client.detach();
+  client.isAttached();
+  client.init(&modem);
 
   // ========================================================================
   // TinyGsmClient - Extended Client API
@@ -651,6 +655,8 @@ void loop() {
   context_secure_default.init(&modem, (uint8_t)1);
   context_secure_default.isAttached();
   context_secure_default.getSSLContextIndex();
+  context_secure_default.detach();
+  context_secure_default.init(&modem, (uint8_t)1);
 
   TinyGsmSecureContext context_secure(modem, 0);
   TinyGsmSecureContext(modem, SSLAuthMode::MUTUAL_AUTHENTICATION);
@@ -673,6 +679,7 @@ void loop() {
 
   client_secure.init(&modem);
   client_secure.init(&modem, 1);
+  client_secure.isAttached();
 
   client_secure.connect(server, 443);
 
@@ -697,6 +704,9 @@ void loop() {
   }
 
   client_secure.stop();
+  client_secure.detach();
+  client_secure.isAttached();
+  client_secure.init(&modem);
 
   // ========================================================================
   // TinyGsmClientSecure - Extended Client API

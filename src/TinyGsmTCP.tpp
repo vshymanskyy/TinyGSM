@@ -169,15 +169,20 @@ class TinyGsmTCP {
 
   /**
    * @brief Find the number of the first unassigned mux socket
+   * @param availableMuxCount The number of socket positions to search.
    * @return The mux number of the first unassigned socket, or 255 (0xFF,
-   * static_cast<uint8_t>(-1)) if all sockets are assigned
+   * static_cast<uint8_t>(-1)) if all searched sockets are assigned
    * @note This returns an unsigned int instead of a signed int to be easily
    * comparable with the socket mux value, which is also unsigned.
    */
-  uint8_t findFirstUnassignedMux() {
+  uint8_t
+  findFirstUnassignedMux(uint8_t availableMuxCount = TcpConfig::kMuxCount) {
+    if (availableMuxCount > TcpConfig::kMuxCount) {
+      availableMuxCount = TcpConfig::kMuxCount;
+    }
     // Try to iterate through the assigned client sockets to find the next spot
     // in the array of client pointers that has not been linked to an object.
-    for (int next_mux = 0; next_mux < TcpConfig::kMuxCount; next_mux++) {
+    for (uint8_t next_mux = 0; next_mux < availableMuxCount; ++next_mux) {
       if (thisModem().sockets[next_mux] == nullptr) { return next_mux; }
     }
     DBG("### WARNING: No empty mux sockets found!");
@@ -1150,11 +1155,37 @@ class GsmClient : public Client {
     return connected();
   }
 
+  /**
+   * @brief Check whether this client is initialized with a modem.
+   *
+   * Use this after construction when registration may fail because all modem
+   * socket slots are already occupied.
+   *
+   * @return `true` when initialized; otherwise `false`.
+   */
+  bool isAttached() const {
+    return at != nullptr;
+  }
+
+  /**
+   * @brief Detach this client from its modem and release its socket slot.
+   *
+   * This only releases the TinyGSM client registration. It does not close an
+   * active connection. Call stop() before detaching a connected client.
+   */
+  void detach() {
+    // remove the pointer to this client from the modem's socket array if
+    // necessary (this is done inside unregisterFromModem)
+    unregisterFromModem();
+    // unset the modem pointer and mux number
+    at  = nullptr;
+    mux = static_cast<uint8_t>(-1);
+    resetClientState();
+  }
+
   /// destructor - need to remove self from the socket pointer array
   virtual ~GsmClient() {
-    if (at != nullptr && mux < TcpConfig::kMuxCount) {
-      if (at->sockets[mux] == this) { at->sockets[mux] = nullptr; }
-    }
+    detach();
   }
   /**@}*/
 
@@ -1240,6 +1271,203 @@ class GsmClient : public Client {
 
  protected:
   /**
+   * @brief Attach this client to an available modem socket slot.
+   * This both attaches the client to the modem (sets the `at` pointer), assigns
+   * a position in the modems socket array (the mux number) and places a pointer
+   * to the client in the socket array of the modem.  This is the function to
+   * use to attach a client to a modem for modems that use the Static
+   * TinyGsmTcpMuxMode.
+   * @param client Pointer to the concrete client instance.
+   * @param requestedAT The modem to attach to.
+   * @param requestedMux The preferred zero-indexed socket position.
+   * @param availableMuxCount The number of socket positions this client type
+   * may use.
+   * @return `true` if attached; otherwise `false`. On failure, an existing
+   * attachment is preserved.
+   */
+  template <typename clientType>
+  bool attachToModem(clientType* client, modemType* requestedAT,
+                     uint8_t requestedMux,
+                     uint8_t availableMuxCount = TcpConfig::kMuxCount) {
+    // if there's not a modem in the request or no available slots, return false
+    // NOTE: It shouldn't ever happen that availableMuxCount is either zero or
+    // greater than TcpConfig::kMuxCount.
+    if (requestedAT == nullptr || availableMuxCount == 0 ||
+        availableMuxCount > TcpConfig::kMuxCount) {
+      return false;
+    }
+
+    // check if this client was already registered with a valid mux to any modem
+    // (ie, the current `at` pointer, which may or may not be the same as the
+    // requested one.
+    const bool wasRegistered = at != nullptr &&
+        this->mux < TcpConfig::kMuxCount && at->sockets[mux] == client;
+
+    // temporarily set the assigned mux to an invalid value
+    uint8_t assignedMux = static_cast<uint8_t>(-1);
+
+    // if the modem to attach to is the same as the already attached one, try to
+    // use the current mux, even if it's not the requested one
+    if (requestedAT == at && this->mux < availableMuxCount &&
+        requestedAT->sockets[this->mux] == client) {
+      assignedMux = this->mux;
+#if defined(TINY_GSM_DEBUG)
+      if (requestedMux != this->mux) {
+        // print a note if the mux being used is different from the requested
+        // one
+        DBG(GF("Using current mux of"), this->mux,
+            GF("instead of requested mux:"), requestedMux);
+      }
+#endif
+    } else if (requestedMux < availableMuxCount &&
+               (requestedAT->sockets[requestedMux] == nullptr ||
+                requestedAT->sockets[requestedMux] == client)) {
+      // if the requested mux is a possible numbered slot and is available or
+      // already this client, use the requested mux
+      assignedMux = requestedMux;
+    } else {
+      // otherwise, find the first available mux number
+      assignedMux = requestedAT->findFirstUnassignedMux(availableMuxCount);
+      // print a debugging message if the mux was changed from the requested one
+      if (assignedMux != requestedMux) {
+        DBG("Could not use requested mux", requestedMux,
+            ", assigned next available mux:", assignedMux);
+      }
+    }
+
+    // if no mux could be assigned, print an error and reset state if not
+    // previously registered
+    if (assignedMux == static_cast<uint8_t>(-1)) {
+      DBG(GF("ERROR: No unassigned client sockets available!"));
+      if (!wasRegistered) {
+        at        = nullptr;
+        this->mux = static_cast<uint8_t>(-1);
+        resetClientState();
+      }
+      return false;
+    }
+
+    // if we get here, a mux has been successfully assigned
+    // unregister from any previously attached modem
+    unregisterFromModem();
+    // set new modem pointer and reset mux
+    at        = requestedAT;
+    this->mux = assignedMux;
+    resetClientState();
+    at->sockets[this->mux] = client;
+    return true;
+  }
+
+  /**
+   * @brief Attach to a modem that assigns the socket during connect().
+   * This attaches to the modem (sets the `at` pointer) but sets an invalid mux
+   * number and does not place a pointer to the client in the modem's socket
+   * array. This is the function to use to attach a client to a modem for modems
+   * that use the Dynamic TinyGsmTcpMuxMode.
+   * @param client Pointer to the concrete client instance.
+   * @param requestedAT The modem to attach to.
+   * @return `true` if attached; otherwise `false`.
+   */
+  template <typename clientType>
+  bool attachToModem(clientType* client, modemType* requestedAT) {
+    (void)client;
+    if (requestedAT == nullptr) { return false; }
+    // unregister from any previously attached modem
+    unregisterFromModem();
+    // set new modem pointer and reset mux
+    at  = requestedAT;
+    mux = static_cast<uint8_t>(-1);
+    // reset client state variables
+    resetClientState();
+    return true;
+  }
+
+  /**
+   * @brief Register this client in a modem-assigned socket.
+   * This puts a pointer to the client in the modem's socket array at the
+   * assigned mux, moving the displaced client to the old mux if necessary and
+   * possible.  This is the function to use to put sockets in the modem socket
+   * array for modems that use the Dynamic TinyGsmTcpMuxMode.
+   * @param client Pointer to the concrete client instance.
+   * @param modemAssignedMux The zero-indexed socket assigned by the modem.
+   * @param forceOverwrite If `true`, forcibly overwrite any existing client at
+   * the assigned mux if it cannot be moved.
+   * @return `true` if the client was registered; otherwise `false`.
+   */
+  template <typename clientType>
+  bool registerAssignedMux(clientType* client, uint8_t modemAssignedMux,
+                           bool forceOverwrite = false) {
+    // if there's not a modem attached or the assigned mux is invalid, return
+    // false
+    // NOTE: It shouldn't be possible for the modem to assign an invalid mux,
+    // but we check anyway.
+    if (at == nullptr || modemAssignedMux >= TcpConfig::kMuxCount) {
+      return false;
+    }
+    // if the assigned mux is already registered with this client, return true
+    if (modemAssignedMux == mux && at->sockets[modemAssignedMux] == client) {
+      return true;
+    }
+    // store the last mux and whether it was registered with this client
+    const uint8_t oldMux           = mux;
+    const bool    oldMuxRegistered = oldMux < TcpConfig::kMuxCount &&
+        at->sockets[oldMux] == client;
+    // grab a pointer to the client currently occupying the assigned mux (which
+    // we already know is different than the input one)
+    GsmClient* displacedClient = at->sockets[modemAssignedMux];
+
+    // If the current client was registered with modem at the old mux, unset
+    // that pointer in the modem's socket array.
+    if (oldMuxRegistered) { at->sockets[oldMux] = nullptr; }
+    // If the assigned mux is currently occupied by another client, attempt to
+    // move it to the old mux.
+    if (displacedClient != nullptr && displacedClient != client) {
+      uint8_t    displacedMux   = modemAssignedMux;
+      const bool displacedMoved = at->moveSocket(modemAssignedMux, oldMux,
+                                                 &displacedMux) &&
+          displacedMux != modemAssignedMux;
+      if (!displacedMoved) {
+        if (!forceOverwrite) {
+          // we failed to move the displaced client to the old mux and are not
+          // willing to force an overwrite, so we cannot register the new client
+          // at the assigned mux. If it was previously registered at the old
+          // mux, restore that pointer but return false regardless.
+          if (oldMuxRegistered) { at->sockets[oldMux] = client; }
+          return false;
+        }
+        // Detach the displaced client before overwriting its slot so it cannot
+        // operate on the newly assigned connection.
+        displacedClient->detach();
+      }
+    }
+
+    // At this point, the assigned mux is free, or the displaced client was
+    // moved or detached. We can now register the new client at the assigned
+    // mux.
+    at->sockets[modemAssignedMux] = client;
+    mux                           = modemAssignedMux;
+    return true;
+  }
+
+  /// Reset connection-specific state variables when attaching or detaching.
+  void resetClientState() {
+    rx.clear();
+    sock_available = 0;
+    prev_check     = 0;
+    sock_connected = false;
+    got_data       = false;
+    is_mid_send    = false;
+  }
+
+  /// Remove this client from its current modem's socket pointer array.
+  void unregisterFromModem() {
+    if (at != nullptr && mux < TcpConfig::kMuxCount &&
+        at->sockets[mux] == this) {
+      at->sockets[mux] = nullptr;
+    }
+  }
+
+  /**
    * @brief Dump any remaining data in the modem's internal buffer.
    * @param maxWaitMs The maximum time to wait for data to be read, in
    * milliseconds.
@@ -1267,8 +1495,8 @@ class GsmClient : public Client {
     }
   }
 
-  modemType*                               at             = nullptr;
-  uint8_t                                  mux            = 0;
+  modemType*                               at  = nullptr;
+  uint8_t                                  mux = static_cast<uint8_t>(-1);
   uint16_t                                 sock_available = 0;
   uint32_t                                 prev_check     = 0;
   bool                                     sock_connected = false;

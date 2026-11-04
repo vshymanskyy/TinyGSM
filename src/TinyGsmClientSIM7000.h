@@ -138,36 +138,7 @@ class TinyGsmSim7000
      * @copydetails GsmClientSim7000::GsmClientSim7000(TinyGsmSim7000&, uint8_t)
      */
     bool init(TinyGsmSim7000* modem, uint8_t mux = 0) override {
-      if (modem == nullptr) { return false; }
-      this->at       = modem;
-      sock_available = 0;
-      prev_check     = 0;
-      sock_connected = false;
-      got_data       = false;
-      is_mid_send    = false;
-
-      // if it's a valid mux number, and that mux number isn't in use (or it's
-      // already this), accept the mux number
-      if (mux < TcpConfig::kMuxCount &&
-          (at->sockets[mux] == nullptr || at->sockets[mux] == this)) {
-        this->mux = mux;
-        // If the mux number is in use or out of range, find the next available
-        // one
-      } else {
-        uint8_t nextMux = at->findFirstUnassignedMux();
-        if (nextMux != static_cast<uint8_t>(-1)) {
-          this->mux = nextMux;
-          DBG("Could not use requested mux", mux,
-              ", assigned next available mux:", nextMux);
-        } else {
-          // If we can't find anything available, overwrite something, using mod
-          // to make sure we're in range
-          this->mux = (mux % TcpConfig::kMuxCount);
-        }
-      }
-      at->sockets[this->mux] = this;
-
-      return true;
+      return this->attachToModem(this, modem, mux);
     }
 
     /*
