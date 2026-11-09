@@ -93,16 +93,28 @@ class TinyGsmSMS {
    */
   /**@{*/
  protected:
+  /**
+   * @brief Convert one hexadecimal character to its numeric nibble value.
+   * @param c The hexadecimal character to convert.
+   * @return The decoded nibble value.
+   */
+  static inline uint8_t TinyGsmHexCharToNibble(char c) {
+    return (c <= '9') ? c - '0' : (c & 0x0F) + 9;
+  }
+
+  /**
+   * @brief Decode a hexadecimal GSM 7-bit string.
+   * @param instr The hexadecimal string to decode.
+   * @return The decoded GSM 7-bit data.
+   */
   static inline String TinyGsmDecodeHex7bit(const String& instr) {
     String  result;
     uint8_t remainder = 0;
     int8_t  bitstate  = 7;
 
     for (uint16_t i = 0; i < instr.length(); i += 2) {
-      char    c = instr[i];
-      uint8_t b = (c <= '9') ? c - '0' : (c & 0x0F) + 9;
-      c         = instr[i + 1];
-      b         = (b << 4) | ((c <= '9') ? c - '0' : (c & 0x0F) + 9);
+      uint8_t b = TinyGsmHexCharToNibble(instr[i]);
+      b         = (b << 4) | TinyGsmHexCharToNibble(instr[i + 1]);
 
       result += (char)(((b << (7 - bitstate)) + remainder) & 0x7F);
       remainder = b >> bitstate;
@@ -117,14 +129,17 @@ class TinyGsmSMS {
     return result;
   }
 
+  /**
+   * @brief Decode a hexadecimal 8-bit string.
+   * @param instr The hexadecimal string to decode.
+   * @return The decoded 8-bit data.
+   */
   static inline String TinyGsmDecodeHex8bit(const String& instr) {
     String result;
 
     for (uint16_t i = 0; i < instr.length(); i += 2) {
-      char    c = instr[i];
-      uint8_t b = (c <= '9') ? c - '0' : (c & 0x0F) + 9;
-      c         = instr[i + 1];
-      b         = (b << 4) | ((c <= '9') ? c - '0' : (c & 0x0F) + 9);
+      uint8_t b = TinyGsmHexCharToNibble(instr[i]);
+      b         = (b << 4) | TinyGsmHexCharToNibble(instr[i + 1]);
 
       result += (char)b;
     }
@@ -132,14 +147,18 @@ class TinyGsmSMS {
     return result;
   }
 
+  /**
+   * @brief Decode a hexadecimal UCS-2 string.
+   * @param instr The hexadecimal UCS-2 string to decode.
+   * @return The decoded data, with non-ASCII characters represented according
+   * to the TINY_GSM_UNICODE_TO_HEX configuration.
+   */
   static inline String TinyGsmDecodeHex16bit(const String& instr) {
     String result;
 
     for (uint16_t i = 0; i < instr.length(); i += 4) {
-      char    c = instr[i];
-      uint8_t b = (c <= '9') ? c - '0' : (c & 0x0F) + 9;
-      c         = instr[i + 1];
-      b         = (b << 4) | ((c <= '9') ? c - '0' : (c & 0x0F) + 9);
+      uint8_t b = TinyGsmHexCharToNibble(instr[i]);
+      b         = (b << 4) | TinyGsmHexCharToNibble(instr[i + 1]);
 
       if (b) {
 #if defined(TINY_GSM_UNICODE_TO_HEX)
@@ -152,10 +171,8 @@ class TinyGsmSMS {
         result += '?';
 #endif
       } else {
-        c = instr[i + 2];
-        b = (c <= '9') ? c - '0' : (c & 0x0F) + 9;
-        c = instr[i + 3];
-        b = (b << 4) | ((c <= '9') ? c - '0' : (c & 0x0F) + 9);
+        b = TinyGsmHexCharToNibble(instr[i + 2]);
+        b = (b << 4) | TinyGsmHexCharToNibble(instr[i + 3]);
 
         result += (char)b;
       }

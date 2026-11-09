@@ -88,7 +88,7 @@ struct TinyGsmSim7080TcpConfig
           /*stopTimeoutS*/ 15,
           /*sendTimeoutS*/ 15,
           /*retransmissionTimeoutS*/ 75,
-          /*minFreeTxBuffer*/ 1360> {};
+          /*minFreeTxBuffer*/ 1318> {};
 
 /**
  * @brief SSL behavior and limits for the SIMCom SIM7080 modem family.
@@ -140,6 +140,7 @@ class TinyGsmSim7080
     friend class TinyGsmSim7080;
 
    public:
+    using GsmClient<TinyGsmSim7080, TinyGsmSim7080TcpConfig>::init;
     using GsmClient<TinyGsmSim7080, TinyGsmSim7080TcpConfig>::connect;
     using GsmClient<TinyGsmSim7080, TinyGsmSim7080TcpConfig>::stop;
     using TcpConfig = TinyGsmSim7080TcpConfig;
@@ -176,13 +177,24 @@ class TinyGsmSim7080
     }
 
     /**
-     * @brief Initialize the TCP client with a modem and optionally a
-     * multiplexing channel.
-     * @return true if initialization was successful, false otherwise.
-     * @copydetails GsmClientSim7080::GsmClientSim7080(TinyGsmSim7080&, uint8_t)
+     * @brief Initialize this client with modem context and multiplexing
+     * channel.
+     *
+     * @param modem Pointer to the modem instance.
+     * @param mux The **zero-indexed** position of this client in the
+     * corresponding modem's socket array.
+     * @param strictAttach If true, require the requested mux for static mux
+     * clients.
+     * @return true if initialization completed.
+     * @note The SIM7080 uses an init() override to set the real maximum send
+     * size for the TCP client.
      */
-    bool init(TinyGsmSim7080* modem, uint8_t mux = 0) override {
-      if (!this->attachToModem(this, modem, mux)) { return false; }
+    bool init(TinyGsmSim7080* modem, uint8_t mux = 0,
+              bool strictAttach = false) override {
+      if (!this->attachToModem(this, modem, mux, TcpConfig::kMuxCount,
+                               strictAttach)) {
+        return false;
+      }
       realMaxSendSize = TcpConfig::kSendMaxSize;
       return true;
     }
@@ -214,6 +226,7 @@ class TinyGsmSim7080
 
    public:
     using GsmClientSim7080::connect;
+    using GsmSecureClient<GsmClientSim7080, TinyGsmSim7080>::init;
     using GsmClientSim7080::stop;
     using GsmSecureClient::GsmSecureClient;
     using TcpConfig = TinyGsmSim7080TcpConfig;

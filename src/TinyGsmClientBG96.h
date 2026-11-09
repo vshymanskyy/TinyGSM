@@ -178,16 +178,6 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
       init(&modem, mux);
     }
 
-    /**
-     * @brief Initialize the TCP client with a modem and optionally a
-     * multiplexing channel.
-     * @return true if initialization was successful, false otherwise.
-     * @copydetails GsmClientBG96::GsmClientBG96(TinyGsmBG96&, uint8_t)
-     */
-    bool init(TinyGsmBG96* modem, uint8_t mux = 0) override {
-      return this->attachToModem(this, modem, mux);
-    }
-
     /*
      * Arduino Client interface
      */

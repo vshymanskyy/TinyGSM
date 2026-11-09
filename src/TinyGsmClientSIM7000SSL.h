@@ -158,17 +158,6 @@ class TinyGsmSim7000SSL
       init(&modem, mux);
     }
 
-    /**
-     * @brief Initialize the TCP client with a modem and optionally a
-     * multiplexing channel.
-     * @return true if initialization was successful, false otherwise.
-     * @copydetails GsmClientSim7000SSL::GsmClientSim7000SSL(TinyGsmSim7000SSL&,
-     * uint8_t)
-     */
-    bool init(TinyGsmSim7000SSL* modem, uint8_t mux = 0) override {
-      return this->attachToModem(this, modem, mux);
-    }
-
     /*
      * Arduino Client interface
      */

@@ -144,16 +144,6 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
       init(&modem, mux);
     }
 
-    /**
-     * @brief Initialize the TCP client with a modem and optionally a
-     * multiplexing channel.
-     * @return true if initialization was successful, false otherwise.
-     * @copydetails GsmClientM590::GsmClientM590(TinyGsmM590&, uint8_t)
-     */
-    bool init(TinyGsmM590* modem, uint8_t mux = 0) override {
-      return this->attachToModem(this, modem, mux);
-    }
-
     /*
      * Arduino Client interface
      */

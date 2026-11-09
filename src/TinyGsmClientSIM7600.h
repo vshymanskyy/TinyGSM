@@ -88,7 +88,7 @@ constexpr char TinyGsmSim7600ModemConfig::MODEM_MODEL[] __attribute__((weak));
 /**
  * @brief TCP behavior and limits for the SIMCom SIM7600 modem family.
  *
- * The module supports 10 TCP sockets or 2 SSL
+ * The module supports 10 TCP sockets or 2 SSL sockets.
  *
  * @todo I think the number of TCP and SSL sockets are independent of each other
  * and managed completely differently.  That is, I think there can be two
@@ -200,16 +200,6 @@ class TinyGsmSim7600
       init(&modem, mux);
     }
 
-    /**
-     * @brief Initialize the TCP client with a modem and optionally a
-     * multiplexing channel.
-     * @return true if initialization was successful, false otherwise.
-     * @copydetails GsmClientSim7600::GsmClientSim7600(TinyGsmSim7600&, uint8_t)
-     */
-    bool init(TinyGsmSim7600* modem, uint8_t mux = 0) override {
-      return this->attachToModem(this, modem, mux);
-    }
-
     /*
      * Arduino Client interface
      */
@@ -232,10 +222,64 @@ class TinyGsmSim7600
     friend class TinyGsmSim7600;
 
    public:
+    using GsmSecureClient<GsmClientSim7600, TinyGsmSim7600>::init;
     using GsmClientSim7600::connect;
     using GsmClientSim7600::stop;
-    using GsmSecureClient::GsmSecureClient;
     using TcpConfig = TinyGsmSim7600TcpConfig;
+
+    /*
+     * Secure client constructors and initialization
+     */
+
+    /**
+     * @brief Create a new secured TCP (SSL) client.
+     * @warning You must call the init() method before attempting to use a
+     * client created with this constructor.
+     */
+    GsmClientSecureSim7600() : GsmSecureClient() {}
+
+    /**
+     * @brief Create a new secured TCP (SSL) client and bind it to a modem and
+     * optionally a multiplexing channel.
+     * @copydetails GsmClientSim7600::GsmClientSim7600(TinyGsmSim7600&, uint8_t)
+     */
+    explicit GsmClientSecureSim7600(TinyGsmSim7600& modem, uint8_t mux = 0)
+        : GsmSecureClient() {
+      init(&modem, mux);
+    }
+
+    /**
+     * @brief Create a new secured TCP (SSL) client with an explicit SSL
+     * context and bind it to a modem and multiplexing channel.
+     * @param modem The modem that owns the socket and SSL contexts.
+     * @param mux The socket identifier.
+     * @param sslCtxIndex The hardware SSL context index.
+     */
+    explicit GsmClientSecureSim7600(TinyGsmSim7600& modem, uint8_t mux,
+                                    uint8_t sslCtxIndex)
+        : GsmSecureClient() {
+      setSSLContextIndex(sslCtxIndex);
+      init(&modem, mux);
+    }
+
+    /**
+     * @brief Initialize this client with modem context and multiplexing
+     * channel.
+     *
+     * @param modem Pointer to the modem instance.
+     * @param mux The **zero-indexed** position of this client in the
+     * corresponding modem's socket array.
+     * @param strictAttach If true, require the requested mux for static mux
+     * clients.
+     * @return true if initialization completed.
+     * @important The SSL client for the A7672x only supports multiplexing
+     * channel numbers 0 and 1 unlike the 10 channels supported for non-SSL
+     * sockets.
+     */
+    bool init(TinyGsmSim7600* modem, uint8_t mux = 0,
+              bool strictAttach = false) override {
+      return this->attachToModem(this, modem, mux, 2, strictAttach);
+    }
 
     /*
      * Arduino Client interface
@@ -1171,7 +1215,9 @@ class TinyGsmSim7600
       streamSkipUntil(',');  // Skip requested bytes to send
       // TODO(?):  make sure requested and confirmed bytes match
       int16_t sent = streamGetIntBefore('\n');  // check send length
-      if (isExpectedMux(ret_mux, mux)) { return sent; }
+      if (isExpectedMux(ret_mux, mux) && sent >= 0) {
+        return static_cast<size_t>(sent);
+      }
       return 0;
     }
   }
@@ -1197,8 +1243,10 @@ class TinyGsmSim7600
       len_reported = streamGetIntBefore('\n');
     } else {
 #ifdef TINY_GSM_USE_HEX
+      // <mode> - 3 – read data in HEX form, the max read length is 750
       sendAT(GF("+CIPRXGET=3,"), mux, ',', (uint16_t)size);
 #else
+      // <mode> - 2 – read data in ASCII, the max read length is 1500
       sendAT(GF("+CIPRXGET=2,"), mux, ',', (uint16_t)size);
 #endif
       if (waitResponse(GF("+CIPRXGET:")) != 1) { return 0; }
@@ -1297,6 +1345,11 @@ class TinyGsmSim7600
         streamSkipUntil(',');                       // Skip returned mode (4)
         int16_t ret_mux = streamGetIntBefore(',');  // mux
         result          = streamGetIntBefore('\n');
+        if (isValidMux(ret_mux)) {
+          // set the sock available as long as the received mux is valid
+          sockets[ret_mux]->sock_available = result;
+        }
+        // but if we somehow got an unexpected mux, set the return result to 0
         if (!isExpectedMux(ret_mux, mux)) { result = 0; }
       }
     }

@@ -32,7 +32,7 @@
 #include "TinyGsmTCP.tpp"
 
 // NOTE: This module supports SSL, but we do not support any certificate
-// management yet. Define TINY_GSM_MODEM_HAS_SSL here and do no include the SSL
+// management yet. Define TINY_GSM_MODEM_HAS_SSL here and do not include the SSL
 // module.
 // See the example examples/more/SIM800_SslSetCert/SIM800_SslSetCert.ino for an
 // example of how to manage the certificates
@@ -184,22 +184,11 @@ class TinyGsmSim800
       init(&modem, mux);
     }
 
-    /**
-     * @brief Initialize the TCP client with a modem and optionally a
-     * multiplexing channel.
-     * @return true if initialization was successful, false otherwise.
-     * @copydetails GsmClientSim800::GsmClientSim800(TinyGsmSim800&, uint8_t)
-     */
-    bool init(TinyGsmSim800* modem, uint8_t mux = 0) override {
-      return this->attachToModem(this, modem, mux);
-    }
-
     /*
      * Arduino Client interface
      */
    public:
     TINY_GSM_STATIC_TCP_CONNECT
-
 
     /*
      * Extended Client API
@@ -395,8 +384,8 @@ class TinyGsmSim800
   /*
    * Secure socket layer (SSL) certificate management functions
    */
-  // This module supports SSL, but there are no certificate management functions
-  // are supported yet.
+  // This module supports SSL, but no certificate management functions are
+  // supported yet.
   // If you wish to add certificate management for this module you must (in
   // addition to adding the functions here):
   //  - Add `#include "TinyGsmSSL.tpp` to the top of the file

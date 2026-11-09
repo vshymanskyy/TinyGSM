@@ -401,6 +401,22 @@ class TinyGsmSSL {
   bool convertPSKTable(const String& psk_table_name) {
     return convertPSKTable(psk_table_name.c_str());
   }
+
+  /**
+   * @brief Find the first unassigned SSL context slot.
+   * @param availableContextCount The number of context slots to scan.
+   * @return The first available slot index, or uint8_t(-1) if none are free.
+   */
+  uint8_t findFirstUnassignedSSLContext(
+      uint8_t availableContextCount = SslConfig::kContextCount) {
+    if (availableContextCount > SslConfig::kContextCount) {
+      availableContextCount = SslConfig::kContextCount;
+    }
+    for (uint8_t i = 0; i < availableContextCount; ++i) {
+      if (sslContexts[i] == nullptr) { return i; }
+    }
+    return static_cast<uint8_t>(-1);
+  }
   /**@}*/
 
 
@@ -784,32 +800,43 @@ class GsmSecureContext {
   /**
    * @brief Attach or reattach this object to a modem SSL context slot.
    *
-   * Reattaching to the same modem and slot succeeds. An invalid index, null
-   * modem, or slot registered to another context is rejected without changing
-   * the current attachment. When changing slots, the old slot is detached only
-   * after the requested slot has been validated.
+   * Reattaching to the same modem and slot succeeds. An invalid index or null
+   * modem is rejected without changing the current attachment. When
+   * strictAttach is true, a slot registered to another context is rejected.
+   * When strictAttach is false, attachment falls back to the first free
+   * context slot. When changing slots, the old slot is detached only after the
+   * target slot has been validated.
    *
    * @param modem The modem that owns the hardware SSL context.
-   * @param contextIndex The zero-based hardware SSL context index.
+   * @param contextIndex The preferred zero-based hardware SSL context index.
+   * @param strictAttach If true, require the requested slot. If false, allow
+   * fallback to the first free slot.
    * @return `true` if this object is registered in the requested slot;
    * otherwise `false`.
    */
-  bool init(modemType* modem, uint8_t contextIndex = TINY_GSM_DEFAULT_SSL_CTX) {
+  bool init(modemType* modem, uint8_t contextIndex = TINY_GSM_DEFAULT_SSL_CTX,
+            bool strictAttach = true) {
     if (modem == nullptr || contextIndex >= sslConfig::kContextCount) {
       return false;
     }
 
-    GsmSecureContext* registered = modem->getSSLContext(contextIndex);
-    if (registered != nullptr && registered != this) { return false; }
-    if (this->modem == modem && this->sslCtxIndex == contextIndex &&
+    uint8_t           targetIndex = contextIndex;
+    GsmSecureContext* registered  = modem->getSSLContext(targetIndex);
+    if (registered != nullptr && registered != this) {
+      if (strictAttach) { return false; }
+      targetIndex = modem->findFirstUnassignedSSLContext();
+      if (targetIndex == static_cast<uint8_t>(-1)) { return false; }
+      registered = modem->getSSLContext(targetIndex);
+    }
+    if (this->modem == modem && this->sslCtxIndex == targetIndex &&
         registered == this) {
       return true;
     }
 
     detach();
-    if (!modem->attachSSLContext(this, contextIndex)) { return false; }
+    if (!modem->attachSSLContext(this, targetIndex)) { return false; }
     this->modem       = modem;
-    this->sslCtxIndex = contextIndex;
+    this->sslCtxIndex = targetIndex;
     return true;
   }
   /**@}*/

@@ -148,15 +148,6 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
       init(&modem);
     }
 
-    /**
-     * @brief Initialize the TCP client with a modem.
-     * @return true if initialization was successful, false otherwise.
-     * @copydetails GsmClientA6::GsmClientA6(TinyGsmA6&, uint8_t)
-     */
-    bool init(TinyGsmA6* modem, uint8_t /*mux*/ = 0) override {
-      return this->attachToModem(this, modem);
-    }
-
     /*
      * Arduino Client interface
      */

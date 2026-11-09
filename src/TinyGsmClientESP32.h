@@ -193,16 +193,6 @@ class TinyGsmESP32
       init(&modem, mux);
     }
 
-    /**
-     * @brief Initialize the TCP client with a modem and optionally a
-     * multiplexing channel.
-     * @return true if initialization was successful, false otherwise.
-     * @copydetails GsmClientESP32::GsmClientESP32(TinyGsmESP32&, uint8_t)
-     */
-    bool init(TinyGsmESP32* modem, uint8_t mux = 0) override {
-      return this->attachToModem(this, modem, mux);
-    }
-
     /*
      * Arduino Client interface
      */

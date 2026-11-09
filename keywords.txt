@@ -53,13 +53,19 @@ TinyGsmCapabilities::can_specify_certs< TinyGsmSim800 >	KEYWORD1
 TinyGsmCapabilities::can_specify_certs< TinyGsmSim808 >	KEYWORD1
 TinyGsmCapabilities::can_specify_certs< TinyGsmUBLOX >	KEYWORD1
 TinyGsmCapabilities::has_battery	KEYWORD1
+TinyGsmCapabilities::has_battery< TinyGsmSim808 >	KEYWORD1
 TinyGsmCapabilities::has_bluetooth	KEYWORD1
 TinyGsmCapabilities::has_calling	KEYWORD1
+TinyGsmCapabilities::has_calling< TinyGsmSim808 >	KEYWORD1
 TinyGsmCapabilities::has_cellular_data	KEYWORD1
+TinyGsmCapabilities::has_cellular_data< TinyGsmSim808 >	KEYWORD1
 TinyGsmCapabilities::has_gps	KEYWORD1
 TinyGsmCapabilities::has_gsm_location	KEYWORD1
+TinyGsmCapabilities::has_gsm_location< TinyGsmSim808 >	KEYWORD1
 TinyGsmCapabilities::has_ntp	KEYWORD1
+TinyGsmCapabilities::has_ntp< TinyGsmSim808 >	KEYWORD1
 TinyGsmCapabilities::has_sms	KEYWORD1
+TinyGsmCapabilities::has_sms< TinyGsmSim808 >	KEYWORD1
 TinyGsmCapabilities::has_ssl	KEYWORD1
 TinyGsmCapabilities::has_ssl< T, typename make_void< typename T::SslConfig >::type >	KEYWORD1
 TinyGsmCapabilities::has_ssl< TinyGsmESP8266NonOS >	KEYWORD1
@@ -72,6 +78,7 @@ TinyGsmCapabilities::has_ssl< TinyGsmUBLOX >	KEYWORD1
 TinyGsmCapabilities::has_tcp	KEYWORD1
 TinyGsmCapabilities::has_temperature	KEYWORD1
 TinyGsmCapabilities::has_time	KEYWORD1
+TinyGsmCapabilities::has_time< TinyGsmSim808 >	KEYWORD1
 TinyGsmCapabilities::has_wifi	KEYWORD1
 TinyGsmCapabilities::integral_constant	KEYWORD1
 TinyGsmCapabilities::is_base_of	KEYWORD1
@@ -265,6 +272,7 @@ isGprsConnected	KEYWORD2
 getOperator	KEYWORD2
 getProvider	KEYWORD2
 maintain	KEYWORD2
+findFirstUnassignedMux	KEYWORD2
 callAnswer	KEYWORD2
 callNumber	KEYWORD2
 callHangup	KEYWORD2
@@ -293,6 +301,7 @@ convertCACertificate	KEYWORD2
 convertClientCertificates	KEYWORD2
 convertPSKandID	KEYWORD2
 convertPSKTable	KEYWORD2
+findFirstUnassignedSSLContext	KEYWORD2
 getGsmLocationRaw	KEYWORD2
 getGsmLocation	KEYWORD2
 getGsmLocationTime	KEYWORD2
@@ -385,6 +394,7 @@ GsmClientSim7080	KEYWORD2
 ~GsmSecureContextSim7080	KEYWORD2
 TinyGsmSim70xx	KEYWORD2
 TinyGsmSim7600	KEYWORD2
+GsmClientSecureSim7600	KEYWORD2
 GsmClientSim7600	KEYWORD2
 ~GsmSecureContextSim7600	KEYWORD2
 TinyGsmSim800	KEYWORD2

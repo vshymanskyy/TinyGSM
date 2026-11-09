@@ -33,7 +33,7 @@
 #include "TinyGsmTCP.tpp"
 
 // NOTE: This module supports SSL, but we do not support any certificate
-// management yet. Define TINY_GSM_MODEM_HAS_SSL here and do no include the SSL
+// management yet. Define TINY_GSM_MODEM_HAS_SSL here and do not include the SSL
 // module.
 #ifndef TINY_GSM_MODEM_HAS_SSL
 /// flag to indicate that the modem has Secure Socket Layer (SSL) functions
@@ -194,17 +194,6 @@ class TinyGsmSequansMonarch
               modem, mux) {
       is_secure = false;
       init(&modem, mux);
-    }
-
-    /**
-     * @brief Initialize the TCP client with a modem and optionally a
-     * multiplexing channel.
-     * @return true if initialization was successful, false otherwise.
-     * @copydetails GsmClientSequansMonarch::GsmClientSequansMonarch(
-     * TinyGsmSequansMonarch&, uint8_t)
-     */
-    bool init(TinyGsmSequansMonarch* modem, uint8_t mux = 0) override {
-      return this->attachToModem(this, modem, mux);
     }
 
     /*
@@ -471,8 +460,8 @@ class TinyGsmSequansMonarch
   /*
    * Secure socket layer (SSL) certificate management functions
    */
-  // This module supports SSL, but there are no certificate management functions
-  // are supported yet.
+  // This module supports SSL, but no certificate management functions are
+  // supported yet.
   // If you wish to add certificate management for this module you must (in
   // addition to adding the functions here):
   //  - Add `#include "TinyGsmSSL.tpp` to the top of the file

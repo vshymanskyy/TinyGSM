@@ -132,10 +132,10 @@ const int port_ssl = 443;
 #define TINY_GSM_TEST_WIFI true
 #endif
 #if TINY_GSM_TEST_WIFI && not defined TINY_GSM_MODEM_HAS_WIFI
-#undef TINY_GSM_USE_CELLULAR_DATA
-#undef TINY_GSM_USE_WIFI
-#define TINY_GSM_USE_CELLULAR_DATA true
-#define TINY_GSM_USE_WIFI false
+#undef TINY_GSM_TEST_CELLULAR_DATA
+#undef TINY_GSM_TEST_WIFI
+#define TINY_GSM_TEST_CELLULAR_DATA true
+#define TINY_GSM_TEST_WIFI false
 #endif
 
 #ifdef DUMP_AT_COMMANDS

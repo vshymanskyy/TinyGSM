@@ -186,8 +186,7 @@ The general flow of your code should be:
           or
     - `TinyGsmClientSecure clientX(modem, 0);`, `TinyGsmClientSecure clientY(modem, 1);`, etc.
   - Secure and insecure clients can usually be mixed when using multiple connections.
-  - The total number of connections possible varies by module
-    - You can verify the number of connections possible against the defines `TINY_GSM_MUX_COUNT` and `TINY_GSM_SECURE_MUX_COUNT`
+  - The total number of connections possible varies by module; check the [client configuration summary](docs/ClientConfigurationSummary.md) for your specific module.
 - Begin your serial communication and set all your pins as required to power your module and bring it to full functionality.
   - The examples attempt to guess the module's baud rate.  In working code, you should use a set baud.
 - Wait for the module to be ready (could be as much as 6s, depending on the module)

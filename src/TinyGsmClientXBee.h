@@ -257,16 +257,6 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
       init(&modem);
     }
 
-    /**
-     * @brief Initialize the TCP client with a modem.
-     * @return true if initialization was successful, false otherwise.
-     * @copydetails GsmClientXBee::GsmClientXBee(TinyGsmXBee&, uint8_t)
-     */
-    bool init(TinyGsmXBee* modem, uint8_t /*mux*/ = 0) override {
-      // only 1 possible socket for XBee in transparent mode
-      return this->attachToModem(this, modem, 0);
-    }
-
     /*
      * Arduino Client interface
      */
@@ -760,10 +750,10 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
     sendAT(GF("HS"));  // Get the "Hardware Series";
     int16_t intRes = readResponseInt();
     // if no response from module, then try again
-    if (0xff == intRes || -1 == intRes) {
+    if (intRes == 0xff || intRes == -9999) {
       sendAT(GF("HS"));  // Get the "Hardware Series";
       intRes = readResponseInt();
-      if (0xff == intRes || -1 == intRes) {
+      if (intRes == 0xff || intRes == -9999) {
         // Still no response, leave a known value - should reset
         intRes = static_cast<int16_t>(XBeeType::XBEE_UNKNOWN);
       }
@@ -986,7 +976,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
       intRes = 0;  // tends to reply with "69" when signal is unknown
 
     if (beeType == XBeeType::XBEE_S6B_WIFI) {
-      if (intRes == 0xFF) {
+      if (intRes == 0xFF || intRes == -9999) {
         return 0;  // 0xFF returned for unknown
       } else {
         return -93 + intRes;  // the maximum sensitivity is -93dBm
@@ -2156,14 +2146,15 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
    * timeout milliseconds for data to become available.
    *
    * @param timeout_ms The maximum time to wait for a response, in milliseconds.
-   * @return The response from the XBee module as an integer.
+   * @return The response from the XBee module as an integer, or -9999 if there
+   * is no response or an invalid character is encountered.
    */
   int16_t readResponseInt(uint32_t timeout_ms = 1000L) {
     char buf[16];  // buffer to store the response as a C-string
     int  firstChar = streamTimedRead(timeout_ms);
 
-    // Return -1 for empty response
-    if (firstChar < 0 || firstChar == '\r') { return -1; }
+    // Return -9999 for empty response
+    if (firstChar < 0 || firstChar == '\r') { return -9999; }
 
     buf[0]           = static_cast<char>(firstChar);
     size_t bytesRead = 1 +
@@ -2184,7 +2175,7 @@ class TinyGsmXBee : public TinyGsmModem<TinyGsmXBee, TinyGsmXBeeModemConfig>,
         hexDigit = c - 'a' + 10;
       } else {
         // Invalid character outside 0-9, A-F, a-f
-        return -1;
+        return -9999;
       }
 
       result <<= 4;

@@ -251,6 +251,7 @@ void loop() {
   // ========================================================================
 
   modem.maintain();
+  modem.findFirstUnassignedMux();
 
   char server[]   = "somewhere";
   char resource[] = "something";
@@ -260,6 +261,7 @@ void loop() {
   // ========================================================================
 
 #if defined(TINY_GSM_MODEM_HAS_SSL) && defined(TINY_GSM_MODEM_CAN_LOAD_CERTS)
+  modem.findFirstUnassignedSSLContext();
   static const char flash_certificate_content[] TINY_GSM_PROGMEM =
       "certificate_content";
   modem.loadCertificate("certificateName", "certificate_content", 20);
@@ -576,6 +578,8 @@ void loop() {
   TinyGsmClient client3(modem, 1);
   client.init(&modem);
   client.init(&modem, 1);
+  client.init(&modem, 1, false);
+  client.init(&modem, 1, true);
   client.isAttached();
 
   client.connect(server, 80);
@@ -653,10 +657,12 @@ void loop() {
   context_secure_default.isAttached();
   context_secure_default.getSSLContextIndex();
   context_secure_default.init(&modem, (uint8_t)1);
+  context_secure_default.init(&modem, (uint8_t)1, true);
   context_secure_default.isAttached();
   context_secure_default.getSSLContextIndex();
   context_secure_default.detach();
   context_secure_default.init(&modem, (uint8_t)1);
+  context_secure_default.init(&modem, (uint8_t)1, false);
 
   TinyGsmSecureContext context_secure(modem, 0);
   TinyGsmSecureContext(modem, SSLAuthMode::MUTUAL_AUTHENTICATION);
@@ -679,6 +685,8 @@ void loop() {
 
   client_secure.init(&modem);
   client_secure.init(&modem, 1);
+  client_secure.init(&modem, 1, false);
+  client_secure.init(&modem, 1, true);
   client_secure.isAttached();
 
   client_secure.connect(server, 443);

@@ -184,17 +184,6 @@ class TinyGsmESP8266NonOS
       init(&modem, mux);
     }
 
-    /**
-     * @brief Initialize the TCP client with a modem and optionally a
-     * multiplexing channel.
-     * @return true if initialization was successful, false otherwise.
-     * @copydetails GsmClientESP8266NonOS::GsmClientESP8266NonOS(
-     * TinyGsmESP8266NonOS&, uint8_t)
-     */
-    bool init(TinyGsmESP8266NonOS* modem, uint8_t mux = 0) override {
-      return this->attachToModem(this, modem, mux);
-    }
-
     /*
      * Arduino Client interface
      */

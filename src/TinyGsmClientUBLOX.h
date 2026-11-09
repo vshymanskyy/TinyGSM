@@ -36,8 +36,8 @@
 #include "TinyGsmTCP.tpp"
 
 // NOTE: This module supports SSL, but we do not support any certificate
-// management yet. Define TINY_GSM_MODEM_HAS_SSL here and do no include the SSL
-// module.
+// management yet. We define TINY_GSM_MODEM_HAS_SSL here and do not include the
+// SSL module.
 #ifndef TINY_GSM_MODEM_HAS_SSL
 /// flag to indicate that the modem has Secure Socket Layer (SSL) functions
 #define TINY_GSM_MODEM_HAS_SSL
@@ -176,17 +176,6 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
       init(&modem);
     }
 
-    /**
-     * @brief Initialize the TCP client with a modem.
-     * @return true if initialization was successful, false otherwise.
-     * @copydetails GsmClientUBLOX::GsmClientUBLOX(TinyGsmUBLOX&, uint8_t)
-     */
-    bool init(TinyGsmUBLOX* modem, uint8_t /*mux*/ = 0) override {
-      // This is a placeholder registration. The modem assigns the actual mux
-      // during connect(), and the client registration is moved at that time.
-      return this->attachToModem(this, modem, 0);
-    }
-
     /*
      * Arduino Client interface
      */
@@ -217,7 +206,8 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
       // modemConnect will validate the mux number returned by the modem and
       // return false and set the assignedMux to -1 if the mux number is invalid
       // or the connection fails
-      sock_connected = at->modemConnect(host, port, &assignedMux, timeout_s);
+      sock_connected = at->modemConnect(host, port, &assignedMux, timeout_s,
+                                        is_secure);
       if (sock_connected &&
           !this->registerAssignedMux(this, assignedMux, true)) {
         at->modemStop(assignedMux, TcpConfig::kStopTimeoutS * 1000L);
@@ -442,8 +432,8 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
   /*
    * Secure socket layer (SSL) certificate management functions
    */
-  // This module supports SSL, but there are no certificate management functions
-  // are supported yet.
+  // This module supports SSL, but no certificate management functions are
+  // supported yet.
   // If you wish to add certificate management for this module you must (in
   // addition to adding the functions here):
   //  - Add `#include "TinyGsmSSL.tpp` to the top of the file
@@ -797,13 +787,9 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
    */
  protected:
   bool modemConnect(const char* host, uint16_t port, uint8_t* dynamicMux,
-                    int timeout_s) {
-    // Validate dynamicMux before accessing sockets array
-    if (*dynamicMux >= TcpConfig::kMuxCount || !sockets[*dynamicMux]) {
-      return false;
-    }
+                    int timeout_s, bool isSecure) {
     uint32_t timeout_ms  = ((uint32_t)timeout_s) * 1000;
-    bool     ssl         = sockets[*dynamicMux]->is_secure;
+    bool     ssl         = isSecure;
     uint32_t startMillis = millis();
 
     // create a socket
