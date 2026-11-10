@@ -546,12 +546,13 @@ void loop() {
     !defined(TINY_GSM_MODEM_SARAR5) && !defined(TINY_GSM_MODEM_UBLOX)
   modem.getBattVoltage();
 #endif
-#if !defined(TINY_GSM_MODEM_SIM7600) && !defined(TINY_GSM_MODEM_XBEE)
+#if !defined(TINY_GSM_MODEM_SIM7600) && !defined(TINY_GSM_MODEM_A7672X) && \
+    !defined(TINY_GSM_MODEM_XBEE)
   modem.getBattPercent();
 #endif
 #if !defined(TINY_GSM_MODEM_SARAR4) && !defined(TINY_GSM_MODEM_SARAR5) && \
     !defined(TINY_GSM_MODEM_UBLOX) && !defined(TINY_GSM_MODEM_SIM7600) && \
-    !defined(TINY_GSM_MODEM_XBEE)
+    !defined(TINY_GSM_MODEM_A7672X) && !defined(TINY_GSM_MODEM_XBEE)
   modem.getBattChargeState();
 #endif
   int8_t  chargeState   = -99;
