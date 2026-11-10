@@ -3,4 +3,6 @@
 /.gitignore export-ignore
 /.travis.yml export-ignore
 
+# Filters
+continuous_integration/build_job_matrix.py text diff=python filter=localTestPaths
 *.ino filter=updateUsersAndPasses

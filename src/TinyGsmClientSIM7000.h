@@ -149,6 +149,13 @@ class TinyGsmSim7000
   // NOTE:  Use modem TinyGsmSim7000SSL for a secure client!
 
   /*
+   * Public Aliases
+   */
+ public:
+  /// Arduino Client type for this modem.
+  using TinyGsmClient = GsmClientSim7000;
+
+  /*
    * GSM Modem Constructor
    */
  public:

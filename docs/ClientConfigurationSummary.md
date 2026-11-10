@@ -19,12 +19,14 @@ This table provides a comprehensive overview of TCP/SSL socket configuration and
 | SIM5360        | 10            | N/A         | N/A          | Static           | Readable and Sizable | 1500                  | 15                  | 15               | 1                  |
 | SIM7000        | 8             | N/A         | N/A          | Static           | Readable and Sizable | 1500                  | 75                  | 15               | 1                  |
 | SIM7000SSL     | 2 (combined)  | —           | 6            | Static           | Readable and Sizable | 1460                  | 75                  | 15               | 1                  |
-| SIM7080        | 12 (combined) | —           | 6            | Static           | Readable and Sizable | 1360                  | 75                  | 15               | 1360               |
+| SIM7080        | 12 (combined) | —           | 6            | Static           | Readable and Sizable | 1360                  | 75                  | 15               | 1318               |
 | SIM7600        | 10            | 2           | 10           | Static           | Readable and Sizable | 1500                  | 75                  | 15               | 1                  |
 | SIM800         | 8             | 5           | —            | Static           | Readable and Sizable | 1500                  | 75                  | 15               | 1                  |
 | SIM808         | 8             | 5           | —            | Static           | Readable and Sizable | 1500                  | 75                  | 15               | 1                  |
 | UBLOX          | 7 (combined)  | —           | —            | Dynamic          | Readable and Sizable | 1024                  | 120                 | 15               | 1                  |
 | XBee           | 1 (combined)  | —           | 1            | Static           | No Buffer            | 1500                  | 75                  | 5                | 1                  |
+
+Some tested SIM7080 modules with P/N S2-108HB-Z30GJ never report more than 1318 bytes free, so the minimum free TX buffer threshold is 1318 bytes.
 
 ## Legend
 

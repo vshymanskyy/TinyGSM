@@ -70,7 +70,7 @@
 /**
  * @brief The default SSL context to use for SSL connections.
  *
- * This applies to **all** modems using the GsmSecureClient class.  The SSL
+ * This applies to **all** modems using the GsmClientSecure class.  The SSL
  * context is a collection of SSL settings, not the connection identifier.  This
  * library uses SSL context 0 by default.  At this time, all modems that support
  * SSL via contexts show using context 0 in their documentation.  If you find a
@@ -1055,7 +1055,7 @@ class GsmSecureContext {
  * @tparam modemType The modem class type (e.g., TinyGsmA7672X)
  */
 template <typename ClientType, typename modemType>
-class GsmSecureClient : public ClientType {
+class GsmClientSecure : public ClientType {
  public:
   /**
    * @anchor ssl_client_ctors
@@ -1063,7 +1063,7 @@ class GsmSecureClient : public ClientType {
    */
   /**@{*/
   /// Default constructor creating an unattached secure client
-  GsmSecureClient() {
+  GsmClientSecure() {
     this->is_secure = true;
   }
 
@@ -1072,7 +1072,7 @@ class GsmSecureClient : public ClientType {
    * @param modem The modem that owns the socket and SSL contexts
    * @param mux The socket identifier
    */
-  explicit GsmSecureClient(modemType& modem, uint8_t mux = 0)
+  explicit GsmClientSecure(modemType& modem, uint8_t mux = 0)
       : ClientType(modem, mux) {
     this->is_secure = true;
   }
@@ -1083,7 +1083,7 @@ class GsmSecureClient : public ClientType {
    * @param mux The socket identifier
    * @param sslCtxIndex The hardware SSL context index
    */
-  explicit GsmSecureClient(modemType& modem, uint8_t mux, uint8_t sslCtxIndex)
+  explicit GsmClientSecure(modemType& modem, uint8_t mux, uint8_t sslCtxIndex)
       : ClientType(modem, mux) {
     this->is_secure = true;
     this->setSSLContextIndex(sslCtxIndex);

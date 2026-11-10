@@ -187,6 +187,8 @@ The general flow of your code should be:
     - `TinyGsmClientSecure clientX(modem, 0);`, `TinyGsmClientSecure clientY(modem, 1);`, etc.
   - Secure and insecure clients can usually be mixed when using multiple connections.
   - The total number of connections possible varies by module; check the [client configuration summary](docs/ClientConfigurationSummary.md) for your specific module.
+- The global aliases above are the simple API for sketches using one modem type.
+- Libraries and multi-modem sketches should include the modem-specific headers and use aliases scoped to the modem class, such as `TinyGsmSaraR4::TinyGsmClient` and `TinyGsmSaraR4::TinyGsmClientSecure`.
 - Begin your serial communication and set all your pins as required to power your module and bring it to full functionality.
   - The examples attempt to guess the module's baud rate.  In working code, you should use a set baud.
 - Wait for the module to be ready (could be as much as 6s, depending on the module)

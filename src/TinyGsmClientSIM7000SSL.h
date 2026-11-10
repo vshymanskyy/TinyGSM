@@ -177,13 +177,13 @@ class TinyGsmSim7000SSL
   /// Inner secure client
   /// @ingroup simcom_sim7000ssl
   class GsmClientSecureSim7000SSL
-      : public GsmSecureClient<GsmClientSim7000SSL, TinyGsmSim7000SSL> {
+      : public GsmClientSecure<GsmClientSim7000SSL, TinyGsmSim7000SSL> {
     friend class TinyGsmSim7000SSL;
 
    public:
+    using GsmClientSecure::GsmClientSecure;
     using GsmClientSim7000SSL::connect;
     using GsmClientSim7000SSL::stop;
-    using GsmSecureClient::GsmSecureClient;
     using TcpConfig = TinyGsmSim7000SSLTcpConfig;
 
     // Because we have the same potential range of mux numbers for secure and
@@ -252,6 +252,17 @@ class TinyGsmSim7000SSL
     /// Unregister this context from its modem.
     ~GsmSecureContextSim7000SSL() {}
   };
+
+  /*
+   * Public Aliases
+   */
+ public:
+  /// Arduino Client type for this modem.
+  using TinyGsmClient = GsmClientSim7000SSL;
+  /// Secure Arduino Client type for this modem.
+  using TinyGsmClientSecure = GsmClientSecureSim7000SSL;
+  /// Security-context type for this modem.
+  using TinyGsmSecureContext = GsmSecureContextSim7000SSL;
 
   /*
    * GSM Modem Constructor

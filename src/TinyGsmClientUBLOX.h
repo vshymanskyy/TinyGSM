@@ -201,15 +201,18 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
       }
 #endif
       rx.clear();
-      // attempt to use the requested mux number first
-      uint8_t assignedMux = mux;
-      // modemConnect will validate the mux number returned by the modem and
-      // return false and set the assignedMux to -1 if the mux number is invalid
-      // or the connection fails
+      // Start with an invalid mux so cleanup only closes a newly allocated
+      // socket.
+      uint8_t assignedMux = static_cast<uint8_t>(-1);
+      // modemConnect will validate the mux number returned by the modem.
       sock_connected = at->modemConnect(host, port, &assignedMux, timeout_s,
                                         is_secure);
-      if (sock_connected &&
-          !this->registerAssignedMux(this, assignedMux, true)) {
+      // stop the socket if the connection failed or we could not register the
+      // assigned mux
+      if (!sock_connected && assignedMux < TcpConfig::kMuxCount) {
+        at->modemStop(assignedMux, TcpConfig::kStopTimeoutS * 1000L, true);
+      } else if (sock_connected &&
+                 !this->registerAssignedMux(this, assignedMux, true)) {
         at->modemStop(assignedMux, TcpConfig::kStopTimeoutS * 1000L);
         sock_connected = false;
       }
@@ -257,6 +260,15 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
       is_secure = true;
     }
   };
+
+  /*
+   * Public Aliases
+   */
+ public:
+  /// Arduino Client type for this modem.
+  using TinyGsmClient = GsmClientUBLOX;
+  /// Secure Arduino Client type for this modem.
+  using TinyGsmClientSecure = GsmClientSecureUBLOX;
 
   /*
    * GSM Modem Constructor
@@ -755,24 +767,40 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
   int16_t getBattVoltageImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
 
   int8_t getBattPercentImpl() {
+    // get indication states related to network status, battery information and
+    // so on
     sendAT(GF("+CIND?"));
-    if (waitResponse(GF("+CIND:")) != 1) { return 0; }
+    // Response:
+    // +CIND:battchg,signal,service,sounder,message,call,roam,smsfull,gprs,callsetup,callheld,simind
+    // OK
+    // battchg = battery charge level, 0-5 (always 0 if charging isnt supported
+    // signal:
+    // - 0: < -105 dBm
+    // - 1: < -93 dBm
+    // - 2: < -81 dBm
+    // - 3: < -69 dBm
+    // - 4: < - 57 dBm
+    // - 5: >= -57 dBm
+    // see the manual for the rest of the "indications"
+    if (waitResponse(GF("+CIND:")) != 1) { return -99; }
 
-    int8_t res     = streamGetIntBefore(',');
-    int8_t percent = res * 20;  // return is 0-5
+    int16_t res = streamGetIntBefore(',');  // return is 0-5
     // Wait for final OK
-    waitResponse();
-    return percent;
+    bool validResponse = waitResponse() == 1;
+    if (!validResponse || res < 0 || res > 5) { return -99; }
+    return static_cast<int8_t>(res * 20);
   }
 
   int8_t getBattChargeStateImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
 
   bool getBattStatsImpl(int8_t& chargeState, int8_t& percent,
                         int16_t& milliVolts) {
-    chargeState = 0;
-    percent     = getBattPercent();
-    milliVolts  = 0;
-    return true;
+    // the only battery value we can get is percent, so defer to
+    // getBattPercentImpl() and set the others to default invalid values
+    chargeState = -99;
+    percent     = getBattPercentImpl();
+    milliVolts  = -9999;
+    return percent != -99;
   }
 
   /*
@@ -833,8 +861,11 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
     return (1 == rsp);
   }
 
-  bool modemStop(uint8_t mux, uint32_t /*maxWaitMs*/) {
-    if (!isValidMux(mux)) { return false; }
+  bool modemStop(uint8_t mux, uint32_t /*maxWaitMs*/,
+                 bool    newlyAllocated = false) {
+    if (mux >= TcpConfig::kMuxCount || (!newlyAllocated && !isValidMux(mux))) {
+      return false;
+    }
     // Same command for both secure and non-secure sockets
     sendAT(GF("+USOCL="), mux);
     return waitResponse() == 1;  // should return within 1s

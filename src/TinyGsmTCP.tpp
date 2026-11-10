@@ -1321,7 +1321,7 @@ class GsmClient : public Client {
    * may use.
    * @param strictAttach If true, the client will only attach to the requested
    * modem at the specified mux number. If false, it will attach to the
-   * requested modem at the next avaialble socket if the requested one is not
+   * requested modem at the next available socket if the requested one is not
    * available.
    * @return `true` if attached; otherwise `false`. On failure, an existing
    * attachment is preserved.

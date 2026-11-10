@@ -43,6 +43,17 @@ class TinyGsmSim808 : public TinyGsmSim800,
   friend class TinyGsmBluetooth<TinyGsmSim808>;
 
   /*
+   * Public Aliases
+   */
+ public:
+  /// Arduino Client type inherited from the SIM800 implementation.
+  using TinyGsmClient = TinyGsmSim800::TinyGsmClient;
+#if !defined(TINY_GSM_MODEM_SIM900)
+  /// Secure Arduino Client type inherited from the SIM800 implementation.
+  using TinyGsmClientSecure = TinyGsmSim800::TinyGsmClientSecure;
+#endif
+
+  /*
    * GSM Modem Constructor
    */
  public:

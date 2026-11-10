@@ -235,7 +235,7 @@ class TinyGsmEspressif
    * Generic network functions
    */
  protected:
-  int8_t getSignalQualityImpl() {
+  int16_t getSignalQualityImpl() {
     thisModem().sendAT(GF("+CWJAP?"));
     int8_t res1 = thisModem().waitResponse(GF("No AP"), GF("+CWJAP:"),
                                            GFP(ModemConfig::GSM_OK),
@@ -249,15 +249,15 @@ class TinyGsmEspressif
                                       GFP(ModemConfig::GSM_ERROR));
       if (res1 != 2) {
         thisModem().waitResponse();
-        return 0;
+        return -9999;
       }
     }
     thisModem().streamSkipUntil(',');  // Skip SSID
     thisModem().streamSkipUntil(',');  // Skip BSSID/MAC address
     thisModem().streamSkipUntil(',');  // Skip Chanel number
-    int8_t res2 = thisModem().streamGetIntBefore(',');  // Read RSSI
-    thisModem().streamSkipUntil('\n');                  // Skip the rest
-    thisModem().waitResponse();  // Returns an OK after the value
+    int16_t res2 = thisModem().streamGetIntBefore(',');  // Read RSSI
+    thisModem().streamSkipUntil('\n');                   // Skip the rest
+    if (thisModem().waitResponse() != 1 || res2 == -9999) { return -9999; }
     return res2;
   }
 

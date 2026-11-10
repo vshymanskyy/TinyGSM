@@ -572,7 +572,8 @@ class TinyGsmModem {
    * This is often a "CSQ" value ranging from 0 to 32, but may be an RSSI or a
    * percent.
    *
-   * @return *int16_t* The signal quality
+   * @return *int16_t* The signal quality, or -9999 if the modem does not
+   * respond or the response is invalid.
    */
   int16_t getSignalQuality() {
     return thisModem().getSignalQualityImpl();
@@ -1623,11 +1624,13 @@ class TinyGsmModem {
   }
 
   // Gets signal quality report according to 3GPP TS command AT+CSQ
-  int8_t getSignalQualityImpl() {
+  int16_t getSignalQualityImpl() {
     thisModem().sendAT(GF("+CSQ"));
-    if (thisModem().waitResponse(GF("+CSQ:")) != 1) { return 99; }
-    int8_t res = thisModem().streamGetIntBefore(',');
-    thisModem().waitResponse();
+    if (thisModem().waitResponse(GF("+CSQ:")) != 1) { return -9999; }
+    int16_t res = thisModem().streamGetIntBefore(',');
+    if (thisModem().waitResponse() != 1 || res < 0 || res > 32) {
+      return -9999;
+    }
     return res;
   }
 

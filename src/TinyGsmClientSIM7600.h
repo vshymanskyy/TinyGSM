@@ -218,11 +218,11 @@ class TinyGsmSim7600
   /// Inner secure client
   /// @ingroup simcom_sim7600
   class GsmClientSecureSim7600
-      : public GsmSecureClient<GsmClientSim7600, TinyGsmSim7600> {
+      : public GsmClientSecure<GsmClientSim7600, TinyGsmSim7600> {
     friend class TinyGsmSim7600;
 
    public:
-    using GsmSecureClient<GsmClientSim7600, TinyGsmSim7600>::init;
+    using GsmClientSecure<GsmClientSim7600, TinyGsmSim7600>::init;
     using GsmClientSim7600::connect;
     using GsmClientSim7600::stop;
     using TcpConfig = TinyGsmSim7600TcpConfig;
@@ -236,7 +236,7 @@ class TinyGsmSim7600
      * @warning You must call the init() method before attempting to use a
      * client created with this constructor.
      */
-    GsmClientSecureSim7600() : GsmSecureClient() {}
+    GsmClientSecureSim7600() : GsmClientSecure() {}
 
     /**
      * @brief Create a new secured TCP (SSL) client and bind it to a modem and
@@ -244,7 +244,7 @@ class TinyGsmSim7600
      * @copydetails GsmClientSim7600::GsmClientSim7600(TinyGsmSim7600&, uint8_t)
      */
     explicit GsmClientSecureSim7600(TinyGsmSim7600& modem, uint8_t mux = 0)
-        : GsmSecureClient() {
+        : GsmClientSecure() {
       init(&modem, mux);
     }
 
@@ -257,7 +257,7 @@ class TinyGsmSim7600
      */
     explicit GsmClientSecureSim7600(TinyGsmSim7600& modem, uint8_t mux,
                                     uint8_t sslCtxIndex)
-        : GsmSecureClient() {
+        : GsmClientSecure() {
       setSSLContextIndex(sslCtxIndex);
       init(&modem, mux);
     }
@@ -272,7 +272,7 @@ class TinyGsmSim7600
      * @param strictAttach If true, require the requested mux for static mux
      * clients.
      * @return true if initialization completed.
-     * @important The SSL client for the A7672x only supports multiplexing
+     * @important The SSL client for the SIM7600 only supports multiplexing
      * channel numbers 0 and 1 unlike the 10 channels supported for non-SSL
      * sockets.
      */
@@ -333,6 +333,17 @@ class TinyGsmSim7600
     /// Unregister this context from its modem.
     ~GsmSecureContextSim7600() {}
   };
+
+  /*
+   * Public Aliases
+   */
+ public:
+  /// Arduino Client type for this modem.
+  using TinyGsmClient = GsmClientSim7600;
+  /// Secure Arduino Client type for this modem.
+  using TinyGsmClientSecure = GsmClientSecureSim7600;
+  /// Security-context type for this modem.
+  using TinyGsmSecureContext = GsmSecureContextSim7600;
 
   /*
    * GSM Modem Constructor
@@ -902,18 +913,21 @@ class TinyGsmSim7600
    * Battery functions
    */
  protected:
-  // returns volts, multiply by 1000 to get mV
+  // AT+CBC reports the power supply voltage in volts instead of millivolts.
   int16_t getBattVoltageImpl() {
     sendAT(GF("+CBC"));
-    if (waitResponse(GF("+CBC:")) != 1) { return 0; }
-
-    // get voltage in VOLTS
+    // Return -9999 for no response
+    if (waitResponse(GF("+CBC:")) != 1) { return -9999; }
+    // get voltage in volts
     float voltage = streamGetFloatBefore('\n');
     // Wait for final OK
-    waitResponse();
-    // Return millivolts
-    uint16_t res = voltage * 1000;
-    return res;
+    bool validResponse = waitResponse() == 1;
+    // Return -9999 for an invalid value
+    if (!validResponse || voltage <= 0.0F || voltage > 32.767F) {
+      return -9999;
+    }
+    // Return millivolts, adding 0.5 for rounding
+    return static_cast<int16_t>(voltage * 1000.0F + 0.5F);
   }
 
   int8_t getBattPercentImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
@@ -922,10 +936,12 @@ class TinyGsmSim7600
 
   bool getBattStatsImpl(int8_t& chargeState, int8_t& percent,
                         int16_t& milliVolts) {
-    chargeState = 0;
-    percent     = 0;
-    milliVolts  = getBattVoltage();
-    return true;
+    // the only battery value we can get is voltage, so defer to
+    // getBattVoltageImpl() and set the others to default invalid values
+    chargeState = -99;
+    percent     = -99;
+    milliVolts  = getBattVoltageImpl();
+    return milliVolts != -9999;
   }
 
   /*
@@ -935,11 +951,11 @@ class TinyGsmSim7600
   // get temperature in degree celsius
   float getTemperatureImpl() {
     sendAT(GF("+CPMUTEMP"));
-    if (waitResponse(GF("+CPMUTEMP:")) != 1) { return -9999.0f; }
+    if (waitResponse(GF("+CPMUTEMP:")) != 1) { return -9999.0F; }
     // return temperature in C
     float temp = streamGetFloatBefore('\n');
     // Wait for final OK
-    waitResponse();
+    if (waitResponse() != 1 || temp == -9999.0F) { return -9999.0F; }
     return temp;
   }
 
@@ -1281,7 +1297,7 @@ class TinyGsmSim7600
     if (ssl) {
       if (isValidMux(ret_mux)) {
         // Returns +CCHRECV: {mux},0 after the data
-        if (waitResponse(GF("+CCHRECV: ")) == 1) {
+        if (waitResponse(GF("+CCHRECV:")) == 1) {
           streamSkipUntil('\n');  // skip the mux and error code
           waitResponse();         // final OK
         }
@@ -1321,7 +1337,7 @@ class TinyGsmSim7600
       // +CCHRECV: LEN,<cache_len_0>,<cache_len_1>
       // <cache_len_0> = The length of RX data cached for connection 0.
       // <cache_len_1> = The length of RX data cached for connection 1.
-      if (waitResponse(GF("+CCHRECV: ")) != 1) { return 0; }
+      if (waitResponse(GF("+CCHRECV:")) != 1) { return 0; }
       streamSkipUntil(',');                        // Skip the text "LEN"
       size_t len_on_0 = streamGetIntBefore(',');   // read cache_len_0
       size_t len_on_1 = streamGetIntBefore('\n');  // read cache_len_1

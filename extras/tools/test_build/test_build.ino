@@ -17,6 +17,42 @@
 
 TinyGsm modem(Serial);
 
+template <typename First, typename Second>
+struct TinyGsmTestIsSame {
+  static const bool value = false;
+};
+
+template <typename Type>
+struct TinyGsmTestIsSame<Type, Type> {
+  static const bool value = true;
+};
+
+static_assert(TinyGsmTestIsSame<TinyGsmClient, TinyGsm::TinyGsmClient>::value,
+              "Global and modem-scoped client aliases must match");
+
+#if defined(TINY_GSM_MODEM_HAS_SSL)
+static_assert(
+    TinyGsmTestIsSame<TinyGsmClientSecure, TinyGsm::TinyGsmClientSecure>::value,
+    "Global and modem-scoped secure client aliases must match");
+#endif
+
+#if defined(TINY_GSM_MODEM_CAN_SPECIFY_CERTS)
+static_assert(TinyGsmTestIsSame<TinyGsmSecureContext,
+                                TinyGsm::TinyGsmSecureContext>::value,
+              "Global and modem-scoped security-context aliases must match");
+#endif
+
+#if defined(TINY_GSM_MODEM_SIM808) || defined(TINY_GSM_MODEM_SIM868)
+static_assert(
+    TinyGsmTestIsSame<TinyGsmSim808::TinyGsmClient,
+                      TinyGsmSim800::TinyGsmClient>::value,
+    "The SIM808 client alias must use the inherited SIM800 client type");
+static_assert(
+    TinyGsmTestIsSame<TinyGsmSim808::TinyGsmClientSecure,
+                      TinyGsmSim800::TinyGsmClientSecure>::value,
+    "The SIM808 secure client alias must use the inherited SIM800 type");
+#endif
+
 void setup() {
   Serial.begin(115200);
   delay(6000);

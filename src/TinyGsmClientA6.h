@@ -203,6 +203,13 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
   // Doesn't support SSL
 
   /*
+   * Modem-scoped Client Aliases
+   */
+ public:
+  /// Arduino Client type for this modem.
+  using TinyGsmClient = GsmClientA6;
+
+  /*
    * GSM Modem Constructor
    */
  public:
@@ -527,26 +534,61 @@ class TinyGsmA6 : public TinyGsmModem<TinyGsmA6, TinyGsmA6ModemConfig>,
   // Needs a '?' after CBC, unlike most
   int8_t getBattPercentImpl() {
     sendAT(GF("+CBC?"));
-    if (waitResponse(GF("+CBC:")) != 1) { return false; }
+    if (waitResponse(GF("+CBC:")) != 1) { return -99; }
     streamSkipUntil(',');  // Skip battery charge status
     // Read battery charge level
-    int8_t res = streamGetIntBefore('\n');
+    int16_t res = streamGetIntBefore('\n');
     // Wait for final OK
-    waitResponse();
-    return res;
+    bool validResponse = waitResponse() == 1;
+    if (!validResponse || res < 0 || res > 100) { return -99; }
+    return static_cast<int8_t>(res);
+  }
+
+  // Needs a '?' after CBC, unlike most
+  int8_t getBattChargeStateImpl() {
+    sendAT(GF("+CBC?"));
+    if (waitResponse(GF("+CBC:")) != 1) { return -99; }
+    int16_t res = streamGetIntBefore(',');
+    // Wait for final OK
+    bool validResponse = waitResponse() == 1;
+    if (!validResponse || res < 0 || res > 2) { return -99; }
+    return static_cast<int8_t>(res);
   }
 
   // Needs a '?' after CBC, unlike most
   bool getBattStatsImpl(int8_t& chargeState, int8_t& percent,
                         int16_t& milliVolts) {
-    sendAT(GF("+CBC?"));
+    // set all output variables to default invalid values
+    chargeState = -99;
+    percent     = -99;
+    milliVolts  = -9999;
+
+    sendAT(GF("+CBC?"));  // <- The '?' is needed!
+    // if there's no response to the request, return false immediately
     if (waitResponse(GF("+CBC:")) != 1) { return false; }
-    chargeState = streamGetIntBefore(',');
-    percent     = streamGetIntBefore('\n');
-    milliVolts  = 0;
+    // try to parse the responses
+    int16_t parsedChargeState = streamGetIntBefore(',');
+    int16_t parsedPercent     = streamGetIntBefore('\n');
+    // no voltage reported by this modem
     // Wait for final OK
-    waitResponse();
-    return true;
+    if (waitResponse() != 1) { return false; }
+
+    bool results_valid = true;
+    // the charge state should be between 0 and 2
+    if (parsedChargeState >= 0 && parsedChargeState <= 2) {
+      chargeState = static_cast<int8_t>(parsedChargeState);
+    } else {
+      results_valid = false;
+    }
+    // the percent should be between 0 and 100
+    if (parsedPercent >= 0 && parsedPercent <= 100) {
+      percent = static_cast<int8_t>(parsedPercent);
+    } else {
+      results_valid = false;
+    }
+
+    // return true if everything is valid and within the expected ranges
+    return results_valid;
   }
 
   /*

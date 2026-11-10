@@ -46,6 +46,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- Added modem-scoped `TinyGsmClient`, `TinyGsmClientSecure`, and `TinyGsmSecureContext` aliases for libraries and multi-modem sketches while preserving the global single-modem aliases.
 - Added support for selecting SSL version and authentication types on select modules
 - Added support for SSL pre-shared keys and PSK tables on select modules.
 - Added support for writing/loading certificates on select modules

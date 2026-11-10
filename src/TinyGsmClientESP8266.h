@@ -215,13 +215,13 @@ class TinyGsmESP8266
   /// Inner secure client
   /// @ingroup espressif_esp8266
   class GsmClientSecureESP8266
-      : public GsmSecureClient<GsmClientESP8266, TinyGsmESP8266> {
+      : public GsmClientSecure<GsmClientESP8266, TinyGsmESP8266> {
     friend class TinyGsmESP8266;
 
    public:
     using GsmClientESP8266::connect;
     using GsmClientESP8266::stop;
-    using GsmSecureClient::GsmSecureClient;
+    using GsmClientSecure::GsmClientSecure;
     using TcpConfig = TinyGsmESP8266TcpConfig;
 
     // Because we have the same potential range of mux numbers for secure and
@@ -374,6 +374,17 @@ class TinyGsmESP8266
                           1] = '\0';
     }
   };
+
+  /*
+   * Modem-scoped Client Aliases
+   */
+ public:
+  /// Arduino Client type for this modem.
+  using TinyGsmClient = GsmClientESP8266;
+  /// Secure Arduino Client type for this modem.
+  using TinyGsmClientSecure = GsmClientSecureESP8266;
+  /// Security-context type for this modem.
+  using TinyGsmSecureContext = GsmSecureContextESP8266;
 
   /*
    * GSM Modem Constructor

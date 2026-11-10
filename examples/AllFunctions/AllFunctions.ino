@@ -332,7 +332,7 @@ void loop() {
   DBG("Local IP:", local);
   (void)local;
 
-  int csq = modem.getSignalQuality();
+  int16_t csq = modem.getSignalQuality();
   DBG("Signal quality:", csq);
   (void)csq;
 #endif

@@ -239,6 +239,17 @@ class TinyGsmSim800
 #endif
 
   /*
+   * Public Aliases
+   */
+ public:
+  /// Arduino Client type for this modem.
+  using TinyGsmClient = GsmClientSim800;
+#if !defined(TINY_GSM_MODEM_SIM900)
+  /// Secure Arduino Client type for this modem.
+  using TinyGsmClientSecure = GsmClientSecureSim800;
+#endif
+
+  /*
    * GSM Modem Constructor
    */
  public:

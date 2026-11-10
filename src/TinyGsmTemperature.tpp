@@ -45,7 +45,8 @@ class TinyGsmTemperature {
 
   /**
    * @brief Get the modem chip temperature in degrees celsius.
-   * @return *float* The modem chip temperature in degrees celsius.
+   * @return *float* The modem chip temperature in degrees celsius, or
+   * -9999.0F if the modem does not respond or returns an invalid value.
    */
   float getTemperature() {
     return thisModem().getTemperatureImpl();

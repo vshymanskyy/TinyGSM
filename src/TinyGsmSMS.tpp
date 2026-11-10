@@ -150,8 +150,10 @@ class TinyGsmSMS {
   /**
    * @brief Decode a hexadecimal UCS-2 string.
    * @param instr The hexadecimal UCS-2 string to decode.
-   * @return The decoded data, with non-ASCII characters represented according
-   * to the TINY_GSM_UNICODE_TO_HEX configuration.
+   * @return The decoded data. When a character's high byte is nonzero,
+   * TINY_GSM_UNICODE_TO_HEX controls its representation. Characters with a
+   * zero high byte, such as 00E9, are appended as their low byte (0xE9)
+   * regardless of that setting.
    */
   static inline String TinyGsmDecodeHex16bit(const String& instr) {
     String result;

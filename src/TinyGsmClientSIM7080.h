@@ -221,14 +221,14 @@ class TinyGsmSim7080
   /// Inner secure client
   /// @ingroup simcom_sim7080
   class GsmClientSecureSim7080
-      : public GsmSecureClient<GsmClientSim7080, TinyGsmSim7080> {
+      : public GsmClientSecure<GsmClientSim7080, TinyGsmSim7080> {
     friend class TinyGsmSim7080;
 
    public:
     using GsmClientSim7080::connect;
-    using GsmSecureClient<GsmClientSim7080, TinyGsmSim7080>::init;
+    using GsmClientSecure<GsmClientSim7080, TinyGsmSim7080>::init;
+    using GsmClientSecure::GsmClientSecure;
     using GsmClientSim7080::stop;
-    using GsmSecureClient::GsmSecureClient;
     using TcpConfig = TinyGsmSim7080TcpConfig;
 
     // Because we have the same potential range of mux numbers for secure and
@@ -296,6 +296,17 @@ class TinyGsmSim7080
     /// Unregister this context from its modem.
     ~GsmSecureContextSim7080() {}
   };
+
+  /*
+   * Public Aliases
+   */
+ public:
+  /// Arduino Client type for this modem.
+  using TinyGsmClient = GsmClientSim7080;
+  /// Secure Arduino Client type for this modem.
+  using TinyGsmClientSecure = GsmClientSecureSim7080;
+  /// Security-context type for this modem.
+  using TinyGsmSecureContext = GsmSecureContextSim7080;
 
   /*
    * GSM Modem Constructor

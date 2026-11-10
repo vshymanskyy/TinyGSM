@@ -235,6 +235,15 @@ class TinyGsmESP8266NonOS
   };
 
   /*
+   * Modem-scoped Client Aliases
+   */
+ public:
+  /// Arduino Client type for this modem.
+  using TinyGsmClient = GsmClientESP8266NonOS;
+  /// Secure Arduino Client type for this modem.
+  using TinyGsmClientSecure = GsmClientSecureESP8266NonOS;
+
+  /*
    * GSM Modem Constructor
    */
  public:

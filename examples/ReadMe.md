@@ -85,6 +85,7 @@ This example opens and manages multiple simultaneous client connections to diffe
 
 This example shows how to use two different modems together in the same code.
 The key thing to notice is that instead of defining the modem type and including the TinyGsmClient.h file, it includes the specific modem headers.
+It uses modem-scoped client aliases, such as `TinyGsmSim7080::TinyGsmClientSecure`, so the client types cannot collide.
 
 - [The multiple modules example on GitHub](https://github.com/vshymanskyy/TinyGSM/tree/master/examples/more/Multiple_Modules)
 

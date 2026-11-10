@@ -6,9 +6,9 @@
  *
  * The key thing to notice is that instead of defining the modem type and
  * including the TinyGsmClient.h file, it includes the specific modem headers.
- * You cannot use the typedefs `TinyGsm`, `TinyGsmClient`, and
- * `TinyGsmClientSecure` for the modem and the clients. You must use the full
- * class names instead.
+ * The global aliases `TinyGsm`, `TinyGsmClient`, and `TinyGsmClientSecure`
+ * select only one modem type. Use each modem class and its scoped client
+ * aliases when multiple modem headers are included.
  * ========================================================================== */
 
 // NOTE: DO NOT set a modem define!
@@ -113,11 +113,11 @@ TinyGsmSim7080 modem1(SerialAT1);
 TinyGsmESP32   modem2(SerialAT2);
 #endif
 
-TinyGsmSim7080::GsmClientSecureSim7080 client1(modem1);
-const int                              port1 = 443;
+TinyGsmSim7080::TinyGsmClientSecure client1(modem1);
+const int                           port1 = 443;
 
-TinyGsmESP32::GsmClientSecureESP32 client2(modem2);
-const int                          port2 = 443;
+TinyGsmESP32::TinyGsmClientSecure client2(modem2);
+const int                         port2 = 443;
 
 void setup() {
   // Set console baud rate

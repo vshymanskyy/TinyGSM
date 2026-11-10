@@ -197,13 +197,13 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
   /// Inner secure client
   /// @ingroup quectel_bg96
   class GsmClientSecureBG96
-      : public GsmSecureClient<GsmClientBG96, TinyGsmBG96> {
+      : public GsmClientSecure<GsmClientBG96, TinyGsmBG96> {
     friend class TinyGsmBG96;
 
    public:
     using GsmClientBG96::connect;
     using GsmClientBG96::stop;
-    using GsmSecureClient::GsmSecureClient;
+    using GsmClientSecure::GsmClientSecure;
     using TcpConfig = TinyGsmBG96TcpConfig;
 
     /*
@@ -328,6 +328,17 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
     /// Unregister this context from its modem.
     ~GsmSecureContextBG96() {}
   };
+
+  /*
+   * Modem-scoped Client Aliases
+   */
+ public:
+  /// Arduino Client type for this modem.
+  using TinyGsmClient = GsmClientBG96;
+  /// Secure Arduino Client type for this modem.
+  using TinyGsmClientSecure = GsmClientSecureBG96;
+  /// Security-context type for this modem.
+  using TinyGsmSecureContext = GsmSecureContextBG96;
 
   /*
    * GSM Modem Constructor
@@ -1024,17 +1035,17 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
    */
  protected:
   // get temperature in degree celsius
-  uint16_t getTemperatureImpl() {
+  float getTemperatureImpl() {
     sendAT(GF("+QTEMP"));
-    if (waitResponse(GF("+QTEMP:")) != 1) { return 0; }
+    if (waitResponse(GF("+QTEMP:")) != 1) { return -9999.0F; }
     // return temperature in C
-    uint16_t res =
+    int16_t res =
         streamGetIntBefore(',');  // read PMIC (primary ic) temperature
     streamSkipUntil(',');         // skip XO temperature ??
     streamSkipUntil('\n');        // skip PA temperature ??
     // Wait for final OK
-    waitResponse();
-    return res;
+    if (waitResponse() != 1 || res == -9999) { return -9999.0F; }
+    return static_cast<float>(res);
   }
 
   /*

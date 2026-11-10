@@ -182,6 +182,13 @@ class TinyGsmSim5360
   // NOT SUPPORTED
 
   /*
+   * Public Aliases
+   */
+ public:
+  /// Arduino Client type for this modem.
+  using TinyGsmClient = GsmClientSim5360;
+
+  /*
    * GSM Modem Constructor
    */
  public:
@@ -648,34 +655,64 @@ class TinyGsmSim5360
    * Battery functions
    */
  protected:
-  // SRGD Note:  Returns voltage in VOLTS instead of millivolts
+  // AT+CBC reports the power supply voltage in volts instead of millivolts.
   int16_t getBattVoltageImpl() {
     sendAT(GF("+CBC"));
-    if (waitResponse(GF("+CBC:")) != 1) { return 0; }
+    // Return -9999 for no response
+    if (waitResponse(GF("+CBC:")) != 1) { return -9999; }
     streamSkipUntil(',');  // Skip battery charge status
     streamSkipUntil(',');  // Skip battery charge level
-    // get voltage in VOLTS
+    // get voltage in volts
     float voltage = streamGetFloatBefore('\n');
     // Wait for final OK
-    waitResponse();
-    // Return millivolts
-    uint16_t res = voltage * 1000;
-    return res;
+    bool validResponse = waitResponse() == 1;
+    // Return -9999 for an invalid value
+    if (!validResponse || voltage <= 0.0F || voltage > 32.767F) {
+      return -9999;
+    }
+    // Return millivolts, adding 0.5 for rounding
+    return static_cast<int16_t>(voltage * 1000.0F + 0.5F);
   }
 
   // SRGD Note:  Returns voltage in VOLTS instead of millivolts
   bool getBattStatsImpl(int8_t& chargeState, int8_t& percent,
                         int16_t& milliVolts) {
+    // set outputs to default invalid values
+    chargeState = -99;
+    percent     = -99;
+    milliVolts  = -9999;
+
     sendAT(GF("+CBC"));
     if (waitResponse(GF("+CBC:")) != 1) { return false; }
-    chargeState = streamGetIntBefore(',');
-    percent     = streamGetIntBefore(',');
-    // get voltage in VOLTS
+    int16_t parsedChargeState = streamGetIntBefore(',');
+    int16_t parsedPercent     = streamGetIntBefore(',');
+    // get voltage in volts
     float voltage = streamGetFloatBefore('\n');
-    milliVolts    = voltage * 1000;
     // Wait for final OK
-    waitResponse();
-    return true;
+    if (waitResponse() != 1) { return false; }
+
+    bool results_valid = true;
+    // the charge state should be between 0 and 2
+    if (parsedChargeState >= 0 && parsedChargeState <= 2) {
+      chargeState = static_cast<int8_t>(parsedChargeState);
+    } else {
+      results_valid = false;
+    }
+    // the percent should be between 0 and 100
+    if (parsedPercent >= 0 && parsedPercent <= 100) {
+      percent = static_cast<int8_t>(parsedPercent);
+    } else {
+      results_valid = false;
+    }
+    // the voltage should be positive and < 32.767 volts
+    if (voltage > 0.0F && voltage <= 32.767F) {
+      milliVolts = static_cast<int16_t>(voltage * 1000.0F + 0.5F);
+    } else {
+      results_valid = false;
+    }
+
+    // return true if everything is valid and within the expected ranges
+    return results_valid;
   }
 
   /*
@@ -686,13 +723,13 @@ class TinyGsmSim5360
   float getTemperatureImpl() {
     // Enable Temparature Reading
     sendAT(GF("+CMTE=1"));
-    if (waitResponse() != 1) { return 0; }
+    if (waitResponse() != 1) { return -9999.0F; }
     // Get Temparature Value
     sendAT(GF("+CMTE?"));
-    if (waitResponse(GF("+CMTE:")) != 1) { return false; }
+    if (waitResponse(GF("+CMTE:")) != 1) { return -9999.0F; }
     float res = streamGetFloatBefore('\n');
     // Wait for final OK
-    waitResponse();
+    if (waitResponse() != 1 || res == -9999.0F) { return -9999.0F; }
     return res;
   }
 

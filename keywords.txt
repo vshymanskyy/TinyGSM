@@ -9,7 +9,7 @@
 
 ClientType	KEYWORD1
 GsmClient	KEYWORD1
-GsmSecureClient	KEYWORD1
+GsmClientSecure	KEYWORD1
 GsmSecureContext	KEYWORD1
 TinyGsmA6	KEYWORD1
 TinyGsmA6::GsmClientA6	KEYWORD1
@@ -218,7 +218,7 @@ getConnectionID	KEYWORD2
 beginWrite	KEYWORD2
 endWrite	KEYWORD2
 setSSLContextIndex	KEYWORD2
-GsmSecureClient	KEYWORD2
+GsmClientSecure	KEYWORD2
 GsmSecureContext	KEYWORD2
 ~GsmSecureContext	KEYWORD2
 setSSLAuthMode	KEYWORD2

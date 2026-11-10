@@ -309,6 +309,15 @@ class TinyGsmSequansMonarch
   };
 
   /*
+   * Modem-scoped Client Aliases
+   */
+ public:
+  /// Arduino Client type for this modem.
+  using TinyGsmClient = GsmClientSequansMonarch;
+  /// Secure Arduino Client type for this modem.
+  using TinyGsmClientSecure = GsmClientSecureSequansMonarch;
+
+  /*
    * GSM Modem Constructor
    */
  public:
@@ -597,11 +606,10 @@ class TinyGsmSequansMonarch
  protected:
   float getTemperatureImpl() {
     sendAT(GF("+SMDTH"));
-    if (waitResponse(10000L, GF("+SMDTH: ")) != 1) { return -9999.0f; }
-    String res;
-    if (waitResponse(1000L, res) != 1) { return -9999.0f; }
-    if (res.indexOf("ERROR") >= 0) { return -9999.0f; }
-    return res.toFloat();
+    if (waitResponse(10000L, GF("+SMDTH: ")) != 1) { return -9999.0F; }
+    float temp = streamGetFloatBefore('\n');
+    if (waitResponse() != 1 || temp == -9999.0F) { return -9999.0F; }
+    return temp;
   }
 
   /*

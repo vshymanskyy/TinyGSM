@@ -212,11 +212,11 @@ class TinyGsmA7672X
   /// Inner secure client
   /// @ingroup simcom_a7672x
   class GsmClientSecureA7672X
-      : public GsmSecureClient<GsmClientA7672X, TinyGsmA7672X> {
+      : public GsmClientSecure<GsmClientA7672X, TinyGsmA7672X> {
     friend class TinyGsmA7672X;
 
    public:
-    using GsmSecureClient<GsmClientA7672X, TinyGsmA7672X>::init;
+    using GsmClientSecure<GsmClientA7672X, TinyGsmA7672X>::init;
     using GsmClientA7672X::connect;
     using GsmClientA7672X::stop;
     using TcpConfig = TinyGsmA7672XTcpConfig;
@@ -230,7 +230,7 @@ class TinyGsmA7672X
      * @warning You must call the init() method before attempting to use a
      * client created with this constructor.
      */
-    GsmClientSecureA7672X() : GsmSecureClient() {}
+    GsmClientSecureA7672X() : GsmClientSecure() {}
 
     /**
      * @brief Create a new secured TCP (SSL) client and bind it to a modem and
@@ -238,7 +238,7 @@ class TinyGsmA7672X
      * @copydetails GsmClientA7672X::GsmClientA7672X(TinyGsmA7672X&, uint8_t)
      */
     explicit GsmClientSecureA7672X(TinyGsmA7672X& modem, uint8_t mux = 0)
-        : GsmSecureClient() {
+        : GsmClientSecure() {
       init(&modem, mux);
     }
 
@@ -251,7 +251,7 @@ class TinyGsmA7672X
      */
     explicit GsmClientSecureA7672X(TinyGsmA7672X& modem, uint8_t mux,
                                    uint8_t sslCtxIndex)
-        : GsmSecureClient() {
+        : GsmClientSecure() {
       setSSLContextIndex(sslCtxIndex);
       init(&modem, mux);
     }
@@ -327,6 +327,17 @@ class TinyGsmA7672X
     /// Unregister this context from its modem.
     ~GsmSecureContextA7672X() {}
   };
+
+  /*
+   * Modem-scoped Client Aliases
+   */
+ public:
+  /// Arduino Client type for this modem.
+  using TinyGsmClient = GsmClientA7672X;
+  /// Secure Arduino Client type for this modem.
+  using TinyGsmClientSecure = GsmClientSecureA7672X;
+  /// Security-context type for this modem.
+  using TinyGsmSecureContext = GsmSecureContextA7672X;
 
   /*
    * GSM Modem Constructor
@@ -738,7 +749,37 @@ class TinyGsmA7672X
   /*
    * Battery functions
    */
-  // No functions of this type supported
+ protected:
+  // AT+CBC reports the power supply voltage in volts instead of millivolts.
+  int16_t getBattVoltageImpl() {
+    sendAT(GF("+CBC"));
+    // Return -9999 for no response
+    if (waitResponse(GF("+CBC:")) != 1) { return -9999; }
+    // get voltage in volts
+    float voltage = streamGetFloatBefore('\n');
+    // Wait for final OK
+    bool validResponse = waitResponse() == 1;
+    // Return -9999 for an invalid value
+    if (!validResponse || voltage <= 0.0F || voltage > 32.767F) {
+      return -9999;
+    }
+    // Return millivolts, adding 0.5 for rounding
+    return static_cast<int16_t>(voltage * 1000.0F + 0.5F);
+  }
+
+  int8_t getBattPercentImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
+
+  int8_t getBattChargeStateImpl() TINY_GSM_ATTR_NOT_AVAILABLE;
+
+  bool getBattStatsImpl(int8_t& chargeState, int8_t& percent,
+                        int16_t& milliVolts) {
+    // the only battery value we can get is voltage, so defer to
+    // getBattVoltageImpl() and set the others to default invalid values
+    chargeState = -99;
+    percent     = -99;
+    milliVolts  = getBattVoltageImpl();
+    return milliVolts != -9999;
+  }
 
   /*
    * Temperature functions
@@ -746,11 +787,11 @@ class TinyGsmA7672X
  protected:
   float getTemperatureImpl() {
     sendAT(GF("+CPMUTEMP"));
-    if (waitResponse(GF("+CPMUTEMP:")) != 1) { return -9999.0f; }
+    if (waitResponse(GF("+CPMUTEMP:")) != 1) { return -9999.0F; }
     // return temperature in C
     float temp = streamGetFloatBefore('\n');
     // Wait for final OK
-    waitResponse();
+    if (waitResponse() != 1 || temp == -9999.0F) { return -9999.0F; }
     return temp;
   }
 
@@ -1132,7 +1173,7 @@ class TinyGsmA7672X
       // +CCHRECV: LEN,<cache_len_0>,<cache_len_1>
       // <cache_len_0> = The length of RX data cached for connection 0.
       // <cache_len_1> = The length of RX data cached for connection 1.
-      if (waitResponse(GF("+CCHRECV: ")) != 1) { return 0; }
+      if (waitResponse(GF("+CCHRECV:")) != 1) { return 0; }
       streamSkipUntil(',');                        // Skip the text "LEN"
       size_t len_on_0 = streamGetIntBefore(',');   // read cache_len_0
       size_t len_on_1 = streamGetIntBefore('\n');  // read cache_len_1
