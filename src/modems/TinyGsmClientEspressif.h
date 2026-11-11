@@ -15,8 +15,8 @@
 #define SRC_TINYGSMCLIENTESPRESSIF_H_
 #pragma message("TinyGSM:  TinyGsmClientEspressif")
 
-#include "TinyGsmModem.tpp"
-#include "TinyGsmWifi.tpp"
+#include "mixins/TinyGsmModem.tpp"
+#include "mixins/TinyGsmWifi.tpp"
 
 /// The length of a SSL/TLS certificate filename, not including the namespace.
 /// This is a dot and a single digit number (0 or 1).

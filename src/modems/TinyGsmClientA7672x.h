@@ -40,17 +40,17 @@
 #define SRC_TINYGSMCLIENTA7672X_H_
 #pragma message("TinyGSM:  TinyGsmClientA7672x")
 
-#include "TinyGsmModem.tpp"
-#include "TinyGsmTCP.tpp"
-#include "TinyGsmSSL.tpp"
-#include "TinyGsmCellularData.tpp"
-#include "TinyGsmCalling.tpp"
-#include "TinyGsmSMS.tpp"
-#include "TinyGsmGSMLocation.tpp"
-#include "TinyGsmTime.tpp"
-#include "TinyGsmNTP.tpp"
-#include "TinyGsmBattery.tpp"
-#include "TinyGsmTemperature.tpp"
+#include "mixins/TinyGsmModem.tpp"
+#include "mixins/TinyGsmTCP.tpp"
+#include "mixins/TinyGsmSSL.tpp"
+#include "mixins/TinyGsmCellularData.tpp"
+#include "mixins/TinyGsmCalling.tpp"
+#include "mixins/TinyGsmSMS.tpp"
+#include "mixins/TinyGsmGSMLocation.tpp"
+#include "mixins/TinyGsmTime.tpp"
+#include "mixins/TinyGsmNTP.tpp"
+#include "mixins/TinyGsmBattery.tpp"
+#include "mixins/TinyGsmTemperature.tpp"
 
 /// Registration status
 /// @ingroup simcom_a7672x

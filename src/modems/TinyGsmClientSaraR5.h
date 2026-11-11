@@ -1,22 +1,20 @@
 /**
- * @file       TinyGsmClientUBLOX.h
- * @brief      u-blox modem client and modem-trait definitions.
- * @author     Volodymyr Shymanskyy
+ * @file       TinyGsmClientSaraR5.h
+ * @brief      u-blox SARA-R5 modem client and modem-trait definitions.
+ * @author     Sebastian Bergner, Volodymyr Shymanskyy
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
- * @date       Nov 2016
+ * @date       Aug 2023
  */
 /**
- * @defgroup ublox_cellular u-blox 2G and 3G Cellular Modules
+ * @defgroup ublox_sara_r5 u-blox SARA-R5
  * @ingroup group_ublox
- * @brief Manufacturer: u-blox. Models: 2G and 3G cellular modules, including
- * LARA, LEON, LISA, MPCI, SARA-G, SARA-U, and TOBY modules.
+ * @brief Manufacturer: u-blox. Models: SARA-R5.
  *
  * # Connection Information
  *
  * - Combined TCP/SSL sockets:
  *   - 7
- *   - a few u-blox modules support more, but this library does not
  * - SSL contexts (security profiles):
  *   - 5
  * - Socket Buffering:
@@ -28,69 +26,92 @@
  * @todo In `restartImpl()`: Verify delay timing here
  */
 
-#ifndef SRC_TINYGSMCLIENTUBLOX_H_
-#define SRC_TINYGSMCLIENTUBLOX_H_
-#pragma message("TinyGSM:  TinyGsmClientUBLOX")
+#ifndef SRC_TINYGSMCLIENTSARAR5_H_
+#define SRC_TINYGSMCLIENTSARAR5_H_
+#pragma message("TinyGSM:  TinyGsmClientSaraR5")
 
-#include "TinyGsmModem.tpp"
-#include "TinyGsmTCP.tpp"
+#include "mixins/TinyGsmModem.tpp"
+#include "mixins/TinyGsmTCP.tpp"
 
 // NOTE: This module supports SSL, but we do not support any certificate
-// management yet. We define TINY_GSM_MODEM_HAS_SSL here and do not include the
-// SSL module.
+// management yet. Define TINY_GSM_MODEM_HAS_SSL here and do not include the SSL
+// module.
 #ifndef TINY_GSM_MODEM_HAS_SSL
 /// flag to indicate that the modem has Secure Socket Layer (SSL) functions
 #define TINY_GSM_MODEM_HAS_SSL
 #endif
 
-#include "TinyGsmCellularData.tpp"
-#include "TinyGsmCalling.tpp"
-#include "TinyGsmSMS.tpp"
-#include "TinyGsmGSMLocation.tpp"
-#include "TinyGsmGPS.tpp"
-#include "TinyGsmTime.tpp"
-#include "TinyGsmBattery.tpp"
+#include "mixins/TinyGsmCellularData.tpp"
+#include "mixins/TinyGsmCalling.tpp"
+#include "mixins/TinyGsmSMS.tpp"
+#include "mixins/TinyGsmGSMLocation.tpp"
+#include "mixins/TinyGsmGPS.tpp"
+#include "mixins/TinyGsmTime.tpp"
+#include "mixins/TinyGsmBattery.tpp"
 
 /// Registration status
-/// @ingroup ublox_cellular
-enum class UBLOXRegStatus {
-  REG_NO_RESULT    = -1,  ///< No registration result
-  REG_UNREGISTERED = 0,   ///< Not registered on the network
-  REG_SEARCHING    = 2,   ///< Searching for network
-  REG_DENIED       = 3,   ///< Registration denied
-  REG_OK_HOME      = 1,   ///< Registered on the home network
-  REG_OK_ROAMING   = 5,   ///< Registered on a roaming network
-  REG_UNKNOWN      = 4,   ///< Unknown registration status
+/// @ingroup ublox_sara_r5
+enum class SaraR5RegStatus {
+  /// No registration result
+  REG_NO_RESULT = -1,
+  /// Not registered on the network
+  REG_UNREGISTERED = 0,
+  /// Searching for network
+  REG_SEARCHING = 2,
+  /// Registration denied
+  REG_DENIED = 3,
+  /// Registered on the home network
+  REG_OK_HOME = 1,
+  /// Registered on a roaming network
+  REG_OK_ROAMING = 5,
+  /// Unknown registration status
+  REG_UNKNOWN = 4,
+  /// Registered on the home network for SMS only
+  REG_SMS_ONLY_HOME = 6,
+  /// Registered on a roaming network for SMS only
+  REG_SMS_ONLY_ROAMING = 7,
+  /// ublox AT command manual states: attached for emergency bearer services
+  /// only (see 3GPP TS 24.008 [85] and 3GPP TS 24.301 [120] that specify the
+  /// condition when the MS is considered as attached for emergency bearer
+  /// services)
+  REG_EMERGENCY_ONLY = 8,
+  /// not 100% certain, ublox AT command manual states: registered for "CSFB not
+  /// preferred", home network (applicable only when AcTStatus indicates
+  /// E-UTRAN)
+  REG_NO_FALLBACK_LTE_HOME = 9,
+  /// not 100% certain, ublox AT command manual states: registered for "CSFB not
+  /// preferred", roaming (applicable only when AcTStatus indicates E-UTRAN)
+  REG_NO_FALLBACK_LTE_ROAMING = 10
 };
 
-/// Basic modem configurations for the UBLOX modem family
-/// @ingroup ublox_cellular
-struct TinyGsmUBLOXModemConfig
-    : public TinyGsmModemConfigPreset<UBLOXRegStatus> {
+/// Basic modem configurations for the SARA-R5
+/// @ingroup ublox_sara_r5
+struct TinyGsmSaraR5ModemConfig
+    : public TinyGsmModemConfigPreset<SaraR5RegStatus> {
   /// The modem manufacturer
   static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "u-blox";
   /// The modem model
-  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "unknown";
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "SARA-R5";
 };
 
-constexpr char TinyGsmUBLOXModemConfig::MODEM_MANUFACTURER[]
+constexpr char TinyGsmSaraR5ModemConfig::MODEM_MANUFACTURER[]
     __attribute__((weak));
-constexpr char TinyGsmUBLOXModemConfig::MODEM_MODEL[] __attribute__((weak));
+constexpr char TinyGsmSaraR5ModemConfig::MODEM_MODEL[] __attribute__((weak));
 
 /**
- * @brief TCP behavior and limits for the u-blox family.
+ * @brief TCP behavior and limits for the SARA-R5.
  *
- * Most modules using this protocol support 7 sockets, the LEON-G1 supports 16.
- * I **think** all sockets can be SSL, but the manual is not clear (to me).
+ * Per the manual, 7 standard sockets can be managed.  I **think** all sockets
+ * can be SSL, but the manual is not clear (to me).
  *
  * @warning You cannot control the socket mux number on this module! The module
  * opens the connection and returns the connection number it opened.
  *
  * The send data command, USOWR, accepts up to 1024 bytes in "normal" and
  * "binary extended" modes and up to 512 bytes in "HEX" mode.
- * @ingroup ublox_cellular
+ * @ingroup ublox_sara_r5
  */
-struct TinyGsmUBLOXTcpConfig
+struct TinyGsmSaraR5TcpConfig
     : public TinyGsmTcpConfigPreset<
           /*bufferMode*/ TinyGsmTcpBufferMode::BufferReadAndCheckSize,
           /*muxMode*/ TinyGsmTcpMuxMode::Dynamic,
@@ -100,55 +121,57 @@ struct TinyGsmUBLOXTcpConfig
 
 #if 0
 /**
- * @brief SSL behavior and limits for the u-blox family
+ * @brief SSL behavior and limits for the u-blox SARA-R5.
  * The module supports 5 SSL contexts (called security profiles, numbered 0-4).
  * This library does not support selecting or modifying the security profiles in
  * any way.  The module will always use the default profile.
- * @ingroup ublox_cellular
+ * @ingroup ublox_sara_r5
  */
-struct TinyGsmUBLOXSslConfig : public TinyGsmSslConfigPreset<
-                                  /*contextCount*/ 5> {};
+struct TinyGsmSaraR5SslConfig : public TinyGsmSslConfigPreset<
+                                   /*contextCount*/ 5> {};
 #endif
 
-/// Class for the u-blox family of modems
-/// @ingroup ublox_cellular
-class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
-                     public TinyGsmCellularData<TinyGsmUBLOX>,
-                     public TinyGsmTCP<TinyGsmUBLOX, TinyGsmUBLOXTcpConfig>,
-                     public TinyGsmCalling<TinyGsmUBLOX>,
-                     public TinyGsmSMS<TinyGsmUBLOX>,
-                     public TinyGsmGSMLocation<TinyGsmUBLOX>,
-                     public TinyGsmGPS<TinyGsmUBLOX>,
-                     public TinyGsmTime<TinyGsmUBLOX>,
-                     public TinyGsmBattery<TinyGsmUBLOX> {
-  friend class TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>;
-  friend class TinyGsmCellularData<TinyGsmUBLOX>;
-  friend class TinyGsmTCP<TinyGsmUBLOX, TinyGsmUBLOXTcpConfig>;
-  friend class GsmClient<TinyGsmUBLOX, TinyGsmUBLOXTcpConfig>;
-  friend class TinyGsmCalling<TinyGsmUBLOX>;
-  friend class TinyGsmSMS<TinyGsmUBLOX>;
-  friend class TinyGsmGSMLocation<TinyGsmUBLOX>;
-  friend class TinyGsmGPS<TinyGsmUBLOX>;
-  friend class TinyGsmTime<TinyGsmUBLOX>;
-  friend class TinyGsmBattery<TinyGsmUBLOX>;
+/// Class for the u-blox SARA-R5
+/// @ingroup ublox_sara_r5
+class TinyGsmSaraR5
+    : public TinyGsmModem<TinyGsmSaraR5, TinyGsmSaraR5ModemConfig>,
+      public TinyGsmCellularData<TinyGsmSaraR5>,
+      public TinyGsmTCP<TinyGsmSaraR5, TinyGsmSaraR5TcpConfig>,
+      public TinyGsmCalling<TinyGsmSaraR5>,
+      public TinyGsmSMS<TinyGsmSaraR5>,
+      public TinyGsmGSMLocation<TinyGsmSaraR5>,
+      public TinyGsmGPS<TinyGsmSaraR5>,
+      public TinyGsmTime<TinyGsmSaraR5>,
+      public TinyGsmBattery<TinyGsmSaraR5> {
+  friend class TinyGsmModem<TinyGsmSaraR5, TinyGsmSaraR5ModemConfig>;
+  friend class TinyGsmCellularData<TinyGsmSaraR5>;
+  friend class TinyGsmTCP<TinyGsmSaraR5, TinyGsmSaraR5TcpConfig>;
+  friend class GsmClient<TinyGsmSaraR5, TinyGsmSaraR5TcpConfig>;
+  friend class TinyGsmCalling<TinyGsmSaraR5>;
+  friend class TinyGsmSMS<TinyGsmSaraR5>;
+  friend class TinyGsmGSMLocation<TinyGsmSaraR5>;
+  friend class TinyGsmGPS<TinyGsmSaraR5>;
+  friend class TinyGsmTime<TinyGsmSaraR5>;
+  friend class TinyGsmBattery<TinyGsmSaraR5>;
 
  public:
-  using ModemConfig = TinyGsmUBLOXModemConfig;
-  using TcpConfig   = TinyGsmUBLOXTcpConfig;
+  using ModemConfig = TinyGsmSaraR5ModemConfig;
+  using TcpConfig   = TinyGsmSaraR5TcpConfig;
 
   /*
    * Inner Client
    */
  public:
   /// Inner client
-  /// @ingroup ublox_cellular
-  class GsmClientUBLOX : public GsmClient<TinyGsmUBLOX, TinyGsmUBLOXTcpConfig> {
-    friend class TinyGsmUBLOX;
+  /// @ingroup ublox_sara_r5
+  class GsmClientSaraR5
+      : public GsmClient<TinyGsmSaraR5, TinyGsmSaraR5TcpConfig> {
+    friend class TinyGsmSaraR5;
 
    public:
-    using GsmClient<TinyGsmUBLOX, TinyGsmUBLOXTcpConfig>::connect;
-    using GsmClient<TinyGsmUBLOX, TinyGsmUBLOXTcpConfig>::stop;
-    using TcpConfig = TinyGsmUBLOXTcpConfig;
+    using GsmClient<TinyGsmSaraR5, TinyGsmSaraR5TcpConfig>::connect;
+    using GsmClient<TinyGsmSaraR5, TinyGsmSaraR5TcpConfig>::stop;
+    using TcpConfig = TinyGsmSaraR5TcpConfig;
 
     /*
      * Client constructors and initialization
@@ -158,20 +181,20 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
      * @warning You must call the init() method before attempting to use a
      * client created with this constructor.
      */
-    GsmClientUBLOX() {
+    GsmClientSaraR5() {
       is_secure = false;
     }
     /**
      * @brief Create a new TCP client and bind it to a modem.
      * @param modem Modem instance used by this client.
      *
-     * @note The u-blox modules do not allow you to specify the multiplexing
-     * channel.  The modem will automatically assign a channel when the client
-     * connects to a server.  Use the getMux() function to get the assigned
-     * multiplexing channel number after a successful connection.
+     * @note The SARA-R5 does not allow you to specify the multiplexing channel.
+     * The modem will automatically assign a channel when the client connects to
+     * a server.  Use the getMux() function to get the assigned multiplexing
+     * channel number after a successful connection.
      */
-    explicit GsmClientUBLOX(TinyGsmUBLOX& modem, uint8_t /*mux*/ = 0)
-        : GsmClient<TinyGsmUBLOX, TinyGsmUBLOXTcpConfig>(modem /*, mux*/) {
+    explicit GsmClientSaraR5(TinyGsmSaraR5& modem, uint8_t /*mux*/ = 0)
+        : GsmClient<TinyGsmSaraR5, TinyGsmSaraR5TcpConfig>(modem /*, mux*/) {
       is_secure = false;
       init(&modem);
     }
@@ -182,7 +205,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
    public:
     /**
      * @copydoc GsmClient::connect(const char*, uint16_t, int)
-     * @warning The u-blox modems automatically assign the multiplexing
+     * @warning The SARA-R5 modem automatically assigns the multiplexing
      * channel.  When the modem assigns the mux, the client will be registered
      * there.  An attempt will be made to move any other client that had been at
      * that position in the modem's socket array.  If it cannot be moved, the
@@ -231,14 +254,14 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
    */
  public:
   /// Inner secure client
-  /// @ingroup ublox_cellular
-  class GsmClientSecureUBLOX : public GsmClientUBLOX {
-    friend class TinyGsmUBLOX;
+  /// @ingroup ublox_sara_r5
+  class GsmClientSecureSaraR5 : public GsmClientSaraR5 {
+    friend class TinyGsmSaraR5;
 
    public:
-    using GsmClientUBLOX::connect;
-    using GsmClientUBLOX::stop;
-    using TcpConfig = TinyGsmUBLOXTcpConfig;
+    using GsmClientSaraR5::connect;
+    using GsmClientSaraR5::stop;
+    using TcpConfig = TinyGsmSaraR5TcpConfig;
 
     /*
      * Secure client constructors and initialization
@@ -248,15 +271,15 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
      * @warning You must call the init() method before attempting to use a
      * client created with this constructor.
      */
-    GsmClientSecureUBLOX() {
+    GsmClientSecureSaraR5() {
       is_secure = true;
     }
     /**
      * @brief Create a new secured TCP (SSL) client and bind it to a modem.
-     * @copydetails GsmClientUBLOX::GsmClientUBLOX(TinyGsmUBLOX&, uint8_t)
+     * @copydetails GsmClientSaraR5::GsmClientSaraR5(TinyGsmSaraR5&, uint8_t)
      */
-    explicit GsmClientSecureUBLOX(TinyGsmUBLOX& modem, uint8_t /*mux*/ = 0)
-        : GsmClientUBLOX(modem) {
+    explicit GsmClientSecureSaraR5(TinyGsmSaraR5& modem, uint8_t /*mux*/ = 0)
+        : GsmClientSaraR5(modem) {
       is_secure = true;
     }
   };
@@ -265,10 +288,13 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
    * Public Aliases
    */
  public:
+  /// Typedef for backward compatibility
+  using GsmClientSecureR5 = GsmClientSecureSaraR5;
+
   /// Arduino Client type for this modem.
-  using TinyGsmClient = GsmClientUBLOX;
+  using TinyGsmClient = GsmClientSaraR5;
   /// Secure Arduino Client type for this modem.
-  using TinyGsmClientSecure = GsmClientSecureUBLOX;
+  using TinyGsmClientSecure = GsmClientSecureSaraR5;
 
   /*
    * GSM Modem Constructor
@@ -278,7 +304,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
    * @brief Construct a modem wrapper around a stream transport.
    * @param stream Stream used to communicate with the modem.
    */
-  explicit TinyGsmUBLOX(Stream& stream) : stream(stream) {
+  explicit TinyGsmSaraR5(Stream& stream) : stream(stream) {
     memset(sockets, 0, sizeof(sockets));
   }
 
@@ -288,7 +314,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
  protected:
   bool initImpl(const char* pin) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
-    DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientUBLOX"));
+    DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientSaraR5"));
 
     if (!testAT()) { return false; }
 
@@ -370,17 +396,32 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
   /*
    * Generic network functions
    */
+
  protected:
-  UBLOXRegStatus getRegistrationStatusImpl() {
-    return static_cast<UBLOXRegStatus>(getRegistrationStatusXREG("CGREG"));
+  SaraR5RegStatus getRegistrationStatusImpl() {
+    // Check first for EPS registration
+    SaraR5RegStatus epsStatus =
+        static_cast<SaraR5RegStatus>(getRegistrationStatusXREG("CEREG"));
+
+    // If we're connected on EPS, great!
+    if (epsStatus == SaraR5RegStatus::REG_OK_HOME ||
+        epsStatus == SaraR5RegStatus::REG_OK_ROAMING) {
+      return epsStatus;
+    } else {
+      // Otherwise, check generic network status
+      return static_cast<SaraR5RegStatus>(getRegistrationStatusXREG("CREG"));
+    }
   }
 
   bool isNetworkConnectedImpl() {
-    UBLOXRegStatus s = this->getRegistrationStatus();
-    if (s == UBLOXRegStatus::REG_OK_HOME || s == UBLOXRegStatus::REG_OK_ROAMING)
+    SaraR5RegStatus s = this->getRegistrationStatus();
+    if (s == SaraR5RegStatus::REG_OK_HOME ||
+        s == SaraR5RegStatus::REG_OK_ROAMING ||
+        s == SaraR5RegStatus::REG_SMS_ONLY_ROAMING ||
+        s == SaraR5RegStatus::REG_SMS_ONLY_HOME)
       return true;
-    else if (s == UBLOXRegStatus::REG_UNKNOWN)  // for some reason, it can hang
-                                                // at unknown..
+    else if (s == SaraR5RegStatus::REG_UNKNOWN)  // for some reason, it can hang
+                                                 // at unknown..
       return isDataConnected();
     else
       return false;
@@ -403,19 +444,11 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
   /**
    * @brief Set the radio access technology (RAT) for the modem.
    *
-   * Possible values for selected are:
-   * - 0: GSM / GPRS / eGPRS (single mode)
-   * - 1: GSM / UMTS (dual mode)
-   * - 2: UMTS (single mode)
-   * - 3: LTE (single mode)
-   * - 4: GSM / UMTS / LTE (tri mode)
-   * - 5: GSM / LTE (dual mode)
-   * - 6: UMTS / LTE (dual mode)
-   *
-   * Possible values for preferred are:
-   * - 0: GSM / GPRS / eGPRS
-   * - 2: UTRAN
+   * Possible values for selected and preferred are:
    * - 3: LTE
+   * - 7: LTE Cat M1
+   * - 8: LTE Cat NB1
+   * - 9: GPRS / eGPRS
    *
    * @param selected The selected RAT mode.
    * @param preferred The preferred RAT mode.
@@ -430,14 +463,17 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
   /**
    * @brief Get the current radio access technology (RAT) of the modem.
    * @return The current RAT mode, or -1 if the command or parsing failed.
+   * Possible values are:
+   * - 3: LTE
+   * - 7: LTE Cat M1
+   * - 8: LTE Cat NB1
+   * - 9: GPRS / eGPRS
    */
   int8_t getCurrentRadioAccessTechnology() {
     sendAT(GF("+URAT?"));
     if (waitResponse(10000L, GF("+URAT:")) != 1) { return -1; }
-
     int16_t parsedRat = streamGetIntBefore('\n');
     if (waitResponse() != 1 || parsedRat == -9999) { return -1; }
-
     return static_cast<int8_t>(parsedRat);
   }
 
@@ -448,18 +484,18 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
   // supported yet.
   // If you wish to add certificate management for this module you must (in
   // addition to adding the functions here):
-  //  - Add `#include "TinyGsmSSL.tpp` to the top of the file
+  //  - Add `#include "mixins/TinyGsmSSL.tpp` to the top of the file
   //  - Remove `#define TINY_GSM_MODEM_HAS_SSL` from the top of the file
   //  - Remove the #if 0 / #endif statements bracketing the SSL configuration
   //  structure.
-  //  - Add `public TinyGsmSSL<TinyGsmUBLOX, TinyGsmUBLOXSslConfig>,` to the
+  //  - Add `public TinyGsmSSL<TinyGsmSaraR5, TinyGsmSaraR5SslConfig>,` to the
   //  constructor's initializer list
-  //  - Add `friend class TinyGsmSSL<TinyGsmUBLOX, TinyGsmUBLOXSslConfig>;` to
+  //  - Add `friend class TinyGsmSSL<TinyGsmSaraR5, TinyGsmSaraR5SslConfig>;` to
   //  the friend list
   //  - Make the secure client inherit from the secure client class in the SSL
   //  template.
   //  - Create an inner secure context class inheriting from
-  //  TinyGsmSSLContext<TinyGsmUBLOX, TinyGsmUBLOXSslConfig>
+  //  TinyGsmSSLContext<TinyGsmSaraR5, TinyGsmSaraR5SslConfig>
 
   /*
    * Wifi functions
@@ -470,9 +506,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
    * Cellular data functions
    */
  protected:
-  bool dataConnectImpl(const char* apn, const char* user, const char* pwd) {
-    // dataDisconnect();
-
+  bool dataConnectImpl(const char* apn, const char*, const char*) {
     sendAT(GF("+CGATT=1"));  // attach to Packet Domain service
     if (waitResponse(360000L) != 1) { return false; }
 
@@ -484,56 +518,65 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
     // AT+UPSD=<profile_id>,<param_tag>,<param_val>
     // profile_id = 0 - PSD profile identifier, in range 0-6 (NOT PDP context)
     // param_tag = 1: APN
-    // param_tag = 2: username
-    // param_tag = 3: password
+    // param_tag = 2: username  -> not working for SARA-R5
+    // param_tag = 3: password  -> not working for SARA-R5
     // param_tag = 7: IP address Note: IP address set as "0.0.0.0" means
     //    dynamic IP address assigned during PDP context activation
-    sendAT(GF("+UPSD=0,1,\""), apn, '"');  // Set APN for PSD profile 0
+
+
+    // check all available PDP context identifiers
+    sendAT(GF("+CGDCONT?"));
+    // Example Responses:
+    // +CGDCONT: 0,"IP","payandgo.o2.co.uk","0.0.0.0",0,0,0,0,0,0,0,0,0,0
+    // +CGDCONT:
+    // 1,"IP","payandgo.o2.co.uk.mnc010.mcc234.gprs","10.160.182.234",0,0,0,2,0,0,0,0,0,0
+
+    // While we're still getting responses starting with +CGDCONT:, keep reading
+    // the lines and trying to match the APN. Continue through the final result
+    // code after finding a match so the response is completely consumed.
+    int    rcid = -1;
+    char   strApn[128];
+    bool   found = false;
+    int8_t response;
+    do {
+      response = waitResponse(1000L, GF("+CGDCONT:"), GFP(ModemConfig::GSM_OK),
+                              GFP(ModemConfig::GSM_ERROR));
+      if (response != 1) { break; }
+
+      int parsedCid = streamGetIntBefore(',');
+      streamSkipUntil('\"');  // skip to the opening quote
+      char strPdpType[10];
+      // read the PDP type
+      stream.readBytesUntil('\"', strPdpType, sizeof(strPdpType));
+      streamSkipUntil('\"');  // skip to the next opening quote
+      // read the APN
+      size_t len  = stream.readBytesUntil('\"', strApn, sizeof(strApn) - 1);
+      strApn[len] = '\0';
+      streamSkipUntil('\n');  // throw away the rest of the line
+      if (!found && parsedCid >= 0 && !strcmp(strApn, apn)) {
+        rcid  = parsedCid;
+        found = true;
+      }
+    } while (response == 1);
+
+    // The query must end successfully and return a matching PDP context.
+    if (response != 2 || !found) { return false; }
+
+    sendAT(GF(
+        "+UPSDA=0,4"));  // Deactivate the PDP context associated with profile 0
+    waitResponse(360000L);  // Can return an error if previously not activated
+
+    sendAT(GF("+UPSD=0,100,"),
+           rcid);  // Deactivate the PDP context associated with profile 0
     waitResponse();
 
-    if (user && strlen(user) > 0) {
-      sendAT(GF("+UPSD=0,2,\""), user, '"');  // Set user for PSD profile 0
-      waitResponse();
-    }
-    if (pwd && strlen(pwd) > 0) {
-      sendAT(GF("+UPSD=0,3,\""), pwd, '"');  // Set password for PSD profile 0
-      waitResponse();
-    }
-
-    sendAT(GF("+UPSD=0,7,\"0.0.0.0\""));  // Dynamic IP on PSD profile 0
-    waitResponse();
-
-    // Packet switched data action
-    // AT+UPSDA=<profile_id>,<action>
-    // profile_id = 0: PSD profile identifier, in range 0-6 (NOT PDP context)
-    // action = 3: activate; it activates a PDP context with the specified
-    // profile, using the current parameters
     sendAT(GF(
         "+UPSDA=0,3"));  // Activate the PDP context associated with profile 0
-    if (waitResponse(360000L) != 1) {  // Should return ok
-      return false;
-    }
+    if (waitResponse(360000L) != 1) { return false; }
 
-    // Packet switched network-assigned data - Returns the current (dynamic)
-    // network-assigned or network-negotiated value of the specified parameter
-    // for the active PDP context associated with the specified PSD profile.
-    // AT+UPSND=<profile_id>,<param_tag>
-    // profile_id = 0: PSD profile identifier, in range 0-6 (NOT PDP context)
-    // param_tag = 8: PSD profile status: if the profile is active the return
-    // value is 1, 0 otherwise
-    sendAT(GF("+UPSND=0,8"));  // Check if PSD profile 0 is now active
-    int8_t res = waitResponse(GF(",8,1"), GF(",8,0"));
-    waitResponse();  // Should return another OK
-    if (res == 1) {
-      return true;          // It's now active
-    } else if (res == 2) {  // If it's not active yet, wait for the +UUPSDA URC
-      if (waitResponse(180000L, GF("+UUPSDA: 0")) != 1) {  // 0=successful
-        return false;
-      }
-      streamSkipUntil('\n');  // Ignore the IP address, if returned
-    } else {
-      return false;
-    }
+    sendAT(GF("+UPSD=0,0,2"));  // Set protocol type to IPv4v6 with IPv4
+                                // preferred for internal sockets
+    waitResponse();
 
     return true;
   }
@@ -588,18 +631,12 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
    */
  protected:
   bool enableGPSImpl() {
-    // AT+UGPS=<mode>[,<aid_mode>[,<GNSS_systems>]]
-    // <mode> - 0: GNSS receiver powered off, 1: on
-    // <aid_mode> - 0: no aiding (default)
-    // <GNSS_systems> - 3: GPS + SBAS (default)
-    sendAT(GF("+UGPS=1,0,3"));
-    if (waitResponse(10000L, GF("+UGPS:")) != 1) { return false; }
-    return waitResponse(10000L) == 1;
+    DBG(GF("GPS on SARA-R5 cannot be enabled or disabled"));
+    return true;
   }
   bool disableGPSImpl() {
-    sendAT(GF("+UGPS=0"));
-    if (waitResponse(10000L, GF("+UGPS:")) != 1) { return false; }
-    return waitResponse(10000L) == 1;
+    DBG(GF("GPS on SARA-R5 cannot be enabled or disabled"));
+    return true;
   }
   String inline getUbloxLocationRaw(int8_t sensor) {
     // AT+ULOC=<mode>,<sensor>,<response_type>,<timeout>,<accuracy>
@@ -616,6 +653,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
     // <accuracy> - Target accuracy in meters (1 - 999999)
     sendAT(GF("+ULOC=2,"), sensor, GF(",0,120,1"));
     // wait for first "OK"
+    // waitResponse(10000L) ;
     if (waitResponse(10000L) != 1) { return ""; }
     // wait for the final result - wait full timeout time
     if (waitResponse(120000L, GF("+UULOC:")) != 1) { return ""; }
@@ -624,6 +662,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
     res.trim();
     return res;
   }
+
   String getGsmLocationRawImpl() {
     return getUbloxLocationRaw(2);
   }
@@ -646,10 +685,13 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
     //          - 3: ?? use the combined GNSS receiver and CellLocate service
     //          information ?? - Docs show using sensor 3 and it's documented
     //          for the +UTIME command but not for +ULOC
-    // <response_type> - 0: standard (single-hypothesis) response
+    // <response_type> - 0: standard (single-hypothesis) response  -> +UULOC:
+    // <date>,<time>,<lat>,<long>,<alt>,<uncertainty>
+    //                   1: detailed (single-hypothesis) response  -> +UULOC:
+    //                   <date>,<time>,<lat>,<long>,<alt>,<uncertainty>,<speed>,<direction>,<vertical_acc>,<sensor_used>,<SV_used>,<antenna_status>,<jamming_status>
     // <timeout> - Timeout period in seconds
     // <accuracy> - Target accuracy in meters (1 - 999999)
-    sendAT(GF("+ULOC=2,"), sensor, GF(",0,120,1"));
+    sendAT(GF("+ULOC=2,"), sensor, GF(",1,120,1"));
     // wait for first "OK"
     if (waitResponse(10000L) != 1) { return false; }
     // wait for the final result - wait full timeout time
@@ -806,6 +848,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
   /*
    * Temperature functions
    */
+
   // This would only available for a small number of modules in this group
   // (TOBY-L)
   float getTemperatureImpl() TINY_GSM_ATTR_NOT_IMPLEMENTED;
@@ -861,14 +904,13 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
     return (1 == rsp);
   }
 
-  bool modemStop(uint8_t mux, uint32_t /*maxWaitMs*/,
-                 bool    newlyAllocated = false) {
+  bool modemStop(uint8_t mux, uint32_t maxWaitMs, bool newlyAllocated = false) {
     if (mux >= TcpConfig::kMuxCount || (!newlyAllocated && !isValidMux(mux))) {
       return false;
     }
     // Same command for both secure and non-secure sockets
     sendAT(GF("+USOCL="), mux);
-    return waitResponse() == 1;  // should return within 1s
+    return waitResponse(maxWaitMs) == 1;
   }
 
   bool modemBeginSend(size_t len, uint8_t mux) {
@@ -943,7 +985,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
       if (!isExpectedMux(ret_mux, mux)) { result = 0; }
     }
     if (!result) { sockets[mux]->sock_connected = modemGetConnected(mux); }
-    // DBG("### AvailablE:", result, "on", mux);
+    // DBG("### Available:", result, "on", mux);
     return result;
   }
 
@@ -1004,8 +1046,9 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX, TinyGsmUBLOXModemConfig>,
   Stream& stream;
 
  protected:
-  GsmClientUBLOX* sockets[TcpConfig::kMuxCount];
+  GsmClientSaraR5* sockets[TcpConfig::kMuxCount];
 };
-// cspell:words USOWR
 
-#endif  // SRC_TINYGSMCLIENTUBLOX_H_
+// cspell:words USOWR CSFB UTRAN
+
+#endif  // SRC_TINYGSMCLIENTSARAR5_H_

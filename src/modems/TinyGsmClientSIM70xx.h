@@ -14,9 +14,9 @@
 #define SRC_TINYGSMCLIENTSIM70XX_H_
 #pragma message("TinyGSM:  TinyGsmClientSIM70xx")
 
-#include "TinyGsmModem.tpp"
-#include "TinyGsmCellularData.tpp"
-#include "TinyGsmGPS.tpp"
+#include "mixins/TinyGsmModem.tpp"
+#include "mixins/TinyGsmCellularData.tpp"
+#include "mixins/TinyGsmGPS.tpp"
 
 /// Registration status
 /// @ingroup simcom_sim70xx

@@ -33,11 +33,11 @@
 #define SRC_TINYGSMCLIENTM590_H_
 #pragma message("TinyGSM:  TinyGsmClientM590")
 
-#include "TinyGsmModem.tpp"
-#include "TinyGsmTCP.tpp"
-#include "TinyGsmCellularData.tpp"
-#include "TinyGsmSMS.tpp"
-#include "TinyGsmTime.tpp"
+#include "mixins/TinyGsmModem.tpp"
+#include "mixins/TinyGsmTCP.tpp"
+#include "mixins/TinyGsmCellularData.tpp"
+#include "mixins/TinyGsmSMS.tpp"
+#include "mixins/TinyGsmTime.tpp"
 
 /// Neoway M590 Registration status
 /// @remark The Neoway M590 uses different numbers for registration status than

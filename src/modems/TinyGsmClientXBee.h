@@ -80,14 +80,14 @@
  */
 #define TINY_GSM_XBEE_DROPOUT_TIME 0x64
 
-#include "TinyGsmModem.tpp"
-#include "TinyGsmTCP.tpp"
-#include "TinyGsmSSL.tpp"
-#include "TinyGsmWifi.tpp"
-#include "TinyGsmCellularData.tpp"
-#include "TinyGsmSMS.tpp"
-#include "TinyGsmTemperature.tpp"
-#include "TinyGsmBattery.tpp"
+#include "mixins/TinyGsmModem.tpp"
+#include "mixins/TinyGsmTCP.tpp"
+#include "mixins/TinyGsmSSL.tpp"
+#include "mixins/TinyGsmWifi.tpp"
+#include "mixins/TinyGsmCellularData.tpp"
+#include "mixins/TinyGsmSMS.tpp"
+#include "mixins/TinyGsmTemperature.tpp"
+#include "mixins/TinyGsmBattery.tpp"
 
 /**
  * @brief function decorator to enter command mode for XBee modules, if not

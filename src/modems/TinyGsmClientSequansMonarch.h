@@ -29,8 +29,8 @@
 #define SRC_TINYGSMCLIENTSEQUANSMONARCH_H_
 #pragma message("TinyGSM:  TinyGsmClientSequansMonarch")
 
-#include "TinyGsmModem.tpp"
-#include "TinyGsmTCP.tpp"
+#include "mixins/TinyGsmModem.tpp"
+#include "mixins/TinyGsmTCP.tpp"
 
 // NOTE: This module supports SSL, but we do not support any certificate
 // management yet. Define TINY_GSM_MODEM_HAS_SSL here and do not include the SSL
@@ -43,11 +43,11 @@
 /// The default SSL context to use for SSL connections.
 #define TINY_GSM_MONARCH_DEFAULT_SSL_CTX 1
 
-#include "TinyGsmCellularData.tpp"
-#include "TinyGsmCalling.tpp"
-#include "TinyGsmSMS.tpp"
-#include "TinyGsmTime.tpp"
-#include "TinyGsmTemperature.tpp"
+#include "mixins/TinyGsmCellularData.tpp"
+#include "mixins/TinyGsmCalling.tpp"
+#include "mixins/TinyGsmSMS.tpp"
+#include "mixins/TinyGsmTime.tpp"
+#include "mixins/TinyGsmTemperature.tpp"
 
 /// Registration status
 /// @ingroup sequans_monarch
@@ -473,7 +473,7 @@ class TinyGsmSequansMonarch
   // supported yet.
   // If you wish to add certificate management for this module you must (in
   // addition to adding the functions here):
-  //  - Add `#include "TinyGsmSSL.tpp` to the top of the file
+  //  - Add `#include "mixins/TinyGsmSSL.tpp` to the top of the file
   //  - Remove `#define TINY_GSM_MODEM_HAS_SSL` from the top of the file
   //  - Remove the #if 0 / #endif statements bracketing the SSL configuration
   //  structure.

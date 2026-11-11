@@ -33,13 +33,13 @@
 #define SRC_TINYGSMCLIENTA6_H_
 #pragma message("TinyGSM:  TinyGsmClientA6")
 
-#include "TinyGsmModem.tpp"
-#include "TinyGsmTCP.tpp"
-#include "TinyGsmCellularData.tpp"
-#include "TinyGsmCalling.tpp"
-#include "TinyGsmSMS.tpp"
-#include "TinyGsmTime.tpp"
-#include "TinyGsmBattery.tpp"
+#include "mixins/TinyGsmModem.tpp"
+#include "mixins/TinyGsmTCP.tpp"
+#include "mixins/TinyGsmCellularData.tpp"
+#include "mixins/TinyGsmCalling.tpp"
+#include "mixins/TinyGsmSMS.tpp"
+#include "mixins/TinyGsmTime.tpp"
+#include "mixins/TinyGsmBattery.tpp"
 
 /// Registration status
 /// @ingroup aithinker_a6

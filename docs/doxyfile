@@ -1115,8 +1115,7 @@ RECURSIVE              = YES
 # Note that relative paths are relative to the directory from which Doxygen is
 # run.
 
-EXCLUDE                = ../src/ReadMe.md \
-                         ../tests \
+EXCLUDE                = ../tests \
                          ../lib \
                          ../boards \
                          ../variants \
@@ -1282,7 +1281,7 @@ USE_MDFILE_AS_MAINPAGE = ../README.md
 # command in order to be used as directory documentation.
 # The default value is: YES.
 
-IMPLICIT_DIR_DOCS      = NO
+IMPLICIT_DIR_DOCS      = YES
 
 # The Fortran standard specifies that for fixed formatted Fortran code all
 # characters from position 72 are to be considered as comment. A common
@@ -1447,7 +1446,7 @@ IGNORE_PREFIX          =
 # If the GENERATE_HTML tag is set to YES, Doxygen will generate HTML output
 # The default value is: YES.
 
-GENERATE_HTML          = YES
+GENERATE_HTML          = NO
 
 # The HTML_OUTPUT tag is used to specify where the HTML docs will be put. If a
 # relative path is entered the value of OUTPUT_DIRECTORY will be put in front of

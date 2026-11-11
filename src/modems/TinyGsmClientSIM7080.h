@@ -1,22 +1,20 @@
 /**
- * @file       TinyGsmClientSim7000SSL.h
- * @brief      SIM7000 SSL modem client and modem-trait definitions.
+ * @file       TinyGsmClientSim7080.h
+ * @brief      SIM7070/SIM7080/SIM7090 modem client and modem-trait definitions.
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0
  * @copyright  Copyright (c) 2016 Volodymyr Shymanskyy
  * @date       Nov 2016
  */
 /**
- * @defgroup simcom_sim7000ssl SIMCom SIM7000 (SSL toolkit)
- * @brief Manufacturer: SIMCom. Models: SIM7000 (SSL toolkit)
+ * @defgroup simcom_sim7080 SIMCom SIM7070, SIM7080, SIM7090
+ * @brief Manufacturer: SIMCom. Models: SIM7070, SIM7080, SIM7090.
  * @ingroup simcom_sim70xx
  *
  * # Connection Information
  *
- * - TCP sockets:
- *   - 8
- * - SSL sockets:
- *   - 2
+ * - Combined TCP/SSL sockets:
+ *   - 12
  * - SSL contexts:
  *   - 6
  * - Socket Buffering:
@@ -28,104 +26,124 @@
  * @todo In `configureSSLContext()`: Skip verifying the context number?
  */
 
-#ifndef SRC_TINYGSMCLIENTSIM7000SSL_H_
-#define SRC_TINYGSMCLIENTSIM7000SSL_H_
-#pragma message("TinyGSM:  TinyGsmClientSim7000SSL")
+#ifndef SRC_TINYGSMCLIENTSIM7080_H_
+#define SRC_TINYGSMCLIENTSIM7080_H_
+#pragma message("TinyGSM:  TinyGsmClientSim7080")
+
 
 #include "TinyGsmClientSIM70xx.h"
-#include "TinyGsmTCP.tpp"
-#include "TinyGsmSSL.tpp"
-#include "TinyGsmSMS.tpp"
-#include "TinyGsmGSMLocation.tpp"
-#include "TinyGsmTime.tpp"
-#include "TinyGsmNTP.tpp"
-#include "TinyGsmBattery.tpp"
+#include "mixins/TinyGsmTCP.tpp"
+#include "mixins/TinyGsmSSL.tpp"
+#include "mixins/TinyGsmSMS.tpp"
+#include "mixins/TinyGsmGSMLocation.tpp"
+#include "mixins/TinyGsmTime.tpp"
+#include "mixins/TinyGsmNTP.tpp"
+#include "mixins/TinyGsmBattery.tpp"
 
-/// Basic modem configurations for the SIMCom SIM7000 (SSL toolkit)
-/// @ingroup simcom_sim7000ssl
-struct TinyGsmSim7000SSLModemConfig
+/// Basic modem configurations for the SIMCom SIM7080 modem family
+/// @ingroup simcom_sim7080
+struct TinyGsmSim7080ModemConfig
     : public TinyGsmModemConfigPreset<Sim70xxRegStatus> {
   /// The modem manufacturer
   static constexpr char MODEM_MANUFACTURER[] TINY_GSM_PROGMEM = "SIMCom";
+#if defined(TINY_GSM_MODEM_SIM7070)
   /// The modem model
-  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "SIM7000";
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "SIM7070";
+#elif defined(TINY_GSM_MODEM_SIM7090)
+  /// The modem model
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "SIM7090";
+#else
+  /// The modem model
+  static constexpr char MODEM_MODEL[] TINY_GSM_PROGMEM = "SIM7080";
+#endif
 };
 
-constexpr char TinyGsmSim7000SSLModemConfig::MODEM_MANUFACTURER[]
+constexpr char TinyGsmSim7080ModemConfig::MODEM_MANUFACTURER[]
     __attribute__((weak));
-constexpr char TinyGsmSim7000SSLModemConfig::MODEM_MODEL[]
-    __attribute__((weak));
+constexpr char TinyGsmSim7080ModemConfig::MODEM_MODEL[] __attribute__((weak));
 
 /**
- * @brief TCP behavior and limits for the SIMCom SIM7000 (SSL toolkit).
+ * @brief TCP behavior and limits for the SIMCom SIM7080 modem family.
  *
- * @todo Handle the different number of sockets for TCP and SSL in the code.
+ * Up to 1460 bytes can be sent at a time with CASEND.
+ * NOTE: The manual says 1460, but the actual value seems to be variable.  I
+ * have modules P/N S2-108HB-Z3037 that never report more than 1360 available
+ * and P/N S2-108HB-Z30GJ that top out at 1318.  I'm setting the default to
+ * 1360, but you can change it in the TinyGsmSim7080TcpConfig struct if you need
+ * to.
  *
- * The SIM7000 manual doesn't specify the max size for CASEND, but the SIM7080
- * takes up to 1460, so we'll use that.
- * @ingroup simcom_sim7000ssl
+ * In my testing, if the check for available space in the send buffer reports
+ * anything less than full space available, the modem is on the edge of crashing
+ * and you need to back off until it's fully cleared. Refilling a partially
+ * emptied buffer doesn't go well.
+ * @ingroup simcom_sim7080
  */
-struct TinyGsmSim7000SSLTcpConfig
+struct TinyGsmSim7080TcpConfig
     : public TinyGsmTcpConfigPreset<
           /*bufferMode*/ TinyGsmTcpBufferMode::BufferReadAndCheckSize,
           /*muxMode*/ TinyGsmTcpMuxMode::Static,
-          /*muxCount*/ 8,
-          /*sendMaxSize*/ 1460> {};
+          /*muxCount*/ 12,
+          /*sendMaxSize*/ 1360,
+          /*connectTimeoutS*/ 75,  // default
+          /*stopTimeoutS*/ 15,
+          /*sendTimeoutS*/ 15,
+          /*retransmissionTimeoutS*/ 75,
+          /*minFreeTxBuffer*/ 1318> {};
 
 /**
- * @brief SSL behavior and limits for SIMCom SIM7000 (SSL toolkit).
+ * @brief SSL behavior and limits for the SIMCom SIM7080 modem family.
  * The module supports 6 SSL contexts (0-5).
- * @ingroup simcom_sim7000ssl
+ * @ingroup simcom_sim7080
  */
-struct TinyGsmSim7000SSLSslConfig : public TinyGsmSslConfigPreset<
-                                        /*contextCount*/ 6> {};
+struct TinyGsmSim7080SslConfig : public TinyGsmSslConfigPreset<
+                                     /*contextCount*/ 6> {};
 
-/// Class for the SIMCOM SIM7000 with SSL support using the SSL application
-/// @ingroup simcom_sim7000ssl
-class TinyGsmSim7000SSL
-    : public TinyGsmSim70xx<TinyGsmSim7000SSL, TinyGsmSim7000SSLModemConfig>,
-      public TinyGsmTCP<TinyGsmSim7000SSL, TinyGsmSim7000SSLTcpConfig>,
-      public TinyGsmSSL<TinyGsmSim7000SSL, TinyGsmSim7000SSLSslConfig>,
-      public TinyGsmSMS<TinyGsmSim7000SSL>,
-      public TinyGsmGSMLocation<TinyGsmSim7000SSL>,
-      public TinyGsmTime<TinyGsmSim7000SSL>,
-      public TinyGsmNTP<TinyGsmSim7000SSL>,
-      public TinyGsmBattery<TinyGsmSim7000SSL> {
-  friend class TinyGsmSim70xx<TinyGsmSim7000SSL, TinyGsmSim7000SSLModemConfig>;
-  friend class TinyGsmModem<TinyGsmSim7000SSL, TinyGsmSim7000SSLModemConfig>;
-  friend class TinyGsmCellularData<TinyGsmSim7000SSL>;
-  friend class TinyGsmTCP<TinyGsmSim7000SSL, TinyGsmSim7000SSLTcpConfig>;
-  friend class GsmClient<TinyGsmSim7000SSL, TinyGsmSim7000SSLTcpConfig>;
-  friend class TinyGsmSSL<TinyGsmSim7000SSL, TinyGsmSim7000SSLSslConfig>;
-  friend class TinyGsmSMS<TinyGsmSim7000SSL>;
-  friend class TinyGsmGSMLocation<TinyGsmSim7000SSL>;
-  friend class TinyGsmGPS<TinyGsmSim7000SSL>;
-  friend class TinyGsmTime<TinyGsmSim7000SSL>;
-  friend class TinyGsmNTP<TinyGsmSim7000SSL>;
-  friend class TinyGsmBattery<TinyGsmSim7000SSL>;
+/// Class for the SIMCOM SIM7070, SIM7080, and SIM7090
+/// @ingroup simcom_sim7080
+class TinyGsmSim7080
+    : public TinyGsmSim70xx<TinyGsmSim7080, TinyGsmSim7080ModemConfig>,
+      public TinyGsmTCP<TinyGsmSim7080, TinyGsmSim7080TcpConfig>,
+      public TinyGsmSSL<TinyGsmSim7080, TinyGsmSim7080SslConfig>,
+      public TinyGsmSMS<TinyGsmSim7080>,
+      public TinyGsmGSMLocation<TinyGsmSim7080>,
+      public TinyGsmTime<TinyGsmSim7080>,
+      public TinyGsmNTP<TinyGsmSim7080>,
+      public TinyGsmBattery<TinyGsmSim7080> {
+  friend class TinyGsmSim70xx<TinyGsmSim7080, TinyGsmSim7080ModemConfig>;
+  friend class TinyGsmModem<TinyGsmSim7080, TinyGsmSim7080ModemConfig>;
+  friend class TinyGsmCellularData<TinyGsmSim7080>;
+  friend class TinyGsmTCP<TinyGsmSim7080, TinyGsmSim7080TcpConfig>;
+  friend class GsmClient<TinyGsmSim7080, TinyGsmSim7080TcpConfig>;
+  friend class TinyGsmSSL<TinyGsmSim7080, TinyGsmSim7080SslConfig>;
+  friend class TinyGsmSMS<TinyGsmSim7080>;
+  friend class TinyGsmGSMLocation<TinyGsmSim7080>;
+  friend class TinyGsmGPS<TinyGsmSim7080>;
+  friend class TinyGsmTime<TinyGsmSim7080>;
+  friend class TinyGsmNTP<TinyGsmSim7080>;
+  friend class TinyGsmBattery<TinyGsmSim7080>;
 
  public:
-  using ModemConfig = TinyGsmSim7000SSLModemConfig;
-  using TcpConfig   = TinyGsmSim7000SSLTcpConfig;
-  using SslConfig   = TinyGsmSim7000SSLSslConfig;
+  using ModemConfig = TinyGsmSim7080ModemConfig;
+  using TcpConfig   = TinyGsmSim7080TcpConfig;
+  using SslConfig   = TinyGsmSim7080SslConfig;
   using GsmSecureContext =
-      TinyGsmSSL<TinyGsmSim7000SSL,
-                 TinyGsmSim7000SSLSslConfig>::gsmSecureContext;
+      TinyGsmSSL<TinyGsmSim7080, TinyGsmSim7080SslConfig>::gsmSecureContext;
 
   /*
    * Inner Client
    */
  public:
   /// Inner client
-  /// @ingroup simcom_sim7000ssl
-  class GsmClientSim7000SSL
-      : public GsmClient<TinyGsmSim7000SSL, TinyGsmSim7000SSLTcpConfig> {
-    friend class TinyGsmSim7000SSL;
+  /// @ingroup simcom_sim7080
+  class GsmClientSim7080
+      : public GsmClient<TinyGsmSim7080, TinyGsmSim7080TcpConfig> {
+    friend class TinyGsmSim7080;
 
    public:
-    using GsmClient<TinyGsmSim7000SSL, TinyGsmSim7000SSLTcpConfig>::connect;
-    using GsmClient<TinyGsmSim7000SSL, TinyGsmSim7000SSLTcpConfig>::stop;
-    using TcpConfig = TinyGsmSim7000SSLTcpConfig;
+    using GsmClient<TinyGsmSim7080, TinyGsmSim7080TcpConfig>::init;
+    using GsmClient<TinyGsmSim7080, TinyGsmSim7080TcpConfig>::connect;
+    using GsmClient<TinyGsmSim7080, TinyGsmSim7080TcpConfig>::stop;
+    using TcpConfig = TinyGsmSim7080TcpConfig;
 
     /*
      * Client constructors and initialization
@@ -135,7 +153,7 @@ class TinyGsmSim7000SSL
      * @warning You must call the init() method before attempting to use a
      * client created with this constructor.
      */
-    GsmClientSim7000SSL() {
+    GsmClientSim7080() {
       is_secure = false;
     }
     /**
@@ -144,18 +162,41 @@ class TinyGsmSim7000SSL
      * @param modem Modem instance used by this client.
      * @param mux The **zero-indexed** position of this client in the
      * corresponding modem's socket array.  This is identical to the identifier
-     * the modem uses internally to identify the socket for the SIM7000.
+     * the modem uses internally to identify the socket for the SIM7080.
      *
-     * @note The SIM7000 allows you choose the multiplexing channel number, but
-     * if the input mux channel number is already in use and other mux channels
-     * are available, this library will select the next available one.  Use the
-     * getMux() function to get the assigned multiplexing channel number after a
-     * successful connection.
+     * @note The SIM7080 and similar variants allow you choose the multiplexing
+     * channel number, but if the input mux channel number is already in use and
+     * other mux channels are available, this library will select the next
+     * available one.  Use the getMux() function to get the assigned
+     * multiplexing channel number after a successful connection.
      */
-    explicit GsmClientSim7000SSL(TinyGsmSim7000SSL& modem, uint8_t mux = 0)
-        : GsmClient<TinyGsmSim7000SSL, TinyGsmSim7000SSLTcpConfig>(modem, mux) {
+    explicit GsmClientSim7080(TinyGsmSim7080& modem, uint8_t mux = 0)
+        : GsmClient<TinyGsmSim7080, TinyGsmSim7080TcpConfig>(modem, mux) {
       is_secure = false;
       init(&modem, mux);
+    }
+
+    /**
+     * @brief Initialize this client with modem context and multiplexing
+     * channel.
+     *
+     * @param modem Pointer to the modem instance.
+     * @param mux The **zero-indexed** position of this client in the
+     * corresponding modem's socket array.
+     * @param strictAttach If true, require the requested mux for static mux
+     * clients.
+     * @return true if initialization completed.
+     * @note The SIM7080 uses an init() override to set the real maximum send
+     * size for the TCP client.
+     */
+    bool init(TinyGsmSim7080* modem, uint8_t mux = 0,
+              bool strictAttach = false) override {
+      if (!this->attachToModem(this, modem, mux, TcpConfig::kMuxCount,
+                               strictAttach)) {
+        return false;
+      }
+      realMaxSendSize = TcpConfig::kSendMaxSize;
+      return true;
     }
 
     /*
@@ -168,6 +209,9 @@ class TinyGsmSim7000SSL
      * Extended Client API
      */
     // No extra extended API functions
+
+   protected:
+    size_t realMaxSendSize = TcpConfig::kSendMaxSize;
   };
 
   /*
@@ -175,16 +219,17 @@ class TinyGsmSim7000SSL
    */
  public:
   /// Inner secure client
-  /// @ingroup simcom_sim7000ssl
-  class GsmClientSecureSim7000SSL
-      : public GsmClientSecure<GsmClientSim7000SSL, TinyGsmSim7000SSL> {
-    friend class TinyGsmSim7000SSL;
+  /// @ingroup simcom_sim7080
+  class GsmClientSecureSim7080
+      : public GsmClientSecure<GsmClientSim7080, TinyGsmSim7080> {
+    friend class TinyGsmSim7080;
 
    public:
+    using GsmClientSim7080::connect;
+    using GsmClientSecure<GsmClientSim7080, TinyGsmSim7080>::init;
     using GsmClientSecure::GsmClientSecure;
-    using GsmClientSim7000SSL::connect;
-    using GsmClientSim7000SSL::stop;
-    using TcpConfig = TinyGsmSim7000SSLTcpConfig;
+    using GsmClientSim7080::stop;
+    using TcpConfig = TinyGsmSim7080TcpConfig;
 
     // Because we have the same potential range of mux numbers for secure and
     // insecure connections, we don't need to re-check for mux number
@@ -212,7 +257,7 @@ class TinyGsmSim7000SSL
       // this module accepts PSK credentials only as a converted PSK table
       if (sslContext->sslAuthMode == SSLAuthMode::PRE_SHARED_KEYS &&
           sslContext->pskTableName[0] == '\0') {
-        DBG("### The SIM7000 requires a PSK table; identity/key pairs are "
+        DBG("### The SIM7080 requires a PSK table; identity/key pairs are "
             "not supported.");
         return 0;
       }
@@ -232,25 +277,24 @@ class TinyGsmSim7000SSL
   };
 
   /// Typedef for backward compatibility
-  using GsmClientSecureSIM7000SSL = GsmClientSecureSim7000SSL;
+  using GsmClientSecureSIM7080 = GsmClientSecureSim7080;
 
   /*
    * Inner Secure Context
    */
  public:
   /// Inner secure context
-  /// @ingroup simcom_sim7000ssl
-  class GsmSecureContextSim7000SSL
-      : public ::GsmSecureContext<TinyGsmSim7000SSL,
-                                  TinyGsmSim7000SSLSslConfig> {
-    friend class TinyGsmSim7000SSL;
+  /// @ingroup simcom_sim7080
+  class GsmSecureContextSim7080
+      : public ::GsmSecureContext<TinyGsmSim7080, TinyGsmSim7080SslConfig> {
+    friend class TinyGsmSim7080;
 
    public:
-    using ::GsmSecureContext<TinyGsmSim7000SSL,
-                             TinyGsmSim7000SSLSslConfig>::GsmSecureContext;
+    using ::GsmSecureContext<TinyGsmSim7080,
+                             TinyGsmSim7080SslConfig>::GsmSecureContext;
 
     /// Unregister this context from its modem.
-    ~GsmSecureContextSim7000SSL() {}
+    ~GsmSecureContextSim7080() {}
   };
 
   /*
@@ -258,11 +302,11 @@ class TinyGsmSim7000SSL
    */
  public:
   /// Arduino Client type for this modem.
-  using TinyGsmClient = GsmClientSim7000SSL;
+  using TinyGsmClient = GsmClientSim7080;
   /// Secure Arduino Client type for this modem.
-  using TinyGsmClientSecure = GsmClientSecureSim7000SSL;
+  using TinyGsmClientSecure = GsmClientSecureSim7080;
   /// Security-context type for this modem.
-  using TinyGsmSecureContext = GsmSecureContextSim7000SSL;
+  using TinyGsmSecureContext = GsmSecureContextSim7080;
 
   /*
    * GSM Modem Constructor
@@ -272,9 +316,8 @@ class TinyGsmSim7000SSL
    * @brief Construct a modem wrapper around a stream transport.
    * @param stream Stream used to communicate with the modem.
    */
-  explicit TinyGsmSim7000SSL(Stream& stream)
-      : TinyGsmSim70xx<TinyGsmSim7000SSL, TinyGsmSim7000SSLModemConfig>(
-            stream) {
+  explicit TinyGsmSim7080(Stream& stream)
+      : TinyGsmSim70xx<TinyGsmSim7080, TinyGsmSim7080ModemConfig>(stream) {
     memset(sockets, 0, sizeof(sockets));
   }
 
@@ -282,14 +325,31 @@ class TinyGsmSim7000SSL
    * Basic functions
    */
  protected:
+  bool testATImpl(uint32_t timeout_ms) {
+    for (uint32_t start = millis(); millis() - start < timeout_ms;) {
+      sendAT(GF(""));
+      int8_t resp = waitResponse(200L, GFP(ModemConfig::GSM_OK),
+                                 GFP(ModemConfig::GSM_ERROR),
+                                 GFP(ModemConfig::GSM_AT));
+      if (resp == 1) {
+        return true;
+      } else if (resp == 3) {
+        waitResponse(200L);  // get the OK
+        DBG(GF("## Turning off echo!"));
+        sendAT(GF("E0"));  // Echo Off
+        waitResponse(2000L);
+      }
+      delay(100);
+    }
+    return false;
+  }
+
   bool initImpl(const char* pin) {
     DBG(GF("### TinyGSM Version:"), TINYGSM_VERSION);
-    DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientSIM7000SSL"));
+    DBG(GF("### TinyGSM Compiled Module:  TinyGsmClientSIM7080"));
 
-    if (!testAT()) { return false; }
-
-    sendAT(GF("E0"));  // Echo Off
-    if (waitResponse() != 1) { return false; }
+    bool gotATOK = testAT();
+    if (!gotATOK) { return false; }
 
 #ifdef TINY_GSM_DEBUG
     sendAT(GF("+CMEE=2"));  // turn on verbose error codes
@@ -325,7 +385,7 @@ class TinyGsmSim7000SSL
     // sockets asking if any data is available
     bool check_socks = false;
     for (uint8_t mux = 0; mux < TcpConfig::kMuxCount; mux++) {
-      GsmClientSim7000SSL* sock = sockets[mux];
+      GsmClientSim7080* sock = sockets[mux];
       if (sock && sock->got_data) {
         sock->got_data = false;
         check_socks    = true;
@@ -340,7 +400,19 @@ class TinyGsmSim7000SSL
   /*
    * Power functions
    */
-  // Follows functions as inherited from TinyGsmClientSIM70xx.h
+ protected:
+  bool restartImpl(const char* pin) {
+    bool success = true;
+
+    bool gotATOK = testAT();
+    if (!gotATOK) { return false; }
+
+    sendAT(GF("+CREBOOT"));  // Reboot
+    success &= waitResponse() == 1;
+    waitResponse(30000L, GF("SMS Ready"));
+    success &= initImpl(pin);
+    return success;
+  }
 
   /*
    * Generic network functions
@@ -358,11 +430,6 @@ class TinyGsmSim7000SSL
   /*
    * Secure socket layer (SSL) certificate management functions
    */
-
-  //  NOTE: These functions are copied from the SIM7080 implementation. Per the
-  //  AT command manual, the commands are identical and **should** work for both
-  //  modules. BUT I (SRGDamia1) have done no testing to confirm this.
-
   // The name of the certificate/key/password file. The file name must
   // have type like ".pem" or ".der".
   // NOTE: Uploading the certificate only happens by filename, the type of
@@ -399,7 +466,7 @@ class TinyGsmSim7000SSL
     // we don't write the file. If we don't write something within 10 seconds
     // (the <input time>), the terminal will timeout and send back an 'OK' at
     // the 10s mark.
-    success &= waitResponse(10500L, GF("DOWNLOAD"),
+    success &= waitResponse(10500L, GF("DOWNLOAD"), GFP(ModemConfig::GSM_OK),
                             GFP(ModemConfig::GSM_ERROR)) == 1;
 
     if (success) {
@@ -472,7 +539,7 @@ class TinyGsmSim7000SSL
 
     // wait for some characters to be available
     uint32_t start = millis();
-    while (!stream.available() && millis() - start < 10000) { yield(); }
+    while (!stream.available() && millis() - start < 10000) {}
 
     for (int i = 0; i < print_len; i++) {
       int      c;
@@ -528,6 +595,7 @@ class TinyGsmSim7000SSL
     //  AT+CSSLCFG="CONVERT",<ssltype>,<cname>[,<keyname>[,<passkey>]]
     // <ssltype> 2=QAPI_NET_SSL_CA_LIST_E
     // <cname> name of certificate file
+    // NOTE:  despite docs using caps, "convert" must be in lower case
     sendAT(GF("+CSSLCFG=\"convert\",2,\""), ca_cert_name, '"');
     return waitResponse(5000L) == 1;
     // After conversion, the AT manual suggests you delete the files!
@@ -542,6 +610,7 @@ class TinyGsmSim7000SSL
     // <cname> name of certificate file
     // <keyname> name of key file (for client cert/key pairs)
     // <passkey> passkey for the client key file [NOT SUPPORTED BY TINYGSM]
+    // NOTE:  despite docs using caps, "convert" must be in lower case
     sendAT(GF("+CSSLCFG=\"convert\",1,\""), client_cert_name, GF("\",\""),
            client_cert_key, '"');
     return waitResponse(5000L) == 1;
@@ -556,6 +625,7 @@ class TinyGsmSim7000SSL
     // <cname> name of PSK table file
     // <keyname> not used for PSK tables
     // <passkey> not used for PSK tables
+    // NOTE:  despite docs using caps, "convert" must be in lower case
     sendAT(GF("+CSSLCFG=\"convert\",3,\""), psk_table_name, '"');
     return waitResponse(5000L) == 1;
     // After conversion, the AT manual suggests you delete the files!
@@ -588,9 +658,16 @@ class TinyGsmSim7000SSL
     // For who only knows what reason, doing so screws up the rest of the
     // process
 
+    // Check the APN returned by the server
+    // not sure why, but the connection is more consistent with this
+    sendAT(GF("+CGNAPN"));
+    waitResponse();
+
     // Bearer settings for applications based on IP
     // Set the user name and password
-    // AT+CNCFG=<ip_type>[,<APN>[,<usename>,<password>[,<authentication>]]]
+    // AT+CNCFG=<pdpidx>,<ip_type>,[<APN>,[<usename>,<password>,[<authentication>]]]
+    // <pdpidx> PDP Context Identifier, 0-3 - for reasons not understood by me,
+    //          use PDP context identifier of 0 for what we defined as 1 above
     // <ip_type> 0: Dual PDN Stack
     //           1: Internet Protocol Version 4
     //           2: Internet Protocol Version 6
@@ -599,36 +676,47 @@ class TinyGsmSim7000SSL
     //                  2: CHAP
     //                  3: PAP or CHAP
     if (pwd && strlen(pwd) > 0 && user && strlen(user) > 0) {
-      sendAT(GF("+CNCFG=1,\""), apn, GF("\",\""), user, GF("\",\""), pwd,
+      sendAT(GF("+CNCFG=0,1,\""), apn, GF("\",\""), user, GF("\",\""), pwd,
              GF("\",3"));
       waitResponse();
     } else if (user && strlen(user) > 0) {
       // Set the user name only
-      sendAT(GF("+CNCFG=1,\""), apn, GF("\",\""), user, '"');
+      sendAT(GF("+CNCFG=0,1,\""), apn, GF("\",\""), user, '"');
       waitResponse();
     } else {
       // Set the APN only
-      sendAT(GF("+CNCFG=1,\""), apn, '"');
+      sendAT(GF("+CNCFG=0,1,\""), apn, '"');
       waitResponse();
     }
 
     // Activate application network connection
-    // This is for most other supported applications outside of the
-    // TCP application toolkit (ie, SSL)
-    // AT+CNACT=<mode>,<action>
-    // <mode> 0: Deactive
-    //        1: Active
-    //        2: Auto Active
+    // AT+CNACT=<pdpidx>,<action>
+    // <pdpidx> PDP Context Identifier - for reasons not understood by me,
+    //          use PDP context identifier of 0 for what we defined as 1 above
+    // <action> 0: Deactive
+    //          1: Active
+    //          2: Auto Active
     bool res    = false;
     int  ntries = 0;
     while (!res && ntries < 5) {
-      sendAT(GF("+CNACT=1,\""), apn, '"');
-      res = waitResponse(60000L, GF("+APP PDP: ACTIVE"),
-                         GF("+APP PDP: DEACTIVE"),
+      sendAT(GF("+CNACT=0,1"));
+      res = waitResponse(60000L, GF("+APP PDP: 0,ACTIVE"),
+                         GF("+APP PDP: 0,DEACTIVE"),
                          GFP(ModemConfig::GSM_ERROR)) == 1;
       waitResponse();
       ntries++;
     }
+
+    // Set the PDP context for DNS lookup
+    sendAT(GF("+CDNSPDPID=0"));
+    if (waitResponse() != 1) { return false; }
+
+#if TINY_GSM_USE_PUBLIC_DNS
+    // Override network-assigned DNS with Google Public DNS when requested.
+    sendAT(GF("+CDNSCFG=\"8.8.8.8\",\"8.8.4.4\""));
+    // This optional override is not required for the packet data connection.
+    waitResponse();
+#endif
 
     return res;
   }
@@ -636,7 +724,7 @@ class TinyGsmSim7000SSL
   bool dataDisconnectImpl() {
     // Shut down the general application TCP/IP connection
     // CNACT will close *all* open application connections
-    sendAT(GF("+CNACT=0"));
+    sendAT(GF("+CNACT=0,0"));
     if (waitResponse(60000L) != 1) { return false; }
 
     sendAT(GF("+CGATT=0"));  // Deactivate the bearer context
@@ -684,7 +772,56 @@ class TinyGsmSim7000SSL
   /*
    * NTP server functions
    */
-  // Follows all NTP server functions as inherited from TinyGsmNTP.tpp
+ protected:
+  bool NTPServerSyncImpl(const char* server, int TimeZone) {
+    // Set bearer profile to associate with NTP sync
+    // this may fail, it's not supported by all modules
+    sendAT(GF("+CNTPCID=0"));  // CID must be 0. With 1 (like other modules)
+                               // does not work!
+    waitResponse(10000L);
+
+    // Set NTP server and timezone - write command
+    // AT+CNTP=<ntpserver>[,<time zone>][,<cid>][,<mode>]
+    // <ntpserver> - NTP server’s url
+    // <time zone> - Local time zone, the range is (-47 to 48), in fact, time
+    // zone range (-12 to 12), but taking into account that some countries and
+    // regions will use half time zone, or even fourth time zone, so the entire
+    // extended four time zones X, so that when the time zone of the input
+    // integers are used, without the need for decimal. Time zone in front of
+    // the West if it is a negative number indicates the time zone.
+    // <cid> - Bearer profile identifier, refer to <pdpidx> of AT+CNACT
+    // <mode> - print UTC time on uart and set to local time
+    //        - 0 Just set UTC to localtime
+    //        - 1 Just output UTC time to AT port
+    //        - 2 Set UTC to localtime and output UTC time to AT port
+    sendAT(GF("+CNTP=\""), server, GF("\","), TimeZone, GF(",0,2"));
+    if (waitResponse(10000L) != 1) { return false; }
+
+    // TODO: Should we have a "quick fail" here? We don't want to wait for the
+    // time sync to finish here, but if we don't wait up to the maximum possible
+    // response time, will the "+CNTP:" end up mangled in the responses to a
+    // later command?  The waitForTimeSync() function calls the exact command
+    // repeatedly waiting for a response within 10s each time.  Are those going
+    // to cause trouble?
+
+    // Request network synchronization - execution command
+    sendAT(GF("+CNTP"));
+    if (waitResponse(10000L, GF("+CNTP:")) == 1) {
+      // Return: +CNTP: <code>[,<time>]
+      // <code> - Result code of the NTP synchronization
+      //    - 1 UTC time synchronization is successful
+      //    - 61 Network Error
+      //    - 62 DNS resolution error
+      //    - 63 Connection Error
+      //    - 64 Service response error
+      //    - 65 Service Response Timeout
+      int code = stream.parseInt();
+      // Throw away the rest of the line, since we don't care about it here
+      streamSkipUntil('\n');
+      return code == 1;
+    }
+    return false;
+  }
 
   /*
    * BLE functions
@@ -761,6 +898,9 @@ class TinyGsmSim7000SSL
     //              3: QAPI_NET_SSL_PROTOCOL_TLS_1_2
     //              4: QAPI_NET_SSL_PROTOCOL_DTLS_1_0
     //              5: QAPI_NET_SSL_PROTOCOL_DTLS_1_2
+    //              6: QAPI_NET_SSL_PROTOCOL_TLS_1_3 (only supported with 2117
+    //              firmware baseline)
+    // NOTE:  despite docs using caps, "sslversion" must be in lower case
     int8_t s70x_ssl_version = 3;
     // convert the ssl version into the format for this command
     switch (sslVersion) {
@@ -1088,8 +1228,8 @@ class TinyGsmSim7000SSL
     // This isn't ideal; hopefully the compiler will save us from ourselves. We
     // cannot use a dynamic cast because Arduino compiles with -fno-rtti.
     if (ssl) {
-      const GsmClientSecureSim7000SSL* thisClient =
-          static_cast<const GsmClientSecureSim7000SSL*>(sockets[mux]);
+      const GsmClientSecureSim7080* thisClient =
+          static_cast<const GsmClientSecureSim7080*>(sockets[mux]);
       uint8_t sslCtxIndex = thisClient->sslCtxIndex;
 
       // NOTE: We cannot link the SSL context or set the certificates until
@@ -1111,12 +1251,20 @@ class TinyGsmSim7000SSL
     DBG("### port:", port);
 
     // actually open the connection
-    // AT+CAOPEN=<cid>[,<conn_type>],<server>,<port>
+    // AT+CAOPEN=<cid>,<pdp_index>,<conn_type>,<server>,<port>[,<recv_mode>]
     // <cid> TCP/UDP identifier
+    // <pdp_index> Index of PDP connection; we set up PCP context 1 above, but
+    // must use 0 here
     // <conn_type> "TCP" or "UDP"
-    // NOTE:  the "TCP" can't be included
-    sendAT(GF("+CAOPEN="), mux, GF(",\""), host, GF("\","), port);
-    if (waitResponse(timeout_ms, GF("+CAOPEN:")) != 1) { return false; }
+    // <recv_mode> 0: The received data can only be read manually using
+    // AT+CARECV=<cid>
+    //             1: After receiving the data, it will automatically report
+    //             URC:
+    //                +CAURC:
+    //                "recv",<id>,<length>,<remoteIP>,<remote_port><CR><LF><data>
+    // NOTE:  including the <recv_mode> fails
+    sendAT(GF("+CAOPEN="), mux, GF(",0,\"TCP\",\""), host, GF("\","), port);
+    if (waitResponse(timeout_ms, GF("+CAOPEN:")) != 1) { return 0; }
     // returns OK/r/n/r/n+CAOPEN: <cid>,<result>
     // <result> 0: Success
     //          1: Socket error
@@ -1143,9 +1291,19 @@ class TinyGsmSim7000SSL
     if (!isExpectedMux(ret_mux, mux) || 0 != res) {
       DBG(GF("### Connection failed for mux"), mux);
       DBG(GF("Instead got"), ret_mux, GF("with result"), res);
+      return false;
     }
 
-    return isExpectedMux(ret_mux, mux) && 0 == res;
+    // Immediately after connecting, before sending any data, we need to check
+    // actual the send buffer size, so we can wait for it to be available. The
+    // actual size is smaller than the size in the manual and seems to be
+    // variable, so we need to account for that when waiting for the buffer to
+    // be available.
+    sockets[mux]->realMaxSendSize = modemGetSendLength(mux);
+    // DBG(GF("### Real max send size for mux"), mux, GF("is"),
+    //     sockets[mux]->realMaxSendSize);
+
+    return true;
   }
 
   bool modemStop(uint8_t mux, uint32_t maxWaitMs) {
@@ -1165,17 +1323,59 @@ class TinyGsmSim7000SSL
   // Between the modemBeginSend and modemEndSend, modemSend calls:
   // stream.write(reinterpret_cast<const uint8_t*>(buff), len);
   // stream.flush();
-  size_t modemEndSend(size_t len, uint8_t mux) {
+  size_t modemEndSend(size_t len, uint8_t) {
+    // Nothing but an OK after posting data
+    if (waitResponse() != 1) { return 0; }
+    return len;
+  }
+  size_t modemGetSendLength(uint8_t mux) {
     if (!isValidMux(mux)) { return 0; }
-    // after posting data, module responds with:
-    //+CASEND: <cid>,<result>,<sendlen>
-    if (waitResponse(GF("+CASEND:")) != 1) { return 0; }
-    int16_t  ret_mux = streamGetIntBefore(',');       // check mux
-    bool     result  = streamGetIntBefore(',') == 0;  // check result
-    uint16_t sent    = streamGetIntBefore('\n');      // check send length
-    if (sent != len) { DBG("### Sent:", sent, "of", len, "on", mux); }
-    if (isExpectedMux(ret_mux, mux) && result) { return sent; }
-    return 0;
+    // Sending only the mux number will return the number of bytes left in the
+    // send buffer (that we can soon fill up with our next send attempt)
+    sendAT(GF("+CASEND="), mux);
+    if (waitResponse(GF("+CASEND:")) != 1) {
+      // If this returns anything other than `+CASEND: <mux>,<leftsize>`, we
+      // assume the send buffer is empty and we can send the maximum size.  If
+      // the send buffer is empty, the module will definitely return an error.
+      // If the wait times out or returns something else, we treat that
+      // identically.
+      return TcpConfig::kSendMaxSize;
+    }
+    size_t leftsize = streamGetIntBefore('\n');
+    waitResponse();  // final ok
+    if (leftsize > TcpConfig::kSendMaxSize) { return TcpConfig::kSendMaxSize; }
+    return leftsize;
+  }
+
+  size_t modemWaitForSend(uint8_t mux, uint32_t timeout_ms) {
+    if (!isValidMux(mux)) { return 0; }
+    size_t sendLength = modemGetSendLength(mux);
+#if defined(TINY_GSM_DEBUG)
+    if (sendLength != sockets[mux]->realMaxSendSize) {
+      DBG(GF("### Full send buffer not available! Expected it to have"),
+          sockets[mux]->realMaxSendSize, GF("bytes, but it has"), sendLength);
+    }
+    if (sendLength < sockets[mux]->realMaxSendSize) {
+      DBG(GF(
+          "### Waiting up to 15s for sufficient available send buffer space"));
+    }
+#endif
+    uint32_t start = millis();
+    while (sendLength < sockets[mux]->realMaxSendSize &&
+           millis() - start < timeout_ms && sockets[mux]->sock_connected) {
+      delay(250);
+      sendLength = modemGetSendLength(mux);
+#if defined(TINY_GSM_DEBUG)
+      if (sendLength >= sockets[mux]->realMaxSendSize) {
+        DBG(GF("### Send buffer has"), sendLength, GF("available after"),
+            millis() - start, GF("ms"));
+      }
+#endif
+    }
+#if defined(TINY_GSM_DEBUG)
+    if (sendLength == 0) { DBG(GF("### No available send buffer!")); }
+#endif
+    return sendLength;
   }
 
   size_t modemRead(size_t size, uint8_t mux) {
@@ -1202,8 +1402,6 @@ class TinyGsmSim7000SSL
     waitResponse();  // final ok
 
     // make sure the sock available number is accurate again
-    // the module is **EXTREMELY** testy about being asked to read more from
-    // the buffer than exists; it will freeze until a hard reset or power cycle!
     sockets[mux]->sock_available = modemGetAvailable(mux);
     return len_read;
   }
@@ -1235,7 +1433,7 @@ class TinyGsmSim7000SSL
           for (int16_t extra_mux = muxNo; extra_mux <
                TinyGsmMin(ret_mux, static_cast<int16_t>(TcpConfig::kMuxCount));
                extra_mux++) {
-            GsmClientSim7000SSL* isock = sockets[extra_mux];
+            GsmClientSim7080* isock = sockets[extra_mux];
             if (isock) { isock->sock_available = 0; }
           }
           muxNo = ret_mux;
@@ -1245,7 +1443,7 @@ class TinyGsmSim7000SSL
         // so we set any we haven't gotten to yet to 0
         for (int16_t extra_mux = muxNo; extra_mux < TcpConfig::kMuxCount;
              extra_mux++) {
-          GsmClientSim7000SSL* isock = sockets[extra_mux];
+          GsmClientSim7080* isock = sockets[extra_mux];
           if (isock) { isock->sock_available = 0; }
         }
         break;
@@ -1270,15 +1468,16 @@ class TinyGsmSim7000SSL
   }
 
   bool modemGetConnected(uint8_t mux) {
-    // NOTE: This function gets status for all sockets at once, so we don't
+    // NOTE: This function gets the status for all sockets at once, so we don't
     // check if the specific mux is valid until right before returning the value
     // for that mux.
-    // NOTE:  This gets the state of all connections that have been opened since
-    // the last connection
+    // NOTE:  This gets the state of all connections that have been opened
+    // since the last connection
     sendAT(GF("+CASTATE?"));
 
     for (int16_t muxNo = 0; muxNo < TcpConfig::kMuxCount; muxNo++) {
-      // after the last connection, there's an ok, so we catch it right away
+      // after the last connection, there's an ok, so we try to catch it right
+      // away
       int res = waitResponse(3000, GF("+CASTATE:"), GFP(ModemConfig::GSM_OK),
                              GFP(ModemConfig::GSM_ERROR));
       // if we get the +CASTATE: response, read the mux number and the status
@@ -1299,7 +1498,7 @@ class TinyGsmSim7000SSL
           for (int16_t extra_mux = muxNo; extra_mux <
                TinyGsmMin(ret_mux, static_cast<int16_t>(TcpConfig::kMuxCount));
                extra_mux++) {
-            GsmClientSim7000SSL* isock = sockets[extra_mux];
+            GsmClientSim7080* isock = sockets[extra_mux];
             if (isock) { isock->sock_connected = false; }
           }
           muxNo = ret_mux;
@@ -1309,7 +1508,7 @@ class TinyGsmSim7000SSL
         // so we set any we haven't gotten to yet to 0
         for (int16_t extra_mux = muxNo; extra_mux < TcpConfig::kMuxCount;
              extra_mux++) {
-          GsmClientSim7000SSL* isock = sockets[extra_mux];
+          GsmClientSim7080* isock = sockets[extra_mux];
           if (isock) { isock->sock_connected = false; }
         }
         break;
@@ -1389,9 +1588,9 @@ class TinyGsmSim7000SSL
   }
 
  protected:
-  GsmClientSim7000SSL* sockets[TcpConfig::kMuxCount];
+  GsmClientSim7080* sockets[TcpConfig::kMuxCount];
 };
 
-// cspell:words CASEND configureSSLSNI
+// cspell:words CASEND gotATOK configureSSLSNI
 
-#endif  // SRC_TINYGSMCLIENTSIM7000SSL_H_
+#endif  // SRC_TINYGSMCLIENTSIM7080_H_

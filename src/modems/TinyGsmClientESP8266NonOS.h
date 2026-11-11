@@ -35,7 +35,7 @@
 #pragma message("TinyGSM:  TinyGsmClientESP8266NonOS")
 
 #include "TinyGsmClientEspressif.h"
-#include "TinyGsmTCP.tpp"
+#include "mixins/TinyGsmTCP.tpp"
 
 // NOTE: This module supports SSL, but we do not support any certificate
 // management for the non-OS version of the ESP8266 firmware.  Define

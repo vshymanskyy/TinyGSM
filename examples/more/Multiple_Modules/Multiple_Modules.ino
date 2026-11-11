@@ -5,7 +5,8 @@
  * same code.
  *
  * The key thing to notice is that instead of defining the modem type and
- * including the TinyGsmClient.h file, it includes the specific modem headers.
+ * including the TinyGsmClient.h file, it includes the specific modem headers
+ * from the modems subfolder.
  * The global aliases `TinyGsm`, `TinyGsmClient`, and `TinyGsmClientSecure`
  * select only one modem type. Use each modem class and its scoped client
  * aliases when multiple modem headers are included.
@@ -92,11 +93,14 @@ const char resource1[] = "/TinyGSM/logo.txt";
 const char server2[]   = "vsh.pp.ua";
 const char resource2[] = "/TinyGSM/logo.txt";
 
-// NOTE: Do NOT include the generic TinyGsmClient headers for specific modems.
+// NOTE: Do NOT include the generic TinyGsmClient.h header for specific modems.
+// For the Arduino IDE to correctly detect TinyGSM as a dependency,
+// include TinyGSM.h and **do not** `#define` any of the modems beforehand.
+#include <TinyGSM.h>
 // Include for the SIM7080 modem
-#include <TinyGsmClientSIM7080.h>
+#include <modems/TinyGsmClientSIM7080.h>
 // Include for the ESP32
-#include <TinyGsmClientESP32.h>
+#include <modems/TinyGsmClientESP32.h>
 
 #if (defined(ARDUINO_NRF52840_FEATHER)) && !defined(ADAFRUIT_TINYUSB_H_)
 #include <Adafruit_TinyUSB.h>  // for Serial

@@ -28,8 +28,8 @@
 #pragma message("TinyGSM:  TinyGsmClientSIM808")
 
 #include "TinyGsmClientSIM800.h"
-#include "TinyGsmGPS.tpp"
-#include "TinyGsmBluetooth.tpp"
+#include "mixins/TinyGsmGPS.tpp"
+#include "mixins/TinyGsmBluetooth.tpp"
 
 /**
  * @brief Class for the SIMCOM SIM808 and SIM868, which extends the SIM800 with

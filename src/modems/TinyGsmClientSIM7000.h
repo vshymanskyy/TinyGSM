@@ -28,12 +28,12 @@
 #pragma message("TinyGSM:  TinyGsmClientSIM7000")
 
 #include "TinyGsmClientSIM70xx.h"
-#include "TinyGsmTCP.tpp"
-#include "TinyGsmSMS.tpp"
-#include "TinyGsmGSMLocation.tpp"
-#include "TinyGsmTime.tpp"
-#include "TinyGsmNTP.tpp"
-#include "TinyGsmBattery.tpp"
+#include "mixins/TinyGsmTCP.tpp"
+#include "mixins/TinyGsmSMS.tpp"
+#include "mixins/TinyGsmGSMLocation.tpp"
+#include "mixins/TinyGsmTime.tpp"
+#include "mixins/TinyGsmNTP.tpp"
+#include "mixins/TinyGsmBattery.tpp"
 
 /// Basic modem configurations for the SIMCom SIM7000
 /// @ingroup simcom_sim7000

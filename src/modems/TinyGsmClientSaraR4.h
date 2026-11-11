@@ -32,8 +32,8 @@
 #define SRC_TINYGSMCLIENTSARAR4_H_
 #pragma message("TinyGSM:  TinyGsmClientSaraR4")
 
-#include "TinyGsmModem.tpp"
-#include "TinyGsmTCP.tpp"
+#include "mixins/TinyGsmModem.tpp"
+#include "mixins/TinyGsmTCP.tpp"
 
 // NOTE: This module supports SSL, but we do not support any certificate
 // management yet. Define TINY_GSM_MODEM_HAS_SSL here and do not include the SSL
@@ -43,13 +43,13 @@
 #define TINY_GSM_MODEM_HAS_SSL
 #endif
 
-#include "TinyGsmCellularData.tpp"
-#include "TinyGsmSMS.tpp"
-#include "TinyGsmGSMLocation.tpp"
-#include "TinyGsmGPS.tpp"
-#include "TinyGsmTime.tpp"
-#include "TinyGsmBattery.tpp"
-#include "TinyGsmTemperature.tpp"
+#include "mixins/TinyGsmCellularData.tpp"
+#include "mixins/TinyGsmSMS.tpp"
+#include "mixins/TinyGsmGSMLocation.tpp"
+#include "mixins/TinyGsmGPS.tpp"
+#include "mixins/TinyGsmTime.tpp"
+#include "mixins/TinyGsmBattery.tpp"
+#include "mixins/TinyGsmTemperature.tpp"
 
 /// Registration status
 /// @ingroup ublox_sara_r4
@@ -444,7 +444,7 @@ class TinyGsmSaraR4
   // supported yet.
   // If you wish to add certificate management for this module you must (in
   // addition to adding the functions here):
-  //  - Add `#include "TinyGsmSSL.tpp` to the top of the file
+  //  - Add `#include "mixins/TinyGsmSSL.tpp` to the top of the file
   //  - Remove `#define TINY_GSM_MODEM_HAS_SSL` from the top of the file
   //  - Remove the #if 0 / #endif statements bracketing the SSL configuration
   //  structure.

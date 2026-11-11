@@ -34,10 +34,10 @@
 #pragma message("TinyGSM:  TinyGsmClientESP32")
 
 #include "TinyGsmClientEspressif.h"
-#include "TinyGsmTCP.tpp"
-#include "TinyGsmSSL.tpp"
-#include "TinyGsmTime.tpp"
-#include "TinyGsmNTP.tpp"
+#include "mixins/TinyGsmTCP.tpp"
+#include "mixins/TinyGsmSSL.tpp"
+#include "mixins/TinyGsmTime.tpp"
+#include "mixins/TinyGsmNTP.tpp"
 
 /// State: current Wi-Fi state.
 /// @ingroup espressif_esp32
