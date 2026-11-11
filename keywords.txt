@@ -210,6 +210,7 @@ flush	KEYWORD2
 connected	KEYWORD2
 operator bool	KEYWORD2
 isAttached	KEYWORD2
+isSecure	KEYWORD2
 detach	KEYWORD2
 ~GsmClient	KEYWORD2
 remoteIP	KEYWORD2
@@ -273,6 +274,9 @@ getOperator	KEYWORD2
 getProvider	KEYWORD2
 maintain	KEYWORD2
 findFirstUnassignedMux	KEYWORD2
+getClient	KEYWORD2
+findFirstClient	KEYWORD2
+findFirstIdleClient	KEYWORD2
 callAnswer	KEYWORD2
 callNumber	KEYWORD2
 callHangup	KEYWORD2
