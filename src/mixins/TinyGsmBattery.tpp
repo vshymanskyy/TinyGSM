@@ -89,8 +89,12 @@ class TinyGsmBattery {
    * @param milliVolts A reference to an int to set to the battery voltage in
    * millivolts, or -9999 if unavailable, not valid, or not received.
    *
-   * @return True only if all battery stats were received and are valid, false
-   * if any were not returned or not valid.
+   * @return True only if all supported battery stats were received and are
+   * valid, false if any were not returned or not valid.
+   *
+   * @note If a particular battery stat is not supported by the modem, it will
+   * be set to its invalid value.  The return value will still indicate whether
+   * all supported stats were successfully received and valid.
    */
   bool getBattStats(int8_t& chargeState, int8_t& percent, int16_t& milliVolts) {
     return thisModem().getBattStatsImpl(chargeState, percent, milliVolts);

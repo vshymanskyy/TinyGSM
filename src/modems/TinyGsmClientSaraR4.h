@@ -770,7 +770,7 @@ class TinyGsmSaraR4
     sendAT(GF("+UTEMP?"));
     if (waitResponse(GF("+UTEMP:")) != 1) { return -9999.0F; }
     int16_t res = streamGetIntBefore('\n');
-    if (waitResponse() != 1 || res == -1 || res == -9999) { return -9999.0F; }
+    if (waitResponse() != 1 || res == -9999) { return -9999.0F; }
     return static_cast<float>(res) / 10.0F;
   }
 

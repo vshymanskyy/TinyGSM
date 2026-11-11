@@ -617,6 +617,8 @@ void loop() {
   client.init(&modem, 1);
   client.init(&modem, 1, false);
   client.init(&modem, 1, true);
+  client.init(modem, 1, false);
+  client.init(modem, 1, true);
   client.isAttached();
 
   client.connect(server, 80);
@@ -724,6 +726,8 @@ void loop() {
   client_secure.init(&modem, 1);
   client_secure.init(&modem, 1, false);
   client_secure.init(&modem, 1, true);
+  client_secure.init(modem, 1, false);
+  client_secure.init(modem, 1, true);
   client_secure.isAttached();
 
   client_secure.connect(server, 443);
