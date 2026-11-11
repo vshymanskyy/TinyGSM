@@ -17,9 +17,18 @@ import os
 import re
 import json
 
+# # %%
+# local testing paths below
+# local testing paths above
+
 # %%
 # Import helper functions from the CI pipeline
-from build_utils import dict_product, remove_nested_duplicates
+from build_utils import (
+    dict_product,
+    remove_nested_duplicates,
+    read_platformio_config,
+    build_pio_mappings,
+)
 
 
 # %%
@@ -71,6 +80,16 @@ def build_custom_matrix(config: dict) -> list[dict]:
     # compiler_flags = config.get("compiler_flags", [[]])
     compiler_flags = [["-D TINY_GSM_USE_HEX"], []]
 
+    # Read the PlatformIO config and build mapping dictionaries for boards and environments
+    print("Reading the PlatformIO config...")
+    pio_ini_dir = os.path.dirname(config.get("pio_config_file"))  # type: ignore
+    pio_config = read_platformio_config(pio_ini_dir)
+    print("Building mapping dictionaries...")
+    pio_env_to_board, pio_env_to_platform, board_to_pio_env = build_pio_mappings(
+        pio_config
+    )
+
+    # %%
     print("=== TinyGSM Custom Matrix Builder ===")
 
     # Get the modem list from TinyGsmClient.h
@@ -275,6 +294,22 @@ def build_custom_matrix(config: dict) -> list[dict]:
             "compiler_flags": compiler_flags,
             # This hard-codes the modems, so only test it for that configuration
         },
+        {
+            "compiler": compiler_list,
+            "example": examples_to_build,
+            "board": [
+                board
+                for board in boards
+                if "esp32" in board or "huzzah" in board or "nodemcu" in board
+            ],
+            "inline_defines": [
+                ["TINY_GSM_MODEM_ESP32"],
+                ["TINY_GSM_MODEM_ESP8266"],
+                ["TINY_GSM_MODEM_ESP8266_NONOS"],
+            ],
+            "compiler_flags": compiler_flags,
+            # it really doesn't make sense to attach a wifi modem to a wifi processor
+        },
     ]
 
     # expand the matrix exclusions
@@ -398,13 +433,29 @@ def build_custom_matrix(config: dict) -> list[dict]:
         if e not in expanded_matrix_exclusions_lookup
         and e in expanded_matrix_inclusions_lookup
     ]
+    core_platforms = []
+    for matrix_entry in assembled_matrix:
+        if matrix_entry["compiler"] == "arduino-cli":
+            # core_platform = matrix_entry["board"].rsplit(":", 1)[0].replace(":", "_")
+            core_platform = matrix_entry["board"].split(":")[1].replace(":", "_")
+        else:
+            core_platform = pio_env_to_platform[matrix_entry["board"]]
+        if "git" in core_platform and "espressif32" in core_platform:
+            core_platform = "espressif32"
+        if core_platform in ["sam"]:
+            core_platform = "samd"
+        matrix_entry["core_platform"] = core_platform
+        if f"{matrix_entry['compiler']} {core_platform}" not in core_platforms:
+            core_platforms.append(f"{matrix_entry['compiler']} {core_platform}")
+
     assembled_matrix = sorted(
         assembled_matrix,
         key=lambda x: (
             x["compiler"],
+            x["inline_defines"],
+            x["core_platform"],
             x["board"],
             x["example"],
-            x["inline_defines"],
             x["compiler_flags"],
         ),
     )
@@ -417,6 +468,28 @@ def build_custom_matrix(config: dict) -> list[dict]:
             r"sed -i 's/#define TINY_GSM_MODEM_/\/\/ #define TINY_GSM_MODEM_/g' "
             + f'"{example_full_path}"'
         ]
+        if "core_platform" in matrix_entry.keys() and matrix_entry["core_platform"] in [
+            "renesas_uno",
+            "mbed_nano",
+            "mbed_nicla",
+            "mbed_portenta",
+            "mbed_rp2040",
+            "nrf52",
+            "megaavr",
+            "stm32",
+        ]:
+            matrix_entry["core_platform"] = "other_cores"
+        if "core_platform" in matrix_entry.keys() and matrix_entry["core_platform"] in [
+            "renesas-ra",
+            "microchippic32",
+            "ststm32",
+            "nordicnrf52",
+            "intel_arc32",
+            "atmelmegaavr",
+            "raspberrypi",
+            "teensy",
+        ]:
+            matrix_entry["core_platform"] = "other_cores"
 
     final_matrix = remove_nested_duplicates(assembled_matrix)
     print(f"Final filtered matrix: {len(final_matrix)}")
@@ -426,4 +499,5 @@ def build_custom_matrix(config: dict) -> list[dict]:
 
 
 # %%
-# cSpell:ignore devkitm megaatmega2560 megaavr mzero_bl renesas unor4wifi
+# cSpell:ignore devkitm megaatmega2560 megaavr mzero_bl renesas unor4wifi nicla mbed portenta
+# cSpell:ignore microchippic32 ststm32 nordicnrf52 atmelmegaavr raspberrypi

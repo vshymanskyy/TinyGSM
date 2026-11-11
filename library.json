@@ -29,6 +29,7 @@
       "README.md",
       "keywords.txt",
       "src/*",
+      "src/*/*",
       "examples/*"
     ]
   },

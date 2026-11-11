@@ -17,6 +17,42 @@
 
 TinyGsm modem(Serial);
 
+template <typename First, typename Second>
+struct TinyGsmTestIsSame {
+  static const bool value = false;
+};
+
+template <typename Type>
+struct TinyGsmTestIsSame<Type, Type> {
+  static const bool value = true;
+};
+
+static_assert(TinyGsmTestIsSame<TinyGsmClient, TinyGsm::TinyGsmClient>::value,
+              "Global and modem-scoped client aliases must match");
+
+#if defined(TINY_GSM_MODEM_HAS_SSL)
+static_assert(
+    TinyGsmTestIsSame<TinyGsmClientSecure, TinyGsm::TinyGsmClientSecure>::value,
+    "Global and modem-scoped secure client aliases must match");
+#endif
+
+#if defined(TINY_GSM_MODEM_CAN_SPECIFY_CERTS)
+static_assert(TinyGsmTestIsSame<TinyGsmSecureContext,
+                                TinyGsm::TinyGsmSecureContext>::value,
+              "Global and modem-scoped security-context aliases must match");
+#endif
+
+#if defined(TINY_GSM_MODEM_SIM808) || defined(TINY_GSM_MODEM_SIM868)
+static_assert(
+    TinyGsmTestIsSame<TinyGsmSim808::TinyGsmClient,
+                      TinyGsmSim800::TinyGsmClient>::value,
+    "The SIM808 client alias must use the inherited SIM800 client type");
+static_assert(
+    TinyGsmTestIsSame<TinyGsmSim808::TinyGsmClientSecure,
+                      TinyGsmSim800::TinyGsmClientSecure>::value,
+    "The SIM808 secure client alias must use the inherited SIM800 type");
+#endif
+
 void setup() {
   Serial.begin(115200);
   delay(6000);
@@ -251,6 +287,7 @@ void loop() {
   // ========================================================================
 
   modem.maintain();
+  modem.findFirstUnassignedMux();
 
   char server[]   = "somewhere";
   char resource[] = "something";
@@ -260,6 +297,7 @@ void loop() {
   // ========================================================================
 
 #if defined(TINY_GSM_MODEM_HAS_SSL) && defined(TINY_GSM_MODEM_CAN_LOAD_CERTS)
+  modem.findFirstUnassignedSSLContext();
   static const char flash_certificate_content[] TINY_GSM_PROGMEM =
       "certificate_content";
   modem.loadCertificate("certificateName", "certificate_content", 20);
@@ -508,12 +546,13 @@ void loop() {
     !defined(TINY_GSM_MODEM_SARAR5) && !defined(TINY_GSM_MODEM_UBLOX)
   modem.getBattVoltage();
 #endif
-#if !defined(TINY_GSM_MODEM_SIM7600) && !defined(TINY_GSM_MODEM_XBEE)
+#if !defined(TINY_GSM_MODEM_SIM7600) && !defined(TINY_GSM_MODEM_A7672X) && \
+    !defined(TINY_GSM_MODEM_XBEE)
   modem.getBattPercent();
 #endif
 #if !defined(TINY_GSM_MODEM_SARAR4) && !defined(TINY_GSM_MODEM_SARAR5) && \
     !defined(TINY_GSM_MODEM_UBLOX) && !defined(TINY_GSM_MODEM_SIM7600) && \
-    !defined(TINY_GSM_MODEM_XBEE)
+    !defined(TINY_GSM_MODEM_A7672X) && !defined(TINY_GSM_MODEM_XBEE)
   modem.getBattChargeState();
 #endif
   int8_t  chargeState   = -99;
@@ -576,6 +615,11 @@ void loop() {
   TinyGsmClient client3(modem, 1);
   client.init(&modem);
   client.init(&modem, 1);
+  client.init(&modem, 1, false);
+  client.init(&modem, 1, true);
+  client.init(modem, 1, false);
+  client.init(modem, 1, true);
+  client.isAttached();
 
   client.connect(server, 80);
 
@@ -600,6 +644,9 @@ void loop() {
   }
 
   client.stop();
+  client.detach();
+  client.isAttached();
+  client.init(&modem);
 
   // ========================================================================
   // TinyGsmClient - Extended Client API
@@ -649,8 +696,12 @@ void loop() {
   context_secure_default.isAttached();
   context_secure_default.getSSLContextIndex();
   context_secure_default.init(&modem, (uint8_t)1);
+  context_secure_default.init(&modem, (uint8_t)1, true);
   context_secure_default.isAttached();
   context_secure_default.getSSLContextIndex();
+  context_secure_default.detach();
+  context_secure_default.init(&modem, (uint8_t)1);
+  context_secure_default.init(&modem, (uint8_t)1, false);
 
   TinyGsmSecureContext context_secure(modem, 0);
   TinyGsmSecureContext(modem, SSLAuthMode::MUTUAL_AUTHENTICATION);
@@ -673,6 +724,11 @@ void loop() {
 
   client_secure.init(&modem);
   client_secure.init(&modem, 1);
+  client_secure.init(&modem, 1, false);
+  client_secure.init(&modem, 1, true);
+  client_secure.init(modem, 1, false);
+  client_secure.init(modem, 1, true);
+  client_secure.isAttached();
 
   client_secure.connect(server, 443);
 
@@ -697,6 +753,9 @@ void loop() {
   }
 
   client_secure.stop();
+  client_secure.detach();
+  client_secure.isAttached();
+  client_secure.init(&modem);
 
   // ========================================================================
   // TinyGsmClientSecure - Extended Client API

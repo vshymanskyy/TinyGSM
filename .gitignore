@@ -1,77 +1,143 @@
-cd# Compiled files, executables
+# Windows image file caches
+Thumbs.db
+ehthumbs.db
+~*
+
+# Folder config file
+Desktop.ini
+
+# Recycle Bin used on file shares
+$RECYCLE.BIN/
+
+# Windows Installer files
+*.cab
+*.msi
+*.msm
+*.msp
+
+# Windows shortcuts
+*.lnk
+
+# =========================
+# Operating System Files
+# =========================
+
+# OSX
+# =========================
+
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Thumbnails
+._*
+
+# Files that might appear in the root of a volume
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+
+# Directories potentially created on remote AFP share
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Compiled files, executables
 *.o
 *.a
 *.exe
 *.out
 *.app
 
-# Junk
+# Compressed and Backup Files
 *.orig
 *.log
 *.bak
+*.tar.gz
+*.zip
+sync.ffs_db
 
-# IDE project files
-.settings
+# Certificates
+*.pem
+*.pem.crt
+*.pem.cert
+*.pem.key
+*.crt
+*.cert
+*.key
+src/CipherSuiteCodes.csv
+
+# Python
+__pycache__/
+
+# PyCharm
+.idea/
+
+# Atom
+.atomrc.cson
 .clang_complete
 .gcc-flags.json
-platformio.ini
-extra_envs.ini
-lib/readme.txt
-include/readme.txt
-.history
 
 # VSCode
 .vscode
-
-# Extras
-extras/docs
-extras/Module Datasheets
-extras/Older Command Manuals
-extras/Older Command Manuals
-extras/At Command Manuals - Unsupported
-
-# Filters
-.gitconfig
-filters/*
-
-# Certificates
-*.cert
-*.crt
-*.pem
-*.key
-src/CipherSuiteCodes.csv
+.history
+.settings
 
 # PlatformIO
 .pioenvs
 .piolibdeps
 .pio
-.platformio_local
-.pio_local
-.pio_core_local
-pioScripts
-variants
-boards
-tests
 lib
+lib/readme.txt
+/include
+include/readme.txt
+/tests
+tests/readme.txt
+/boards
+/variants
+/pioScripts
+.sconsign.dblite
+platformio.ini
+extra_envs.ini
+.clang-tidy
+compile_commands.json
 platformio_extra_envs.ini
 pio_common_libdeps.ini
-continuous_integration/platformio_local.ini
-continuous_integration/generate_local_tests.py
-continuous_integration/parse_test_results.py
 
 # Arduino CLI
+arduino_cli.log
 continuous_integration/arduino_cli_local.yaml
+home/arduino/*
+arduino_lint.md
+arduino_lint.json
 
 # Local CI and Build Artifacts
-home/arduino
-continuous_integration_artifacts
+continuous_integration/*local*.*
+output_*.log
+continuous_integration_artifacts/*
 clang_format_all.bat
 generateKeywords.bat
 installWorkingDependencies.bat
-clang-format-all.py
 runDoxygen.bat
-compile_commands.json
 buildCI.bat
+
+# Filters
+filters/*
+
+# Planning and Archive Folders
+/archive
+/planning
+**/*.*_archive
+
+# Local Agent Instructions
+AGENTS.md
+.github/copilot-instructions.md
+.bumpversion.toml
 
 # Local Documentation Artifacts
 generated_docs
@@ -106,13 +172,14 @@ docs/m-tinygsm.css
 docs/m-tinygsm.compiled.css
 docs/m-tinygsm+documentation.compiled.css
 
+# Extras
+extras/docs
+extras/Module Datasheets
+extras/Older Command Manuals
+extras/Older Command Manuals
+extras/At Command Manuals - Unsupported
+
 # Other stuff
-*.tar.gz
-archive
 tmp
 src/wakeUp.h
-**/__pycache__
-AGENTS.md
-.github/copilot-instructions.md
-.bumpversion.toml
 passwords.txt

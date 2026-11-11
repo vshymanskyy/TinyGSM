@@ -239,8 +239,12 @@ struct has_tcp : true_type {};
 // Modems that have SSL but don't inherit from TinyGsmSSL
 // (They use TINY_GSM_MODEM_HAS_SSL but don't have certificate management)
 
+
+#if !defined(TINY_GSM_MODEM_SIM900)
+// The SIM900 doesn't have SSL
 template <>
 struct has_ssl<TinyGsmSim800> : true_type {};
+#endif
 template <>
 struct can_specify_certs<TinyGsmSim800> : false_type {};
 template <>
@@ -296,6 +300,25 @@ struct can_load_certs<TinyGsmESP8266> : false_type {};
 
 template <>
 struct can_load_certs<TinyGsmXBee> : false_type {};
+
+
+// customize the 800, which would otherwise report most traits as false because
+// they're not directly inherited
+
+template <>
+struct has_cellular_data<TinyGsmSim808> : true_type {};
+template <>
+struct has_sms<TinyGsmSim808> : true_type {};
+template <>
+struct has_calling<TinyGsmSim808> : true_type {};
+template <>
+struct has_battery<TinyGsmSim808> : true_type {};
+template <>
+struct has_time<TinyGsmSim808> : true_type {};
+template <>
+struct has_ntp<TinyGsmSim808> : true_type {};
+template <>
+struct has_gsm_location<TinyGsmSim808> : true_type {};
 
 }  // namespace TinyGsmCapabilities
 

@@ -12,6 +12,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Changed
 
+- **BREAKING** Moved modem-specific headers into `src/modems` and internal CRTP mixins into `src/mixins`.
+  The standard `#include <TinyGsmClient.h>` API is unchanged, while direct modem-header includes now use paths such as `#include <modems/TinyGsmClientSIM7080.h>`.
 - **BREAKING** Rewrote SSL support module!
   - Certificate-loading and per-client credential-selection function names have changed.
     - Modem functions have been renamed to "load" instead of "set" to clarify that the certificate data is being loaded into the flash of the module rather than being used somewhere in the library code.
@@ -46,6 +48,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- Added modem-scoped `TinyGsmClient`, `TinyGsmClientSecure`, and `TinyGsmSecureContext` aliases for libraries and multi-modem sketches while preserving the global single-modem aliases.
 - Added support for selecting SSL version and authentication types on select modules
 - Added support for SSL pre-shared keys and PSK tables on select modules.
 - Added support for writing/loading certificates on select modules

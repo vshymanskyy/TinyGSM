@@ -8,8 +8,7 @@ config:
 
   # MD013 - Line length
   #
-  # Doxygen generates long lines containing links, declarations,
-  # fully-qualified names, etc. Do not enforce an 80-character limit.
+  # Do not enforce an 80-character limit.
   MD013: false
 
   # MD024 - Multiple headings with the same content
@@ -19,10 +18,6 @@ config:
     siblings_only: true
 
   # MD033 - Inline HTML
-  #
-  # Doxygen generates explicit anchors and line breaks such as:
-  # <a id="a528d5a4c7d75a6951ec236b7b46fcedb"></a>
-  # <br>
   #
   # Allow only these HTML elements; other inline HTML remains an error.
   MD033:

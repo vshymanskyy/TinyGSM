@@ -18,5 +18,5 @@ jobs:
       examples_to_ignore: 'extras/tools/AT_Debug,extras/tools/AT_Spy,examples/more/Hologram_Dash,extras/tools/EspressifUpdateFirmware'
       arduino_fqbns_to_ignore: 'arduino:zephyr_main:nicla_sense'
       pio_envs_to_ignore: 'esp32-c6-devkitm-1,arduino_nano_esp32'
-      log_grouping_fields: 'compiler,board,example,inline_defines,compiler_flags'
-      job_grouping_fields: 'compiler,board,example,compiler_flags'
+      log_grouping_fields: 'compiler,inline_defines,core_platform,board,compiler_flags,example'
+      job_grouping_fields: 'compiler,inline_defines,core_platform'

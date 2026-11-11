@@ -90,7 +90,7 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 // disconnect and power down modem after tests
 #define TINY_GSM_POWERDOWN true
 
-// set GSM PIN, if any
+// set SIM card pin, if any
 #define SIM_PIN ""
 
 // Set phone numbers, if you want to test SMS and Calls
@@ -132,10 +132,10 @@ const int port_ssl = 443;
 #define TINY_GSM_TEST_WIFI true
 #endif
 #if TINY_GSM_TEST_WIFI && not defined TINY_GSM_MODEM_HAS_WIFI
-#undef TINY_GSM_USE_CELLULAR_DATA
-#undef TINY_GSM_USE_WIFI
-#define TINY_GSM_USE_CELLULAR_DATA true
-#define TINY_GSM_USE_WIFI false
+#undef TINY_GSM_TEST_CELLULAR_DATA
+#undef TINY_GSM_TEST_WIFI
+#define TINY_GSM_TEST_CELLULAR_DATA true
+#define TINY_GSM_TEST_WIFI false
 #endif
 
 #ifdef DUMP_AT_COMMANDS
@@ -332,7 +332,7 @@ void loop() {
   DBG("Local IP:", local);
   (void)local;
 
-  int csq = modem.getSignalQuality();
+  int16_t csq = modem.getSignalQuality();
   DBG("Signal quality:", csq);
   (void)csq;
 #endif

@@ -33,9 +33,7 @@
 // #define TINY_GSM_MODEM_SIM7080
 // #define TINY_GSM_MODEM_A7672X
 // #define TINY_GSM_MODEM_ESP32
-// #define TINY_GSM_MODEM_SEQUANS_MONARCH
 // #define TINY_GSM_MODEM_BG96
-// #define TINY_GSM_MODEM_XBEE
 
 #define TINY_GSM_TCP_KEEP_ALIVE 180
 
@@ -80,7 +78,7 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 #define TINY_GSM_USE_CELLULAR_DATA true
 #define TINY_GSM_USE_WIFI false
 
-// set GSM PIN, if any
+// set SIM card pin, if any
 #define SIM_PIN ""
 
 // Your SIM card credentials, if any
@@ -352,7 +350,7 @@ String createStatusMessage() {
   msgStatus += ",\"modemSimCCID\":\"" + modemSimCCID + "\"";
 #endif
 
-  uint16_t modemService = modem.getSignalQuality();
+  int16_t modemService = modem.getSignalQuality();
   msgStatus += ",\"modemSignalQuality\":\"" + String(modemService) + "\"";
 
 #ifdef TINY_GSM_MODEM_HAS_NTP
@@ -388,7 +386,7 @@ String createInitMessage() {
   msgInit += ",\"modemSimCCID\":\"" + modemSimCCID + "\"";
 #endif
 
-  uint16_t modemService = modem.getSignalQuality();
+  int16_t modemService = modem.getSignalQuality();
   msgInit += ",\"modemSignalQuality\":\"" + String(modemService) + "\"";
 
 #ifdef TINY_GSM_MODEM_HAS_NTP
@@ -582,7 +580,7 @@ bool getInternetConnection() {
 #endif
 
   // check and print the signal quality for debugging
-  uint16_t modemService = modem.getSignalQuality();
+  int16_t modemService = modem.getSignalQuality();
   SerialMon.print("Signal Quality: ");
   SerialMon.println(modemService);
 
