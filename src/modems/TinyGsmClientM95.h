@@ -29,7 +29,10 @@
 
 #ifndef SRC_TINYGSMCLIENTM95_H_
 #define SRC_TINYGSMCLIENTM95_H_
+
+#if defined(TINY_GSM_DEBUG)
 #pragma message("TinyGSM:  TinyGsmClientM95")
+#endif
 
 #include "mixins/TinyGsmModem.tpp"
 #include "mixins/TinyGsmTCP.tpp"

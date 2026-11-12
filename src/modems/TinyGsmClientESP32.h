@@ -31,7 +31,10 @@
 
 #ifndef SRC_TINYGSMCLIENTESP32_H_
 #define SRC_TINYGSMCLIENTESP32_H_
+
+#if defined(TINY_GSM_DEBUG)
 #pragma message("TinyGSM:  TinyGsmClientESP32")
+#endif
 
 #include "TinyGsmClientEspressif.h"
 #include "mixins/TinyGsmTCP.tpp"

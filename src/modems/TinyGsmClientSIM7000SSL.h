@@ -30,7 +30,10 @@
 
 #ifndef SRC_TINYGSMCLIENTSIM7000SSL_H_
 #define SRC_TINYGSMCLIENTSIM7000SSL_H_
+
+#if defined(TINY_GSM_DEBUG)
 #pragma message("TinyGSM:  TinyGsmClientSim7000SSL")
+#endif
 
 #include "TinyGsmClientSIM70xx.h"
 #include "mixins/TinyGsmTCP.tpp"

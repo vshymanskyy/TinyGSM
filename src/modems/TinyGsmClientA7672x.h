@@ -38,7 +38,10 @@
 
 #ifndef SRC_TINYGSMCLIENTA7672X_H_
 #define SRC_TINYGSMCLIENTA7672X_H_
+
+#if defined(TINY_GSM_DEBUG)
 #pragma message("TinyGSM:  TinyGsmClientA7672x")
+#endif
 
 #include "mixins/TinyGsmModem.tpp"
 #include "mixins/TinyGsmTCP.tpp"

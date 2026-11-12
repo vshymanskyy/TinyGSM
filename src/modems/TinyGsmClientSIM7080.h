@@ -28,7 +28,10 @@
 
 #ifndef SRC_TINYGSMCLIENTSIM7080_H_
 #define SRC_TINYGSMCLIENTSIM7080_H_
+
+#if defined(TINY_GSM_DEBUG)
 #pragma message("TinyGSM:  TinyGsmClientSim7080")
+#endif
 
 
 #include "TinyGsmClientSIM70xx.h"

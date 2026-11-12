@@ -13,7 +13,10 @@
 
 #ifndef SRC_TINYGSMCLIENTESPRESSIF_H_
 #define SRC_TINYGSMCLIENTESPRESSIF_H_
+
+#if defined(TINY_GSM_DEBUG)
 #pragma message("TinyGSM:  TinyGsmClientEspressif")
+#endif
 
 #include "mixins/TinyGsmModem.tpp"
 #include "mixins/TinyGsmWifi.tpp"

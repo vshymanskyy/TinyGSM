@@ -32,7 +32,10 @@
 
 #ifndef SRC_TINYGSMCLIENTESP8266NONOS_H_
 #define SRC_TINYGSMCLIENTESP8266NONOS_H_
+
+#if defined(TINY_GSM_DEBUG)
 #pragma message("TinyGSM:  TinyGsmClientESP8266NonOS")
+#endif
 
 #include "TinyGsmClientEspressif.h"
 #include "mixins/TinyGsmTCP.tpp"

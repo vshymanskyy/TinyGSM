@@ -39,7 +39,10 @@
 
 #ifndef SRC_TINYGSMCLIENTXBEE_H_
 #define SRC_TINYGSMCLIENTXBEE_H_
+
+#if defined(TINY_GSM_DEBUG)
 #pragma message("TinyGSM:  TinyGsmClientXBee")
+#endif
 
 
 #ifdef TINY_GSM_XBEE_GUARD_TIME
