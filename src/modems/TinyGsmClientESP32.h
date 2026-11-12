@@ -987,11 +987,6 @@ class TinyGsmESP32
   }
 
   bool convertCertificateImpl(CertificateType cert_type, const char*) {
-    if (cert_type == CertificateType::CLIENT_PSK ||
-        cert_type == CertificateType::CLIENT_PSK_IDENTITY) {
-      // The ESP32 does not support SSL using pre-shared keys with AT firmware.
-      return false;
-    }
     return true;  // no conversion needed on the ESP32
   }
   bool convertCACertificateImpl(const char*) {
@@ -1001,8 +996,7 @@ class TinyGsmESP32
     return true;  // no conversion needed on the ESP32
   }
   bool convertPSKandIDImpl(const char*, const char*) {
-    // The ESP32 does not support SSL using pre-shared keys with AT firmware.
-    return false;
+    return true;
   }
   bool convertPSKTableImpl(const char*) {
     return true;
