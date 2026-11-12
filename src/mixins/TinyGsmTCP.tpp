@@ -148,6 +148,107 @@ class TinyGsmTCP {
     DBG("### WARNING: No empty mux sockets found!");
     return static_cast<uint8_t>(-1);
   }
+
+  /**
+   * @brief Look up the client registered at a mux socket.
+   *
+   * The returned pointer is borrowed from the application-owned client
+   * registry. It becomes invalid if that client is destroyed, detached, or
+   * reinitialized.
+   *
+   * @param mux The zero-indexed position in the modem's socket array.
+   * @return The registered client, or `nullptr` if the mux is invalid or no
+   * client is registered there.
+   */
+  GsmClient<modemType, tcpConfig>* getClient(uint8_t mux) {
+    if (mux >= TcpConfig::kMuxCount) { return nullptr; }
+    return thisModem().sockets[mux];
+  }
+
+  /**
+   * @brief Look up the client registered at a mux socket.
+   *
+   * The returned pointer is borrowed from the application-owned client
+   * registry. It becomes invalid if that client is destroyed, detached, or
+   * reinitialized.
+   *
+   * @param mux The zero-indexed position in the modem's socket array.
+   * @return The registered client, or `nullptr` if the mux is invalid or no
+   * client is registered there.
+   */
+  const GsmClient<modemType, tcpConfig>* getClient(uint8_t mux) const {
+    if (mux >= TcpConfig::kMuxCount) { return nullptr; }
+    return thisModem().sockets[mux];
+  }
+
+  /**
+   * @brief Find the first registered client of the requested type.
+   *
+   * This performs only a local socket-array search and does not communicate
+   * with the modem. For dynamic-mux modems, the array contains only clients
+   * whose mux has already been assigned and registered during a connection.
+   * The returned pointer is borrowed from the application-owned client
+   * registry and follows the same lifetime rules as getClient().
+   *
+   * @param secure If true, search for a secure client; otherwise search for an
+   * unsecured client.
+   * @return The first matching registered client, or `nullptr` if none is
+   * registered.
+   */
+  GsmClient<modemType, tcpConfig>* findFirstClient(bool secure) {
+    for (uint8_t mux = 0; mux < TcpConfig::kMuxCount; ++mux) {
+      GsmClient<modemType, tcpConfig>* client = getClient(mux);
+      if (client != nullptr && client->isSecure() == secure) { return client; }
+    }
+    return nullptr;
+  }
+
+  /**
+   * @brief Find the first registered client of the requested type.
+   *
+   * This performs only a local socket-array search and does not communicate
+   * with the modem. For dynamic-mux modems, the array contains only clients
+   * whose mux has already been assigned and registered during a connection.
+   * The returned pointer is borrowed from the application-owned client
+   * registry and follows the same lifetime rules as getClient().
+   *
+   * @param secure If true, search for a secure client; otherwise search for an
+   * unsecured client.
+   * @return The first matching registered client, or `nullptr` if none is
+   * registered.
+   */
+  const GsmClient<modemType, tcpConfig>* findFirstClient(bool secure) const {
+    for (uint8_t mux = 0; mux < TcpConfig::kMuxCount; ++mux) {
+      const GsmClient<modemType, tcpConfig>* client = getClient(mux);
+      if (client != nullptr && client->isSecure() == secure) { return client; }
+    }
+    return nullptr;
+  }
+
+  /**
+   * @brief Find the first idle registered client of the requested type.
+   *
+   * This helper applies only to static-mux modems. Calling connected() may
+   * communicate with the modem while checking whether a matching client is
+   * idle. The returned pointer is borrowed from the application-owned client
+   * registry and follows the same lifetime rules as getClient().
+   *
+   * @param secure If true, search for a secure client; otherwise search for an
+   * unsecured client.
+   * @return The first matching disconnected client, or `nullptr` if none is
+   * available or the modem uses dynamic mux assignment.
+   */
+  GsmClient<modemType, tcpConfig>* findFirstIdleClient(bool secure) {
+    if (TcpConfig::kMuxMode != TinyGsmTcpMuxMode::Static) { return nullptr; }
+    for (uint8_t mux = 0; mux < TcpConfig::kMuxCount; ++mux) {
+      GsmClient<modemType, tcpConfig>* client = getClient(mux);
+      if (client != nullptr && client->isSecure() == secure &&
+          !client->connected()) {
+        return client;
+      }
+    }
+    return nullptr;
+  }
   /**@}*/
 
   /*
@@ -1197,6 +1298,14 @@ class GsmClient : public Client {
    */
   bool isAttached() const {
     return at != nullptr;
+  }
+
+  /**
+   * @brief Check whether this is a secure client.
+   * @return `true` for a secure client; otherwise `false`.
+   */
+  bool isSecure() const {
+    return is_secure;
   }
 
   /**

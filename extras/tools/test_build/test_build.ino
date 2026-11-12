@@ -288,6 +288,11 @@ void loop() {
 
   modem.maintain();
   modem.findFirstUnassignedMux();
+  modem.getClient(0);
+  static_cast<const TinyGsm&>(modem).getClient(0);
+  modem.findFirstClient(false);
+  static_cast<const TinyGsm&>(modem).findFirstClient(false);
+  modem.findFirstIdleClient(false);
 
   char server[]   = "somewhere";
   char resource[] = "something";
@@ -620,6 +625,7 @@ void loop() {
   client.init(modem, 1, false);
   client.init(modem, 1, true);
   client.isAttached();
+  client.isSecure();
 
   client.connect(server, 80);
 
@@ -729,6 +735,9 @@ void loop() {
   client_secure.init(modem, 1, false);
   client_secure.init(modem, 1, true);
   client_secure.isAttached();
+  client_secure.isSecure();
+  modem.findFirstClient(true);
+  modem.findFirstIdleClient(true);
 
   client_secure.connect(server, 443);
 
