@@ -1,5 +1,5 @@
 /**
- * @file       TinyGsmClientSim7000SSL.h
+ * @file       TinyGsmClientSIM7000SSL.h
  * @brief      SIM7000 SSL modem client and modem-trait definitions.
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0
@@ -508,13 +508,13 @@ class TinyGsmSim7000SSL
       case CertificateType::CLIENT_PSK:
       case CertificateType::CLIENT_PSK_IDENTITY: {
         DBG("### WARNING: The PSK and PSK identity must be converted together "
-            "on the SIM7080.  Please use the convertPSKandID(..) function.");
+            "on the SIM7000.  Please use the convertPSKandID(..) function.");
         return false;
       }
       case CertificateType::CLIENT_CERTIFICATE:
       case CertificateType::CLIENT_KEY: {
         DBG("### WARNING: The client certificate and matching key must be "
-            "converted together on the SIM7080.  Please use the "
+            "converted together on the SIM7000.  Please use the "
             "convertClientCertificates(..) function.");
         return false;
       }

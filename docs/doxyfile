@@ -1129,7 +1129,7 @@ EXCLUDE                = ../tests \
                          ../src/wakeUp.h \
                          ../continuous_integration_artifacts \
                          ../CMakeLists.txt \
-                         ../extras/tools/test_simple.txt \
+                         ../extras/download_tests/test_simple.txt \
                          ../keywords.txt \
                          ../examples/AWS_IoTCore/aws_iot_config.h \
                          ../examples/more/SIM800_SslSetCert/COMODORSACertificationAuthority.h \

@@ -1,5 +1,5 @@
 /**
- * @file       TinyGsmClientSim7080.h
+ * @file       TinyGsmClientSIM7080.h
  * @brief      SIM7070/SIM7080/SIM7090 modem client and modem-trait definitions.
  * @author     Volodymyr Shymanskyy
  * @license    LGPL-3.0

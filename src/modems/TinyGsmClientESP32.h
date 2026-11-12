@@ -1334,7 +1334,7 @@ class TinyGsmESP32
       DBG("### CA cert number:", ca_number);
       DBG("### PKI number:", pki_number);
       DBG("### PSK identity:", pskIdent);
-      DBG("### PSK key:", psKey);
+      // DBG("### PSK key:", psKey);
 
       // SSL certificate checking will not work without a valid timestamp!
       if ((sslAuthMode != SSLAuthMode::NO_VALIDATION) &&

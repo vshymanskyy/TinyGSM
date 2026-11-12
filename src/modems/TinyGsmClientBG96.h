@@ -828,6 +828,8 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
    */
  protected:
   String getGSMDateTimeImpl(TinyGSMDateTimeFormat format) {
+    // Use AT+QLTS=2 to explicitly request the latest network-synced time in
+    // local time.
     sendAT(GF("+QLTS=2"));
     if (waitResponse(2000L, GF("+QLTS: \"")) != 1) { return ""; }
 
@@ -849,9 +851,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
     return res;
   }
 
-  // The BG96 returns UTC time instead of local time as other modules do in
-  // response to CCLK, so we're using QLTS where we can specifically request
-  // local time.
+  // Use AT+QLTS=1 to explicitly request the latest network-synced time in UTC.
   bool getNetworkUTCTimeImpl(int* year, int* month, int* day, int* hour,
                              int* minute, int* second, float* timezone) {
     sendAT(GF("+QLTS=1"));
