@@ -45,24 +45,24 @@ reviews:
     - path: '**/*.dox'
       instructions: >-
         Review for grammar, spelling, and clarity.
-        Ensure that Doxygen comments follow Doxygen conventions, using java-style @commands rather than Qt-style \commands.
+        Ensure that Doxygen comments are clear and follow Doxygen conventions, using java-style @commands rather than Qt-style \commands.
         Check C++ and Arduino code snippets as C++ code.
     - path: '**/*.ino'
       instructions: >-
         Treat Arduino code in ino files as C++ code.
         Review the C++ code, point out issues relative to principles of clean code, expressiveness, and performance.
-        Since this is an Arduino project, never suggest using the standard library (std::).
+        Since this is an Arduino project, never suggest using the standard library (std::) or run time type information.
+        For memory savings, prefer defines to const variables, and prefer using the GF() macro for string literals longer than a single character.
         Files should be formatted according to the .clang-format file in the repo.
         Template files used as includes should have the .tpp extension, and should not be included in ino files.
-        Credential information should never be committed.
-        When analyzing on a local machine, confirm that credential information will be removed by local smudge filters in the filters folder.
+        If a local analysis is being performed and a `filters` folder is present, confirm that credential information will be removed by `filters\cleanFilter.ps1`.
         When evaluating a pull request, confirm that no credential information is present.
     - path: '**/*.h'
       instructions: >-
         Review the C++ code, point out issues relative to principles of clean code, expressiveness, and performance.
-        Since this is an Arduino project, never suggest using the standard library (std::).
         C++ code should be C++11 compatible, and should not use later features.
-        For memory savings, prefer defines to const variables, and prefer using the F() macro for string literals longer than a single character.
+        Since this is an Arduino project, never suggest using the standard library (std::) or run time type information.
+        For memory savings, prefer defines to const variables, and prefer using the GF() macro for string literals longer than a single character.
         Files should be formatted according to the .clang-format file in the repo.
         This is a header-only library; all code should be in the header and template files.
         Template files used as includes should have the .tpp extension, and should not be included directly by the user.
@@ -72,9 +72,9 @@ reviews:
     - path: '**/*.tpp'
       instructions: >-
         Review the C++ code, point out issues relative to principles of clean code, expressiveness, and performance.
-        Since this is an Arduino project, never suggest using the standard library (std::).
+        Since this is an Arduino project, never suggest using the standard library (std::) or run time type information.
         C++ code should be C++11 compatible, and should not use later features.
-        For memory savings, prefer defines to const variables, and prefer using the F() macro for string literals longer than a single character.
+        For memory savings, prefer defines to const variables, and prefer using the GF() macro for string literals longer than a single character.
         Files should be formatted according to the .clang-format file in the repo.
         This is a header-only library; all code should be in the header and template files.
         Template files used as includes should have the .tpp extension, and should not be included directly by the user.

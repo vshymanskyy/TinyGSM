@@ -322,6 +322,9 @@ class TinyGsmSSL {
    * @param filename The name of the certificate file.
    * @return True if the certificate was successfully converted, false
    * otherwise.
+   *
+   * @note On modems that do not require certificate conversion, this function
+   * simply returns true.
    */
   bool convertCertificate(CertificateType cert_type, const char* filename) {
     return thisModem().convertCertificateImpl(cert_type, filename);
@@ -336,6 +339,9 @@ class TinyGsmSSL {
    * @param ca_cert_name The name of the CA certificate file.
    * @return True if the CA certificate was successfully converted, false
    * otherwise.
+   *
+   * @note On modems that do not require certificate conversion, this function
+   * simply returns true.
    */
   bool convertCACertificate(const char* ca_cert_name) {
     return thisModem().convertCACertificateImpl(ca_cert_name);
@@ -354,6 +360,9 @@ class TinyGsmSSL {
    * @param client_cert_key The name of the client certificate key file.
    * @return True if the client certificate and key were successfully converted,
    * false otherwise.
+   *
+   * @note On modems that do not require certificate conversion, this function
+   * simply returns true.
    */
   bool convertClientCertificates(const char* client_cert_name,
                                  const char* client_cert_key) {
@@ -377,6 +386,9 @@ class TinyGsmSSL {
    * identifier hint or hint).
    * @return True if the PSK and identity were successfully converted, false
    * otherwise.
+   *
+   * @note On modems that do not require key conversion, this function simply
+   * returns true.
    */
   bool convertPSKandID(const char* psk, const char* pskIdent) {
     return thisModem().convertPSKandIDImpl(psk, pskIdent);
@@ -393,6 +405,9 @@ class TinyGsmSSL {
    *
    * @param psk_table_name The name of the PSK table file.
    * @return True if the PSK table was successfully converted, false otherwise.
+   *
+   * @note On modems that do not require PSK table conversion, this function
+   * simply returns true.
    */
   bool convertPSKTable(const char* psk_table_name) {
     return thisModem().convertPSKTableImpl(psk_table_name);

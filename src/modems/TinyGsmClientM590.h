@@ -432,15 +432,6 @@ class TinyGsmM590 : public TinyGsmModem<TinyGsmM590, TinyGsmM590ModemConfig>,
    * Time functions
    */
   // Follows all clock functions as inherited from TinyGsmTime.tpp
-  /*
-   * NTP server functions
-   */
-  // Follows all NTP server functions as inherited from TinyGsmNTP.tpp
-
-  /*
-   * BLE functions
-   */
-  // No functions of this type supported
 
   /*
    * NTP server functions

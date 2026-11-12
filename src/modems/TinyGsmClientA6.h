@@ -15,7 +15,7 @@
  *
  * - TCP sockets:
  *   - 8
- *   - SSL client not supported *
+ *   - SSL client not supported
  * - Socket Buffering:
  *   - The modem does **not** have an internal buffer for incoming data.
  *   - You must set the buffer size in this library to be larger than your

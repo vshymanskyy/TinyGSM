@@ -74,13 +74,13 @@ class TinyGsmTime {
   /**
    * @brief Get the date and time as parts
    *
-   * @param year Reference to an int for the year
-   * @param month Reference to an int for the month
-   * @param day Reference to an int for the day
-   * @param hour Reference to an int for the hour
-   * @param minute Reference to an int for the minute
-   * @param second Reference to an int for the second
-   * @param timezone Reference to a float for the timezone
+   * @param year Pointer to an int for the year
+   * @param month Pointer to an int for the month
+   * @param day Pointer to an int for the day
+   * @param hour Pointer to an int for the hour
+   * @param minute Pointer to an int for the minute
+   * @param second Pointer to an int for the second
+   * @param timezone Pointer to a float for the timezone
    * @return True if the references have been filled with valid values from
    * the GSM module, false otherwise.
    */
@@ -93,13 +93,13 @@ class TinyGsmTime {
   /**
    * @brief Get the date and time as parts in UTC
    *
-   * @param year Reference to an int for the year
-   * @param month Reference to an int for the month
-   * @param day Reference to an int for the day
-   * @param hour Reference to an int for the hour
-   * @param minute Reference to an int for the minute
-   * @param second Reference to an int for the second
-   * @param timezone Reference to a float for the timezone
+   * @param year Pointer to an int for the year
+   * @param month Pointer to an int for the month
+   * @param day Pointer to an int for the day
+   * @param hour Pointer to an int for the hour
+   * @param minute Pointer to an int for the minute
+   * @param second Pointer to an int for the second
+   * @param timezone Pointer to a float for the timezone
    * @return True if the references have been filled with valid values from
    * the GSM module, false otherwise.
    */
