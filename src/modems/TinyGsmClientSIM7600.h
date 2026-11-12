@@ -36,7 +36,10 @@
 
 #ifndef SRC_TINYGSMCLIENTSIM7600_H_
 #define SRC_TINYGSMCLIENTSIM7600_H_
+
+#if defined(TINY_GSM_DEBUG)
 #pragma message("TinyGSM:  TinyGsmClientSIM7600")
+#endif
 
 #include "mixins/TinyGsmModem.tpp"
 #include "mixins/TinyGsmTCP.tpp"

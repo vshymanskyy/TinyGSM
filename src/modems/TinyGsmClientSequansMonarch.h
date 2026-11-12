@@ -27,7 +27,10 @@
 
 #ifndef SRC_TINYGSMCLIENTSEQUANSMONARCH_H_
 #define SRC_TINYGSMCLIENTSEQUANSMONARCH_H_
+
+#if defined(TINY_GSM_DEBUG)
 #pragma message("TinyGSM:  TinyGsmClientSequansMonarch")
+#endif
 
 #include "mixins/TinyGsmModem.tpp"
 #include "mixins/TinyGsmTCP.tpp"

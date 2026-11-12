@@ -28,7 +28,10 @@
 
 #ifndef SRC_TINYGSMCLIENTSARAR5_H_
 #define SRC_TINYGSMCLIENTSARAR5_H_
+
+#if defined(TINY_GSM_DEBUG)
 #pragma message("TinyGSM:  TinyGsmClientSaraR5")
+#endif
 
 #include "mixins/TinyGsmModem.tpp"
 #include "mixins/TinyGsmTCP.tpp"

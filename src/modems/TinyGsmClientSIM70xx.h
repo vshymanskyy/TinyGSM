@@ -12,7 +12,10 @@
  */
 #ifndef SRC_TINYGSMCLIENTSIM70XX_H_
 #define SRC_TINYGSMCLIENTSIM70XX_H_
+
+#if defined(TINY_GSM_DEBUG)
 #pragma message("TinyGSM:  TinyGsmClientSIM70xx")
+#endif
 
 #include "mixins/TinyGsmModem.tpp"
 #include "mixins/TinyGsmCellularData.tpp"

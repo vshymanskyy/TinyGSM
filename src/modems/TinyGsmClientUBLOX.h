@@ -30,7 +30,10 @@
 
 #ifndef SRC_TINYGSMCLIENTUBLOX_H_
 #define SRC_TINYGSMCLIENTUBLOX_H_
+
+#if defined(TINY_GSM_DEBUG)
 #pragma message("TinyGSM:  TinyGsmClientUBLOX")
+#endif
 
 #include "mixins/TinyGsmModem.tpp"
 #include "mixins/TinyGsmTCP.tpp"

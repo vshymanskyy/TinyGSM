@@ -25,7 +25,10 @@
 
 #ifndef SRC_TINYGSMCLIENTSIM5360_H_
 #define SRC_TINYGSMCLIENTSIM5360_H_
+
+#if defined(TINY_GSM_DEBUG)
 #pragma message("TinyGSM:  TinyGsmClientSIM5360")
+#endif
 
 #include "mixins/TinyGsmModem.tpp"
 #include "mixins/TinyGsmTCP.tpp"
