@@ -589,53 +589,12 @@ class TinyGsmESP8266
   /*
    * Time functions
    */
- public:
-  /**
-   * @brief Set the time zone for the modem and optionally enable SNTP time
-   * synchronization.
-   * @param timezone The time zone offset in hours from UTC (e.g., -5 for EST, 1
-   * for CET).
-   * @param enable_sync Optional parameter to enable or disable SNTP time
-   * synchronization. Defaults to true (enabled).
-   */
-  void setTimeZone(int8_t timezone, bool enable_sync = true) {
-    // configure the NTP settings for the modem
-    sendAT(GF("+CIPSNTPCFG="), enable_sync ? 1 : 0, ',', timezone);
-    waitResponse();
-  }
-
  protected:
-  bool waitForTimeSyncImpl(uint16_t timeout_s) {
-    // if we're not connected, we'll never get the time
-    if (!isNetworkConnected()) {
-      DBG(GF("### Not connected to network; cannot sync time!"));
-      return false;
-    }
-    // if SNTP sync isn't enabled, we won't have the time
-    // NOTE: We don't actually enable the time here, because doing so would
-    // change any user settings for the timezone and time servers.
-    sendAT(GF("+CIPSNTPCFG?"));
-    bool is_enabled = waitResponse(2000L, GF("+CIPSNTPCFG:")) == 1;
-    is_enabled &= streamGetIntBefore(',') == 1;
-    waitResponse(5000L);  // returns OK at the end
-    if (!is_enabled) {
-      DBG(GF("### SNTP sync not enabled; cannot sync time!"));
-      return false;
-    }
-    // if we're sure we should be able to get the time, wait for it
-    uint32_t start_millis = millis();
-    while (millis() - start_millis < static_cast<uint32_t>(timeout_s) * 1000) {
-      uint32_t modem_time = getNetworkEpoch();
-      // If we get a time between January 1, 2020 and January 1, 2035, we're
-      // (hopefully) good
-      if (modem_time > 1577836800 && modem_time < 2051222400) { return true; }
-      delay(250);
-    }
-    return false;
-  }
-
   // NOTE: Only returning full date time in Espressif's format
   String getGSMDateTimeImpl(TinyGSMDateTimeFormat) {
+    // AT+CIPSNTPTIME?
+    // +CIPSNTPTIME:Tue Oct 19 17:47:56 2021
+    // OK
     sendAT(GF("+CIPSNTPTIME?"));
     if (waitResponse(2000L, GF("+CIPSNTPTIME:")) != 1) { return ""; }
 
@@ -685,7 +644,8 @@ class TinyGsmESP8266
     const int16_t itimezone_cfg = streamGetIntBefore(',');
     // AT+CIPSNTPCFG may report timezone as signed whole hours or signed HHMM.
     if (itimezone_cfg >= -14 && itimezone_cfg <= 14) {
-      itimezone          = static_cast<float>(itimezone_cfg);
+      itimezone = static_cast<float>(itimezone_cfg);
+      // also calculate quarter hours because for validation
       itimezone_quarters = static_cast<int16_t>(itimezone_cfg * 4);
     } else {
       const int16_t  timezone_sign    = (itimezone_cfg < 0) ? -1 : 1;
@@ -695,6 +655,7 @@ class TinyGsmESP8266
       itimezone                       = timezone_sign *
           (static_cast<float>(timezone_hours) +
            static_cast<float>(timezone_minutes) / 60.0f);
+      // also calculate quarter hours because for validation
       if (timezone_minutes % 15 == 0) {
         itimezone_quarters = timezone_sign *
             static_cast<int16_t>(timezone_hours * 4 + timezone_minutes / 15);
@@ -722,7 +683,7 @@ class TinyGsmESP8266
     DBG(GF("Timezone:"), static_cast<float>(itimezone) / 4.0);
 #endif
 
-    // Validate parsed values
+    // Validate parsed values (including quarter-hour timezone)
     if (!TinyGsmTime<TinyGsmESP8266>::isValidDateTimeValues(
             iyear, imonth, iday, ihour, imin, isec, itimezone_quarters)) {
       return false;
@@ -776,15 +737,75 @@ class TinyGsmESP8266
   /*
    * NTP server functions
    */
- protected:
-  // NOTE: I don't think this forces an immediate sync
-  bool NTPServerSyncImpl(const char* server, int TimeZone) {
-    // AT+CIPSNTPCFG uses signed HHMM for non-whole-hour UTC offsets.
-    const int timeZoneOffset = (TimeZone / 4) * 100 + (TimeZone % 4) * 15;
-    // configure the NTP settings for the modem
-    sendAT(GF("+CIPSNTPCFG="), 1, ',', timeZoneOffset, GF(",\""), server, '"');
+ public:
+  /**
+   * @brief Set the time zone for the modem and optionally enable SNTP time
+   * synchronization.
+   * @param timezone_quarters The time zone offset from UTC in **quarter hours**
+   * @param enable_sync Optional parameter to enable or disable SNTP time
+   * synchronization. Defaults to true (enabled).
+   * @param server The NTP server to use
+   * @return True if the module accepted the new timezone, false otherwise.
+   *
+   * @note getNetworkTime and getNetworkUTCTime both require a float which they
+   * will fill with a timezone in **decimal hours**.  `NTPServerSync` and
+   * `setTimeZone`, however, require an integer timezone in **quarter hours** as
+   * input..
+   */
+  bool setTimeZone(int8_t timezone_quarters, bool enable_sync = true,
+                   const char* server = nullptr) {
+    // AT+CIPSNTPCFG accepts either integers in range [-12,14] as whole hour
+    // offsets or signed HHMM for non-whole-hour UTC offsets.
+    // The standard input in this library for timezone in NTPServerSync is
+    // quarter hours. convert a quarter hour input to HHMM
+    int timezone_set = (timezone_quarters / 4) * 100 +
+        (timezone_quarters % 4) * 15;
+
+    if (server == nullptr) {
+      // configure the NTP settings for the modem, not setting the server
+      sendAT(GF("+CIPSNTPCFG="), enable_sync ? 1 : 0, ',', timezone_set);
+    } else {
+      // configure the NTP settings for the modem
+      sendAT(GF("+CIPSNTPCFG="), enable_sync ? 1 : 0, ',', timezone_set,
+             GF(",\""), server, '"');
+    }
     // returns a simple OK or ERROR
     return waitResponse() == 1;
+  }
+
+ protected:
+  bool waitForTimeSyncImpl(uint16_t timeout_s) {
+    // if we're not connected, we'll never get the time
+    if (!isNetworkConnected()) {
+      DBG(GF("### Not connected to network; cannot sync time!"));
+      return false;
+    }
+    // if SNTP sync isn't enabled, we won't have the time
+    // NOTE: We don't actually enable the time here, because doing so would
+    // change any user settings for the timezone and time servers.
+    sendAT(GF("+CIPSNTPCFG?"));
+    bool is_enabled = waitResponse(2000L, GF("+CIPSNTPCFG:")) == 1;
+    is_enabled &= streamGetIntBefore(',') == 1;
+    waitResponse(5000L);  // returns OK at the end
+    if (!is_enabled) {
+      DBG(GF("### SNTP sync not enabled; cannot sync time!"));
+      return false;
+    }
+    // if we're sure we should be able to get the time, wait for it
+    uint32_t start_millis = millis();
+    while (millis() - start_millis < static_cast<uint32_t>(timeout_s) * 1000) {
+      uint32_t modem_time = getNetworkEpoch();
+      // If we get a time between January 1, 2020 and January 1, 2035, we're
+      // (hopefully) good
+      if (modem_time > 1577836800 && modem_time < 2051222400) { return true; }
+      delay(250);
+    }
+    return false;
+  }
+
+  // NOTE: I don't think this forces an immediate sync
+  bool NTPServerSyncImpl(const char* server, int timezone_quarters) {
+    return setTimeZone(timezone_quarters, true, server);
   }
 
   /*

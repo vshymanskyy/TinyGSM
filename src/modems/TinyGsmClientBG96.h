@@ -833,7 +833,20 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
   String getGSMDateTimeImpl(TinyGSMDateTimeFormat format) {
     // Use AT+QLTS=2 to explicitly request the latest network-synced time in
     // local time.
+    // AT+QLTS=<mode>
+    // <mode> Query network time mode
+    //  - 0 Query the latest time that has been synchronized through network
+    //  - 1 Query the current GMT time calculated from the latest time that has
+    //  been synchronized through network
+    //  - 2 Query the current LOCAL time
     sendAT(GF("+QLTS=2"));
+    // Response: +QLTS: <time>,<dst>
+    // - <time> String type value. Format is "yy/MM/dd,hh:mm:ss±zz", where
+    //   characters indicate year (last two digits), month, day, hour, minutes,
+    //   seconds and time zone (indicates the difference, expressed in quarters
+    //   of an hour, between the local time and GMT; range -48...+48). E.g. 6th
+    //   of May 2004, 22:10:00 GMT+2 hours equals to “04/05/06,22:10:00+08”
+    // - <ds> Daylight saving time.
     if (waitResponse(2000L, GF("+QLTS: \"")) != 1) { return ""; }
 
     String res;
@@ -854,9 +867,10 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
     return res;
   }
 
-  // Use AT+QLTS=1 to explicitly request the latest network-synced time in UTC.
   bool getNetworkUTCTimeImpl(int* year, int* month, int* day, int* hour,
                              int* minute, int* second, float* timezone) {
+    // Use AT+QLTS=1 to explicitly request the latest network-synced time in
+    // UTC.
     sendAT(GF("+QLTS=1"));
     if (waitResponse(2000L, GF("+QLTS: \"")) != 1) { return false; }
 
@@ -964,7 +978,7 @@ class TinyGsmBG96 : public TinyGsmModem<TinyGsmBG96, TinyGsmBG96ModemConfig>,
    * NTP server functions
    */
 
-  bool NTPServerSyncImpl(const char* server, byte) {
+  bool NTPServerSyncImpl(const char* server, int /*timezone_quarters*/) {
     // Request network synchronization
     // AT+QNTP=<contextID>,<server>[,<port>][,<autosettime>]
     sendAT(GF("+QNTP=1,\""), server, '"');

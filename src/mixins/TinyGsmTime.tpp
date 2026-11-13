@@ -80,7 +80,7 @@ class TinyGsmTime {
    * @param hour Pointer to an int for the hour
    * @param minute Pointer to an int for the minute
    * @param second Pointer to an int for the second
-   * @param timezone Pointer to a float for the timezone
+   * @param timezone Pointer to a float for the timezone in **decimal hours**.
    * @return True if the references have been filled with roughly validated
    * values from the GSM module, false otherwise.
    *
@@ -89,6 +89,11 @@ class TinyGsmTime {
    * parseable and the values are within a reasonable range.  A true response
    * does not guarantee that the values are strictly correct and don't represent
    * an impossible or invalid date/time.
+   *
+   * @note getNetworkTime and getNetworkUTCTime both require a float which they
+   * will fill with a timezone in **decimal hours**.  `NTPServerSync` and
+   * `setTimeZone`, however, require an integer timezone in **quarter hours** as
+   * input..
    */
   bool getNetworkTime(int* year, int* month, int* day, int* hour, int* minute,
                       int* second, float* timezone) {
@@ -105,7 +110,7 @@ class TinyGsmTime {
    * @param hour Pointer to an int for the hour
    * @param minute Pointer to an int for the minute
    * @param second Pointer to an int for the second
-   * @param timezone Pointer to a float for the timezone
+   * @param timezone Pointer to a float for the timezone in **decimal hours**.
    * @return True if the references have been filled with roughly validated
    * values from the GSM module, false otherwise.
    *
@@ -114,6 +119,11 @@ class TinyGsmTime {
    * parseable and the values are within a reasonable range.  A true response
    * does not guarantee that the values are strictly correct and don't represent
    * an impossible or invalid date/time.
+   *
+   * @note getNetworkTime and getNetworkUTCTime both require a float which they
+   * will fill with a timezone in **decimal hours**.  `NTPServerSync` and
+   * `setTimeZone`, however, require an integer timezone in **quarter hours** as
+   * input..
    */
   bool getNetworkUTCTime(int* year, int* month, int* day, int* hour,
                          int* minute, int* second, float* timezone) {
@@ -193,6 +203,10 @@ class TinyGsmTime {
 
   bool getNetworkTimeImpl(int* year, int* month, int* day, int* hour,
                           int* minute, int* second, float* timezone) {
+    // Format is "yy/MM/dd,hh:mm:ss±zz", where characters indicate year (two
+    // last digits),month, day, hour, minutes, seconds and time zone
+    // time zone indicates the difference, expressed in quarters of an hour,
+    // between the local time and GMT; range -47...+48).
     thisModem().sendAT(GF("+CCLK?"));
     if (thisModem().waitResponse(2000L, GF("+CCLK: \"")) != 1) { return false; }
 

@@ -50,18 +50,27 @@ class TinyGsmNTP {
    * returns a boolean indicating success or failure.
    *
    * @param server The NTP server to use
-   * @param TimeZone The timezone offset from UTC, in quarter-hours (15-minute
-   * increments)
+   * @param timezone_quarters The timezone offset from UTC, in quarter-hours
+   * (15-minute increments)
    *
    * @return True if the synchronization was successful, false otherwise.
+   *
+   * @attention The range of the TimeZone parameter is typically -47 to +48,
+   * corresponding to -11.75 to +12 hours in quarter-hour increments.
+   *
+   * @note getNetworkTime and getNetworkUTCTime both require a float which they
+   * will fill with a timezone in **decimal hours**.  `NTPServerSync` and
+   * `setTimeZone`, however, require an integer timezone in **quarter hours** as
+   * input..
    */
-  bool NTPServerSync(const char* server = "pool.ntp.org", int TimeZone = 0) {
-    return thisModem().NTPServerSyncImpl(server, TimeZone);
+  bool NTPServerSync(const char* server            = "pool.ntp.org",
+                     int         timezone_quarters = 0) {
+    return thisModem().NTPServerSyncImpl(server, timezone_quarters);
   }
 
   /// @copydoc NTPServerSync(const char*, int)
-  bool NTPServerSync(const String& server, int TimeZone = 0) {
-    return NTPServerSync(server.c_str(), TimeZone);
+  bool NTPServerSync(const String& server, int timezone_quarters = 0) {
+    return NTPServerSync(server.c_str(), timezone_quarters);
   }
 
   /**
@@ -128,7 +137,7 @@ class TinyGsmNTP {
    * NTP server functions
    */
 
-  bool NTPServerSyncImpl(const char* server, int TimeZone) {
+  bool NTPServerSyncImpl(const char* server, int timezone_quarters) {
     // Set bearer profile to associate with NTP sync
     // this is allowed to fail; it's not supported by all modules
     thisModem().sendAT(GF("+CNTPCID=1"));
@@ -143,7 +152,7 @@ class TinyGsmNTP {
     // extended four time zones X, so that when the time zone of the input
     // integers are used, without the need for decimal. Time zone in front of
     // the West if it is a negative number indicates the time zone.
-    thisModem().sendAT(GF("+CNTP=\""), server, GF("\","), TimeZone);
+    thisModem().sendAT(GF("+CNTP=\""), server, GF("\","), timezone_quarters);
     if (thisModem().waitResponse(10000L) != 1) { return false; }
 
     // TODO: Should we have a "quick fail" here? We don't want to wait for the
@@ -177,7 +186,7 @@ class TinyGsmNTP {
     if (!thisModem().isNetworkConnected()) { return false; }
     // if we're sure we should be able to get the time, wait for it
     uint32_t start_millis = millis();
-    while (millis() - start_ millis < static_cast<uint32_t>(timeout_s) * 1000) {
+    while (millis() - start_millis < static_cast<uint32_t>(timeout_s) * 1000) {
       // Request network synchronization
       thisModem().sendAT(GF("+CNTP"));
       if (thisModem().waitResponse(10000L, GF("+CNTP:")) == 1) {
