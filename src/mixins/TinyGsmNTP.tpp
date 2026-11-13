@@ -68,6 +68,10 @@ class TinyGsmNTP {
    * @brief Wait for the modem to synchronize with the NTP server
    * @param timeout_s The timeout in seconds
    * @return True if the modem synchronized successfully, false otherwise.
+   *
+   * @important This function may block for up to 10 seconds **longer** than the
+   * provided timeout.  The modem may take up to 10 seconds to return after
+   * being asked to synchronize the time.
    */
   bool waitForTimeSync(uint16_t timeout_s = 120) {
     return thisModem().waitForTimeSyncImpl(timeout_s);
@@ -173,7 +177,7 @@ class TinyGsmNTP {
     if (!thisModem().isNetworkConnected()) { return false; }
     // if we're sure we should be able to get the time, wait for it
     uint32_t start_millis = millis();
-    while (millis() - start_millis < static_cast<uint32_t>(timeout_s) * 1000) {
+    while (millis() - start_ millis < static_cast<uint32_t>(timeout_s) * 1000) {
       // Request network synchronization
       thisModem().sendAT(GF("+CNTP"));
       if (thisModem().waitResponse(10000L, GF("+CNTP:")) == 1) {

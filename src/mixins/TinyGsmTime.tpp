@@ -81,8 +81,14 @@ class TinyGsmTime {
    * @param minute Pointer to an int for the minute
    * @param second Pointer to an int for the second
    * @param timezone Pointer to a float for the timezone
-   * @return True if the references have been filled with valid values from
-   * the GSM module, false otherwise.
+   * @return True if the references have been filled with roughly validated
+   * values from the GSM module, false otherwise.
+   *
+   * @important This function does only coarse validation of the returned
+   * values.  A true return guarantees that the response from the modem was
+   * parseable and the values are within a reasonable range.  A true response
+   * does not guarantee that the values are strictly correct and don't represent
+   * an impossible or invalid date/time.
    */
   bool getNetworkTime(int* year, int* month, int* day, int* hour, int* minute,
                       int* second, float* timezone) {
@@ -100,8 +106,14 @@ class TinyGsmTime {
    * @param minute Pointer to an int for the minute
    * @param second Pointer to an int for the second
    * @param timezone Pointer to a float for the timezone
-   * @return True if the references have been filled with valid values from
-   * the GSM module, false otherwise.
+   * @return True if the references have been filled with roughly validated
+   * values from the GSM module, false otherwise.
+   *
+   * @important This function does only coarse validation of the returned
+   * values.  A true return guarantees that the response from the modem was
+   * parseable and the values are within a reasonable range.  A true response
+   * does not guarantee that the values are strictly correct and don't represent
+   * an impossible or invalid date/time.
    */
   bool getNetworkUTCTime(int* year, int* month, int* day, int* hour,
                          int* minute, int* second, float* timezone) {
