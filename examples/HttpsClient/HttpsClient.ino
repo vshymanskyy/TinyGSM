@@ -127,10 +127,15 @@ TinyGsm        modem(debugger);
 TinyGsm modem(SerialAT);
 #endif
 
+#if defined(TINY_GSM_MODEM_CAN_SPECIFY_CERTS)
 // create a secure context as context 0
 TinyGsmSecureContext secureContext(modem, (uint8_t)0);
 // create a secure client as mux 0 and context 0
 TinyGsmClientSecure secureClient(modem, (uint8_t)0, (uint8_t)0);
+#else
+// create a secure client as mux 0
+TinyGsmClientSecure secureClient(modem, (uint8_t)0);
+#endif
 // create an http client using the secure client
 HttpClient http(secureClient, server_ssl, port_ssl);
 
