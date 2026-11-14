@@ -1,27 +1,32 @@
-/**************************************************************
+/** ============================================================================
+ * @example{lineno} SIM800_SslSetCert.ino
  *
- * This sketch uploads SSL certificates to the SIM8xx
+ * @brief This sketch uploads SSL certificates to the SIM8xx
  *
- * TinyGSM Getting Started guide:
- *   https://tiny.cc/tinygsm-readme
- *
- **************************************************************/
+ * @warning The actual certificates included in this example are expired and
+ * will not work for SSL connections.  You must replace them with valid
+ * certificates for your application.
+ * ========================================================================== */
 
 // This example is specific to SIM8xx
 #define TINY_GSM_MODEM_SIM800
 
+#include <TinyGsmClient.h>
+
+#if (defined(ARDUINO_NRF52840_FEATHER)) && !defined(ADAFRUIT_TINYUSB_H_)
+#include <Adafruit_TinyUSB.h>  // for Serial
+#endif
+
 // Select your certificate:
-#include "DSTRootCAX3.h"
-//#include "DSTRootCAX3.der.h"
-//#include "COMODORSACertificationAuthority.h"
+#include "DSTRootCAX3.h"  // Expired 2021-09-30
+// #include "DSTRootCAX3.der.h"  // Expired 2021-09-30
+// #include "COMODORSACertificationAuthority.h"
 
 // Select the file you want to write into
 // (the file is stored on the modem)
 #define CERT_FILE "C:\\USER\\CERT.CRT"
 
-#include <TinyGsmClient.h>
-
-// Set serial for debug console (to the Serial Monitor, speed 115200)
+// Set serial for debug console (to the Serial Monitor)
 #define SerialMon Serial
 
 // Use Hardware Serial for AT commands
@@ -64,14 +69,15 @@ void setup() {
     modem.stream.write(c);
   }
 
-  modem.stream.write(AT_NL);
+  // SIM8xx modules use "\r\n" as their line ending
+  modem.stream.write("\r\n");
   modem.stream.flush();
 
   if (modem.waitResponse(2000) != 1) return;
 
   modem.sendAT(GF("+SSLSETCERT=\"" CERT_FILE "\""));
   if (modem.waitResponse() != 1) return;
-  if (modem.waitResponse(5000L, GF(AT_NL "+SSLSETCERT:")) != 1) return;
+  if (modem.waitResponse(5000L, GF("+SSLSETCERT:")) != 1) return;
   const int retCode = modem.stream.readStringUntil('\n').toInt();
 
 

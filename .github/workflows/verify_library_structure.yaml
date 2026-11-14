@@ -1,0 +1,20 @@
+name: Verify library manifest and structure
+
+# Triggers the workflow on push or pull request events
+on: [push, pull_request]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify_library_structure:
+    name: Validate library structure
+    if: ${{ ! contains(github.event.head_commit.message, 'ci skip') }}
+    # write permissions needed to create a commit comment with validation failures
+    permissions:
+      contents: write
+    uses: EnviroDIY/workflows/.github/workflows/verify_library_structure.yaml@main
+    with:
+      library-manager: "update"
+      library-compliance: "strict"

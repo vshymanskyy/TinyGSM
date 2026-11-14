@@ -1,26 +1,23 @@
-/**************************************************************
+/** ============================================================================
+ * @example{lineno} BlynkClient.ino
+ *
+ * @brief This sketch connects to Blynk using TinyGSM and a GSM modem.
  *
  * For this example, you need to install Blynk library:
  *   https://github.com/blynkkk/blynk-library/releases/latest
  *
- * TinyGSM Getting Started guide:
- *   https://tiny.cc/tinygsm-readme
- *
- **************************************************************
  *
  * Blynk is a platform with iOS and Android apps to control
  * Arduino, Raspberry Pi and the likes over the Internet.
  * You can easily build graphic interfaces for all your
  * projects by simply dragging and dropping widgets.
  *
- * Blynk supports many development boards with WiFi, Ethernet,
- * GSM, Bluetooth, BLE, USB/Serial connection methods.
- * See more in Blynk library examples and community forum.
+ * [Blynk](http://www.blynk.io/) supports many development boards with WiFi,
+ * Ethernet, GSM, Bluetooth, BLE, USB/Serial connection methods. See more in
+ * [Blynk library examples and community forum](http://community.blynk.cc/).
  *
- *                http://www.blynk.io/
- *
- * Change GPRS apm, user, pass, and Blynk auth token to run :)
- **************************************************************/
+ * Change SIM card apn, user, pass, and Blynk auth token to run :)
+ * ========================================================================== */
 
 #define BLYNK_TEMPLATE_ID "TMPxxxxxx"
 #define BLYNK_TEMPLATE_NAME "Device"
@@ -54,29 +51,34 @@
 // #define TINY_GSM_MODEM_M590
 // #define TINY_GSM_MODEM_MC60
 // #define TINY_GSM_MODEM_MC60E
-// #define TINY_GSM_MODEM_ESP8266
 // #define TINY_GSM_MODEM_ESP32
+// #define TINY_GSM_MODEM_ESP8266
+// #define TINY_GSM_MODEM_ESP8266_NONOS
 // #define TINY_GSM_MODEM_XBEE
 // #define TINY_GSM_MODEM_SEQUANS_MONARCH
 
 #include <TinyGsmClient.h>
 #include <BlynkSimpleTinyGSM.h>
 
-// Set serial for debug console (to the Serial Monitor, default speed 115200)
+#if (defined(ARDUINO_NRF52840_FEATHER)) && !defined(ADAFRUIT_TINYUSB_H_)
+#include <Adafruit_TinyUSB.h>  // for Serial
+#endif
+
+// Set serial for debug console (to the Serial Monitor)
 #define SerialMon Serial
 
 // Hardware Serial on Mega, Leonardo, Micro
-#ifndef __AVR_ATmega328P__
+#if !defined(__AVR_ATmega328P__) && !defined(SerialAT)
 #define SerialAT Serial1
 
 // or Software Serial on Uno, Nano
-#else
+#elif !defined(SerialAT)
 #include <SoftwareSerial.h>
 SoftwareSerial SerialAT(2, 3);  // RX, TX
 #endif
 
 
-// Your GPRS credentials, if any
+// Your SIM card credentials, if any
 const char apn[]  = "YourAPN";
 const char user[] = "";
 const char pass[] = "";

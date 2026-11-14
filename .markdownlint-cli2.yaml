@@ -1,0 +1,31 @@
+# .markdownlint-cli2.yaml
+#
+# Configuration for generated Doxygen Markdown.
+
+config:
+  # Start with markdownlint's standard rules.
+  default: true
+
+  # MD013 - Line length
+  #
+  # Do not enforce an 80-character limit.
+  MD013: false
+
+  # MD024 - Multiple headings with the same content
+  #
+  # Only flag duplicate headings when they share the same parent heading.
+  MD024:
+    siblings_only: true
+
+  # MD033 - Inline HTML
+  #
+  # Allow only these HTML elements; other inline HTML remains an error.
+  MD033:
+    allowed_elements:
+      - a
+      - br
+      - sup
+
+  # MD060 - Table style
+  MD060:
+    style: aligned

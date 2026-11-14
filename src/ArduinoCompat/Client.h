@@ -37,6 +37,7 @@ class Client : public Stream {
   virtual void    stop()                                   = 0;
   virtual uint8_t connected()                              = 0;
   virtual         operator bool()                          = 0;
+  virtual ~Client() {}
 
  protected:
   uint8_t* rawIPAddress(IPAddress& addr) {

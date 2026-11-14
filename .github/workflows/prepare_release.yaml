@@ -1,0 +1,56 @@
+on:
+  push:
+    branches:
+      - master
+      - main
+    # Sequence of patterns matched against refs/tags
+    paths:
+      - 'VERSION' # Push events when the VERSION file changes
+  workflow_dispatch:
+    inputs:
+      include_dependencies:
+        description: 'True to include a zip file with dependencies in the release'
+        required: false
+        type: boolean
+        default: true
+
+name: Create a New Release
+
+jobs:
+  wait_for_checks:
+    if: ${{ github.event_name != 'workflow_dispatch' }}
+    strategy:
+      matrix:
+        req_workflow: [verify_library_structure.yaml, build_examples.yaml]
+    name: Wait for Checks to complete
+    runs-on: ubuntu-latest
+    # actions:read is required so action-wait-for-workflow can query workflow run status
+    permissions:
+      actions: read
+    steps:
+      - name: Wait on Workflow
+        uses: ArcticLampyrid/action-wait-for-workflow@v1.3.0
+        with:
+          workflow: ${{ matrix.req_workflow }}
+          sha: ${{ github.sha || github.event.pull_request.head.sha || github.event.pull_request.head.ref }} # optional
+          # Allow success, cancelled, or skipped conclusion
+          # Allow canceled because sometimes a CI check is accidentally started after a commit that only changes versioning and then canceled,
+          # and we don't want to block the release for that.
+          allowed-conclusions: |
+            success
+            cancelled
+            skipped
+
+  release:
+    name: Prepare a new release
+    needs: [wait_for_checks]
+    if: |
+      always() &&
+      (needs.wait_for_checks.result == 'success' || needs.wait_for_checks.result == 'skipped')
+    permissions:
+      contents: write
+    uses: EnviroDIY/workflows/.github/workflows/prepare_release.yaml@main
+    secrets:
+      PLATFORMIO_AUTH_TOKEN: ${{ secrets.PLATFORMIO_AUTH_TOKEN }}
+    with:
+      include_dependencies: ${{ github.event_name != 'workflow_dispatch' || inputs.include_dependencies }}

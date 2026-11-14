@@ -1,15 +1,9 @@
-/**************************************************************
+/** ============================================================================
+ * @example{lineno} MqttClient.ino
  *
- * For this example, you need to install PubSubClient library:
- *   https://github.com/knolleary/pubsubclient
- *   or from http://librarymanager/all#PubSubClient
+ * @brief This sketch connects to an MQTT broker and publishes and subscribes to
+ * topics to control and report the status of the onboard LED.
  *
- * TinyGSM Getting Started guide:
- *   https://tiny.cc/tinygsm-readme
- *
- * For more MQTT examples, see PubSubClient library
- *
- **************************************************************
  * This example connects to HiveMQ's showcase broker.
  *
  * You can quickly test sending and receiving messages from the HiveMQ webclient
@@ -20,7 +14,12 @@
  * should toggle and you should see a new message published to
  * GsmClientTest/ledStatus with the newest LED status.
  *
- **************************************************************/
+ * For this example, you need to install PubSubClient library:
+ *   https://github.com/knolleary/pubsubclient
+ *   or from http://librarymanager/all#PubSubClient
+ *
+ * For more MQTT examples, see PubSubClient library
+ * ========================================================================== */
 
 // Select your modem:
 #define TINY_GSM_MODEM_SIM800
@@ -49,48 +48,46 @@
 // #define TINY_GSM_MODEM_XBEE
 // #define TINY_GSM_MODEM_SEQUANS_MONARCH
 
-// Set serial for debug console (to the Serial Monitor, default speed 115200)
+// Set serial for debug console (to the Serial Monitor)
 #define SerialMon Serial
 
 // Set serial for AT commands (to the module)
 // Use Hardware Serial on Mega, Leonardo, Micro
-#ifndef __AVR_ATmega328P__
+#if !defined(__AVR_ATmega328P__) && !defined(SerialAT)
 #define SerialAT Serial1
 
 // or Software Serial on Uno, Nano
-#else
+#elif !defined(SerialAT)
 #include <SoftwareSerial.h>
 SoftwareSerial SerialAT(2, 3);  // RX, TX
 #endif
 
 // See all AT commands, if wanted
+// WARNING: At high baud rates, incoming data may be lost when dumping AT
+// commands
 // #define DUMP_AT_COMMANDS
 
 // Define the serial console for debug prints, if needed
-#define TINY_GSM_DEBUG SerialMon
+// #define TINY_GSM_DEBUG SerialMon
 
 // Range to attempt to autobaud
 // NOTE:  DO NOT AUTOBAUD in production code.  Once you've established
 // communication, set a fixed baud rate using modem.setBaud(#).
 #define GSM_AUTOBAUD_MIN 9600
-#define GSM_AUTOBAUD_MAX 115200
-
-// Add a reception delay, if needed.
-// This may be needed for a fast processor at a slow baud rate.
-// #define TINY_GSM_YIELD() { delay(2); }
+#define GSM_AUTOBAUD_MAX 921600
 
 // Define how you're planning to connect to the internet.
 // This is only needed for this example, not in other code.
-#define TINY_GSM_USE_GPRS true
+#define TINY_GSM_USE_CELLULAR_DATA true
 #define TINY_GSM_USE_WIFI false
 
-// set GSM PIN, if any
-#define GSM_PIN ""
+// set SIM card pin, if any
+#define SIM_PIN ""
 
-// Your GPRS credentials, if any
-const char apn[]      = "YourAPN";
-const char gprsUser[] = "";
-const char gprsPass[] = "";
+// Your SIM card credentials, if any
+const char apn[]     = "YourAPN";
+const char simUser[] = "";
+const char simPass[] = "";
 
 // Your WiFi connection credentials, if applicable
 const char wifiSSID[] = "YourSSID";
@@ -106,17 +103,21 @@ const char* topicLedStatus = "GsmClientTest/ledStatus";
 #include <TinyGsmClient.h>
 #include <PubSubClient.h>
 
+#if (defined(ARDUINO_NRF52840_FEATHER)) && !defined(ADAFRUIT_TINYUSB_H_)
+#include <Adafruit_TinyUSB.h>  // for Serial
+#endif
+
 // Just in case someone defined the wrong thing..
-#if TINY_GSM_USE_GPRS && not defined TINY_GSM_MODEM_HAS_GPRS
-#undef TINY_GSM_USE_GPRS
+#if TINY_GSM_USE_CELLULAR_DATA && not defined TINY_GSM_MODEM_HAS_CELLULAR_DATA
+#undef TINY_GSM_USE_CELLULAR_DATA
 #undef TINY_GSM_USE_WIFI
-#define TINY_GSM_USE_GPRS false
+#define TINY_GSM_USE_CELLULAR_DATA false
 #define TINY_GSM_USE_WIFI true
 #endif
 #if TINY_GSM_USE_WIFI && not defined TINY_GSM_MODEM_HAS_WIFI
-#undef TINY_GSM_USE_GPRS
+#undef TINY_GSM_USE_CELLULAR_DATA
 #undef TINY_GSM_USE_WIFI
-#define TINY_GSM_USE_GPRS true
+#define TINY_GSM_USE_CELLULAR_DATA true
 #define TINY_GSM_USE_WIFI false
 #endif
 
@@ -125,7 +126,7 @@ const char* topicLedStatus = "GsmClientTest/ledStatus";
 StreamDebugger debugger(SerialAT, SerialMon);
 TinyGsm        modem(debugger);
 #else
-TinyGsm        modem(SerialAT);
+TinyGsm modem(SerialAT);
 #endif
 TinyGsmClient client(modem);
 PubSubClient  mqtt(client);
@@ -178,6 +179,12 @@ void setup() {
 
   pinMode(LED_PIN, OUTPUT);
 
+  // MQTT Broker setup
+  // NOTE: This is only configuring the server and callback within the
+  // PubSubClient object. It does not take any action.
+  mqtt.setServer(broker, 1883);
+  mqtt.setCallback(mqttCallback);
+
   // !!!!!!!!!!!
   // Set your reset, enable, power pins here
   // !!!!!!!!!!!
@@ -199,9 +206,12 @@ void setup() {
   SerialMon.print("Modem Info: ");
   SerialMon.println(modemInfo);
 
-#if TINY_GSM_USE_GPRS
+#if TINY_GSM_USE_CELLULAR_DATA
   // Unlock your SIM card with a PIN if needed
-  if (GSM_PIN && modem.getSimStatus() != 3) { modem.simUnlock(GSM_PIN); }
+  if (SIM_PIN && modem.getSimStatus() != SIM_READY) {
+    // simUnlock will do nothing if the pin is empty
+    modem.simUnlock(SIM_PIN);
+  }
 #endif
 
 #if TINY_GSM_USE_WIFI
@@ -215,9 +225,9 @@ void setup() {
   SerialMon.println(" success");
 #endif
 
-#if TINY_GSM_USE_GPRS && defined TINY_GSM_MODEM_XBEE
-  // The XBee must run the gprsConnect function BEFORE waiting for network!
-  modem.gprsConnect(apn, gprsUser, gprsPass);
+#if TINY_GSM_USE_CELLULAR_DATA && defined TINY_GSM_MODEM_XBEE
+  // The XBee must run the dataConnect function BEFORE waiting for network!
+  modem.dataConnect(apn, simUser, simPass);
 #endif
 
   SerialMon.print("Waiting for network...");
@@ -230,23 +240,20 @@ void setup() {
 
   if (modem.isNetworkConnected()) { SerialMon.println("Network connected"); }
 
-#if TINY_GSM_USE_GPRS
-  // GPRS connection parameters are usually set after network registration
+#if TINY_GSM_USE_CELLULAR_DATA
+  // Cellular data connection parameters are usually set after network
+  // registration
   SerialMon.print(F("Connecting to "));
   SerialMon.print(apn);
-  if (!modem.gprsConnect(apn, gprsUser, gprsPass)) {
+  if (!modem.dataConnect(apn, simUser, simPass)) {
     SerialMon.println(" fail");
     delay(10000);
     return;
   }
   SerialMon.println(" success");
 
-  if (modem.isGprsConnected()) { SerialMon.println("GPRS connected"); }
+  if (modem.isDataConnected()) { SerialMon.println("Cellular data connected"); }
 #endif
-
-  // MQTT Broker setup
-  mqtt.setServer(broker, 1883);
-  mqtt.setCallback(mqttCallback);
 }
 
 void loop() {
@@ -261,33 +268,32 @@ void loop() {
     if (modem.isNetworkConnected()) {
       SerialMon.println("Network re-connected");
     }
-
-#if TINY_GSM_USE_GPRS
-    // and make sure GPRS/EPS is still connected
-    if (!modem.isGprsConnected()) {
-      SerialMon.println("GPRS disconnected!");
-      SerialMon.print(F("Connecting to "));
-      SerialMon.print(apn);
-      if (!modem.gprsConnect(apn, gprsUser, gprsPass)) {
-        SerialMon.println(" fail");
-        delay(10000);
-        return;
-      }
-      if (modem.isGprsConnected()) { SerialMon.println("GPRS reconnected"); }
-    }
-#endif
   }
 
-  if (!mqtt.connected()) {
-    SerialMon.println("=== MQTT NOT CONNECTED ===");
-    // Reconnect every 10 seconds
-    uint32_t t = millis();
-    if (t - lastReconnectAttempt > 10000L) {
-      lastReconnectAttempt = t;
-      if (mqttConnect()) { lastReconnectAttempt = 0; }
+#if TINY_GSM_USE_CELLULAR_DATA
+  // and make sure cellular data is still connected
+  if (!modem.isDataConnected()) {
+    SerialMon.println("Cellular data disconnected!");
+    SerialMon.print(F("Connecting to "));
+    SerialMon.print(apn);
+    if (!modem.dataConnect(apn, simUser, simPass)) {
+      SerialMon.println(" fail");
+      delay(10000);
+      return;
     }
-    delay(100);
-    return;
+    if (modem.isDataConnected()) {
+      SerialMon.println("Cellular data reconnected");
+    }
+  }
+#endif
+
+  if (!mqtt.connected()) {
+    // Reconnect every 10 seconds
+    if (millis() - lastReconnectAttempt > 10000L) {
+      SerialMon.println("=== MQTT NOT CONNECTED ===");
+      lastReconnectAttempt = millis();
+      mqttConnect();
+    }
   }
 
   mqtt.loop();
