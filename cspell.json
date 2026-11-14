@@ -72,7 +72,19 @@
   ],
   "ignoreWords": [],
   "import": [],
-  "ignorePaths": ["platformio.ini", "*doxyfile*", ".vscode"],
+  "ignorePaths": [
+    ".vscode",
+    ".gitignore",
+    ".clang-format",
+    ".clang-tidy",
+    "platformio.ini",
+    "*doxyfile*",
+    "docs/Doxyfile",
+    ".github/**/*.yaml",
+    ".github/**/*.yml",
+    ".gitignore",
+    "**/runDoxygen.bat"
+  ],
   "enabledFileTypes": {
     "cpp": true
   }

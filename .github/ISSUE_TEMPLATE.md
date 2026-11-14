@@ -20,7 +20,6 @@ with your board before submitting any issues.
 [ ] Bug or issue with library functionality (ie, sending data over TCP/IP)
 [ ] Question or request for help
 
-
 ### What are you working with?
 
 Modem: <!-- Brand, model, variant, firmware version, ie Quectel BG96 Revision: BG96MAR02A07M1G -->

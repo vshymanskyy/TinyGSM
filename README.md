@@ -90,15 +90,18 @@ This library is easy to integrate with lots of sketches which use Ethernet or Wi
 - SIMCom SIM900 series (SIM900A, SIM900D, SIM908, SIM968)
   - Previously tested by current maintainer; updates not all tested
 - SIMCom WCDMA/HSPA/HSPA+ Modules (SIM5360, SIM5320, SIM5300E, SIM5300E/A)
-  - Accepted as pull request and verified against manuals. Not personally tested by the maintainer.
+  - Accepted as pull request and verified against manuals.
+    Not personally tested by the maintainer.
 - SIMCom LTE Modules (SIM7100E, SIM7500E, SIM7500A, SIM7600C, SIM7600E)
-  - Accepted as pull request and verified against manuals. Not personally tested by the maintainer.
+  - Accepted as pull request and verified against manuals.
+    Not personally tested by the maintainer.
 - SIMCom SIM7000E/A/G CAT-M1/NB-IoT Module
   - Previously tested by current maintainer; updates not all tested
 - SIMCom SIM7070/SIM7080/SIM7090 CAT-M1/NB-IoT Module
   - Tested by the current maintainer; currently her primary cellular module
 - SIMCom A7672x CAT-M1 Module
-  - Accepted as pull request. Not personally tested by the maintainer.
+  - Accepted as pull request.
+    Not personally tested by the maintainer.
 - AI-Thinker A6, A6C, A7, A20
   - Previously tested by original author
 - ESP8266/ESP32 (AT commands interface, similar to GSM modems)
@@ -116,11 +119,14 @@ This library is easy to integrate with lots of sketches which use Ethernet or Wi
 - Quectel BG96
   - Tested by the current maintainer
 - Quectel BG95
-  - Accepted as pull request and verified against manuals. Not personally tested by the maintainer.
+  - Accepted as pull request and verified against manuals.
+    Not personally tested by the maintainer.
 - Quectel M95
-  - Accepted as pull request and verified against manuals. Not personally tested by the maintainer.
+  - Accepted as pull request and verified against manuals.
+    Not personally tested by the maintainer.
 - Quectel MC60 ***(alpha)***
-  - Accepted as pull request, though I have concerns about the implementation. Not personally tested by the maintainer.
+  - Accepted as pull request, though I have concerns about the implementation.
+    Not personally tested by the maintainer.
 
 Watch this repo for new updates!
 And of course, contributions are welcome ;)
@@ -261,9 +267,12 @@ Once you've established communication with the module, set the baud rate using t
 
 Some caveats with baud rates:
 
-- `TINY_GSM_INTERCHAR_TIMEOUT_MS` sets the maximum silence allowed while waiting for the next character during short inter-character operations. `waitResponse()` also uses it to avoid splitting a response that is still arriving when its overall timeout expires. The default is 10 ms.
-- `TINY_GSM_RESPONSE_MAX_GRACE_MS` limits how long `waitResponse()` can continue beyond its overall timeout while a response is still arriving. The default is 1000 ms.
-- These timing defaults should work for most users. Override them before including TinyGSM only when a modem or stream transport is known to require different timing.
+- `TINY_GSM_INTERCHAR_TIMEOUT_MS` sets the maximum silence allowed while waiting for the next character during short inter-character operations. `waitResponse()` also uses it to avoid splitting a response that is still arriving when its overall timeout expires.
+  The default is 10 ms.
+- `TINY_GSM_RESPONSE_MAX_GRACE_MS` limits how long `waitResponse()` can continue beyond its overall timeout while a response is still arriving.
+  The default is 1000 ms.
+- These timing defaults should work for most users.
+  Override them before including TinyGSM only when a modem or stream transport is known to require different timing.
 - If you are using a slow baud rate to communicate with your module, you may end up with data loss when buffers fill faster than they can be emptied.
 - If you are using a very fast baud rate to communicate with your module, you may need to turn off AT debugging (using StreamDebugger or `DUMP_AT_COMMANDS`) to prevent data loss
 
@@ -370,7 +379,7 @@ client.println(" HTTP/1.1");
 
 When using `SoftwareSerial` (on Uno, Nano, etc), the speed **115200** may not work.
 Try selecting **57600**, **38400**, or even lower - the one that works best for you.
-In some cases **9600** is unstable, but using **38400** helps, etc.
+In some cases **9600** is unstable, but using **38400** helps, etc..
 Be sure to set correct TX/RX pins in the sketch.
 Please note that not every Arduino pin can serve as TX or RX pin.
 **Read more about AVR Serial options and configuration [on Paul Stoffregen's site](https://www.pjrc.com/teensy/td_libs_AltSoftSerial.html) and [the Arduino reference site](https://www.arduino.cc/en/Reference/SoftwareSerial).**
@@ -394,7 +403,10 @@ Please [refer to this comment](https://github.com/vshymanskyy/TinyGSM/issues/102
 
 ### Goouuu Tech IOT-GA6 vs AI-Thinker A6 confusion
 
-It turns out that **Goouuu Tech IOT-GA6** is not the same as **AI-Thinker A6**. Unfortunately IOT-GA6 is not supported out of the box yet. There are some hints that IOT-GA6 firmware may be updated to match A6... See [this topic](https://github.com/vshymanskyy/TinyGSM/issues/164).
+It turns out that **Goouuu Tech IOT-GA6** is not the same as **AI-Thinker A6**.
+Unfortunately IOT-GA6 is not supported out of the box yet.
+There are some hints that IOT-GA6 firmware may be updated to match A6...
+See [this topic](https://github.com/vshymanskyy/TinyGSM/issues/164).
 
 ### SIM800 and SSL
 
@@ -418,11 +430,12 @@ __________
 
 ## License
 
-This project is released under
-The GNU Lesser General Public License (LGPL-3.0)
+This project is released under the GNU Lesser General Public License (LGPL-3.0)
 
 <!--! @m_innerpage{page_supported_module_functions} -->
 <!--! @m_innerpage{page_supported_module_configuration} -->
 <!--! @m_innerpage{change_log} -->
 <!--! @m_innerpage{todo} -->
 <!--! @m_innerpage{deprecated} -->
+
+<!-- cSpell:ignore TINY_GSM_INTERCHAR_TIMEOUT_MS -->

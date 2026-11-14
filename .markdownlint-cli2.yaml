@@ -29,3 +29,14 @@ config:
   # MD060 - Table style
   MD060:
     style: aligned
+
+  markdownlint-sentences-per-line:
+    single_line_sentences: true
+
+customRules:
+  - '@github/markdownlint-github'
+  - 'markdownlint-sentences-per-line'
+
+outputFormatters:
+  - - markdownlint-cli2-formatter-pretty
+    - appendLink: true

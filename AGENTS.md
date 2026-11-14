@@ -231,7 +231,7 @@ Run:
 Markdown:
 
 ```powershell
-npx.cmd --yes markdownlint-cli2 --config ".markdownlint-cli2.yaml" "*.md"
+npx.cmd --yes markdownlint-cli2 --fix --config ".markdownlint-cli2.yaml" "*.md"
 ```
 
 ## Source Testing
@@ -276,7 +276,6 @@ Default environment mapping:
     | `src/TinyGsmClientUBLOX.h`          | `ublox`                           |
     | `src/TinyGsmClientXBEE.h`           | `xbee`                            |
     | All other files                     | `sim7080` `esp32`                 |
-
 
 Primary test sketch:
 
