@@ -135,8 +135,8 @@ filters/*
 **/*.*_archive
 
 # Local Agent Instructions
-AGENTS.md
-.github/copilot-instructions.md
+# AGENTS.md
+# .github/copilot-instructions.md
 .bumpversion.toml
 
 # Local Documentation Artifacts

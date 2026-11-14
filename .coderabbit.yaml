@@ -1,8 +1,8 @@
 # yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
-early_access: false
-enable_free_tier: true
 language: en
 tone_instructions: ''
+early_access: false
+enable_free_tier: true
 knowledge_base:
   learnings:
     scope: auto
@@ -15,13 +15,15 @@ knowledge_base:
 chat:
   auto_reply: true
 reviews:
-  profile: chill
   request_changes_workflow: false
   high_level_summary: true
   high_level_summary_placeholder: '@coderabbitai summary'
-  poem: false
+  auto_title_placeholder: '@coderabbitai'
   review_status: true
+  commit_status: true
   collapse_walkthrough: true
+  poem: false
+  profile: 'chill' # Options: quiet, chill, assertive
   path_filters:
     - '!**/dependencies.json'
     - '!**/example_dependencies.json'
@@ -36,51 +38,48 @@ reviews:
     - '!**/DSTRoot*.h'
     - '!**/*Certificate*.h'
   path_instructions:
+    - path: '**/*'
+      instructions: |
+        - Where available, review the repository's Agents.md or equivalent files for instructions and guidelines related to the repository.
+        - AT commands sent in code should align with the official documentation and be properly formatted.  If, as is common, there are deviations, they should be clearly documented and justified.
     - path: '**/*.md'
       instructions: >-
         Review for grammar, spelling, and clarity.
-        Each sentence should be on a new line, except inside of lists and bullet points.
-        Markdown files should follow rules of markdownlint.
+        Each sentence should be on a new line, except within lists.
+        There is no maximum line length.
+        Markdown files should follow rules of markdownlint using the `.markdownlint-cli2.yaml` configuration file in the repository.
         Check C++ and Arduino code snippets as C++ code.
+    - path: 'ChangeLog.md'
+      instructions: >-
+        In addition to the general markdown review, check the completeness and accuracy of the changelog entries.
     - path: '**/*.dox'
       instructions: >-
         Review for grammar, spelling, and clarity.
         Ensure that Doxygen comments are clear and follow Doxygen conventions, using java-style @commands rather than Qt-style \commands.
         Check C++ and Arduino code snippets as C++ code.
+    - path: '**/*.{h,cpp,tpp,ino}'
+      instructions: >-
+        Review the C++ code, point out issues relative to principles of clean code, expressiveness, and performance.
+        C++ code should be compatible with the Arduino IDE 2.x.
+        C++ code should be C++11 compatible.
+        Code must be suitable for embedded Arduino platforms with limited memory and processing resources.
+        Since this is an Arduino project, never suggest using the standard library (std::) or run time type information.
+        For memory savings, prefer defines to const variables, and prefer using the F() macro for string literals longer than a single character.
+        Defines should be in `.h` or `.tpp` files, not `.cpp` files.
+        User configurable defines should be in a single configuration header file, not scattered across multiple files.
+        Doxygen documentation should be `.h` or `.tpp` files, not `.cpp` files.
+        Template mixin files should have the `.tpp` extension, and should not be included in `.ino` files.
+        Unique functions, defines, and parameters must be documented with Doxygen comments in the header files.
+        Functions marked as `override` do not need Doxygen comments in the header files, unless they have unique parameters or behavior that needs to be documented.
+        Ensure that Doxygen comments follow Doxygen conventions, using java-style @commands rather than Qt-style \commands.
+        Review Doxygen comments for grammar, spelling, completeness, and clarity.
+        Files should be formatted according to the .clang-format file in the repo.
     - path: '**/*.ino'
       instructions: >-
         Treat Arduino code in ino files as C++ code.
-        Review the C++ code, point out issues relative to principles of clean code, expressiveness, and performance.
-        Since this is an Arduino project, never suggest using the standard library (std::) or run time type information.
-        For memory savings, prefer defines to const variables, and prefer using the GF() macro for string literals longer than a single character.
         Files should be formatted according to the .clang-format file in the repo.
-        Template files used as includes should have the .tpp extension, and should not be included in ino files.
-        If a local analysis is being performed and a `filters` folder is present, confirm that credential information will be removed by `filters\cleanFilter.ps1`.
+        If a local analysis is being performed and a `filters` folder is present, confirm that credential information will be removed by the clean filters.
         When evaluating a pull request, confirm that no credential information is present.
-    - path: '**/*.h'
-      instructions: >-
-        Review the C++ code, point out issues relative to principles of clean code, expressiveness, and performance.
-        C++ code should be C++11 compatible, and should not use later features.
-        Since this is an Arduino project, never suggest using the standard library (std::) or run time type information.
-        For memory savings, prefer defines to const variables, and prefer using the GF() macro for string literals longer than a single character.
-        Files should be formatted according to the .clang-format file in the repo.
-        This is a header-only library; all code should be in the header and template files.
-        Template files used as includes should have the .tpp extension, and should not be included directly by the user.
-        Ensure that Doxygen comments follow Doxygen conventions, using java-style @commands rather than Qt-style \commands.
-        Review Doxygen comments for grammar, spelling, completeness, and clarity.
-        AT commands sent in code should align with the official documentation and be properly formatted.  If, as is common, there are deviations, they should be clearly documented and justified.
-    - path: '**/*.tpp'
-      instructions: >-
-        Review the C++ code, point out issues relative to principles of clean code, expressiveness, and performance.
-        Since this is an Arduino project, never suggest using the standard library (std::) or run time type information.
-        C++ code should be C++11 compatible, and should not use later features.
-        For memory savings, prefer defines to const variables, and prefer using the GF() macro for string literals longer than a single character.
-        Files should be formatted according to the .clang-format file in the repo.
-        This is a header-only library; all code should be in the header and template files.
-        Template files used as includes should have the .tpp extension, and should not be included directly by the user.
-        Ensure that Doxygen comments follow Doxygen conventions, using java-style @commands rather than Qt-style \commands.
-        Review Doxygen comments for grammar, spelling, completeness, and clarity.
-        AT commands sent in code should align with the official documentation and be properly formatted.  If, as is common, there are deviations, they should be clearly documented and justified.
     - path: '**/*.cpp'
       instructions: >-
         This is a header-only library, there should not be any .cpp files. If you see a .cpp file, it should be removed.
@@ -90,6 +89,10 @@ reviews:
         It is intended to be used to test the library with different compilers and platforms, and should not be used as a reference for users.
         Check that the code contains all functions and features of the library.
   tools:
+    # clang:
+    #   enabled: true
+    cppcheck:
+      enabled: true
     shellcheck:
       enabled: true
     ruff:
@@ -115,6 +118,7 @@ reviews:
       enabled: true
   auto_review:
     enabled: true
+    auto_incremental_review: false
     ignore_title_keywords:
       - WIP
     labels: []

@@ -12,123 +12,180 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Changed
 
-- **BREAKING** Moved modem-specific headers into `src/modems` and internal CRTP mixins into `src/mixins`.
-  The standard `#include <TinyGsmClient.h>` API is unchanged, while direct modem-header includes now use paths such as `#include <modems/TinyGsmClientSIM7080.h>`.
-- **BREAKING** Rewrote SSL support module!
-  - Certificate-loading and per-client credential-selection function names have changed.
-    - Modem functions have been renamed to "load" instead of "set" to clarify that the certificate data is being loaded into the flash of the module rather than being used somewhere in the library code.
-    - Client functions have been renamed to "setXX**Name**" to clarify that what you are selecting is the file name of a certificate that has been pre-loaded onto the module, not the certificate data itself.
-    - New shared parent classes have been created for TCP and secure clients.
-    - SSL settings are now owned by reusable `GsmSecureContext` objects rather than by individual clients.
-- **BREAKING** Made date/time, registration-status, and SSL enums scoped enum classes, requiring the class name to be included when using their values. Registration-status type names were also standardized (for example, `SIM800RegStatus` became `Sim800RegStatus`).
-- Renamed modem-specific secure client classes for consistent capitalization:
-  - `GsmClientSecureSIM7000SSL` to `GsmClientSecureSim7000SSL`,
-  - `GsmClientSecureSIM7080` to `GsmClientSecureSim7080`,
-  - `GsmClientSecureR4` to `GsmClientSecureSaraR4`, and
-  - `GsmClientSecureR5` to `GsmClientSecureSaraR5`.
-  - The previous modem-specific names remain as compatibility aliases, and the common `TinyGsmClientSecure` alias is unchanged.
-- **Potentially breaking** Replaced the internal `TinyGsmGPRS` mixin and `TinyGsmGPRS.tpp` header with `TinyGsmCellularData` and `TinyGsmCellularData.tpp`. The public `gprsConnect()`, `gprsDisconnect()`, and `isGprsConnected()` functions remain as compatibility aliases.
-- **Potentially breaking** Replaced modem TCP, SSL, and response configuration macros, including `TINY_GSM_MUX_COUNT`, with typed `ModemConfig`, `TcpConfig`, and `SslConfig` traits that centralize socket counts, buffer modes, send limits, timeouts, response strings, and SSL-context counts.
-- Separated Espressif into **3** modules:
-  - the ESP32 (requiring AT firmware >= 3.2),
-  - the ESP8266 using the final release of its AT firmware ([v2.2.1_esp8266](https://github.com/espressif/esp-at/releases/tag/v2.2.1.0_esp8266)),
-  - and the ESP8266 using the original "non-OS" firmware that the first version of this library was written for.
-- Created missing interface for CRTP for the client related modem functions
-- Made adjustments and corrections to the A7672x based on similar functionality of the SIM7600.
-- Fixed various compiler warnings, where possible
-- Increased max baud rate for autobauding.
-- Made the default receive buffer platform-aware: 1024 bytes on SAMD51, 256 bytes on other SAMD boards, and 64 bytes elsewhere, while retaining the `TINY_GSM_RX_BUFFER` override.
-- Made `waitResponse()` use explicit overall and inter-character timeouts instead of delaying after each received character, configurable with `TINY_GSM_INTERCHAR_TIMEOUT_MS` and `TINY_GSM_RESPONSE_MAX_GRACE_MS`.
-- Minor changes in notes and comments
-- **BREAKING** Corrected the spelling of the function `setRadioAccessTecnology` to `setRadioAccessTechnology` and `getCurrentRadioAccessTecnology` to `getCurrentRadioAccessTechnology` for generic u-blox modules.
-- **BREAKING** Renamed the function `setURAT` to `setRadioAccessTechnology` for u-blox SARA R4 modules.
-- **BREAKING** Changed the inputs and outputs of `getCurrentRadioAccessTechnology` for the u-blox SARA R5 modules and made functional.
-- **Potentially breaking** Changed the response type of NTPServerSync from a byte with inconsistent meaning to a boolean indicating success.  Using a boolean test against this may now return inverted results. Previously, Espressif and BG96 modules returned a falsy '0' byte indicating success, but SIMCom modules returned a truthy '1' byte for success.
-- Standardized NTP timezone arguments as offsets in quarter-hours and corrected date, time, timezone, and epoch parsing across modem families.
-
 ### Added
-
-- Added modem-scoped `TinyGsmClient`, `TinyGsmClientSecure`, and `TinyGsmSecureContext` aliases for libraries and multi-modem sketches while preserving the global single-modem aliases.
-- Added support for selecting SSL version and authentication types on select modules
-- Added support for SSL pre-shared keys and PSK tables on select modules.
-- Added support for writing/loading certificates on select modules
-- Added support for printing and converting stored certificates on select modules.
-- Added AVR-safe loading of certificates stored in program memory.
-- Added support for selecting specific certificates for specific connections on select modules
-  - This includes both CA and client certs
-- Added SSL support for the SIM7600 by \@floBik
-- Added functions `beginWrite` and `endWrite` to directly write into the modem's send buffer to help ensure that an entire request is sent in one chunk.
-  - `beginWrite()` rejects requests larger than the modem's configured single-send limit.
-  - `endWrite()` can verify the number of bytes accepted on modems that report it.
-  - These functions are directly analogous to the `beginPublish` and `endPublish` functions within [PubSubClient](https://github.com/knolleary/pubsubclient) and should be usable in combination with them.
-
-```cpp
-uint16_t mqtt_remaining_length = 2 + topic_len + msg_len;
-uint16_t mqtt_packet_length    = 1 + mqtt_remaining_length;
-do {
-  mqtt_packet_length++;
-  mqtt_remaining_length /= 128;
-} while (mqtt_remaining_length > 0);
-gsmClient.beginWrite(mqtt_packet_length);
-mqttClient.beginPublish(topic, msg_len, false);
-gsmClient.write((uint8_t*)message, strlen(message));
-// or mqttClient.write(...) or stream.write(...)
-// print/println functions should also work here
-mqttClient.endPublish();
-gsmClient.endWrite(mqtt_packet_length);
-```
-
-- Added an example connecting to AWS IoT Core with mutual authentication.
-- Added an example using multiple connections at once
-- Added an example using multiple modem types in one sketch.
-- Added a tool for updating Espressif AT firmware.
-- Added an "is_secure" property to all clients to help differentiate them
-- Added a function (`setDefaultBaud(uint32_t baud)`) to set default baud rate, currently only available on Espressif modules
-- Added a `forceModemBaud()` function to recover a modem with an unknown or incorrect baud rate.
-- Added defines for the frequency of checking for lost incoming message notifications (`TINY_GSM_UNREAD_CHECK_MS`)
-  - This can be used as an external build flag.
-- Added per-modem typed configuration for socket counts, static or dynamic socket numbering, receive-buffer behavior, maximum send sizes, and connection, send, and stop timeouts.
-  - All ordinary client writes are split into modem-safe chunks.
-- Implemented a function (`moveCharsFromStreamToFifo`) for transferring a stream of characters from the modem stream into the fifo.
-  - Implemented use of this function for all modules.
-- Added compile-time modem capability detection for networking, GPS, SSL, SMS, calling, battery, temperature, Bluetooth, and more and an example demonstrating its use.
-- Added a function getConfiguredModem() to return information about the compiled modem *without* communicating with the modem.
-- Added generic `dataConnect()`, `dataDisconnect()`, and `isDataConnected()` names while retaining the historical `gprs*` names as aliases.
-- Added `getNetworkEpoch()` and a public `waitForTimeSync()` function on supported modems.
-- Added `getMux()` and `getConnectionID()` to distinguish the library socket index from modem-specific connection numbering.
-- Added `RegStatus` aliases for the selected modem and public modem, TCP, and SSL configuration types.
-- Added opt-in `TINY_GSM_USE_PUBLIC_DNS` support; it defaults to disabled so supported modems retain their network-assigned DNS servers unless public DNS is explicitly requested.
-- Added support for Digi XBee3 Cellular LTE-M3 modules.
-- Added complete Doxygen-style documentation to all functions and created scripts to update the internal lists of available functions for each modem.
-- Added new `powerOff()` function as the preferred naming convention; deprecated `poweroff()` in favor of the new camelCase naming.
 
 ### Removed
 
-- **BREAKING** Removed the ShowNTPError function.
-- Removed the `TINY_GSM_YIELD` and `TINY_GSM_YIELD_MS` configuration macros; timed stream-read helpers now bound parser waits directly.
-- Removed certificate arrays from the modem objects
-- Only include the SSL template on the modules that support the SSL enhancements and certificate management instead of a bare flag for security.
-
 ### Fixed
-
-- Don't force the maintain function to call modemGetAvailable if the sock_available is already non-zero
-- Don't repeatedly call for sock_connected and sock_available for each socket on espressif modules when the response always includes all sockets.
-- Fixes to stop logic on Espressif and SIM7080
-- Fixed socket assignment, mux validation, connection-state tracking, partial sends, and receive-buffer draining across modem families.
-- Corrected per-modem TCP socket, secure-socket, and SSL-context counts and separated shared socket limits from SSL configuration-profile limits.
-- Hardened stream, numeric, IP-address, and hexadecimal parsing against malformed input, partial data, overflow, underflow, and invalid lengths.
-- Fixed SSL context validation, credential attachment, certificate handling, and failure cleanup across supported secure modems.
-- Fixed SIM7070/SIM7080/SIM7090 parsing of the 18-field `+CGNSINF` GPS response, eliminating the unnecessary five-second wait.
-- Corrected A7672x and SIM7600 cellular-data and socket initialization, command ordering, and SSL connection setup.
-- Corrected multiple Espressif connection, URC, time synchronization, timezone, certificate, and long-domain lookup behaviors.
-- Corrected XBee socket, command-mode, connection-state, and SSL configuration behavior.
-- Modified HTTP examples to attempt to connect to a site that doesn't require SSL.
-  - \@vshymanskyy's site which displays the TinyGSM logo now requires SSL.
-- The Arduino keywords file now contains all relevant Doxygen-derived keywords.
 
 ***
 
-## [v0.12.0]
+## [0.13.0-rc.1]
+
+This release substantially updates TinyGSM's client, socket, SSL/TLS, parsing,
+and modem-support layers. The documented single-modem entry point remains
+`#include <TinyGsmClient.h>`, but applications that use modem-specific headers,
+internal mixins, SSL configuration, registration-status values, or the changed
+return values below will need to be updated.
+
+### Changed
+
+- **BREAKING — SSL/TLS configuration and ownership:** Rebuilt the shared TCP
+  and SSL layers. SSL settings now belong to reusable `GsmSecureContext`
+  objects rather than individual secure clients. Applications must keep each
+  modem, context, and attached client alive for as long as the dependent
+  objects use it.
+  - Functions that copy certificate data into a modem now use `load...` names;
+    functions that select an already-loaded credential use `...Name` names.
+  - Authentication mode, TLS version, CA certificate, client certificate and
+    key, PSK, and PSK-table settings are now configured through secure
+    contexts on supported modems.
+  - Modem-specific secure client classes were standardized as
+    `GsmClientSecureSim7000SSL`, `GsmClientSecureSim7080`,
+    `GsmClientSecureSaraR4`, and `GsmClientSecureSaraR5`. The previous names
+    remain as compatibility aliases, and the global `TinyGsmClientSecure`
+    alias is unchanged.
+- **BREAKING — scoped enums:** Date/time, registration-status, and SSL values
+  now use scoped `enum class` types, so enum values must be qualified with
+  their type. Registration-status type capitalization was also standardized;
+  for example, `SIM800RegStatus` became `Sim800RegStatus`.
+- **BREAKING — header locations:** Moved modem implementations into
+  `src/modems` and internal CRTP mixins into `src/mixins`. The standard
+  `#include <TinyGsmClient.h>` remains unchanged. Direct modem includes must
+  use paths such as `#include <modems/TinyGsmClientSIM7080.h>`.
+- **BREAKING — failure values:** Standardized unsupported, missing, and invalid
+  sensor results across modem families. `getBattVoltage()` returns `-9999`,
+  `getBattPercent()` and `getBattChargeState()` return `-99`, and
+  `getTemperature()` returns `-9999.0F` on failure.
+- **BREAKING — u-blox radio access APIs:** Corrected
+  `setRadioAccessTecnology()` and `getCurrentRadioAccessTecnology()` to
+  `setRadioAccessTechnology()` and `getCurrentRadioAccessTechnology()`. SARA-R4
+  now uses `setRadioAccessTechnology()` instead of `setURAT()`, and the SARA-R5
+  setter argument types and getter result and implementation were corrected.
+- **Potentially breaking — NTP result:** `NTPServerSync()` now consistently
+  returns `bool`, with `true` meaning success. Code that interpreted the old
+  numeric results from Espressif or BG96 modems may have its condition
+  inverted.
+- **Potentially breaking — typed configuration:** Replaced internal modem,
+  TCP, SSL, and response macros, including `TINY_GSM_MUX_COUNT`, with public
+  `ModemConfig`, `TcpConfig`, and `SslConfig` traits. These traits describe
+  socket and SSL-context counts, static or dynamic mux assignment, receive
+  behavior, send limits, timeouts, and response strings.
+- Replaced the internal `TinyGsmGPRS` mixin with `TinyGsmCellularData` and added
+  generic cellular-data terminology. The historical `gprsConnect()`,
+  `gprsDisconnect()`, and `isGprsConnected()` APIs remain as aliases.
+- Reworked client and context registration so objects can be default-created,
+  explicitly initialized, safely attached or detached, and reassigned without
+  leaving stale modem socket or SSL-context pointers.
+- Split Espressif support into separate drivers for ESP32 AT firmware 3.2 or
+  newer, ESP8266
+  [v2.2.1 firmware](https://github.com/espressif/esp-at/releases/tag/v2.2.1.0_esp8266),
+  and the legacy ESP8266 Non-OS firmware.
+- Moved bundled utilities from `tools` to `extras/tools`, the compile-test
+  sketch to `extras/tools/test_build`, and download fixtures to
+  `extras/download_tests` so the packaged library has a consistent layout.
+- Made the default client receive buffer platform-aware: 1024 bytes on SAMD51,
+  256 bytes on other SAMD boards, and 64 bytes elsewhere. The
+  `TINY_GSM_RX_BUFFER` override remains available.
+- Reworked `waitResponse()` and timed stream parsing to use explicit overall
+  and inter-character limits instead of repeated yields. The new
+  `TINY_GSM_INTERCHAR_TIMEOUT_MS` and `TINY_GSM_RESPONSE_MAX_GRACE_MS` settings
+  bound incomplete and continuously arriving responses.
+- Increased the maximum autobaud rate to 921600 and made baud probing preserve
+  the stream timeout.
+- Standardized NTP timezone inputs as quarter-hour offsets and corrected date,
+  time, timezone, and epoch handling across modem families.
+- Aligned the A7672x cellular-data, socket, and SSL flows with the related
+  SIM7600 implementation.
+
+### Added
+
+- Added modem-scoped `TinyGsmClient`, `TinyGsmClientSecure`, and
+  `TinyGsmSecureContext` aliases for libraries and multi-modem sketches. The
+  existing global aliases remain available for single-modem sketches.
+- Added public client/context lifecycle and lookup APIs, including `init()`,
+  `isAttached()`, `detach()`, `getClient()`, `findFirstClient()`, and
+  `findFirstIdleClient()`. Static-mux clients can request strict attachment to
+  a specific socket.
+- Added `isSecure()`, `getMux()`, and `getConnectionID()` so applications can
+  inspect a client and distinguish its TinyGSM socket slot from a modem's
+  internal connection identifier.
+- Added `beginWrite()` and `endWrite()` for sending a complete payload through
+  a modem's direct-send path. Oversized writes are rejected, accepted byte
+  counts can be checked where supported, and ordinary writes are split into
+  modem-safe chunks. The API can be paired with PubSubClient's
+  `beginPublish()` and `endPublish()`.
+- Added generic `dataConnect()`, `dataDisconnect()`, and `isDataConnected()`
+  names while retaining the historical `gprs*` aliases.
+- Added compile-time modem capability traits for SSL, certificate management,
+  networking, GPS, SMS, calling, battery, temperature, Bluetooth, time, and
+  other features, plus a `CapabilityQuery` example.
+- Added `getConfiguredModem()` to identify the configured modem without sending
+  an AT command, a selected-modem `RegStatus` alias, and public aliases for the
+  modem, TCP, and SSL configuration types.
+- Added SSL version and authentication selection, PSK and PSK-table support,
+  CA/client credential selection, stored-certificate conversion and printing,
+  and AVR-safe loading of certificates from program memory on supported
+  modems.
+- Added SIM7600 SSL support from \@floBik.
+- Added `getNetworkEpoch()` and public `waitForTimeSync()` support on capable
+  modems.
+- Added `setDefaultBaud()` for Espressif modems and `forceModemBaud()` for
+  recovering a modem whose current baud rate is unknown or incorrect.
+- Added the configurable `TINY_GSM_UNREAD_CHECK_MS` interval for polling modems
+  that may lose incoming-data notifications.
+- Added opt-in `TINY_GSM_USE_PUBLIC_DNS` support. It is disabled by default so
+  supported modems continue using their network-provided DNS servers.
+- Added support for Digi XBee3 Cellular LTE-M3 modules.
+- Added `powerOff()` as the preferred spelling and deprecated `poweroff()`.
+- Added AWS IoT Core mutual-authentication, multiple-connection, and
+  multiple-modem examples, plus an Espressif AT-firmware update tool.
+- Added generated modem capability documentation, Doxygen coverage for the
+  public API, example and source guides, and library-structure/release tooling.
+
+### Removed
+
+- **BREAKING:** Removed `ShowNTPError()`.
+- Removed the `TINY_GSM_YIELD` and `TINY_GSM_YIELD_MS` configuration macros;
+  timed stream helpers now bound parser waits directly.
+- Removed modem-owned certificate-name arrays; secure contexts now own the
+  credential names used by their connections.
+- Removed the obsolete `AT_Spy` and Industruino sketches and legacy Makefile
+  and archived Travis configuration.
+- Stopped including the certificate-management SSL mixin on modems that provide
+  only basic secure-client support.
+
+### Fixed
+
+- Fixed socket assignment, mux validation and translation, attachment and
+  destruction, connection-state tracking, partial sends, stop behavior, and
+  receive-buffer draining across modem families.
+- Avoided unnecessary socket-status and available-byte queries, including
+  repeated Espressif queries whose responses already describe every socket.
+- Corrected per-modem TCP socket, secure-socket, and SSL-context counts, and
+  separated shared socket limits from SSL configuration-profile limits.
+- Hardened stream, integer, floating-point, IP-address, and hexadecimal parsing
+  against malformed or partial data, invalid lengths, overflow, and underflow.
+- Fixed SSL-context validation, credential pairing and attachment, certificate
+  loading and conversion, connection setup, and failure cleanup across
+  supported secure modems.
+- Fixed SIM7070/SIM7080/SIM7090 parsing of the 18-field `+CGNSINF` GPS response,
+  eliminating an unnecessary five-second wait.
+- Fixed A7672x and SIM7600 cellular-data activation, socket initialization,
+  command ordering, result handling, battery-voltage units, and SSL setup.
+- Fixed Espressif socket handling, URCs, time synchronization, timezone
+  conversion, certificate management, and long-domain lookup behavior.
+- Fixed XBee command-mode transitions, socket setup and state tracking, DNS/IP
+  handling, and SSL configuration.
+- Fixed FIFO copying for element types larger than one byte, empty-buffer
+  peeking, and receive-buffer initialization.
+- Updated non-TLS HTTP examples to use a site that still accepts unencrypted
+  connections, and regenerated the Arduino keywords list from the documented
+  API.
+
+***
+
+## [0.12.0]
 
 ### Changed
 
@@ -169,3 +226,9 @@ gsmClient.endWrite(mqtt_packet_length);
 - Fixed SIM70xx inheritance
 
 ***
+
+[Unreleased]: https://github.com/vshymanskyy/TinyGSM/compare/v0.13.0-rc.1...HEAD
+[0.13.0-rc.1]: https://github.com/vshymanskyy/TinyGSM/releases/tag/v0.13.0-rc.1
+[0.12.0]: https://github.com/vshymanskyy/TinyGSM/releases/tag/v0.12.0
+
+<!-- cSpell:ignore Brusco Juxn3 Mikael Fredriksson Bengarman poweroff interchar urat tecnology -->
