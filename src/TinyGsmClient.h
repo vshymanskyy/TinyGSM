@@ -51,6 +51,11 @@ using TinyGsm       = TinyGsmSim7000;
 using TinyGsmClient = TinyGsmSim7000::TinyGsmClient;
 using RegStatus     = Sim70xxRegStatus;
 
+#elif defined(TINY_GSM_MODEM_SIM7028)
+#include "TinyGsmClientSIM7028.h"
+typedef TinyGsmSim7028                   TinyGsm;
+typedef TinyGsmSim7028::GsmClientSim7028 TinyGsmClient;
+
 #elif defined(TINY_GSM_MODEM_SIM7000SSL)
 #include "modems/TinyGsmClientSIM7000SSL.h"
 using TinyGsm              = TinyGsmSim7000SSL;
