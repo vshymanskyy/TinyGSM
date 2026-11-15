@@ -68,6 +68,15 @@ using TinyGsmClientSecure  = TinyGsmSim7080::TinyGsmClientSecure;
 using TinyGsmSecureContext = TinyGsmSim7080::TinyGsmSecureContext;
 using RegStatus            = Sim70xxRegStatus;
 
+
+#elif defined(TINY_GSM_MODEM_SIM7020)
+  #define TINY_GSM_MODEM_HAS_GPRS
+  #define TINY_GSM_MODEM_HAS_GPS
+  #include <TinyGsmClientSIM7020.h>
+  typedef TinyGsmSim7020 TinyGsm;
+  typedef TinyGsmSim7020::GsmClient TinyGsmClient;
+  // typedef TinyGsmSim7020::GsmClientSecure TinyGsmClientSecure; TODO!
+
 #elif defined(TINY_GSM_MODEM_SIM5320) || defined(TINY_GSM_MODEM_SIM5360) || \
     defined(TINY_GSM_MODEM_SIM5300) || defined(TINY_GSM_MODEM_SIM7100)
 #include "modems/TinyGsmClientSIM5360.h"
