@@ -45,6 +45,15 @@ using TinyGsm       = TinyGsmSim800;
 using TinyGsmClient = TinyGsmSim800::TinyGsmClient;
 using RegStatus     = Sim800RegStatus;
 
+#elif defined(TINY_GSM_MODEM_SIM5320)
+  #define TINY_GSM_MODEM_HAS_GPRS
+  #define TINY_GSM_MODEM_HAS_SSL
+  #define TINY_GSM_MODEM_HAS_GPS
+  #include <TinyGsmClientSIM5320.h>
+  typedef TinyGsmSim5320 TinyGsm;
+  typedef TinyGsmSim5320::GsmClient TinyGsmClient;
+  typedef TinyGsmSim5320::GsmClientSecure TinyGsmClientSecure;
+
 #elif defined(TINY_GSM_MODEM_SIM7000)
 #include "modems/TinyGsmClientSIM7000.h"
 using TinyGsm       = TinyGsmSim7000;
