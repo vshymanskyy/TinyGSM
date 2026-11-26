@@ -226,6 +226,9 @@ class TinyGsmSMS {
     // Set GSM 7 bit default alphabet (3GPP TS 23.038)
     thisModem().sendAT(GF("+CSCS=\"GSM\""));
     thisModem().waitResponse();
+    // Restore GSM data coding after a previous UCS-2 message.
+    thisModem().sendAT(GF("+CSMP=17,167,0,0"));
+    thisModem().waitResponse();
     thisModem().sendAT(GF("+CMGS=\""), number, '"');
     if (thisModem().waitResponse(GF(">")) != 1) { return false; }
     thisModem().stream.print(text);  // Actually send the message
