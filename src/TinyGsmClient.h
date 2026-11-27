@@ -84,6 +84,11 @@ using TinyGsmClientSecure  = TinyGsmSim7600::TinyGsmClientSecure;
 using TinyGsmSecureContext = TinyGsmSim7600::TinyGsmSecureContext;
 using RegStatus            = Sim7600RegStatus;
 
+#elif defined(TINY_GSM_MODEM_EC20) || defined(TINY_GSM_MODEM_EC25)
+#include "TinyGsmClientEC20.h"
+typedef TinyGsmEC20                TinyGsm;
+typedef TinyGsmEC20::GsmClientEC20 TinyGsmClient;
+
 #elif defined(TINY_GSM_MODEM_UBLOX)
 #include "modems/TinyGsmClientUBLOX.h"
 using TinyGsm             = TinyGsmUBLOX;
