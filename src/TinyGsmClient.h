@@ -123,6 +123,12 @@ using TinyGsmClientSecure  = TinyGsmBG96::TinyGsmClientSecure;
 using TinyGsmSecureContext = TinyGsmBG96::TinyGsmSecureContext;
 using RegStatus            = BG96RegStatus;
 
+#elif defined(TINY_GSM_MODEM_BC660)
+#include "TinyGsmClientBC660.h"
+typedef TinyGsmBC660                        TinyGsm;
+typedef TinyGsmBC660::GsmClientBC660        TinyGsmClient;
+typedef TinyGsmBC660::GsmClientSecureBC660  TinyGsmClientSecure;
+
 #elif defined(TINY_GSM_MODEM_A6) || defined(TINY_GSM_MODEM_A7)
 #include "modems/TinyGsmClientA6.h"
 using TinyGsm       = TinyGsmA6;
